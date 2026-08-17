@@ -33,3 +33,7 @@ La vérification automatique locale reste bloquée par le registre de dépendanc
 ## Fix round 1/5
 
 La CI 32078963241 a confirmé que les deux échecs provenaient des noms accessibles réels, qui incluent la flèche décorative « → ». Les deux sélecteurs concernés utilisent désormais des expressions régulières insensibles à la casse : `/préparer la première séance/i` et `/valider cette séance/i`.
+
+## Fix round 2/5
+
+La revue a confirmé que les expressions régulières contournaient le défaut au lieu de le corriger. Les flèches visibles des deux actions sont désormais décoratives (`aria-hidden="true"`) et les deux tests vérifient à nouveau les noms accessibles exacts prescrits.

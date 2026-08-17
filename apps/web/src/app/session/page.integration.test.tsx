@@ -10,7 +10,7 @@ describe("session builder", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Ajouter 5 minutes" })[0]);
     expect(screen.getByText("80 min")).toBeVisible();
     fireEvent.click(screen.getAllByRole("button", { name: "Remplacer la situation" })[2]);
-    fireEvent.click(screen.getByRole("button", { name: /valider cette séance/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Valider cette séance" }));
 
     expect(screen.getByRole("status")).toHaveTextContent("Séance prête");
   });

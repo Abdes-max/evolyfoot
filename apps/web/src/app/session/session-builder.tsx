@@ -63,7 +63,7 @@ export function SessionBuilder({ initialSession }: SessionBuilderProps) {
 
       {!isValid && <p className="session-validation-error" role="alert">La séance doit durer entre 60 et 90 minutes.</p>}
       <div className="session-validation">
-        <button className="continue-button" disabled={!isValid} onClick={() => setValidationStatus("Séance prête")} type="button">Valider cette séance <span>→</span></button>
+        <button className="continue-button" disabled={!isValid} onClick={() => setValidationStatus("Séance prête")} type="button">Valider cette séance <span aria-hidden="true">→</span></button>
         {validationStatus && <p className="session-validation-status" role="status">{validationStatus}</p>}
       </div>
     </section>
