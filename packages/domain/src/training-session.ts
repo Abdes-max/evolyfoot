@@ -68,6 +68,16 @@ const catalogue: TrainingActivity[] = [
     observable: "Les joueurs se rendent disponibles autour du porteur.",
   },
   {
+    id: "main-three-lanes-rotations",
+    kind: "main",
+    title: "Progresser par les rotations",
+    compatibleThemes: themes,
+    objective: "Faire progresser le ballon grâce aux changements de position.",
+    organization: "Jeu à effectif réduit dans trois zones avec rotations régulières.",
+    instruction: "Après ta passe, déplace-toi pour créer une nouvelle solution.",
+    observable: "Les joueurs créent des lignes de passe en mouvement.",
+  },
+  {
     id: "game-free-play",
     kind: "game",
     title: "Jeu libre à thème",
@@ -112,4 +122,58 @@ export function generateTrainingSession(
 
 export function getSessionDuration(session: TrainingSession): number {
   return session.blocks.reduce((total, block) => total + block.durationMinutes, 0);
+}
+
+export function adjustBlockDuration(
+  session: TrainingSession,
+  index: number,
+  delta: number,
+): TrainingSession {
+  const block = session.blocks[index];
+  if (!block) return session;
+
+  const blocks = [...session.blocks];
+  blocks[index] = {
+    ...block,
+    durationMinutes: Math.max(5, block.durationMinutes + delta),
+  };
+  return { ...session, blocks };
+}
+
+export function moveSessionBlock(
+  session: TrainingSession,
+  from: number,
+  to: number,
+): TrainingSession {
+  if (from < 0 || from > 3 || to < 0 || to > 3 || from === to) return session;
+
+  const blocks = [...session.blocks];
+  const [block] = blocks.splice(from, 1);
+  blocks.splice(to, 0, block);
+  return { ...session, blocks };
+}
+
+export function replaceSessionActivity(
+  session: TrainingSession,
+  index: number,
+): TrainingSession {
+  const block = session.blocks[index];
+  if (!block) return session;
+
+  const candidates = catalogue.filter(
+    (activity) =>
+      activity.kind === block.activity.kind && activity.compatibleThemes.includes(session.theme),
+  );
+  const currentIndex = candidates.findIndex((activity) => activity.id === block.activity.id);
+  if (candidates.length < 2 || currentIndex < 0) return session;
+
+  const activity = candidates[(currentIndex + 1) % candidates.length];
+  const blocks = [...session.blocks];
+  blocks[index] = { ...block, activity };
+  return { ...session, blocks };
+}
+
+export function canValidateSession(session: TrainingSession): boolean {
+  const duration = getSessionDuration(session);
+  return duration >= 60 && duration <= 90;
 }
