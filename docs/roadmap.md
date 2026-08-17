@@ -26,6 +26,7 @@ Dernière mise à jour : 17 août 2026.
 - 17 août 2026 — CI #6 : web et packages partagés validés. La référence historique `expo-router/types`, absente d'Expo Router 57, a été retirée au profit des types générés Expo déjà inclus.
 - 17 août 2026 — CI #7 : typecheck entièrement vert. Le lint a détecté TypeScript 7.0.2 non encore supporté par `typescript-eslint` ; TypeScript verrouillé sur 6.0.3 et Next.js aligné avec sa configuration ESLint en 16.3.1.
 - 17 août 2026 — CI #8 : TypeScript validé. Le plugin React de Next.js ne supporte pas encore l'API ESLint 10 ; ESLint verrouillé sur la dernière version 9.39.5 compatible.
+- 17 août 2026 — CI #9 : typecheck et lint verts. Vitest nécessitait le transform JSX React pour charger le test d'intégration ; plugin React officiel Vite 6.0.4 ajouté.
 
 ## Phase 1 — Prototype métier navigable
 

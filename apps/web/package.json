@@ -2,6 +2,7 @@
   "name": "@evolyfoot/web",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "latest",
+    "@vitejs/plugin-react": "6.0.4",
     "@evolyfoot/typescript-config": "workspace:*",
     "@types/node": "latest",
     "@types/react": "latest",
