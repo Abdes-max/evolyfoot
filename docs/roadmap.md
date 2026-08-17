@@ -23,6 +23,7 @@ Dernière mise à jour : 17 août 2026.
 - 17 août 2026 — CI #3 : `setup-node@v5` a détecté pnpm et tenté son auto-cache avant Corepack. L'auto-cache est explicitement désactivé jusqu'au commit du lockfile.
 - 17 août 2026 — CI #4 : installation réussie et lockfile généré. Le typecheck a détecté l'option `baseUrl`, supprimée dans TypeScript 6 ; configuration corrigée.
 - 17 août 2026 — CI #5 : typecheck applicatif atteint. Les extensions d'assertion `jest-dom` n'étaient pas incluses dans le programme TypeScript ; fichiers de configuration Vitest ajoutés au périmètre.
+- 17 août 2026 — CI #6 : web et packages partagés validés. La référence historique `expo-router/types`, absente d'Expo Router 57, a été retirée au profit des types générés Expo déjà inclus.
 
 ## Phase 1 — Prototype métier navigable
 

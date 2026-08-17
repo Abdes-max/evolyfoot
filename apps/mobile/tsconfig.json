@@ -1,5 +1,5 @@
 {
   "extends": "@evolyfoot/typescript-config/react-native.json",
-  "compilerOptions": { "allowJs": true, "types": ["expo-router/types"] },
+  "compilerOptions": { "allowJs": true },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }
