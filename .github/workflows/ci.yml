@@ -24,6 +24,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
       - name: Activer pnpm
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
       - name: Installer les dépendances
@@ -54,6 +55,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
       - name: Activer pnpm
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
       - name: Installer les dépendances
