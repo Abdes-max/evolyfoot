@@ -14,6 +14,13 @@ test("l’éducateur configure son équipe avant le diagnostic", async ({ page }
   await page.getByLabel("Nom de l’équipe").fill("FC Horizon");
   await page.getByRole("button", { name: "Mar" }).click();
   await page.getByRole("button", { name: "Jeu" }).click();
-  await page.getByRole("button", { name: /continuer vers le diagnostic/i }).click();
+  await page.getByRole("button", { name: /valider mon équipe/i }).click();
   await expect(page.getByRole("status")).toContainText("Équipe prête");
+});
+
+test("le diagnostic révèle deux priorités de développement", async ({ page }) => {
+  await page.goto("/diagnostic");
+  await page.getByRole("button", { name: "Réagir après la perte : Rarement" }).click();
+  await page.getByRole("button", { name: "Voir mes priorités" }).click();
+  await expect(page.getByRole("status")).toContainText("Récupérer rapidement");
 });
