@@ -14,4 +14,23 @@ describe("session builder", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("Séance prête");
   });
+
+  it("affiche les informations pratiques de chaque situation et l’effectif", () => {
+    render(<SessionPage />);
+
+    expect(screen.getByText("14 joueurs")).toBeVisible();
+    expect(screen.getAllByText("Organisation")).toHaveLength(4);
+    expect(screen.getAllByText("Consigne")).toHaveLength(4);
+    expect(screen.getAllByText("À observer")).toHaveLength(4);
+    expect(screen.getByText("Jeu 5 contre 5 dans trois couloirs avec zones d’en-but.")).toBeVisible();
+  });
+
+  it("explique pourquoi une situation sans alternative ne peut pas être remplacée", () => {
+    render(<SessionPage />);
+
+    const replaceButtons = screen.getAllByRole("button", { name: /remplacer la situation/i });
+    expect(replaceButtons[0]).toBeDisabled();
+    expect(replaceButtons[0]).toHaveAccessibleDescription("Aucune autre situation compatible pour ce bloc.");
+    expect(replaceButtons[2]).toBeEnabled();
+  });
 });

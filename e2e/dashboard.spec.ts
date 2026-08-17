@@ -34,9 +34,13 @@ test("le plan organise la progression sur quatre semaines", async ({ page }) => 
 });
 
 test("le coach personnalise puis valide sa séance", async ({ page }) => {
-  await page.goto("/session");
+  await page.goto("/plan");
+  await page.getByRole("link", { name: /préparer la première séance/i }).click();
+  await expect(page).toHaveURL(/\/session$/);
 
   await expect(page.getByText("75 min")).toBeVisible();
+  await expect(page.getByText("14 joueurs")).toBeVisible();
+  await expect(page.getByText("Organisation", { exact: true }).first()).toBeVisible();
   await page.getByRole("button", { name: "Ajouter 5 minutes" }).first().click();
   await expect(page.getByText("80 min")).toBeVisible();
   await page.getByRole("button", { name: "Valider cette séance" }).click();

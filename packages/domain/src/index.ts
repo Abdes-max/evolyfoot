@@ -58,6 +58,7 @@ export { buildDevelopmentPlan } from "./development-plan";
 export type { DevelopmentPlan, DevelopmentWeek } from "./development-plan";
 export {
   adjustBlockDuration,
+  canReplaceSessionActivity,
   canValidateSession,
   generateTrainingSession,
   getSessionDuration,
