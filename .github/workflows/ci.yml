@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Qualité et tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v5
+      - name: Installer Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Activer pnpm
+        run: corepack enable && corepack prepare pnpm@10.15.1 --activate
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+      - name: Vérifier les types
+        run: pnpm typecheck
+      - name: Analyser le code
+        run: pnpm lint
+      - name: Exécuter les tests unitaires et d'intégration
+        run: pnpm test
+      - name: Construire les applications
+        run: pnpm build
+
+  e2e:
+    name: Parcours end-to-end
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v5
+      - name: Installer Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Activer pnpm
+        run: corepack enable && corepack prepare pnpm@10.15.1 --activate
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+      - name: Installer Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Exécuter le parcours critique
+        run: pnpm exec playwright test --project=chromium
+      - name: Conserver le rapport en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "EvolyFoot",
+    "slug": "evolyfoot",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "evolyfoot",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true },
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.evolyfoot.app" },
+    "android": { "package": "com.evolyfoot.app", "adaptiveIcon": { "backgroundColor": "#17643d" } }
+  }
+}
