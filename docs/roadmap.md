@@ -13,7 +13,7 @@ Dernière mise à jour : 17 août 2026.
 - [x] Workflow CI GitHub Actions.
 - [x] Stratégie de branches, PR et livraison.
 - [x] Installation complète et génération du lockfile validées dans GitHub Actions ; CI passée à `--frozen-lockfile`.
-- [ ] Première PR vers `master` — authentification GitHub locale à renouveler.
+- [x] Première PR vers `master` fusionnée après validation complète de la CI.
 - [ ] Activer le contrôle Prettier dans la CI après le premier formatage automatisé.
 
 ### Journal de validation
@@ -31,7 +31,7 @@ Dernière mise à jour : 17 août 2026.
 
 ## Phase 1 — Prototype métier navigable
 
-- [ ] Onboarding équipe et catégorie.
+- [x] Onboarding équipe et catégorie — modèle partagé, validation métier, parcours web responsive et tests automatisés.
 - [ ] Diagnostic initial guidé.
 - [ ] Plan de développement sur quatre semaines.
 - [ ] Constructeur de séance.
