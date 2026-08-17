@@ -19,6 +19,7 @@ Dernière mise à jour : 17 août 2026.
 ### Journal de validation
 
 - 17 août 2026 — CI #1 : bootstrap arrêté avant installation, car le cache `setup-node` exigeait déjà `pnpm-lock.yaml`. Cache retiré temporairement et export du lockfile ajouté au workflow.
+- 17 août 2026 — CI #2 : GitHub n'a pas pu télécharger `pnpm/action-setup` (503 puis 429/502). L'action tierce a été remplacée par Corepack fourni avec Node.js 22.
 
 ## Phase 1 — Prototype métier navigable
 
