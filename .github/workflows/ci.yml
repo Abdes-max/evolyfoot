@@ -28,9 +28,14 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
       - name: Installer les dépendances
         run: pnpm install --no-frozen-lockfile
+      - name: Conserver le lockfile généré
+        uses: actions/upload-artifact@v4
+        with:
+          name: pnpm-lock
+          path: pnpm-lock.yaml
+          retention-days: 7
       - name: Vérifier les types
         run: pnpm typecheck
       - name: Analyser le code
@@ -55,7 +60,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
       - name: Installer les dépendances
         run: pnpm install --no-frozen-lockfile
       - name: Installer Chromium

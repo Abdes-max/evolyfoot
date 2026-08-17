@@ -16,6 +16,10 @@ Dernière mise à jour : 17 août 2026.
 - [ ] Première PR vers `master` — authentification GitHub locale à renouveler.
 - [ ] Activer le contrôle Prettier dans la CI après le premier formatage automatisé.
 
+### Journal de validation
+
+- 17 août 2026 — CI #1 : bootstrap arrêté avant installation, car le cache `setup-node` exigeait déjà `pnpm-lock.yaml`. Cache retiré temporairement et export du lockfile ajouté au workflow.
+
 ## Phase 1 — Prototype métier navigable
 
 - [ ] Onboarding équipe et catégorie.
