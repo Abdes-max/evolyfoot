@@ -33,7 +33,7 @@ Dernière mise à jour : 17 août 2026.
 
 - [x] Onboarding équipe et catégorie — modèle partagé, validation métier, parcours web responsive et tests automatisés.
 - [x] Diagnostic initial guidé — quatre comportements observables, échelle simple et deux priorités explicables.
-- [ ] Plan de développement sur quatre semaines.
+- [x] Plan de développement sur quatre semaines — progression découvrir, stabiliser, mettre sous pression et évaluer.
 - [ ] Constructeur de séance.
 - [ ] Observation rapide après séance et match.
 - [ ] Ajustement explicable proposé par Evoly.

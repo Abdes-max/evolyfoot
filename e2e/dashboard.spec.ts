@@ -24,3 +24,5 @@ test("le diagnostic révèle deux priorités de développement", async ({ page }
   await page.getByRole("button", { name: "Voir mes priorités" }).click();
   await expect(page.getByRole("status")).toContainText("Récupérer rapidement");
 });
+
+test("le plan organise la progression sur quatre semaines",async({page})=>{await page.goto("/plan");await expect(page.getByRole("heading",{name:"Ton premier cycle est prêt."})).toBeVisible();await expect(page.getByText("S4",{exact:true})).toBeVisible();await expect(page.getByRole("button",{name:/adopter ce cycle/i})).toBeVisible();});
