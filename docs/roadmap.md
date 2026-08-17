@@ -32,7 +32,7 @@ Dernière mise à jour : 17 août 2026.
 ## Phase 1 — Prototype métier navigable
 
 - [x] Onboarding équipe et catégorie — modèle partagé, validation métier, parcours web responsive et tests automatisés.
-- [ ] Diagnostic initial guidé.
+- [x] Diagnostic initial guidé — quatre comportements observables, échelle simple et deux priorités explicables.
 - [ ] Plan de développement sur quatre semaines.
 - [ ] Constructeur de séance.
 - [ ] Observation rapide après séance et match.
