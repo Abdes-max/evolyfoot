@@ -50,3 +50,5 @@ export const nextSession: SessionPreview = {
 
 export { suggestAdjustment } from "./progression";
 export type { AdjustmentSuggestion, ObservationSummary } from "./progression";
+export { ageGroups, createTeamProfile, validateTeamProfile } from "./team";
+export type { TeamProfile, TeamProfileErrors, TrainingDay } from "./team";

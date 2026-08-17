@@ -16,7 +16,7 @@ export default function Home() {
           <a className="nav-item" href="#plan"><span>◎</span> Plan de progression</a>
           <a className="nav-item" href="#session"><span>△</span> Séances</a>
           <a className="nav-item" href="#observations"><span>◇</span> Observations</a>
-          <a className="nav-item" href="#team"><span>○</span> Mon équipe</a>
+          <a className="nav-item" href="/onboarding"><span>○</span> Mon équipe</a>
         </nav>
         <div className="season-card">
           <span className="eyebrow">SAISON 2026–27</span>
