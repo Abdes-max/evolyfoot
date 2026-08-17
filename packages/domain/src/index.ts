@@ -54,3 +54,5 @@ export { ageGroups, createTeamProfile, validateTeamProfile } from "./team";
 export type { TeamProfile, TeamProfileErrors, TrainingDay } from "./team";
 export { diagnosticCriteria, summarizeDiagnostic } from "./diagnostic";
 export type { DiagnosticCriterion, DiagnosticScores, DiagnosticSummary } from "./diagnostic";
+export { buildDevelopmentPlan } from "./development-plan";
+export type { DevelopmentPlan, DevelopmentWeek } from "./development-plan";
