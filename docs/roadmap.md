@@ -21,6 +21,7 @@ Dernière mise à jour : 17 août 2026.
 - 17 août 2026 — CI #1 : bootstrap arrêté avant installation, car le cache `setup-node` exigeait déjà `pnpm-lock.yaml`. Cache retiré temporairement et export du lockfile ajouté au workflow.
 - 17 août 2026 — CI #2 : GitHub n'a pas pu télécharger `pnpm/action-setup` (503 puis 429/502). L'action tierce a été remplacée par Corepack fourni avec Node.js 22.
 - 17 août 2026 — CI #3 : `setup-node@v5` a détecté pnpm et tenté son auto-cache avant Corepack. L'auto-cache est explicitement désactivé jusqu'au commit du lockfile.
+- 17 août 2026 — CI #4 : installation réussie et lockfile généré. Le typecheck a détecté l'option `baseUrl`, supprimée dans TypeScript 6 ; configuration corrigée.
 
 ## Phase 1 — Prototype métier navigable
 
