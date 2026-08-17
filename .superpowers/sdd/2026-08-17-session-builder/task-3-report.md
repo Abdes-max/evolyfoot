@@ -29,3 +29,7 @@ L’utilisateur a autorisé exactement deux fichiers supplémentaires :
 ## Préoccupation
 
 La vérification automatique locale reste bloquée par le registre de dépendances inaccessible ; aucune conclusion de test vert local ne peut être établie avant l’exécution CI.
+
+## Fix round 1/5
+
+La CI 32078963241 a confirmé que les deux échecs provenaient des noms accessibles réels, qui incluent la flèche décorative « → ». Les deux sélecteurs concernés utilisent désormais des expressions régulières insensibles à la casse : `/préparer la première séance/i` et `/valider cette séance/i`.
