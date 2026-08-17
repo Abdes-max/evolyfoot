@@ -30,7 +30,7 @@
   "devDependencies": {
     "@evolyfoot/typescript-config": "workspace:*",
     "@types/react": "~19.2.2",
-    "eslint": "latest",
+    "eslint": "9.39.5",
     "eslint-config-expo": "latest",
     "typescript": "~6.0.3"
   }

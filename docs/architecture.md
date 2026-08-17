@@ -15,6 +15,7 @@
 - Expo SDK 57.0.9, React 19.2.3 et React Native 0.86.2 côté mobile.
 - Les versions mobiles suivent le template officiel Expo SDK 57 afin d'éviter les combinaisons non supportées.
 - TypeScript 6.0.3 est verrouillé tant que `typescript-eslint` ne supporte pas TypeScript 7.
+- ESLint 9.39.5 est verrouillé tant que le plugin React de la configuration Next.js ne supporte pas ESLint 10.
 
 ## Frontières
 
