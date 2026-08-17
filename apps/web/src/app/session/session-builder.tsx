@@ -32,7 +32,7 @@ export function SessionBuilder({ initialSession }: SessionBuilderProps) {
         <div>
           <span className="eyebrow">DÉROULÉ MODULABLE</span>
           <h2 id="session-builder-title">{session.title}</h2>
-          <p>{session.theme} · {session.playerCount} joueurs</p>
+          <p>{session.theme} · <span>{`${session.playerCount} joueurs`}</span></p>
         </div>
         <strong aria-label={`Durée totale : ${duration} minutes`}>{duration} min</strong>
       </div>
