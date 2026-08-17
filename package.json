@@ -24,6 +24,6 @@
     "@playwright/test": "latest",
     "prettier": "latest",
     "turbo": "latest",
-    "typescript": "latest"
+    "typescript": "~6.0.3"
   }
 }

@@ -11,9 +11,10 @@
 ## Versions de fondation
 
 - Node.js 22.13 minimum.
-- Next.js 16.2.12 et React 19.2.8 côté web.
+- Next.js 16.3.1 et React 19.2.8 côté web.
 - Expo SDK 57.0.9, React 19.2.3 et React Native 0.86.2 côté mobile.
 - Les versions mobiles suivent le template officiel Expo SDK 57 afin d'éviter les combinaisons non supportées.
+- TypeScript 6.0.3 est verrouillé tant que `typescript-eslint` ne supporte pas TypeScript 7.
 
 ## Frontières
 

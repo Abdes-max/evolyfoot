@@ -13,6 +13,6 @@
   },
   "devDependencies": {
     "@evolyfoot/typescript-config": "workspace:*",
-    "typescript": "latest"
+    "typescript": "~6.0.3"
   }
 }
