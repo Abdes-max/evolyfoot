@@ -12,7 +12,7 @@ Dernière mise à jour : 17 août 2026.
 - [x] Stratégie de tests et premiers tests unitaires, intégration et E2E.
 - [x] Workflow CI GitHub Actions.
 - [x] Stratégie de branches, PR et livraison.
-- [ ] Installation complète et génération du lockfile — réseau npm indisponible localement. La CI utilise temporairement `--no-frozen-lockfile`; elle passera à `--frozen-lockfile` dès que le lockfile sera commité.
+- [x] Installation complète et génération du lockfile validées dans GitHub Actions ; CI passée à `--frozen-lockfile`.
 - [ ] Première PR vers `master` — authentification GitHub locale à renouveler.
 - [ ] Activer le contrôle Prettier dans la CI après le premier formatage automatisé.
 
@@ -27,6 +27,7 @@ Dernière mise à jour : 17 août 2026.
 - 17 août 2026 — CI #7 : typecheck entièrement vert. Le lint a détecté TypeScript 7.0.2 non encore supporté par `typescript-eslint` ; TypeScript verrouillé sur 6.0.3 et Next.js aligné avec sa configuration ESLint en 16.3.1.
 - 17 août 2026 — CI #8 : TypeScript validé. Le plugin React de Next.js ne supporte pas encore l'API ESLint 10 ; ESLint verrouillé sur la dernière version 9.39.5 compatible.
 - 17 août 2026 — CI #9 : typecheck et lint verts. Vitest nécessitait le transform JSX React pour charger le test d'intégration ; plugin React officiel Vite 6.0.4 ajouté.
+- 17 août 2026 — CI #10 : typecheck, lint, tests unitaires/intégration, build et E2E Chromium entièrement verts. Lockfile de cette exécution intégré à la branche et installation CI rendue stricte.
 
 ## Phase 1 — Prototype métier navigable
 

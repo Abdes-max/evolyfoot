@@ -28,13 +28,7 @@ jobs:
       - name: Activer pnpm
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
       - name: Installer les dépendances
-        run: pnpm install --no-frozen-lockfile
-      - name: Conserver le lockfile généré
-        uses: actions/upload-artifact@v4
-        with:
-          name: pnpm-lock
-          path: pnpm-lock.yaml
-          retention-days: 7
+        run: pnpm install --frozen-lockfile
       - name: Vérifier les types
         run: pnpm typecheck
       - name: Analyser le code
@@ -59,7 +53,7 @@ jobs:
       - name: Activer pnpm
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
       - name: Installer les dépendances
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: Installer Chromium
         run: pnpm exec playwright install --with-deps chromium
       - name: Exécuter le parcours critique
