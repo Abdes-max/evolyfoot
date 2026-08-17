@@ -1,0 +1,19 @@
+{
+  "name": "@evolyfoot/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:integration": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "@evolyfoot/typescript-config": "workspace:*",
+    "typescript": "latest",
+    "vitest": "4.1.10"
+  }
+}

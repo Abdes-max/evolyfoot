@@ -1,0 +1,18 @@
+{
+  "name": "@evolyfoot/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "tsc --noEmit",
+    "test:unit": "tsc --noEmit",
+    "test:integration": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@evolyfoot/typescript-config": "workspace:*",
+    "typescript": "latest"
+  }
+}

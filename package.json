@@ -1,0 +1,29 @@
+{
+  "name": "evolyfoot",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.15.1",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:web": "pnpm --filter @evolyfoot/web dev",
+    "dev:mobile": "pnpm --filter @evolyfoot/mobile start",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@playwright/test": "latest",
+    "prettier": "latest",
+    "turbo": "latest",
+    "typescript": "latest"
+  }
+}

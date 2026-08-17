@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+.next/
+dist/
+web-build/
+.expo/
+.turbo/
+coverage/
+
+# local configuration
+.env
+.env.*
+!.env.example
+
+# editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+pnpm-debug.log*
+
+# ChatGPT project mirror metadata (not part of EvolyFoot)
+sources/
+AGENTS.md
