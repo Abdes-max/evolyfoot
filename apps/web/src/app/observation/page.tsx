@@ -1,11 +1,12 @@
 import { ObservationForm } from "./observation-form";
 
 interface ObservationPageProps {
-  searchParams?: { type?: string | string[] };
+  searchParams?: Promise<{ type?: string | string[] }>;
 }
 
-export default function ObservationPage({ searchParams }: ObservationPageProps) {
-  const requestedType = Array.isArray(searchParams?.type) ? searchParams.type[0] : searchParams?.type;
+export default async function ObservationPage({ searchParams }: ObservationPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const requestedType = Array.isArray(resolvedSearchParams?.type) ? resolvedSearchParams.type[0] : resolvedSearchParams?.type;
   const initialEventType = requestedType === "match" ? "match" : "training";
 
   return (

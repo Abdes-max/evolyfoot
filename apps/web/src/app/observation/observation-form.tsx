@@ -75,7 +75,10 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
 
       <fieldset className="event-choice">
         <legend>Quel moment observes-tu&nbsp;?</legend>
-        <div>{eventOptions.map((option) => <button aria-pressed={draft.eventType === option.type} className={draft.eventType === option.type ? "active" : ""} key={option.type} onClick={() => selectEventType(option.type)} type="button">{option.label}</button>)}</div>
+        <div>{eventOptions.map((option) => {
+          const selected = draft.eventType === option.type;
+          return <button aria-label={option.label} aria-pressed={selected} className={selected ? "active" : ""} key={option.type} onClick={() => selectEventType(option.type)} type="button">{option.label}{selected && <span aria-hidden="true" className="selection-indicator"> · Sélectionné</span>}</button>;
+        })}</div>
       </fieldset>
 
       <div className="observation-grid">
@@ -87,7 +90,10 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
               return <article className="observation-criterion" key={criterion.id}>
                 <div><h4>{criterion.label}</h4><p>{criterion.description}</p></div>
                 <div aria-label={criterion.label} className="observation-levels">
-                  {levels.map((level) => <button aria-label={`${criterion.label} : ${level.label}`} aria-pressed={selectedLevel === level.value} className={selectedLevel === level.value ? "active" : ""} key={level.value} onClick={() => editDraft(rateObservation(draft, criterion.id, level.value))} type="button">{level.label}</button>)}
+                  {levels.map((level) => {
+                    const selected = selectedLevel === level.value;
+                    return <button aria-label={`${criterion.label} : ${level.label}`} aria-pressed={selected} className={selected ? "active" : ""} key={level.value} onClick={() => editDraft(rateObservation(draft, criterion.id, level.value))} type="button">{level.label}{selected && <span aria-hidden="true" className="selection-indicator"> · Sélectionné</span>}</button>;
+                  })}
                 </div>
               </article>;
             })}
@@ -100,8 +106,8 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
             {draft.players.map((player) => {
               const signal = draft.signals.find((candidate) => candidate.playerId === player.id)?.kind;
               return <article key={player.id}><strong>{player.name}</strong><div>
-                <button aria-label={`Mettre ${player.name} en réussite à retenir`} aria-pressed={signal === "highlight"} className={signal === "highlight" ? "active highlight" : ""} onClick={() => editDraft(togglePlayerSignal(draft, player, "highlight"))} type="button">Réussite à retenir</button>
-                <button aria-label={`Signaler ${player.name} pour un accompagnement`} aria-pressed={signal === "support"} className={signal === "support" ? "active support" : ""} onClick={() => editDraft(togglePlayerSignal(draft, player, "support"))} type="button">À accompagner</button>
+                <button aria-label={`Mettre ${player.name} en réussite à retenir`} aria-pressed={signal === "highlight"} className={signal === "highlight" ? "active highlight" : ""} onClick={() => editDraft(togglePlayerSignal(draft, player, "highlight"))} type="button">Réussite à retenir{signal === "highlight" && <span aria-hidden="true" className="selection-indicator"> · Sélectionné</span>}</button>
+                <button aria-label={`Signaler ${player.name} pour un accompagnement`} aria-pressed={signal === "support"} className={signal === "support" ? "active support" : ""} onClick={() => editDraft(togglePlayerSignal(draft, player, "support"))} type="button">À accompagner{signal === "support" && <span aria-hidden="true" className="selection-indicator"> · Sélectionné</span>}</button>
               </div></article>;
             })}
           </div>

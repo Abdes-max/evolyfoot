@@ -138,8 +138,7 @@ export function togglePlayerSignal(
 }
 
 export function setObservationNote(draft: ObservationDraft, note: string): ObservationDraft {
-  const trimmed = note.trim();
-  return copyDraft(draft, trimmed ? { note: trimmed } : { note: undefined });
+  return copyDraft(draft, { note });
 }
 
 export function canCompleteObservation(draft: ObservationDraft): boolean {

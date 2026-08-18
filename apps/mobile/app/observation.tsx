@@ -15,20 +15,21 @@ import {
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { AccessibilityInfo, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const demoPlayers: ReadonlyArray<PlayerReference> = [
+const demoPlayers: readonly PlayerReference[] = [
   { id: "lina-dupont", name: "Lina" },
   { id: "noah-martin", name: "Noah" },
   { id: "sami-bernard", name: "Sami" },
 ];
 
-const eventOptions: ReadonlyArray<{ type: ObservationEventType; label: string }> = [
+const eventOptions: readonly { type: ObservationEventType; label: string }[] = [
   { type: "training", label: "Après une séance" },
   { type: "match", label: "Après un match" },
 ];
 
-const levels: ReadonlyArray<{ value: ObservationLevel; label: string }> = [
+const levels: readonly { value: ObservationLevel; label: string }[] = [
   { value: "reinforce", label: "À renforcer" },
   { value: "progress", label: "En progrès" },
   { value: "achieved", label: "Acquis aujourd’hui" },
@@ -59,6 +60,17 @@ export default function ObservationScreen() {
   function editDraft(nextDraft: ObservationDraft) {
     setDraft(nextDraft);
     setReport(undefined);
+  }
+
+  function validateObservation() {
+    if (!complete) return;
+
+    const nextReport = completeObservation(draft);
+    setReport(nextReport);
+
+    if (Platform.OS === "ios") {
+      AccessibilityInfo.announceForAccessibility(`Observation validée. Tendance ${levelText[nextReport.summary.trend]}.`);
+    }
   }
 
   return (
@@ -181,7 +193,7 @@ export default function ObservationScreen() {
           accessibilityRole="button"
           accessibilityState={{ disabled: !complete }}
           disabled={!complete}
-          onPress={() => complete && setReport(completeObservation(draft))}
+          onPress={validateObservation}
           style={[styles.validate, !complete && styles.validateDisabled]}
         >
           <Text style={styles.validateText}>Valider l’observation →</Text>
