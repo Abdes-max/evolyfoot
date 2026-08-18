@@ -59,7 +59,7 @@ function suggestionFor(
       reason: `${reason} Le comportement sera répété dans une situation plus lisible avant d'ajouter de la pression.`,
       triggerScore: score,
       proposedTheme: criterion.theme,
-      constraint: "Espace légèrement agrandi, opposition progressive, répétitions courtes.",
+      constraint: "Espace légèrement agrandi.",
       observable: `Le comportement « ${criterion.label} » apparaît dans des situations lisibles.`,
       impact: "Davantage de répétitions courtes avant d'augmenter la pression.",
     };
@@ -73,7 +73,7 @@ function suggestionFor(
       reason: `La moyenne atteint ${averageScore}/100 et aucun comportement n'est à 0. ${criterion.label} reste le repère le plus faible à observer.`,
       triggerScore: averageScore,
       proposedTheme: currentWeek.theme,
-      constraint: "Espace réduit ou décision à prendre plus vite.",
+      constraint: "Espace réduit.",
       observable: `Le comportement « ${criterion.label} » reste présent quand le temps ou l'espace diminue.`,
       impact: "Une seule contrainte augmente pour tester le comportement dans un contexte plus exigeant.",
     };
