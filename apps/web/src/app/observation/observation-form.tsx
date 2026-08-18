@@ -7,7 +7,10 @@ import {
   diagnosticCriteria,
   rateObservation,
   setObservationNote,
+  suggestAdjustmentFromObservation,
   togglePlayerSignal,
+  type AdjustmentSuggestion,
+  type DevelopmentWeek,
   type ObservationDraft,
   type ObservationEventType,
   type ObservationLevel,
@@ -15,6 +18,7 @@ import {
   type PlayerReference,
 } from "@evolyfoot/domain";
 import { useState } from "react";
+import { AdjustmentCard } from "./adjustment-card";
 
 const demoPlayers: ReadonlyArray<PlayerReference> = [
   { id: "lina-dupont", name: "Lina" },
@@ -39,6 +43,14 @@ const levelText: Record<ObservationLevel, string> = {
   achieved: "acquise aujourd’hui",
 };
 
+const currentWeek: DevelopmentWeek = {
+  week: 2,
+  phase: "Stabiliser",
+  theme: "Progresser ensemble",
+  intention: "Répéter le comportement dans des situations variées.",
+  observable: "Le comportement apparaît sans rappel dans 1 action sur 2.",
+};
+
 function eventTitle(type: ObservationEventType) {
   return type === "match" ? "Observation de match" : "Observation de séance";
 }
@@ -54,12 +66,21 @@ interface ObservationFormProps {
 export function ObservationForm({ initialEventType }: ObservationFormProps) {
   const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType));
   const [report, setReport] = useState<ObservationReport>();
+  const [suggestion, setSuggestion] = useState<AdjustmentSuggestion>();
   const complete = canCompleteObservation(draft);
   const remaining = diagnosticCriteria.length - draft.ratings.length;
 
   function editDraft(nextDraft: ObservationDraft) {
     setDraft(nextDraft);
     setReport(undefined);
+    setSuggestion(undefined);
+  }
+
+  function submitObservation() {
+    if (!complete) return;
+    const nextReport = completeObservation(draft);
+    setReport(nextReport);
+    setSuggestion(suggestAdjustmentFromObservation(nextReport, currentWeek));
   }
 
   function selectEventType(eventType: ObservationEventType) {
@@ -116,11 +137,12 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
       </div>
 
       <div className="observation-submit">
-        <button disabled={!complete} onClick={() => complete && setReport(completeObservation(draft))} type="button">Valider l’observation <span aria-hidden="true">→</span></button>
+        <button disabled={!complete} onClick={submitObservation} type="button">Valider l’observation <span aria-hidden="true">→</span></button>
         {!complete && <p>{`${remaining} comportement${remaining > 1 ? "s" : ""} reste${remaining > 1 ? "nt" : ""} à renseigner.`}</p>}
       </div>
 
       {report && <section aria-live="polite" className="observation-result" role="status"><span className="eyebrow">SYNTHÈSE EVOLY</span><h3>{`Tendance ${levelText[report.summary.trend]}`}</h3><dl><div><dt>Point fort</dt><dd>{report.summary.strongest.label}</dd></div><div><dt>Priorité à renforcer</dt><dd>{report.summary.weakest.label}</dd></div><div><dt>Joueurs signalés</dt><dd>{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</dd></div></dl></section>}
+      {suggestion && <AdjustmentCard suggestion={suggestion} />}
     </section>
   );
 }

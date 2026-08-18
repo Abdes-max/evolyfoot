@@ -23,7 +23,7 @@ describe("AdjustmentCard", () => {
     expect(screen.getByRole("heading", { name: "Pourquoi" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Ce qui change" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "À observer" })).toBeVisible();
-    expect(screen.getByText(suggestion.reason).closest("article")).not.toHaveTextContent("Lina");
+    expect(screen.getByText(suggestion.reason)).not.toHaveTextContent("Lina");
 
     const apply = screen.getByRole("button", { name: "Appliquer cet ajustement" });
     apply.focus();
