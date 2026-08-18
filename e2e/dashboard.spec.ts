@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { diagnosticCriteria } from "@evolyfoot/domain";
 
 test("l'éducateur accède au fil directeur de sa semaine", async ({ page }) => {
   await page.goto("/");
@@ -47,12 +48,7 @@ test("le coach personnalise, valide puis observe sa séance", async ({ page }) =
   await expect(page.getByRole("status")).toContainText("Séance prête");
   await page.getByRole("link", { name: /observer cette séance/i }).click();
 
-  for (const label of [
-    "Se rendre disponible",
-    "Regarder avant de recevoir",
-    "Progresser vers la cible",
-    "Réagir après la perte",
-  ]) {
+  for (const { label } of diagnosticCriteria) {
     await page.getByRole("button", { name: `${label} : En progrès` }).click();
   }
 
