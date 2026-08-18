@@ -15,6 +15,13 @@ interface SessionBuilderProps {
   initialSession: TrainingSession;
 }
 
+const kindLabels = {
+  welcome: "Accueil",
+  activation: "Activation",
+  main: "Situation principale",
+  game: "Jeu",
+} as const;
+
 export function SessionBuilder({ initialSession }: SessionBuilderProps) {
   const [session, setSession] = useState(initialSession);
   const [validationStatus, setValidationStatus] = useState("");
@@ -34,7 +41,7 @@ export function SessionBuilder({ initialSession }: SessionBuilderProps) {
           <h2 id="session-builder-title">{session.title}</h2>
           <p>{session.theme} · <span>{`${session.playerCount} joueurs`}</span></p>
         </div>
-        <strong aria-label={`Durée totale : ${duration} minutes`}>{duration} min</strong>
+        <strong aria-atomic="true" aria-label={`Durée totale : ${duration} minutes`} aria-live="polite">{duration} min</strong>
       </div>
 
       <ol className="session-block-list" aria-label="Les quatre temps de la séance">
@@ -47,7 +54,7 @@ export function SessionBuilder({ initialSession }: SessionBuilderProps) {
             <article>
               <div className="session-block-heading">
                 <div>
-                  <span className="session-block-kind">{block.activity.kind}</span>
+                  <span className="session-block-kind">{kindLabels[block.activity.kind]}</span>
                   <h3>{block.activity.title}</h3>
                 </div>
                 <strong>{block.durationMinutes} min</strong>

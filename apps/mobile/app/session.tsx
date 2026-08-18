@@ -44,7 +44,7 @@ export default function SessionScreen() {
             <Text style={styles.summaryTitle}>{session.title}</Text>
             <Text style={styles.summaryTheme}>{session.theme} · {session.playerCount} joueurs</Text>
           </View>
-          <Text style={styles.duration}>{duration} min</Text>
+          <Text accessibilityLabel={`Durée totale : ${duration} minutes`} accessibilityLiveRegion="polite" style={styles.duration}>{duration} min</Text>
         </View>
 
         {session.blocks.map((block, index) => {
