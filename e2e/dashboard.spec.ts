@@ -53,5 +53,7 @@ test("le coach personnalise, valide puis observe sa séance", async ({ page }) =
   }
 
   await page.getByRole("button", { name: /valider l’observation/i }).click();
-  await expect(page.getByRole("status")).toContainText("Tendance en progrès");
+  await expect(page.getByRole("heading", { name: /garder le cap/i })).toBeVisible();
+  await page.getByRole("button", { name: "Appliquer cet ajustement" }).click();
+  await expect(page.getByRole("status")).toContainText("Ajustement appliqué à la prochaine séance");
 });
