@@ -22,7 +22,7 @@ describe("session builder", () => {
     expect(screen.getAllByText("Organisation")).toHaveLength(4);
     expect(screen.getAllByText("Consigne")).toHaveLength(4);
     expect(screen.getAllByText("À observer")).toHaveLength(4);
-    expect(screen.getByText("Jeu 5 contre 5 dans trois couloirs avec zones d’en-but.")).toBeVisible();
+    expect(screen.getByText("Jeu 5 contre 5 avec deux zones de marque.")).toBeVisible();
   });
 
   it("explique pourquoi une situation sans alternative ne peut pas être remplacée", () => {
