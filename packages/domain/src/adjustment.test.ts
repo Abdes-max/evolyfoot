@@ -22,9 +22,9 @@ const reportWith = (
     reactionAfterLoss: 100,
     ...scores,
   };
-  const ratings = Object.entries(values).map(([criterion, score]) => ({
+  const ratings: ObservationReport["ratings"] = Object.entries(values).map(([criterion, score]) => ({
     criterion: criterion as ObservationReport["ratings"][number]["criterion"],
-    level: score === 0 ? "reinforce" : score === 50 ? "progress" : "achieved",
+    level: (score === 0 ? "reinforce" : score === 50 ? "progress" : "achieved") as ObservationReport["ratings"][number]["level"],
     score,
   }));
 
