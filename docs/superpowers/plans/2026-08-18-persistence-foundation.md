@@ -40,6 +40,7 @@
 - Create: `packages/database/src/email.ts`
 - Create: `packages/database/src/email.test.ts`
 - Create: `packages/database/src/client.ts`
+- Create: `packages/database/src/client.test.ts`
 - Create: `.env.example`
 - Modify: `.gitignore`
 - Modify: `package.json`
@@ -68,11 +69,24 @@ describe("normalizeEducatorEmail", () => {
 });
 ```
 
+Create `src/client.test.ts` to protect the configuration boundary without opening a network connection:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { createDatabaseClient } from "./client";
+
+describe("createDatabaseClient", () => {
+  it("rejects a blank database URL before constructing an adapter", () => {
+    expect(() => createDatabaseClient("   ")).toThrow("DATABASE_URL est obligatoire.");
+  });
+});
+```
+
 - [ ] **Step 2: Confirm RED before adding production files**
 
-Run: `pnpm --filter @evolyfoot/database test -- src/email.test.ts`
+Run: `pnpm --filter @evolyfoot/database test -- src/email.test.ts src/client.test.ts`
 
-Expected: FAIL because the package and `normalizeEducatorEmail` do not exist. If the local registry blocks installation, publish the syntactically valid test/package manifest on a temporary PR and require the same missing-module failure in GitHub Actions.
+Expected: FAIL because the package, `normalizeEducatorEmail` and `createDatabaseClient` do not exist. If the local registry blocks installation, publish the syntactically valid tests/package manifest on a temporary PR and require only these missing-module failures in GitHub Actions.
 
 - [ ] **Step 3: Add aligned dependencies and scripts**
 
@@ -163,7 +177,7 @@ Run:
 
 ```bash
 pnpm db:generate
-pnpm --filter @evolyfoot/database test -- src/email.test.ts
+pnpm --filter @evolyfoot/database test -- src/email.test.ts src/client.test.ts
 pnpm --filter @evolyfoot/database typecheck
 pnpm --filter @evolyfoot/database lint
 git diff --check
