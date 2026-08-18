@@ -17,6 +17,7 @@
     },
     "test": {
       "dependsOn": ["^test"],
+      "env": ["DATABASE_URL"],
       "outputs": ["coverage/**"]
     },
     "test:unit": {
