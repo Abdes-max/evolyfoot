@@ -56,3 +56,13 @@ export { diagnosticCriteria, summarizeDiagnostic } from "./diagnostic";
 export type { DiagnosticCriterion, DiagnosticScores, DiagnosticSummary } from "./diagnostic";
 export { buildDevelopmentPlan } from "./development-plan";
 export type { DevelopmentPlan, DevelopmentWeek } from "./development-plan";
+export {
+  adjustBlockDuration,
+  canReplaceSessionActivity,
+  canValidateSession,
+  generateTrainingSession,
+  getSessionDuration,
+  moveSessionBlock,
+  replaceSessionActivity,
+} from "./training-session";
+export type { TrainingActivity, TrainingBlock, TrainingBlockKind, TrainingSession } from "./training-session";

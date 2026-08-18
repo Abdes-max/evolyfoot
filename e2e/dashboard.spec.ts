@@ -25,4 +25,24 @@ test("le diagnostic révèle deux priorités de développement", async ({ page }
   await expect(page.getByRole("status")).toContainText("Récupérer rapidement");
 });
 
-test("le plan organise la progression sur quatre semaines",async({page})=>{await page.goto("/plan");await expect(page.getByRole("heading",{name:"Ton premier cycle est prêt."})).toBeVisible();await expect(page.getByText("S4",{exact:true})).toBeVisible();await expect(page.getByRole("button",{name:/adopter ce cycle/i})).toBeVisible();});
+test("le plan organise la progression sur quatre semaines", async ({ page }) => {
+  await page.goto("/plan");
+
+  await expect(page.getByRole("heading", { name: "Ton premier cycle est prêt." })).toBeVisible();
+  await expect(page.getByText("S4", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: /préparer la première séance/i })).toBeVisible();
+});
+
+test("le coach personnalise puis valide sa séance", async ({ page }) => {
+  await page.goto("/plan");
+  await page.getByRole("link", { name: /préparer la première séance/i }).click();
+  await expect(page).toHaveURL(/\/session$/);
+
+  await expect(page.getByText("75 min")).toBeVisible();
+  await expect(page.getByText("14 joueurs")).toBeVisible();
+  await expect(page.getByText("Organisation", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Ajouter 5 minutes" }).first().click();
+  await expect(page.getByText("80 min")).toBeVisible();
+  await page.getByRole("button", { name: "Valider cette séance" }).click();
+  await expect(page.getByRole("status")).toContainText("Séance prête");
+});
