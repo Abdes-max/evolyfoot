@@ -5,7 +5,7 @@
 - **Unitaires** : règles métier pures dans `packages/domain` avec Vitest.
 - **Intégration** : rendu des parcours web avec Testing Library et données métier partagées.
 - **End-to-end** : parcours critiques dans un navigateur réel avec Playwright.
-- **Mobile** : le contrôle TypeScript est actif dès le socle ; les tests de composants React Native seront ajoutés avec le premier flux interactif.
+- **Mobile** : la couverture actuelle comprend le contrôle TypeScript, la revue d’accessibilité et la génération du bundle Android. Les tests de composants natifs restent une amélioration future lorsqu’un harnais de test React Native sera introduit.
 
 ## Commandes
 

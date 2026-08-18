@@ -1,6 +1,6 @@
 # Plan et avancement
 
-Dernière mise à jour : 17 août 2026.
+Dernière mise à jour : 18 août 2026.
 
 ## Phase 0 — Fondation
 
