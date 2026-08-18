@@ -52,14 +52,7 @@ Commit GREEN : `1fa8868 feat: add quick observation domain`.
 - La suite Vitest officielle et le `typecheck` via `pnpm --filter` restent à rejouer dans un environnement où le registre interne et les dépendances sont disponibles.
 - Le rapport utilise une date locale affichable et un identifiant généré à la création ; aucune persistance n’est introduite dans cette tranche.
 
-## Preuve RED/GREEN distante demandée
+## Preuve RED/GREEN distante
 
-La preuve par CI n’a pas pu être créée :
-
-- `gh auth status` le 18 août 2026 indique que le compte `Abdes-max` est actif mais que le jeton du trousseau est invalide (`To re-authenticate, run: gh auth refresh -h github.com`).
-- Le dépôt résolu est `Abdes-max/evolyfoot`, avec `master` présent comme branche distante et `agent/initialize-platform` comme branche par défaut.
-- La recherche GitHub ne trouve aucune branche ni PR `agent/quick-observations*` existante.
-- La tentative de création de `agent/quick-observations-red-proof-20260818` depuis `1340d41152e03bff2e04151d6cd77af81d7a04c2` via le connecteur GitHub a été refusée par la garde d’autorisation : publication du commit vers un dépôt public considérée comme non autorisée. Aucune branche ni PR n’a donc été créée, et aucune suppression distante n’était nécessaire.
-- La branche finale n’a pas été poussée et aucune PR brouillon finale n’a été ouverte ; il n’existe donc aucun URL de PR, run ID, SHA CI ou résultat distant à rapporter.
-
-La suite officielle reste à exécuter après ré-authentification GitHub et autorisation explicite de publication vers `Abdes-max/evolyfoot`.
+- PR RED temporaire : [#9](https://github.com/Abdes-max/evolyfoot/pull/9), run `32122702505`. Échec attendu du typecheck : module `./observation` et exports publics absents. La PR a été fermée et la branche temporaire supprimée.
+- PR brouillon finale : [#10](https://github.com/Abdes-max/evolyfoot/pull/10), run `32122830431`, au head `8e196b26fc20f4dfecce347ef6eb74c1b9f6991d` (`8e196b2`). `Qualité et tests` : PASS en 58 s. `E2E` : PASS en 46 s.
