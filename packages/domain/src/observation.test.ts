@@ -64,10 +64,21 @@ describe("quick observation domain", () => {
     expect(togglePlayerSignal(draft, "unknown", "highlight")).toBe(draft);
   });
 
-  it("trims notes and removes blank notes", () => {
+  it("preserves a draft note while it is being typed and trims it only on completion", () => {
     const draft = createObservationDraft("training", "Séance 1", players);
-    expect(setObservationNote(draft, "  Belle largeur dans les temps  ").note).toBe("Belle largeur dans les temps");
-    expect(setObservationNote(draft, "   ").note).toBeUndefined();
+    const noted = setObservationNote(draft, "  Belle largeur dans les temps  ");
+    const blank = setObservationNote(draft, "   ");
+
+    expect(noted.note).toBe("  Belle largeur dans les temps  ");
+    expect(blank.note).toBe("   ");
+    expect(completeObservation(diagnosticCriteria.reduce(
+      (current, criterion) => rateObservation(noted, criterion.id, "progress"),
+      noted,
+    )).note).toBe("Belle largeur dans les temps");
+    expect(completeObservation(diagnosticCriteria.reduce(
+      (current, criterion) => rateObservation(blank, criterion.id, "progress"),
+      blank,
+    )).not.toHaveProperty("note");
   });
 
   it("keeps every transition input deeply immutable and preserves tie order", () => {
@@ -92,7 +103,7 @@ describe("quick observation domain", () => {
     const signaledSnapshot = JSON.parse(JSON.stringify(signaled)) as typeof signaled;
     const noted = setObservationNote(signaled, "  Note utile  ");
     expect(noted).not.toBe(signaled);
-    expect(noted.note).toBe("Note utile");
+    expect(noted.note).toBe("  Note utile  ");
     expect(signaled).toEqual(signaledSnapshot);
 
     const completeDraft = ratedDraft();
@@ -111,5 +122,30 @@ describe("quick observation domain", () => {
     expect(() => completeObservation(createObservationDraft("training", "Séance 1", players))).toThrow(
       "Les quatre comportements doivent être renseignés.",
     );
+  });
+
+  it("serializes a non-uniform report with its strongest, weakest and trend", () => {
+    const draft = rateObservation(
+      rateObservation(
+        rateObservation(
+          rateObservation(createObservationDraft("match", "Match 1", players), "availability", "achieved"),
+          "scanning",
+          "reinforce",
+        ),
+        "progression",
+        "progress",
+      ),
+      "reactionAfterLoss",
+      "progress",
+    );
+
+    const report = completeObservation(draft);
+
+    expect(report.summary).toMatchObject({
+      trend: "progress",
+      strongest: { criterion: "availability", score: 100 },
+      weakest: { criterion: "scanning", score: 0 },
+    });
+    expect(JSON.parse(JSON.stringify(report))).toEqual(report);
   });
 });
