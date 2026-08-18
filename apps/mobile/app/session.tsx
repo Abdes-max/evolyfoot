@@ -10,6 +10,7 @@ import {
   summarizeDiagnostic,
 } from "@evolyfoot/domain";
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
+import { Link } from "expo-router";
 import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -126,6 +127,13 @@ export default function SessionScreen() {
           <Text style={styles.validateText}>Valider cette séance →</Text>
         </TouchableOpacity>
         <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.status}>{validationStatus}</Text>
+        {validationStatus && (
+          <Link href="/observation?type=training" asChild>
+            <TouchableOpacity accessibilityRole="button" style={styles.observationLink}>
+              <Text style={styles.observationLinkText}>Observer cette séance →</Text>
+            </TouchableOpacity>
+          </Link>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -163,4 +171,6 @@ const styles = StyleSheet.create({
   validateDisabled: { opacity: 0.45 },
   validateText: { fontSize: 12, fontWeight: "800", color: "white" },
   status: { minHeight: 18, fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 12, textAlign: "center" },
+  observationLink: { minHeight: 44, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.primary, borderRadius: radii.sm, marginTop: 12, paddingHorizontal: 14, backgroundColor: colors.primarySoft },
+  observationLinkText: { fontSize: 12, fontWeight: "800", color: colors.primary },
 });

@@ -60,7 +60,7 @@ export default function Home() {
 
         <section className="bottom-grid" id="team">
           <article className="insight-card"><span className="spark">✦</span><div><span className="eyebrow">SUGGESTION EVOLY</span><h3>Garde le même thème, change la contrainte.</h3><p>Les dernières observations montrent que le soutien existe sans opposition forte. Mardi, réduis l&apos;espace pour provoquer des décisions plus rapides.</p><div className="actions"><button className="small-primary">Appliquer à la séance</button><button className="small-ghost">Pas maintenant</button></div></div></article>
-          <article className="week-card"><div className="card-top"><div><span className="eyebrow">RYTHME DE LA SEMAINE</span><h3>2 temps forts</h3></div><span className="mini-badge">S33</span></div><div className="timeline"><div><span className="dot filled"/><p><strong>Mardi</strong><small>Séance · 18:00</small></p></div><div><span className="dot"/><p><strong>Samedi</strong><small>Match vs. US Vallée · 10:30</small></p></div></div></article>
+          <article className="week-card"><div className="card-top"><div><span className="eyebrow">RYTHME DE LA SEMAINE</span><h3>2 temps forts</h3></div><span className="mini-badge">S33</span></div><div className="timeline"><div><span className="dot filled"/><p><strong>Mardi</strong><small>Séance · 18:00</small></p></div><div><span className="dot"/><p><strong>Samedi</strong><small>Match vs. US Vallée · 10:30</small></p></div></div><a className="match-observation-link" href="/observation?type=match">Observer un match →</a></article>
         </section>
       </section>
     </main>

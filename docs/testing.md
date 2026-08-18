@@ -17,6 +17,23 @@ pnpm test:e2e
 
 La CI exécute formatage, types, lint, tests, build et le parcours E2E Chromium sur chaque pull request vers `master`.
 
+## Démonstration locale
+
+Dans un premier terminal, démarre l’application web :
+
+```bash
+pnpm install
+pnpm dev:web
+```
+
+Ouvre ensuite le parcours dans cet ordre : `/onboarding` → `/diagnostic` → `/plan` → `/session` → `/observation`. Valide la séance, choisis `Observer cette séance`, renseigne les quatre comportements puis valide l’observation. Le rapport reste local au prototype ; il n’est pas encore enregistré dans PostgreSQL.
+
+Le parcours automatisé correspondant se lance avec :
+
+```bash
+pnpm test:e2e
+```
+
 ## Convention
 
 - `*.test.ts` : test unitaire métier.

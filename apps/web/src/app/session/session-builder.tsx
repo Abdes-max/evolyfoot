@@ -9,6 +9,7 @@ import {
   replaceSessionActivity,
   type TrainingSession,
 } from "@evolyfoot/domain";
+import Link from "next/link";
 import { useState } from "react";
 
 interface SessionBuilderProps {
@@ -82,6 +83,7 @@ export function SessionBuilder({ initialSession }: SessionBuilderProps) {
       <div className="session-validation">
         <button className="continue-button" disabled={!isValid} onClick={() => setValidationStatus("Séance prête")} type="button">Valider cette séance <span aria-hidden="true">→</span></button>
         <p aria-live="polite" className="session-validation-status" role="status">{validationStatus}</p>
+        {validationStatus && <Link className="observation-session-link" href="/observation?type=training">Observer cette séance →</Link>}
       </div>
     </section>
   );

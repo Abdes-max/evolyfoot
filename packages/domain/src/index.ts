@@ -66,3 +66,24 @@ export {
   replaceSessionActivity,
 } from "./training-session";
 export type { TrainingActivity, TrainingBlock, TrainingBlockKind, TrainingSession } from "./training-session";
+export {
+  canCompleteObservation,
+  completeObservation,
+  createObservationDraft,
+  rateObservation,
+  setObservationNote,
+  togglePlayerSignal,
+} from "./observation";
+export type {
+  ObservationDraft,
+  ObservationEventType,
+  ObservationLevel,
+  ObservationRating,
+  ObservationReport,
+  ObservationReportRating,
+  ObservationReportSummary,
+  ObservationSummaryRating,
+  PlayerReference,
+  PlayerSignal,
+  PlayerSignalKind,
+} from "./observation";
