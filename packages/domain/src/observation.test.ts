@@ -95,7 +95,14 @@ describe("quick observation domain", () => {
     expect(noted.note).toBe("Note utile");
     expect(signaled).toEqual(signaledSnapshot);
 
-    const complete = completeObservation(ratedDraft());
+    const completeDraft = ratedDraft();
+    const completeDraftSnapshot = JSON.parse(JSON.stringify(completeDraft)) as typeof completeDraft;
+    const complete = completeObservation(completeDraft);
+    expect(completeDraft).toEqual(completeDraftSnapshot);
+    expect(complete).not.toBe(completeDraft);
+    expect(complete.ratings).not.toBe(completeDraft.ratings);
+    expect(Object.isFrozen(complete)).toBe(true);
+    expect(Object.isFrozen(complete.ratings)).toBe(true);
     expect(complete.summary.strongest.criterion).toBe("availability");
     expect(complete.summary.weakest.criterion).toBe("availability");
   });

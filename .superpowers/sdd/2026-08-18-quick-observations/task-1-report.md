@@ -63,3 +63,8 @@ Commit GREEN : `1fa8868 feat: add quick observation domain`.
 - Vérification TypeScript ciblée de la production : exit 0.
 - Smoke test runtime équivalent au test de revue (immutabilité profonde, nouvelles références, signal et note trimée) : `immutability smoke passed`, exit 0.
 - Aucun changement de production n’a été nécessaire.
+
+### Correction revue round 2/5 — complétion
+
+- Le même test capture désormais un brouillon complet avant `completeObservation()`, compare le brouillon après appel à son snapshot profond, puis vérifie les nouvelles références et le gel du rapport et de ses ratings.
+- La production n’a pas été modifiée.
