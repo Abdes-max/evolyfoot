@@ -5,7 +5,10 @@ import {
   diagnosticCriteria,
   rateObservation,
   setObservationNote,
+  suggestAdjustmentFromObservation,
   togglePlayerSignal,
+  type AdjustmentSuggestion,
+  type DevelopmentWeek,
   type ObservationDraft,
   type ObservationEventType,
   type ObservationLevel,
@@ -17,6 +20,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { AccessibilityInfo, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AdjustmentCard } from "../components/adjustment-card";
 
 const demoPlayers: readonly PlayerReference[] = [
   { id: "lina-dupont", name: "Lina" },
@@ -41,6 +45,14 @@ const levelText: Record<ObservationLevel, string> = {
   achieved: "acquise aujourd’hui",
 };
 
+const currentWeek: DevelopmentWeek = {
+  week: 2,
+  phase: "Stabiliser",
+  theme: "Progresser ensemble",
+  intention: "Répéter le comportement dans des situations variées.",
+  observable: "Le comportement apparaît sans rappel dans 1 action sur 2.",
+};
+
 function eventTitle(type: ObservationEventType) {
   return type === "match" ? "Observation de match" : "Observation de séance";
 }
@@ -54,12 +66,14 @@ export default function ObservationScreen() {
   const initialEventType: ObservationEventType = type === "match" ? "match" : "training";
   const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType));
   const [report, setReport] = useState<ObservationReport>();
+  const [suggestion, setSuggestion] = useState<AdjustmentSuggestion>();
   const complete = canCompleteObservation(draft);
   const remaining = diagnosticCriteria.length - draft.ratings.length;
 
   function editDraft(nextDraft: ObservationDraft) {
     setDraft(nextDraft);
     setReport(undefined);
+    setSuggestion(undefined);
   }
 
   function validateObservation() {
@@ -67,6 +81,7 @@ export default function ObservationScreen() {
 
     const nextReport = completeObservation(draft);
     setReport(nextReport);
+    setSuggestion(suggestAdjustmentFromObservation(nextReport, currentWeek));
 
     if (Platform.OS === "ios") {
       AccessibilityInfo.announceForAccessibility(`Observation validée. Tendance ${levelText[nextReport.summary.trend]}.`);
@@ -212,6 +227,7 @@ export default function ObservationScreen() {
             <Text style={styles.resultValue}>{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</Text>
           </View>
         )}
+        {suggestion && <AdjustmentCard suggestion={suggestion} />}
       </ScrollView>
     </SafeAreaView>
   );
