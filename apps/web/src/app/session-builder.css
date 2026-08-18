@@ -41,6 +41,15 @@
   display: none;
 }
 
+.observation-session-link {
+  display: block;
+  margin-top: 11px;
+  color: var(--green-dark);
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+}
+
 @media (max-width: 600px) {
   .session-block-details { grid-template-columns: 1fr; }
 }
