@@ -71,14 +71,21 @@ describe("quick observation domain", () => {
 
     expect(noted.note).toBe("  Belle largeur dans les temps  ");
     expect(blank.note).toBe("   ");
-    expect(completeObservation(diagnosticCriteria.reduce(
-      (current, criterion) => rateObservation(noted, criterion.id, "progress"),
-      noted,
-    )).note).toBe("Belle largeur dans les temps");
-    expect(completeObservation(diagnosticCriteria.reduce(
-      (current, criterion) => rateObservation(blank, criterion.id, "progress"),
-      blank,
-    )).not.toHaveProperty("note");
+    const completedNoted = completeObservation(
+      diagnosticCriteria.reduce(
+        (current, criterion) => rateObservation(noted, criterion.id, "progress"),
+        noted,
+      ),
+    );
+    const completedBlank = completeObservation(
+      diagnosticCriteria.reduce(
+        (current, criterion) => rateObservation(blank, criterion.id, "progress"),
+        blank,
+      ),
+    );
+
+    expect(completedNoted.note).toBe("Belle largeur dans les temps");
+    expect(completedBlank).not.toHaveProperty("note");
   });
 
   it("keeps every transition input deeply immutable and preserves tie order", () => {
