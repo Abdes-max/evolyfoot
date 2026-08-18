@@ -33,7 +33,7 @@ test("le plan organise la progression sur quatre semaines", async ({ page }) => 
   await expect(page.getByRole("link", { name: /préparer la première séance/i })).toBeVisible();
 });
 
-test("le coach personnalise puis valide sa séance", async ({ page }) => {
+test("le coach personnalise, valide puis observe sa séance", async ({ page }) => {
   await page.goto("/plan");
   await page.getByRole("link", { name: /préparer la première séance/i }).click();
   await expect(page).toHaveURL(/\/session$/);
@@ -45,4 +45,17 @@ test("le coach personnalise puis valide sa séance", async ({ page }) => {
   await expect(page.getByText("80 min")).toBeVisible();
   await page.getByRole("button", { name: "Valider cette séance" }).click();
   await expect(page.getByRole("status")).toContainText("Séance prête");
+  await page.getByRole("link", { name: /observer cette séance/i }).click();
+
+  for (const label of [
+    "Se rendre disponible",
+    "Regarder avant de recevoir",
+    "Progresser vers la cible",
+    "Réagir après la perte",
+  ]) {
+    await page.getByRole("button", { name: `${label} : En progrès` }).click();
+  }
+
+  await page.getByRole("button", { name: /valider l’observation/i }).click();
+  await expect(page.getByRole("status")).toContainText("Tendance en progrès");
 });
