@@ -64,8 +64,8 @@ describe("suggestAdjustmentFromObservation", () => {
     );
 
     expect(suggestion.action).toBe("progress");
-    expect(suggestion.triggerScore).toBe(50);
-    expect(suggestion.proposedTheme).toBe("Conserver le ballon");
+    expect(suggestion.triggerScore).toBe(75);
+    expect(suggestion.proposedTheme).toBe(currentWeek.theme);
   });
 
   it("maintains the current direction for middle scores below the progress threshold", () => {
@@ -76,12 +76,12 @@ describe("suggestAdjustmentFromObservation", () => {
 
     expect(suggestion.action).toBe("maintain");
     expect(suggestion.reason).toContain("50/100");
-    expect(suggestion.proposedTheme).toBe("Conserver le ballon");
+    expect(suggestion.proposedTheme).toBe(currentWeek.theme);
   });
 
   it("selects the first diagnostic criterion when the weakest score is tied", () => {
     const suggestion = suggestAdjustmentFromObservation(
-      reportWith({ availability: 50, scanning: 50 }),
+      reportWith({ availability: 0, scanning: 0 }),
       currentWeek,
     );
 

@@ -49,7 +49,9 @@ export const nextSession: SessionPreview = {
 };
 
 export { suggestAdjustment } from "./progression";
-export type { AdjustmentSuggestion, ObservationSummary } from "./progression";
+export type { ObservationSummary } from "./progression";
+export { suggestAdjustmentFromObservation } from "./adjustment";
+export type { AdjustmentAction, AdjustmentSuggestion } from "./adjustment";
 export { ageGroups, createTeamProfile, validateTeamProfile } from "./team";
 export type { TeamProfile, TeamProfileErrors, TrainingDay } from "./team";
 export { diagnosticCriteria, summarizeDiagnostic } from "./diagnostic";
