@@ -36,7 +36,7 @@ Dernière mise à jour : 17 août 2026.
 - [x] Plan de développement sur quatre semaines — progression découvrir, stabiliser, mettre sous pression et évaluer.
 - [x] Constructeur de séance — activités spécifiques aux thèmes, informations terrain, édition sûre et parcours plan → séance couverts par les tests unitaires, d’intégration et E2E ; bundle Android Expo vérifié par la CI.
 - [x] Observation rapide après séance et match.
-- [ ] Ajustement explicable proposé par Evoly.
+- [x] Ajustement explicable proposé par Evoly.
 
 ## Phase 2 — Persistance et comptes
 
