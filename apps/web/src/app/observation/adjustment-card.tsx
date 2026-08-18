@@ -53,7 +53,7 @@ export function AdjustmentCard({ suggestion }: AdjustmentCardProps) {
         </section>
       </div>
 
-      <p aria-atomic="true" aria-live="polite" className="adjustment-card-status" role="status">{status}</p>
+      {status && <p aria-atomic="true" aria-live="polite" className="adjustment-card-status" role="status">{status}</p>}
       <div className="adjustment-card-actions">
         {decision === "pending" && <>
           <button className="adjustment-card-apply" onClick={() => setDecision("accepted")} ref={applyButton} type="button">Appliquer cet ajustement</button>
