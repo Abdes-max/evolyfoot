@@ -19,12 +19,12 @@
     "vitest": "4.1.10"
   },
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "prisma generate && tsc --noEmit",
     "generate": "prisma generate",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:unit": "vitest run src/**/*.test.ts --exclude src/**/*.integration.test.ts",
-    "test:integration": "vitest run src/**/*.integration.test.ts"
+    "typecheck": "prisma generate && tsc --noEmit",
+    "test": "prisma generate && vitest run",
+    "test:unit": "prisma generate && vitest run src/**/*.test.ts --exclude src/**/*.integration.test.ts",
+    "test:integration": "prisma generate && vitest run src/**/*.integration.test.ts"
   }
 }
