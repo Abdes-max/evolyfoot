@@ -56,3 +56,10 @@ Commit GREEN : `1fa8868 feat: add quick observation domain`.
 
 - PR RED temporaire : [#9](https://github.com/Abdes-max/evolyfoot/pull/9), run `32122702505`. Échec attendu du typecheck : module `./observation` et exports publics absents. La PR a été fermée et la branche temporaire supprimée.
 - PR brouillon finale : [#10](https://github.com/Abdes-max/evolyfoot/pull/10), run `32122830431`, au head `8e196b26fc20f4dfecce347ef6eb74c1b9f6991d` (`8e196b2`). `Qualité et tests` : PASS en 58 s. `E2E` : PASS en 46 s.
+
+## Correction revue round 1/5 — immutabilité
+
+- `packages/domain/src/observation.test.ts` vérifie maintenant, pour chaque transition `rateObservation()`, `togglePlayerSignal()` et `setObservationNote()`, l’égalité profonde de l’argument capturé avant/après, les nouvelles références de collections/objets et les valeurs produites.
+- Vérification TypeScript ciblée de la production : exit 0.
+- Smoke test runtime équivalent au test de revue (immutabilité profonde, nouvelles références, signal et note trimée) : `immutability smoke passed`, exit 0.
+- Aucun changement de production n’a été nécessaire.

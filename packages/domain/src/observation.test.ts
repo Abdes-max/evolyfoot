@@ -70,13 +70,34 @@ describe("quick observation domain", () => {
     expect(setObservationNote(draft, "   ").note).toBeUndefined();
   });
 
-  it("does not mutate the input draft and keeps diagnostic order for ties", () => {
+  it("keeps every transition input deeply immutable and preserves tie order", () => {
     const draft = createObservationDraft("training", "Séance 1", players);
-    const rated = ratedDraft();
-    expect(draft.ratings).toEqual([]);
-    expect(draft.signals).toEqual([]);
-    expect(completeObservation(rated).summary.strongest.criterion).toBe("availability");
-    expect(completeObservation(rated).summary.weakest.criterion).toBe("availability");
+    const draftSnapshot = JSON.parse(JSON.stringify(draft)) as typeof draft;
+
+    const rated = rateObservation(draft, "availability", "progress");
+    expect(rated).not.toBe(draft);
+    expect(rated.ratings).not.toBe(draft.ratings);
+    expect(rated.players).not.toBe(draft.players);
+    expect(rated.players[0]).not.toBe(draft.players[0]);
+    expect(rated.ratings).toEqual([{ criterion: "availability", level: "progress" }]);
+    expect(draft).toEqual(draftSnapshot);
+
+    const ratedSnapshot = JSON.parse(JSON.stringify(rated)) as typeof rated;
+    const signaled = togglePlayerSignal(rated, "lina", "highlight");
+    expect(signaled).not.toBe(rated);
+    expect(signaled.signals).not.toBe(rated.signals);
+    expect(signaled.signals).toEqual([{ playerId: "lina", playerName: "Lina", kind: "highlight" }]);
+    expect(rated).toEqual(ratedSnapshot);
+
+    const signaledSnapshot = JSON.parse(JSON.stringify(signaled)) as typeof signaled;
+    const noted = setObservationNote(signaled, "  Note utile  ");
+    expect(noted).not.toBe(signaled);
+    expect(noted.note).toBe("Note utile");
+    expect(signaled).toEqual(signaledSnapshot);
+
+    const complete = completeObservation(ratedDraft());
+    expect(complete.summary.strongest.criterion).toBe("availability");
+    expect(complete.summary.weakest.criterion).toBe("availability");
   });
 
   it("rejects incomplete completion with the domain error", () => {
