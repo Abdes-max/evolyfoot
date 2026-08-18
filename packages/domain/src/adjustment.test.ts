@@ -57,6 +57,12 @@ describe("suggestAdjustmentFromObservation", () => {
     expect(suggestion.triggerScore).toBe(0);
   });
 
+  it("uses exactly one deterministic constraint when reinforcing", () => {
+    const suggestion = suggestAdjustmentFromObservation(reportWith({ reactionAfterLoss: 0 }), currentWeek);
+
+    expect(suggestion.constraint).toBe("Espace légèrement agrandi.");
+  });
+
   it("progresses when the average is exactly 75 without a zero score", () => {
     const suggestion = suggestAdjustmentFromObservation(
       reportWith({ availability: 50, scanning: 50 }),
@@ -66,6 +72,12 @@ describe("suggestAdjustmentFromObservation", () => {
     expect(suggestion.action).toBe("progress");
     expect(suggestion.triggerScore).toBe(75);
     expect(suggestion.proposedTheme).toBe(currentWeek.theme);
+  });
+
+  it("uses exactly one deterministic constraint when progressing", () => {
+    const suggestion = suggestAdjustmentFromObservation(reportWith(), currentWeek);
+
+    expect(suggestion.constraint).toBe("Espace réduit.");
   });
 
   it("maintains the current direction for middle scores below the progress threshold", () => {
