@@ -28,7 +28,12 @@ jobs:
       - name: Activer pnpm
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
       - name: Installer les dépendances
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
+      - name: Conserver le lockfile de persistance
+        uses: actions/upload-artifact@v4
+        with:
+          name: persistence-lockfile
+          path: pnpm-lock.yaml
       - name: Vérifier les types
         run: pnpm typecheck
       - name: Analyser le code
