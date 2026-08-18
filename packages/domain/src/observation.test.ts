@@ -73,13 +73,13 @@ describe("quick observation domain", () => {
     expect(blank.note).toBe("   ");
     const completedNoted = completeObservation(
       diagnosticCriteria.reduce(
-        (current, criterion) => rateObservation(noted, criterion.id, "progress"),
+        (current, criterion) => rateObservation(current, criterion.id, "progress"),
         noted,
       ),
     );
     const completedBlank = completeObservation(
       diagnosticCriteria.reduce(
-        (current, criterion) => rateObservation(blank, criterion.id, "progress"),
+        (current, criterion) => rateObservation(current, criterion.id, "progress"),
         blank,
       ),
     );
