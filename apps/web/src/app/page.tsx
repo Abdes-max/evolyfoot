@@ -19,15 +19,15 @@ export default function Home() {
           <a className="nav-item" href="/onboarding">Mon équipe</a>
         </nav>
         <div className="season-card">
-          <span className="eyebrow">SAISON 2026-27</span>
+          <span className="eyebrow">SAISON 2026–27</span>
           <strong>{demoTeam.name} · {demoTeam.ageGroup}</strong>
           <span>{demoTeam.playerCount} joueurs</span>
         </div>
-        <div className="coach"><span className="avatar">AM</span><div><strong>Abdes</strong><span>Éducateur</span></div><button aria-label="Paramètres">•••</button></div>
+        <div className="coach"><span className="avatar">AM</span><div><strong>Abdes</strong><span>Éducateur</span></div><button aria-label="Paramètres">Réglages</button></div>
       </aside>
 
       <section className="content">
-        <header className="topbar"><div><span className="date">LUNDI 17 AOÛT</span><h1>Bonjour Abdes,</h1><p>Voici l&apos;essentiel pour faire progresser ton équipe cette semaine.</p></div><button className="bell" aria-label="Notifications">◦</button></header>
+        <header className="topbar"><div><span className="date">LUNDI 17 AOÛT</span><h1>Bonjour Abdes,</h1><p>Voici l&apos;essentiel pour faire progresser ton équipe cette semaine.</p></div><button className="bell" aria-label="Notifications">Notifications</button></header>
 
         <section className="hero-grid">
           <article className="focus-card" id="plan">

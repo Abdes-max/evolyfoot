@@ -4,7 +4,7 @@ import "./observation.css";
 import "./session-builder.css";
 
 export const metadata: Metadata = {
-  title: "EvolyFoot - Piloter la progression",
+  title: "EvolyFoot — Piloter la progression",
   description: "L'assistant de progression des éducateurs de football de jeunes.",
 };
 
