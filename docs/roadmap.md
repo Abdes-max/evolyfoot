@@ -40,9 +40,9 @@ Dernière mise à jour : 18 août 2026.
 
 ## Phase 2 — Persistance et comptes
 
-- [ ] PostgreSQL et Prisma.
+- [x] Fondation PostgreSQL et Prisma.
 - [ ] Authentification éducateur.
-- [ ] API et services métier.
+- [ ] API sécurisée et services métier.
 - [ ] Données d'équipe synchronisées web/mobile.
 
 ## Phase 3 — Bêta et distribution

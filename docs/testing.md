@@ -4,6 +4,7 @@
 
 - **Unitaires** : règles métier pures dans `packages/domain` avec Vitest.
 - **Intégration** : rendu des parcours web avec Testing Library et données métier partagées.
+- **Intégration PostgreSQL** : migrations Prisma et dépôts de `packages/database` contre une base PostgreSQL accessible par `DATABASE_URL`.
 - **End-to-end** : parcours critiques dans un navigateur réel avec Playwright.
 - **Mobile** : la couverture actuelle comprend le contrôle TypeScript, la revue d’accessibilité et la génération du bundle Android. Les tests de composants natifs restent une amélioration future lorsqu’un harnais de test React Native sera introduit.
 
@@ -15,7 +16,17 @@ pnpm test:integration
 pnpm test:e2e
 ```
 
-La CI exécute formatage, types, lint, tests, build et le parcours E2E Chromium sur chaque pull request vers `master`.
+Avant les tests qui touchent PostgreSQL, génère le client et applique les migrations :
+
+```bash
+pnpm db:generate
+pnpm db:migrate:deploy
+pnpm db:test:integration
+```
+
+`pnpm db:test:integration` manipule une vraie base : utilise une instance locale ou de CI dédiée, jamais une base partagée ou de production. Les instructions de création et d’arrêt non destructif de la base locale sont dans le [README](../README.md#base-de-donn%C3%A9es-locale).
+
+La CI démarre PostgreSQL 18.6 avec une base de test dédiée, puis exécute la génération Prisma, les migrations, les types, le lint, les tests et le build. Le parcours E2E Chromium reste exécuté dans son job distinct sur chaque pull request vers `master`.
 
 ## Démonstration locale
 

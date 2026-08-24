@@ -18,21 +18,21 @@ jobs:
     name: Qualité et tests
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgresql://evolyfoot:evolyfoot@localhost:5432/evolyfoot?schema=public
+      DATABASE_URL: postgresql://evolyfoot:evolyfoot_ci@localhost:5432/evolyfoot_test?schema=public
     services:
       postgres:
         image: postgres:18.6
         env:
-          POSTGRES_DB: evolyfoot
           POSTGRES_USER: evolyfoot
-          POSTGRES_PASSWORD: evolyfoot
+          POSTGRES_PASSWORD: evolyfoot_ci
+          POSTGRES_DB: evolyfoot_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U evolyfoot -d evolyfoot"
-          --health-interval 10s
+          --health-cmd "pg_isready -U evolyfoot -d evolyfoot_test"
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v5
@@ -45,6 +45,8 @@ jobs:
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
       - name: Installer les dépendances
         run: pnpm install --frozen-lockfile
+      - name: Générer le client Prisma
+        run: pnpm db:generate
       - name: Appliquer les migrations PostgreSQL
         run: pnpm db:migrate:deploy
       - name: Vérifier les types

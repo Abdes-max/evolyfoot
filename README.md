@@ -13,6 +13,7 @@ Le produit ne se limite pas à gérer un effectif ou à générer des séances a
 - `apps/web` — application web Next.js
 - `apps/mobile` — application mobile Expo / React Native
 - `packages/domain` — modèles et données métier partagés
+- `packages/database` — schéma Prisma, migrations PostgreSQL et adaptateurs de persistance côté serveur
 - `packages/design-tokens` — couleurs, espacements et rayons partagés
 - `packages/typescript-config` — configuration TypeScript commune
 - `docs` — cadrage produit, MVP et architecture
@@ -34,10 +35,57 @@ Pour le mobile :
 pnpm dev:mobile
 ```
 
+## Base de données locale
+
+La fondation PostgreSQL est disponible pour les migrations et les tests d’intégration. L’authentification éducateur, les API d’équipe sécurisées et la synchronisation web/mobile ne sont pas encore livrées.
+
+Crée une base locale nommée, avec son volume persistant :
+
+```bash
+docker volume create evolyfoot-postgres-data
+docker run --name evolyfoot-postgres \
+  --detach \
+  --publish 5432:5432 \
+  --env POSTGRES_USER=evolyfoot \
+  --env POSTGRES_PASSWORD=evolyfoot \
+  --env POSTGRES_DB=evolyfoot \
+  --volume evolyfoot-postgres-data:/var/lib/postgresql/data \
+  postgres:18.6
+```
+
+Dans un fichier `.env` local non commité, utilise l’exemple suivant (valeur de développement uniquement) :
+
+```dotenv
+DATABASE_URL="postgresql://evolyfoot:evolyfoot@localhost:5432/evolyfoot?schema=public"
+```
+
+Prépare ensuite le client, applique les migrations et exécute les tests d’intégration :
+
+```bash
+pnpm db:generate
+pnpm db:migrate:deploy
+pnpm db:test:integration
+```
+
+Pour arrêter la base locale sans supprimer ses données :
+
+```bash
+docker stop evolyfoot-postgres
+```
+
+Pour supprimer définitivement la base locale, supprime d’abord le conteneur arrêté, puis le volume. La seconde commande est destructive : elle efface les données locales.
+
+```bash
+docker rm evolyfoot-postgres
+docker volume rm evolyfoot-postgres-data
+```
+
 ## Vérifications
 
 ```bash
 pnpm typecheck
 pnpm lint
 pnpm build
+pnpm test
+pnpm test:e2e
 ```
