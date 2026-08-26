@@ -17,6 +17,9 @@
     "test:unit": "turbo run test:unit",
     "test:integration": "turbo run test:integration",
     "test:e2e": "playwright test",
+    "db:generate": "pnpm --filter @evolyfoot/database generate",
+    "db:migrate:deploy": "pnpm --filter @evolyfoot/database exec prisma migrate deploy",
+    "db:test:integration": "pnpm --filter @evolyfoot/database test:integration",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

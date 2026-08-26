@@ -1,0 +1,30 @@
+{
+  "name": "@evolyfoot/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@evolyfoot/domain": "workspace:*",
+    "@prisma/adapter-pg": "7.8.0",
+    "@prisma/client": "7.8.0",
+    "pg": "latest"
+  },
+  "devDependencies": {
+    "@evolyfoot/typescript-config": "workspace:*",
+    "@types/pg": "latest",
+    "eslint": "9.39.5",
+    "prisma": "7.8.0",
+    "typescript": "~6.0.3",
+    "vitest": "4.1.10"
+  },
+  "scripts": {
+    "build": "prisma generate && tsc --noEmit",
+    "generate": "prisma generate",
+    "lint": "eslint .",
+    "typecheck": "prisma generate && tsc --noEmit",
+    "test": "prisma generate && vitest run",
+    "test:unit": "prisma generate && vitest run --exclude src/**/*.integration.test.ts",
+    "test:integration": "prisma generate && vitest run integration"
+  }
+}

@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AgeGroup {
+  U10
+  U11
+  U12
+  U13
+}
+
+enum TrainingDay {
+  MONDAY    @map("Lundi")
+  TUESDAY   @map("Mardi")
+  WEDNESDAY @map("Mercredi")
+  THURSDAY  @map("Jeudi")
+  FRIDAY    @map("Vendredi")
+}
+
+model Educator {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  displayName String   @map("display_name")
+  team        Team?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("educators")
+}
+
+model Team {
+  id              String        @id @default(uuid()) @db.Uuid
+  educatorId      String        @unique @db.Uuid @map("educator_id")
+  educator        Educator      @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  name            String
+  ageGroup        AgeGroup      @map("age_group")
+  playerCount     Int           @map("player_count")
+  sessionsPerWeek Int           @map("sessions_per_week")
+  trainingDays    TrainingDay[] @map("training_days")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@map("teams")
+}

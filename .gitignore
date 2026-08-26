@@ -10,6 +10,7 @@ web-build/
 .turbo/
 .worktrees/
 coverage/
+packages/database/src/generated/prisma/
 
 # local configuration
 .env
