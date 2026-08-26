@@ -24,7 +24,7 @@
     "lint": "eslint .",
     "typecheck": "prisma generate && tsc --noEmit",
     "test": "prisma generate && vitest run",
-    "test:unit": "prisma generate && vitest run src/**/*.test.ts --exclude src/**/*.integration.test.ts",
-    "test:integration": "prisma generate && vitest run src/**/*.integration.test.ts"
+    "test:unit": "prisma generate && vitest run --exclude src/**/*.integration.test.ts",
+    "test:integration": "prisma generate && vitest run integration"
   }
 }

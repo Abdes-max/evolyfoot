@@ -4,3 +4,6 @@ packages:
 
 onlyBuiltDependencies:
   - sharp
+  - "@prisma/engines"
+  - prisma
+  - unrs-resolver
