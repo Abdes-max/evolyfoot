@@ -29,6 +29,7 @@ async function createEducator(suffix: string, email = `${testRun}-${suffix}@exam
   return educatorRepository.create({
     email,
     displayName: `${testRun}-${suffix}`,
+    passwordHash: "test-hash",
   });
 }
 

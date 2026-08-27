@@ -2,16 +2,21 @@ import { Prisma } from "./generated/prisma/client";
 import type { PrismaClient } from "./generated/prisma/client";
 import { DuplicateEducatorEmailError, EducatorNotFoundError, TeamNotFoundError } from "./errors";
 import {
+  toEducatorAuthRecord,
   toEducatorRecord,
   toPersistedTeamProfile,
   toPrismaAgeGroup,
   toPrismaTrainingDay,
+  toSessionRecord,
 } from "./mappers";
 import { normalizeEducatorEmail } from "./email";
 import type {
+  EducatorAuthRecord,
   EducatorRecord,
   EducatorRepository,
   PersistedTeamProfile,
+  SessionRecord,
+  SessionRepository,
   TeamRepository,
 } from "./repositories";
 import type { TeamProfile } from "@evolyfoot/domain";
@@ -49,12 +54,13 @@ function translateTeamWriteError(error: unknown): never {
 export class PrismaEducatorRepository implements EducatorRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async create(input: { email: string; displayName: string }): Promise<EducatorRecord> {
+  async create(input: { email: string; displayName: string; passwordHash: string }): Promise<EducatorRecord> {
     try {
       const educator = await this.prisma.educator.create({
         data: {
           email: normalizeEducatorEmail(input.email),
           displayName: input.displayName,
+          passwordHash: input.passwordHash,
         },
       });
       return toEducatorRecord(educator);
@@ -69,6 +75,44 @@ export class PrismaEducatorRepository implements EducatorRepository {
       select: { id: true },
     });
     return educator !== null;
+  }
+
+  async findById(id: string): Promise<EducatorRecord | null> {
+    const educator = await this.prisma.educator.findUnique({ where: { id } });
+    return educator === null ? null : toEducatorRecord(educator);
+  }
+
+  async findByEmail(email: string): Promise<EducatorAuthRecord | null> {
+    const educator = await this.prisma.educator.findUnique({
+      where: { email: normalizeEducatorEmail(email) },
+    });
+    return educator === null ? null : toEducatorAuthRecord(educator);
+  }
+}
+
+export class PrismaSessionRepository implements SessionRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<SessionRecord> {
+    const session = await this.prisma.session.create({
+      data: {
+        educatorId: input.educatorId,
+        tokenHash: input.tokenHash,
+        expiresAt: input.expiresAt,
+      },
+    });
+    return toSessionRecord(session);
+  }
+
+  async findValidByTokenHash(tokenHash: string): Promise<SessionRecord | null> {
+    const session = await this.prisma.session.findFirst({
+      where: { tokenHash, expiresAt: { gt: new Date() } },
+    });
+    return session === null ? null : toSessionRecord(session);
+  }
+
+  async deleteByTokenHash(tokenHash: string): Promise<void> {
+    await this.prisma.session.deleteMany({ where: { tokenHash } });
   }
 }
 

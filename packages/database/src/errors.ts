@@ -18,3 +18,17 @@ export class DuplicateEducatorEmailError extends Error {
     this.name = "DuplicateEducatorEmailError";
   }
 }
+
+export class InvalidCredentialsError extends Error {
+  constructor() {
+    super("Adresse e-mail ou mot de passe incorrect.");
+    this.name = "InvalidCredentialsError";
+  }
+}
+
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
