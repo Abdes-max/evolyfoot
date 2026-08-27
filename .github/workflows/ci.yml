@@ -74,6 +74,8 @@ jobs:
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
       - name: Installer les dépendances
         run: pnpm install --frozen-lockfile
+      - name: Générer le client Prisma
+        run: pnpm db:generate
       - name: Installer Chromium
         run: pnpm exec playwright install --with-deps chromium
       - name: Exécuter le parcours critique

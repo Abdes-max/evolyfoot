@@ -1,6 +1,7 @@
-import { demoFocus, demoTeam, nextSession } from "@evolyfoot/domain";
+import { demoFocus, nextSession } from "@evolyfoot/domain";
 import Link from "next/link";
 import { CalendarIcon, EyeIcon, HomeIcon, TargetIcon, UsersIcon } from "./icons";
+import { SidebarIdentity } from "./sidebar-identity";
 
 const priorities = [
   { label: "Se rendre disponible", score: 78, tone: "strong" },
@@ -20,12 +21,7 @@ export default function Home() {
           <a className="nav-item" href="#observations"><EyeIcon /> Observations</a>
           <a className="nav-item" href="/onboarding"><UsersIcon /> Mon équipe</a>
         </nav>
-        <div className="season-card">
-          <span className="eyebrow">SAISON 2026–27</span>
-          <strong>{demoTeam.name} · {demoTeam.ageGroup}</strong>
-          <span>{demoTeam.playerCount} joueurs</span>
-        </div>
-        <div className="coach"><span className="avatar">AM</span><div><strong>Abdes</strong><span>Éducateur</span></div><button aria-label="Paramètres">Réglages</button></div>
+        <SidebarIdentity />
       </aside>
 
       <section className="content">

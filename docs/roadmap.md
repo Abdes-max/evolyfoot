@@ -1,6 +1,6 @@
 # Plan et avancement
 
-Dernière mise à jour : 27 août 2026 (authentification éducateur).
+Dernière mise à jour : 27 août 2026 (routes d'équipe autorisées par la session).
 
 ## Phase 0 — Fondation
 
@@ -44,7 +44,7 @@ Dernière mise à jour : 27 août 2026 (authentification éducateur).
 
 - [x] Fondation PostgreSQL et Prisma.
 - [x] Authentification éducateur — inscription et connexion par e-mail et mot de passe, sessions révocables stockées côté serveur (`Session`), mots de passe hachés avec `scrypt`, routes `/api/auth/{register,login,logout,session}` et pages `/inscription` et `/connexion`.
-- [ ] Routes d'équipe autorisées par la session, sans `educatorId` fourni par le client (le tableau de bord et l'onboarding restent branchés sur des données de démonstration en attendant ce câblage).
+- [x] Routes d'équipe autorisées par la session — `GET`/`PUT /api/team` résolvent l'éducateur depuis le cookie de session ; aucun `educatorId` fourni par le client n'est jamais utilisé. Le tableau de bord (bloc équipe/éducateur) et l'onboarding lisent et écrivent ces données réelles pour un éducateur connecté ; un visiteur anonyme continue de voir le contenu de démonstration et une invitation à se connecter plutôt qu'un mur de connexion imposé.
 - [ ] Données d'équipe synchronisées web/mobile.
 
 ## Phase 3 — Bêta et distribution

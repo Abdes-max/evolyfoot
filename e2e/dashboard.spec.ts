@@ -11,6 +11,19 @@ test("l'éducateur accède au fil directeur de sa semaine", async ({ page }) => 
 });
 
 test("l’éducateur configure son équipe avant le diagnostic", async ({ page }) => {
+  // La persistance réelle (session + PostgreSQL) est couverte par les tests d'intégration
+  // de packages/database et apps/web/src/server ; ce parcours E2E simule un éducateur déjà
+  // connecté pour vérifier le câblage client du formulaire sans dépendre d'une base de données.
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({ json: { educator: { id: "e2e-educator", email: "coach@example.test", displayName: "Coach E2E" } } }),
+  );
+  await page.route("**/api/team", (route) => {
+    if (route.request().method() === "GET") {
+      return route.fulfill({ json: { profile: null } });
+    }
+    return route.fulfill({ json: { profile: JSON.parse(route.request().postData() ?? "{}") } });
+  });
+
   await page.goto("/onboarding");
   await page.getByLabel("Nom de l’équipe").fill("FC Horizon");
   await page.getByRole("button", { name: "Mar" }).click();
