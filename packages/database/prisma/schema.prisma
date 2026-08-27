@@ -23,14 +23,28 @@ enum TrainingDay {
 }
 
 model Educator {
-  id          String   @id @default(uuid()) @db.Uuid
-  email       String   @unique
-  displayName String   @map("display_name")
-  team        Team?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  displayName  String    @map("display_name")
+  passwordHash String    @map("password_hash")
+  team         Team?
+  sessions     Session[]
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("educators")
+}
+
+model Session {
+  id         String   @id @default(uuid()) @db.Uuid
+  educatorId String   @db.Uuid @map("educator_id")
+  educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([educatorId])
+  @@map("sessions")
 }
 
 model Team {

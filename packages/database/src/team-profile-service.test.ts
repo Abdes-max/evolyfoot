@@ -32,7 +32,7 @@ class InMemoryEducatorRepository implements EducatorRepository {
     }
   }
 
-  async create(input: { email: string; displayName: string }): Promise<EducatorRecord> {
+  async create(input: { email: string; displayName: string; passwordHash: string }): Promise<EducatorRecord> {
     const id = `educator-${this.educators.size + 1}`;
     const educator: EducatorRecord = {
       id,
@@ -47,6 +47,14 @@ class InMemoryEducatorRepository implements EducatorRepository {
 
   async existsById(id: string): Promise<boolean> {
     return this.educators.has(id);
+  }
+
+  async findById(id: string): Promise<EducatorRecord | null> {
+    return this.educators.get(id) ?? null;
+  }
+
+  async findByEmail(): Promise<null> {
+    return null;
   }
 }
 

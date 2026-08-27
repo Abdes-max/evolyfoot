@@ -29,10 +29,16 @@
 
 Le client Prisma est créé à partir de `DATABASE_URL` au point d’exécution serveur. Prisma 7 utilise l’adaptateur `@prisma/adapter-pg` (`PrismaPg`) fourni au `PrismaClient` : cette décision maintient le pilote PostgreSQL explicite et évite de transporter une configuration de base de données vers le navigateur. La vérification de santé déconnecte sa poignée de connexion dans un `finally` ; les routes et services serveur sont les seules frontières autorisées vers la base.
 
+## Authentification
+
+`AuthService` (`packages/database`) orchestre l’inscription, la connexion, la déconnexion et la résolution d’une session, au-dessus des mêmes ports `EducatorRepository`/`SessionRepository` que le reste de la persistance. Les mots de passe sont hachés avec `scrypt` (module `node:crypto`, aucune dépendance externe) et jamais stockés ni renvoyés en clair. Une session est un jeton aléatoire opaque (32 octets, `base64url`) : seul son hachage SHA-256 est persisté dans la table `sessions`, avec une date d’expiration ; le jeton en clair ne vit que dans un cookie `HttpOnly`, `SameSite=Lax`, `Secure` en production, posé par les routes `POST /api/auth/{register,login,logout}` et lu par `GET /api/auth/session`. Les erreurs de validation (`ValidationError`), d’identifiants invalides (`InvalidCredentialsError`) et de conflit d’e-mail (`DuplicateEducatorEmailError`) sont traduites en réponses HTTP explicites (400/401/409) sans jamais exposer de détail interne, sur le même principe que la vérification de santé de la base.
+
+Le tableau de bord, l’onboarding et le constructeur de séance restent pour l’instant branchés sur des données de démonstration : le câblage de leurs routes à la session authentifiée (sans accepter d’`educatorId` fourni par le client) est l’étape suivante.
+
 ## Évolution prévue
 
 1. Prototype navigable avec données locales.
-2. Authentification éducateur et API sécurisée au-dessus de la fondation PostgreSQL existante.
+2. Authentification éducateur — fait. Reste à câbler les routes d’équipe sur la session authentifiée, sans `educatorId` fourni par le client.
 3. Synchronisation des données d’équipe entre les interfaces.
 4. Moteur de recommandations fondé sur des règles explicables.
 5. Assistance IA encadrée par le plan, les observations et des garde-fous métier.
