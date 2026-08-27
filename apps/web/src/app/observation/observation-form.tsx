@@ -17,6 +17,7 @@ import {
   type ObservationReport,
   type PlayerReference,
 } from "@evolyfoot/domain";
+import Link from "next/link";
 import { useState } from "react";
 import { AdjustmentCard } from "./adjustment-card";
 
@@ -143,6 +144,7 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
 
       {report && <section aria-live="polite" className="observation-result" role="status"><span className="eyebrow">SYNTHÈSE EVOLY</span><h3>{`Tendance ${levelText[report.summary.trend]}`}</h3><dl><div><dt>Point fort</dt><dd>{report.summary.strongest.label}</dd></div><div><dt>Priorité à renforcer</dt><dd>{report.summary.weakest.label}</dd></div><div><dt>Joueurs signalés</dt><dd>{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</dd></div></dl></section>}
       {suggestion && <AdjustmentCard suggestion={suggestion} />}
+      {report && <Link className="observation-exit back-link" href="/">Retour au tableau de bord</Link>}
     </section>
   );
 }

@@ -84,6 +84,7 @@ export function SessionBuilder({ initialSession }: SessionBuilderProps) {
         <button className="continue-button" disabled={!isValid} onClick={() => setValidationStatus("Séance prête")} type="button">Valider cette séance <span aria-hidden="true">→</span></button>
         <p aria-live="polite" className="session-validation-status" role="status">{validationStatus}</p>
         {validationStatus && <Link className="observation-session-link" href="/observation?type=training">Observer cette séance →</Link>}
+        {validationStatus && <Link className="back-link" href="/">Retour au tableau de bord</Link>}
       </div>
     </section>
   );

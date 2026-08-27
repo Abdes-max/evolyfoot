@@ -8,6 +8,6 @@ describe("tableau de bord", () => {
 
     expect(screen.getByText("Créer des solutions autour du porteur")).toBeInTheDocument();
     expect(screen.getByText("Jouer, bouger, proposer")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /ouvrir la séance/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /ouvrir la séance/i })).toHaveAttribute("href", "/session");
   });
 });
