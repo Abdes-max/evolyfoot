@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   status: { color: colors.primary, fontSize: 13, fontWeight: "800", lineHeight: 19, marginTop: 18 },
   actions: { gap: 8, marginTop: 18 },
   action: { alignItems: "center", backgroundColor: colors.paper, borderColor: colors.line, borderRadius: radii.sm, borderWidth: 1, justifyContent: "center", minHeight: 44, minWidth: 44, paddingHorizontal: 14 },
-  apply: { backgroundColor: colors.ink, borderColor: colors.ink },
+  apply: { backgroundColor: colors.primary, borderColor: colors.primary },
   actionText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
-  applyText: { color: "white", fontSize: 12, fontWeight: "800" },
+  applyText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
 });
