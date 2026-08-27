@@ -33,12 +33,14 @@ Le client Prisma est créé à partir de `DATABASE_URL` au point d’exécution 
 
 `AuthService` (`packages/database`) orchestre l’inscription, la connexion, la déconnexion et la résolution d’une session, au-dessus des mêmes ports `EducatorRepository`/`SessionRepository` que le reste de la persistance. Les mots de passe sont hachés avec `scrypt` (module `node:crypto`, aucune dépendance externe) et jamais stockés ni renvoyés en clair. Une session est un jeton aléatoire opaque (32 octets, `base64url`) : seul son hachage SHA-256 est persisté dans la table `sessions`, avec une date d’expiration ; le jeton en clair ne vit que dans un cookie `HttpOnly`, `SameSite=Lax`, `Secure` en production, posé par les routes `POST /api/auth/{register,login,logout}` et lu par `GET /api/auth/session`. Les erreurs de validation (`ValidationError`), d’identifiants invalides (`InvalidCredentialsError`) et de conflit d’e-mail (`DuplicateEducatorEmailError`) sont traduites en réponses HTTP explicites (400/401/409) sans jamais exposer de détail interne, sur le même principe que la vérification de santé de la base.
 
-Le tableau de bord, l’onboarding et le constructeur de séance restent pour l’instant branchés sur des données de démonstration : le câblage de leurs routes à la session authentifiée (sans accepter d’`educatorId` fourni par le client) est l’étape suivante.
+`GET`/`PUT /api/team` (`apps/web/src/server/team.ts`) résolvent l’éducateur depuis le cookie de session (via `AuthService.getEducatorForSession`) avant tout accès à `TeamProfileService` : la route ignore tout `educatorId` présent dans le corps de la requête et n’en accepte aucun en paramètre. Le tableau de bord (`SidebarIdentity`) et le formulaire d’onboarding sont des composants client qui interrogent `/api/auth/session` puis `/api/team` : un éducateur connecté voit et modifie son équipe réelle, tandis qu’un visiteur anonyme voit le contenu de démonstration accompagné d’une invitation à se connecter. Ce choix — un dégradé plutôt qu’un mur de connexion strict imposé par un middleware — évite de bloquer l’exploration du prototype tant que le reste du tableau de bord (priorités, séance suivante, ajustements) n’a pas encore de persistance propre.
+
+Le constructeur de séance reste pour l’instant branché sur des données de démonstration.
 
 ## Évolution prévue
 
 1. Prototype navigable avec données locales.
-2. Authentification éducateur — fait. Reste à câbler les routes d’équipe sur la session authentifiée, sans `educatorId` fourni par le client.
+2. Authentification éducateur et routes d’équipe autorisées par la session — fait.
 3. Synchronisation des données d’équipe entre les interfaces.
 4. Moteur de recommandations fondé sur des règles explicables.
 5. Assistance IA encadrée par le plan, les observations et des garde-fous métier.
