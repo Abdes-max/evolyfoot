@@ -1,0 +1,18 @@
+.tactical-diagram { position: relative; }
+.tactical-diagram-caption { position: absolute; top: 12px; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: 800; color: var(--ink); z-index: 1; }
+.tactical-diagram svg { display: block; width: 100%; }
+
+.tactical-diagram-pitch { fill: #152a22; stroke: #2c463b; stroke-width: 2; }
+.tactical-diagram-zone { fill: none; stroke: #2c463b; stroke-width: 1.5; stroke-dasharray: 5 5; }
+.tactical-diagram-arrow { stroke: var(--accent); stroke-width: 2.2; fill: none; }
+.tactical-diagram-arrowhead { fill: var(--accent); }
+
+.tactical-diagram-token { stroke: none; }
+.tactical-diagram-token.attacker { fill: var(--accent); }
+.tactical-diagram-token.defender { fill: #ff8f7a; }
+.tactical-diagram-token.goalkeeper { fill: #ffffff; }
+
+.tactical-diagram-label { font-size: 9px; font-weight: 800; pointer-events: none; }
+.tactical-diagram-label.attacker { fill: var(--accent-ink); }
+.tactical-diagram-label.defender { fill: #3a140c; }
+.tactical-diagram-label.goalkeeper { fill: #152a22; }

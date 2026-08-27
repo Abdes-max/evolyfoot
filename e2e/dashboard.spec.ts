@@ -57,3 +57,21 @@ test("le coach personnalise, valide puis observe sa séance", async ({ page }) =
   await page.getByRole("button", { name: "Appliquer cet ajustement" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Ajustement appliqué à la prochaine séance" })).toContainText("Ajustement appliqué à la prochaine séance");
 });
+
+test("l’éducateur parcourt la bibliothèque et consulte le schéma d’un exercice", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Séances" }).click();
+  await expect(page).toHaveURL(/\/bibliotheque$/);
+
+  await page.getByRole("button", { name: "Activation" }).click();
+  await page.getByRole("heading", { name: "Duel et contre-pression" }).click();
+  await expect(page).toHaveURL(/\/bibliotheque\/activation-recuperer$/);
+
+  await expect(page.getByText("But du jeu", { exact: true })).toBeVisible();
+  await expect(page.getByText("Presser à deux, jamais seul.")).toBeVisible();
+  await page.getByRole("button", { name: "Cet exercice m’a plu" }).click();
+  await expect(page.getByRole("status")).toContainText("Merci, c’est noté.");
+
+  await page.getByRole("link", { name: "Bibliothèque", exact: true }).click();
+  await expect(page).toHaveURL(/\/bibliotheque$/);
+});

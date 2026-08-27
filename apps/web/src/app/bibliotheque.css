@@ -1,0 +1,74 @@
+.bibliotheque-shell { min-height: 100vh; background: var(--paper); }
+.bibliotheque-header { padding: 38px max(25px, calc((100vw - 1200px) / 2)); background: linear-gradient(155deg, #123349, #0a1219); color: var(--ink); }
+.bibliotheque-header .onboarding-brand { margin-bottom: 22px; }
+.bibliotheque-header h1 { margin: 10px 0 8px; font-size: 30px; letter-spacing: -0.7px; }
+.bibliotheque-header p { margin: 0; color: var(--muted); font-size: 13px; }
+
+.bibliotheque { width: min(1200px, calc(100% - 40px)); margin: 30px auto 60px; }
+.bibliotheque-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 22px; }
+.bibliotheque-search { flex: 1; min-width: 220px; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; color: var(--muted); }
+.bibliotheque-search input { flex: 1; border: 0; background: none; color: var(--ink); font: inherit; font-size: 12.5px; }
+.bibliotheque-search input::placeholder { color: var(--muted); }
+.bibliotheque-search input:focus { outline: none; }
+.bibliotheque-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.bibliotheque-filters button { min-height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 11.5px; font-weight: 800; }
+.bibliotheque-filters button.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+
+.bibliotheque-empty { padding: 40px 0; text-align: center; color: var(--muted); font-size: 13px; }
+
+.bibliotheque-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.bibliotheque-card { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; text-decoration: none; color: var(--ink); }
+.bibliotheque-thumb { position: relative; height: 170px; }
+.bibliotheque-card-body { padding: 16px 18px 18px; }
+.bibliotheque-card-meta { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+.bibliotheque-card-body h3 { margin: 2px 0 8px; font-size: 15px; }
+.bibliotheque-card-body p { margin: 0; color: var(--muted); font-size: 11.5px; line-height: 1.5; }
+
+.exercise-shell { min-height: 100vh; background: var(--paper); }
+.exercise-topbar { display: flex; align-items: center; gap: 16px; padding: 22px max(25px, calc((100vw - 1220px) / 2)); border-bottom: 1px solid var(--line); }
+.exercise-back { min-height: 40px; min-width: 40px; display: grid; place-items: center; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+.exercise-crumb { color: var(--muted); font-size: 12.5px; }
+.exercise-crumb a { color: var(--accent-dark); }
+.exercise-crumb strong { color: var(--ink); }
+
+.exercise-layout { display: grid; grid-template-columns: 1fr 0.82fr; gap: 28px; width: min(1220px, calc(100% - 50px)); margin: 32px auto 0; align-items: start; }
+.exercise-diagram-card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+.exercise-diagram-card .tactical-diagram { padding-top: 16px; }
+.exercise-diagram-note { text-align: center; color: var(--muted); font-size: 11px; padding: 10px 16px 16px; margin: 0; }
+
+.exercise-meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 22px; }
+.exercise-chip { min-height: 32px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; color: var(--muted); font-size: 11px; font-weight: 700; }
+
+.exercise-layout h1 { margin: 6px 0 0; font-size: 24px; letter-spacing: -0.5px; }
+
+.exercise-callout { background: var(--info-bg); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin-bottom: 22px; }
+.exercise-callout .eyebrow { color: var(--accent-dark); }
+.exercise-callout p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.55; }
+
+.exercise-block-title { margin: 0 0 12px; font-size: 11px; letter-spacing: 1px; font-weight: 800; color: var(--muted); text-transform: uppercase; }
+.exercise-rules { list-style: none; margin: 0 0 26px; padding: 0; display: grid; gap: 10px; }
+.exercise-rules li { display: flex; gap: 12px; align-items: flex-start; font-size: 13px; line-height: 1.5; }
+.exercise-rule-num { flex: 0 0 22px; height: 22px; display: grid; place-items: center; border-radius: 7px; background: var(--surface-2); color: var(--accent-dark); font-size: 10px; font-weight: 800; border: 1px solid var(--line); }
+
+.exercise-coaching { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.exercise-coaching li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.exercise-coaching-arrow { color: var(--accent); font-weight: 800; }
+
+.exercise-feedback { max-width: 1220px; margin: 20px auto 0; padding: 0 25px; text-align: center; }
+.exercise-feedback p { color: var(--muted); font-size: 12.5px; margin: 0 0 12px; }
+.exercise-feedback-status { min-height: 16px; color: var(--accent-dark) !important; font-weight: 800; }
+.exercise-feedback-thumbs { display: flex; justify-content: center; gap: 14px; }
+.exercise-feedback-thumbs button { width: 52px; height: 52px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); display: grid; place-items: center; color: var(--muted); }
+.exercise-feedback-thumbs button.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+
+.exercise-pager { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: min(1220px, calc(100% - 50px)); margin: 24px auto 60px; padding: 20px 0 0; border-top: 1px solid var(--line); }
+.exercise-pager a { min-height: 44px; display: flex; align-items: center; padding: 0 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); font-size: 12px; font-weight: 700; text-decoration: none; }
+.exercise-pager-count { color: var(--muted); font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+
+@media (max-width: 860px) {
+  .exercise-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .bibliotheque-header { padding: 30px 22px; }
+  .bibliotheque-toolbar { flex-direction: column; align-items: stretch; }
+}

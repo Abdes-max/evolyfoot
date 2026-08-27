@@ -4,10 +4,12 @@ import {
   adjustBlockDuration,
   canReplaceSessionActivity,
   canValidateSession,
+  findTrainingActivity,
   generateTrainingSession,
   getSessionDuration,
   moveSessionBlock,
   replaceSessionActivity,
+  trainingActivityCatalogue,
 } from "./training-session";
 
 const developmentWeek: DevelopmentWeek = {
@@ -105,5 +107,37 @@ describe("training session editing", () => {
     expect(canValidateSession(ninety)).toBe(true);
     expect(canValidateSession(belowSixty)).toBe(false);
     expect(canValidateSession(aboveNinety)).toBe(false);
+  });
+});
+
+describe("bibliothèque d'exercices", () => {
+  it("expose vingt activités, chacune avec un schéma tactique et un contenu de coaching complet", () => {
+    expect(trainingActivityCatalogue).toHaveLength(20);
+
+    for (const activity of trainingActivityCatalogue) {
+      expect(activity.rules.length).toBeGreaterThan(0);
+      expect(activity.coachingPoints.length).toBeGreaterThan(0);
+      expect(activity.equipment.length).toBeGreaterThan(0);
+      expect(activity.fieldSize.length).toBeGreaterThan(0);
+      expect(activity.diagram.tokens.length).toBeGreaterThan(0);
+
+      const defenderTokenCount = activity.diagram.tokens.filter((token) => token.role === "defender").length;
+      expect(defenderTokenCount).toBeGreaterThanOrEqual(activity.defenderCount);
+      expect(activity.diagram.tokens.some((token) => token.role === "goalkeeper")).toBe(activity.hasGoalkeeper);
+
+      for (const token of activity.diagram.tokens) {
+        expect(token.x).toBeGreaterThanOrEqual(0);
+        expect(token.x).toBeLessThanOrEqual(activity.diagram.width);
+        expect(token.y).toBeGreaterThanOrEqual(0);
+        expect(token.y).toBeLessThanOrEqual(activity.diagram.height);
+      }
+    }
+  });
+
+  it("retrouve une activité par identifiant et rend indéfini pour un identifiant inconnu", () => {
+    const activity = findTrainingActivity("welcome-recuperer");
+
+    expect(activity?.title).toBe("Accueil chasse au ballon");
+    expect(findTrainingActivity("inconnu")).toBeUndefined();
   });
 });
