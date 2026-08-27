@@ -1,6 +1,6 @@
 # Plan et avancement
 
-Dernière mise à jour : 18 août 2026.
+Dernière mise à jour : 27 août 2026.
 
 ## Phase 0 — Fondation
 
@@ -37,6 +37,7 @@ Dernière mise à jour : 18 août 2026.
 - [x] Constructeur de séance — activités spécifiques aux thèmes, informations terrain, édition sûre et parcours plan → séance couverts par les tests unitaires, d’intégration et E2E ; bundle Android Expo vérifié par la CI.
 - [x] Observation rapide après séance et match.
 - [x] Ajustement explicable proposé par Evoly.
+- [x] Audit design (suppression des tics « vibe-codés », contrastes) puis refonte complète en thème sombre à accent bleu, avec correction des impasses de navigation (retour et sortie de parcours manquants) — retour direct de l'éducateur après test de l'application.
 
 ## Phase 2 — Persistance et comptes
 
@@ -44,6 +45,7 @@ Dernière mise à jour : 18 août 2026.
 - [ ] Authentification éducateur.
 - [ ] API sécurisée et services métier.
 - [ ] Données d'équipe synchronisées web/mobile.
+- [ ] Bibliothèque d'exercices avec schémas tactiques visuels (inspirée de Nextrainers) — nécessite d'enrichir le modèle de domaine des activités d'entraînement ; maquettée mais pas encore implémentée.
 
 ## Phase 3 — Bêta et distribution
 
