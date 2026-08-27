@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./observation.css";
 import "./session-builder.css";
+import "./tactical-diagram.css";
+import "./bibliotheque.css";
 
 export const metadata: Metadata = {
   title: "EvolyFoot — Piloter la progression",

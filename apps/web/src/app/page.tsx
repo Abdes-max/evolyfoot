@@ -16,7 +16,7 @@ export default function Home() {
         <nav aria-label="Navigation principale">
           <a className="nav-item active" href="#"><HomeIcon /> Vue d&apos;ensemble</a>
           <a className="nav-item" href="#plan"><TargetIcon /> Plan de progression</a>
-          <a className="nav-item" href="#session"><CalendarIcon /> Séances</a>
+          <Link className="nav-item" href="/bibliotheque"><CalendarIcon /> Séances</Link>
           <a className="nav-item" href="#observations"><EyeIcon /> Observations</a>
           <a className="nav-item" href="/onboarding"><UsersIcon /> Mon équipe</a>
         </nav>

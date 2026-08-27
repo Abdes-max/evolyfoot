@@ -62,12 +62,24 @@ export {
   adjustBlockDuration,
   canReplaceSessionActivity,
   canValidateSession,
+  findTrainingActivity,
   generateTrainingSession,
   getSessionDuration,
   moveSessionBlock,
   replaceSessionActivity,
+  trainingActivityCatalogue,
 } from "./training-session";
-export type { TrainingActivity, TrainingBlock, TrainingBlockKind, TrainingSession } from "./training-session";
+export type {
+  DiagramArrow,
+  DiagramToken,
+  DiagramTokenRole,
+  DiagramZone,
+  TacticalDiagram,
+  TrainingActivity,
+  TrainingBlock,
+  TrainingBlockKind,
+  TrainingSession,
+} from "./training-session";
 export {
   canCompleteObservation,
   completeObservation,
