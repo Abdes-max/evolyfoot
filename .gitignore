@@ -12,6 +12,10 @@ web-build/
 coverage/
 packages/database/src/generated/prisma/
 
+# test artifacts
+playwright-report/
+test-results/
+
 # local configuration
 .env
 .env.*

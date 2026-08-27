@@ -1,4 +1,6 @@
 import { demoFocus, demoTeam, nextSession } from "@evolyfoot/domain";
+import Link from "next/link";
+import { CalendarIcon, EyeIcon, HomeIcon, TargetIcon, UsersIcon } from "./icons";
 
 const priorities = [
   { label: "Se rendre disponible", score: 78, tone: "strong" },
@@ -12,11 +14,11 @@ export default function Home() {
       <aside className="sidebar">
         <div className="brand"><span className="brand-mark">E</span><span>EvolyFoot</span></div>
         <nav aria-label="Navigation principale">
-          <a className="nav-item active" href="#">Vue d&apos;ensemble</a>
-          <a className="nav-item" href="#plan">Plan de progression</a>
-          <a className="nav-item" href="#session">Séances</a>
-          <a className="nav-item" href="#observations">Observations</a>
-          <a className="nav-item" href="/onboarding">Mon équipe</a>
+          <a className="nav-item active" href="#"><HomeIcon /> Vue d&apos;ensemble</a>
+          <a className="nav-item" href="#plan"><TargetIcon /> Plan de progression</a>
+          <a className="nav-item" href="#session"><CalendarIcon /> Séances</a>
+          <a className="nav-item" href="#observations"><EyeIcon /> Observations</a>
+          <a className="nav-item" href="/onboarding"><UsersIcon /> Mon équipe</a>
         </nav>
         <div className="season-card">
           <span className="eyebrow">SAISON 2026–27</span>
@@ -43,7 +45,7 @@ export default function Home() {
             <h2>{nextSession.title}</h2>
             <p>Une séance centrée sur les déplacements après la passe et la création de triangles.</p>
             <div className="session-meta"><span>{nextSession.durationMinutes} min</span><span>{nextSession.playerCount} joueurs</span><span>Intensité {nextSession.intensity}</span></div>
-            <button className="primary-button">Ouvrir la séance <span>→</span></button>
+            <Link className="primary-button" href="/session">Ouvrir la séance <span>→</span></Link>
           </article>
         </section>
 
