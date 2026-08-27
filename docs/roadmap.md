@@ -1,6 +1,6 @@
 # Plan et avancement
 
-Dernière mise à jour : 27 août 2026 (routes d'équipe autorisées par la session).
+Dernière mise à jour : 27 août 2026 (données d'équipe synchronisées web/mobile).
 
 ## Phase 0 — Fondation
 
@@ -45,7 +45,7 @@ Dernière mise à jour : 27 août 2026 (routes d'équipe autorisées par la sess
 - [x] Fondation PostgreSQL et Prisma.
 - [x] Authentification éducateur — inscription et connexion par e-mail et mot de passe, sessions révocables stockées côté serveur (`Session`), mots de passe hachés avec `scrypt`, routes `/api/auth/{register,login,logout,session}` et pages `/inscription` et `/connexion`.
 - [x] Routes d'équipe autorisées par la session — `GET`/`PUT /api/team` résolvent l'éducateur depuis le cookie de session ; aucun `educatorId` fourni par le client n'est jamais utilisé. Le tableau de bord (bloc équipe/éducateur) et l'onboarding lisent et écrivent ces données réelles pour un éducateur connecté ; un visiteur anonyme continue de voir le contenu de démonstration et une invitation à se connecter plutôt qu'un mur de connexion imposé.
-- [ ] Données d'équipe synchronisées web/mobile.
+- [x] Données d'équipe synchronisées web/mobile — l'application mobile a désormais son propre inscription/connexion (`/inscription`, `/connexion`), un onboarding complet (nom, catégorie, effectif, jours d'entraînement) et un tableau de bord affichant l'éducateur et l'équipe réels, via les mêmes routes `/api/auth/*` et `/api/team` que le web. Mobile n'ayant pas de pot de cookies, les mêmes routes acceptent aussi un jeton porteur (`Authorization: Bearer`) renvoyé dans le corps de la réponse uniquement pour un client identifié comme mobile. Vérifié de bout en bout sur émulateur Android contre le serveur web et PostgreSQL réels (inscription → équipe → déconnexion/reconnexion → tableau de bord synchronisé). Limite connue : la session mobile vit uniquement en mémoire (pas de stockage persistant) et se perd au redémarrage complet de l'app — voir docs/architecture.md.
 
 ## Phase 3 — Bêta et distribution
 

@@ -1,19 +1,97 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { demoFocus, demoTeam, nextSession } from "@evolyfoot/domain";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { demoFocus, nextSession } from "@evolyfoot/domain";
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Link } from "expo-router";
+import { useAuth } from "../lib/auth-context";
+
+function initials(displayName: string): string {
+  const parts = displayName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return "?";
+  }
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]!.toUpperCase())
+    .join("");
+}
 
 export default function HomeScreen() {
+  const { educator, team, logout } = useAuth();
+  const firstName = educator?.displayName.split(" ")[0] ?? "";
+
+  function confirmLogout() {
+    Alert.alert("Se déconnecter ?", undefined, [
+      { text: "Annuler", style: "cancel" },
+      { text: "Se déconnecter", style: "destructive", onPress: logout },
+    ]);
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <View style={styles.header}><View><Text style={styles.eyebrow}>LUNDI 17 AOÛT</Text><Text style={styles.title}>Bonjour Abdes,</Text><Text style={styles.subtitle}>{demoTeam.name} · {demoTeam.ageGroup}</Text></View><View style={styles.avatar}><Text style={styles.avatarText}>AM</Text></View></View>
-        <View style={styles.focusCard}><Text style={styles.focusEyebrow}>PRIORITÉ DU CYCLE · SEMAINE 3/4</Text><Text style={styles.focusTitle}>{demoFocus.label}</Text><Text style={styles.focusBody}>Faire émerger davantage de soutien proche et de solutions devant le ballon.</Text><View style={styles.progress}><View style={[styles.progressValue, { width: `${demoFocus.progress}%` }]} /></View><View style={styles.row}><Text style={styles.focusMeta}>{demoFocus.sessionsCompleted}/{demoFocus.sessionsTotal} séances</Text><Text style={styles.focusMeta}>{demoFocus.progress}%</Text></View></View>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.eyebrow}>LUNDI 17 AOÛT</Text>
+            <Text style={styles.title}>Bonjour {firstName},</Text>
+            <Text style={styles.subtitle}>{team ? `${team.name} · ${team.ageGroup}` : "Pas encore d’équipe"}</Text>
+          </View>
+          <TouchableOpacity accessibilityLabel="Se déconnecter" onPress={confirmLogout} style={styles.avatar}>
+            <Text style={styles.avatarText}>{educator ? initials(educator.displayName) : "?"}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.focusCard}>
+          <Text style={styles.focusEyebrow}>PRIORITÉ DU CYCLE · SEMAINE 3/4</Text>
+          <Text style={styles.focusTitle}>{demoFocus.label}</Text>
+          <Text style={styles.focusBody}>Faire émerger davantage de soutien proche et de solutions devant le ballon.</Text>
+          <View style={styles.progress}>
+            <View style={[styles.progressValue, { width: `${demoFocus.progress}%` }]} />
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.focusMeta}>
+              {demoFocus.sessionsCompleted}/{demoFocus.sessionsTotal} séances
+            </Text>
+            <Text style={styles.focusMeta}>{demoFocus.progress}%</Text>
+          </View>
+        </View>
+
         <Text style={styles.sectionTitle}>Prochaine séance</Text>
-        <View style={styles.sessionCard}><View style={styles.row}><Text style={styles.eyebrow}>{nextSession.dateLabel.toUpperCase()}</Text><Text style={styles.chip}>{nextSession.intensity}</Text></View><Text style={styles.cardTitle}>{nextSession.title}</Text><Text style={styles.cardBody}>{nextSession.durationMinutes} min · {nextSession.playerCount} joueurs · Jeu de position</Text><TouchableOpacity style={styles.button}><Text style={styles.buttonText}>Ouvrir la séance</Text><Text style={styles.buttonText}>→</Text></TouchableOpacity></View>
-        <Link href="/observation?type=match" asChild><TouchableOpacity accessibilityRole="button" style={styles.observationButton}><Text style={styles.observationText}>Observer un match</Text><Text style={styles.observationText}>→</Text></TouchableOpacity></Link>
-        <View style={styles.suggestion}><View style={styles.suggestionContent}><Text style={styles.eyebrow}>SUGGESTION EVOLY</Text><Text style={styles.suggestionTitle}>Garde le thème, change la contrainte.</Text><Text style={styles.cardBody}>Réduis l&apos;espace mardi pour provoquer des décisions plus rapides.</Text></View></View>
-        <Link href="/onboarding" asChild><TouchableOpacity style={styles.setupButton}><Text style={styles.setupText}>Configurer mon équipe</Text><Text style={styles.setupText}>→</Text></TouchableOpacity></Link>
+        <View style={styles.sessionCard}>
+          <View style={styles.row}>
+            <Text style={styles.eyebrow}>{nextSession.dateLabel.toUpperCase()}</Text>
+            <Text style={styles.chip}>{nextSession.intensity}</Text>
+          </View>
+          <Text style={styles.cardTitle}>{nextSession.title}</Text>
+          <Text style={styles.cardBody}>
+            {nextSession.durationMinutes} min · {nextSession.playerCount} joueurs · Jeu de position
+          </Text>
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.buttonText}>Ouvrir la séance</Text>
+            <Text style={styles.buttonText}>→</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Link href="/observation?type=match" asChild>
+          <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
+            <Text style={styles.observationText}>Observer un match</Text>
+            <Text style={styles.observationText}>→</Text>
+          </TouchableOpacity>
+        </Link>
+
+        <View style={styles.suggestion}>
+          <View style={styles.suggestionContent}>
+            <Text style={styles.eyebrow}>SUGGESTION EVOLY</Text>
+            <Text style={styles.suggestionTitle}>Garde le thème, change la contrainte.</Text>
+            <Text style={styles.cardBody}>Réduis l&apos;espace mardi pour provoquer des décisions plus rapides.</Text>
+          </View>
+        </View>
+
+        <Link href="/onboarding" asChild>
+          <TouchableOpacity style={styles.setupButton}>
+            <Text style={styles.setupText}>{team ? "Modifier mon équipe" : "Configurer mon équipe"}</Text>
+            <Text style={styles.setupText}>→</Text>
+          </TouchableOpacity>
+        </Link>
       </ScrollView>
     </SafeAreaView>
   );

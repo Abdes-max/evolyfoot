@@ -7,6 +7,7 @@ import {
   createLogoutHandler,
   createRegisterHandler,
   createSessionHandler,
+  isMobileClient,
   readSessionToken,
   SESSION_COOKIE_NAME,
   type AuthGateway,
@@ -15,8 +16,8 @@ import {
 const educator = { id: "educator-1", email: "coach@example.test", displayName: "Coach" };
 const expiresAt = new Date("2026-09-26T12:00:00.000Z");
 
-function jsonRequest(body: unknown, cookie?: string): Request {
-  const headers = new Headers({ "content-type": "application/json" });
+function jsonRequest(body: unknown, cookie?: string, extraHeaders?: Record<string, string>): Request {
+  const headers = new Headers({ "content-type": "application/json", ...extraHeaders });
   if (cookie) {
     headers.set("cookie", cookie);
   }
@@ -52,6 +53,21 @@ describe("cookie helpers", () => {
   it("returns null when there is no session cookie", () => {
     expect(readSessionToken(new Request("https://evolyfoot.test"))).toBeNull();
   });
+
+  it("reads a bearer token for the mobile client, taking precedence over any cookie", () => {
+    const request = new Request("https://evolyfoot.test", {
+      headers: { authorization: "Bearer le-jeton-mobile", cookie: `${SESSION_COOKIE_NAME}=le-jeton-cookie` },
+    });
+
+    expect(readSessionToken(request)).toBe("le-jeton-mobile");
+  });
+
+  it("identifies a mobile client from its platform header", () => {
+    expect(isMobileClient(new Request("https://evolyfoot.test", { headers: { "x-client-platform": "mobile" } }))).toBe(
+      true,
+    );
+    expect(isMobileClient(new Request("https://evolyfoot.test"))).toBe(false);
+  });
 });
 
 describe("createRegisterHandler", () => {
@@ -76,6 +92,23 @@ describe("createRegisterHandler", () => {
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ educator });
     expect(response.headers.get("set-cookie")).toContain(`${SESSION_COOKIE_NAME}=le-jeton`);
+  });
+
+  it("also returns the raw session token in the body for the mobile client", async () => {
+    const gateway: Pick<AuthGateway, "register"> = {
+      register: async () => ({ educator, sessionToken: "le-jeton", expiresAt }),
+    };
+    const handler = createRegisterHandler(gateway, () => undefined);
+
+    const response = await handler(
+      jsonRequest(
+        { email: educator.email, password: "motdepasse1", displayName: educator.displayName },
+        undefined,
+        { "x-client-platform": "mobile" },
+      ),
+    );
+
+    expect(await response.json()).toEqual({ educator, sessionToken: "le-jeton" });
   });
 
   it("maps a duplicate email to a 409 without leaking internals", async () => {
@@ -147,7 +180,21 @@ describe("createLoginHandler", () => {
     const response = await handler(jsonRequest({ email: educator.email, password: "motdepasse1" }));
 
     expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ educator });
     expect(response.headers.get("set-cookie")).toContain(`${SESSION_COOKIE_NAME}=le-jeton`);
+  });
+
+  it("also returns the raw session token in the body for the mobile client", async () => {
+    const gateway: Pick<AuthGateway, "login"> = {
+      login: async () => ({ educator, sessionToken: "le-jeton", expiresAt }),
+    };
+    const handler = createLoginHandler(gateway, () => undefined);
+
+    const response = await handler(
+      jsonRequest({ email: educator.email, password: "motdepasse1" }, undefined, { "x-client-platform": "mobile" }),
+    );
+
+    expect(await response.json()).toEqual({ educator, sessionToken: "le-jeton" });
   });
 
   it("maps invalid credentials to a 401", async () => {

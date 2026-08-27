@@ -37,10 +37,18 @@ Le client Prisma est créé à partir de `DATABASE_URL` au point d’exécution 
 
 Le constructeur de séance reste pour l’instant branché sur des données de démonstration.
 
+## Authentification et données mobiles
+
+L’application mobile n’a pas de pot de cookies : elle porte le jeton de session dans un en-tête `Authorization: Bearer`, et signale sa plateforme via l’en-tête `X-Client-Platform: mobile` pour que `/api/auth/register` et `/api/auth/login` lui renvoient ce jeton en clair dans le corps de la réponse — uniquement pour un client identifié comme mobile, jamais pour le web (qui continue de s’appuyer exclusivement sur le cookie `HttpOnly`, afin qu’un XSS ne puisse pas lire le jeton dans une réponse `fetch`). `readSessionToken` (`apps/web/src/server/auth.ts`) résout la session en vérifiant d’abord l’en-tête `Authorization`, puis le cookie : les mêmes routes `/api/auth/*` et `/api/team` servent donc indifféremment le web et le mobile.
+
+Côté mobile (`apps/mobile/lib/auth-context.tsx`), la session — éducateur, équipe, jeton — vit uniquement en mémoire dans un contexte React tant que l’application tourne : elle se perd à son redémarrage complet. Ce choix évite d’introduire une dépendance de stockage persistant (`expo-secure-store` ou équivalent) dans un environnement où l’installation de nouvelles dépendances npm n’était pas fiable au moment de cette implémentation ; un stockage persistant réel reste une amélioration future explicite.
+
+Les écrans `/connexion`, `/inscription` et l’onboarding mobile (nom d’équipe, catégorie, effectif, jours d’entraînement) reproduisent les mêmes champs et la même validation métier (`@evolyfoot/domain`) que leurs équivalents web, et appellent les mêmes routes `/api/team` : les données d’équipe créées sur une plateforme sont donc immédiatement visibles sur l’autre, une fois l’éducateur connecté des deux côtés. Vérifié de bout en bout sur émulateur Android contre le serveur web et PostgreSQL réels.
+
 ## Évolution prévue
 
 1. Prototype navigable avec données locales.
-2. Authentification éducateur et routes d’équipe autorisées par la session — fait.
-3. Synchronisation des données d’équipe entre les interfaces.
+2. Authentification éducateur, routes d’équipe autorisées par la session et données d’équipe synchronisées web/mobile — fait.
+3. Stockage de session persistant côté mobile (au-delà de la mémoire process).
 4. Moteur de recommandations fondé sur des règles explicables.
 5. Assistance IA encadrée par le plan, les observations et des garde-fous métier.
