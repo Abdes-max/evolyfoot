@@ -11,6 +11,7 @@ import {
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useState } from "react";
+import { TacticalDiagramView } from "../tactical-diagram";
 
 interface SessionBuilderProps {
   initialSession: TrainingSession;
@@ -60,12 +61,20 @@ export function SessionBuilder({ initialSession }: SessionBuilderProps) {
                 </div>
                 <strong>{block.durationMinutes} min</strong>
               </div>
-              <p>{block.activity.objective}</p>
-              <dl className="session-block-details">
-                <div><dt>Organisation</dt><dd>{block.activity.organization}</dd></div>
-                <div><dt>Consigne</dt><dd>{block.activity.instruction}</dd></div>
-                <div><dt>À observer</dt><dd>{block.activity.observable}</dd></div>
-              </dl>
+              <div className="session-block-body">
+                <div className="session-block-diagram">
+                  <TacticalDiagramView diagram={block.activity.diagram} />
+                  <Link href={`/bibliotheque/${block.activity.id}`}>Voir le détail →</Link>
+                </div>
+                <div className="session-block-text">
+                  <p>{block.activity.objective}</p>
+                  <dl className="session-block-details">
+                    <div><dt>Organisation</dt><dd>{block.activity.organization}</dd></div>
+                    <div><dt>Consigne</dt><dd>{block.activity.instruction}</dd></div>
+                    <div><dt>À observer</dt><dd>{block.activity.observable}</dd></div>
+                  </dl>
+                </div>
+              </div>
               <div className="session-block-actions">
                 <button aria-label="Retirer 5 minutes" onClick={() => editSession(adjustBlockDuration(session, index, -5))} type="button">− 5 min</button>
                 <button aria-label="Ajouter 5 minutes" onClick={() => editSession(adjustBlockDuration(session, index, 5))} type="button">+ 5 min</button>

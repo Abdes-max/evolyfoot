@@ -232,7 +232,7 @@ nav { display:flex; flex-direction:column; gap:4px; }
 .session-block-kind{color:var(--accent-dark);font-size:8px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
 .session-block h3{margin:5px 0 0;font-size:14px}
 .session-block-heading>strong{font-size:11px;white-space:nowrap}
-.session-block article>p{margin:10px 0 14px;color:var(--muted);font-size:10px;line-height:1.5}
+.session-block-text>p{margin:0 0 14px;color:var(--muted);font-size:10px;line-height:1.5}
 .session-block-actions{display:flex;flex-wrap:wrap;gap:7px}
 .session-block-actions button{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:8px;padding:7px 9px;font-size:9px;font-weight:800}
 .session-block-actions button:disabled{cursor:not-allowed;opacity:.45}

@@ -36,6 +36,15 @@ describe("session builder", () => {
     expect(replaceButtons[2]).toBeEnabled();
   });
 
+  it("affiche le schéma tactique de chaque situation avec un lien vers la bibliothèque", () => {
+    render(<SessionPage />);
+
+    expect(screen.getAllByRole("img", { name: /schéma tactique/i })).toHaveLength(4);
+    const detailLinks = screen.getAllByRole("link", { name: /voir le détail/i });
+    expect(detailLinks).toHaveLength(4);
+    expect(detailLinks[0]).toHaveAttribute("href", "/bibliotheque/welcome-recuperer");
+  });
+
   it("conserve le focus sur le contrôle du même bloc après un déplacement", () => {
     render(<SessionPage />);
     const activationCard = screen.getByRole("heading", { name: "Duel et contre-pression" }).closest("li");

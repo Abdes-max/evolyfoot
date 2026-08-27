@@ -1,8 +1,39 @@
+.session-block-body {
+  display: flex;
+  gap: 16px;
+  margin: 12px 0 0;
+  align-items: flex-start;
+}
+
+.session-block-diagram {
+  flex: 0 0 200px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.session-block-diagram a {
+  display: block;
+  padding: 8px 10px;
+  text-align: center;
+  color: var(--accent-dark);
+  font-size: 10.5px;
+  font-weight: 800;
+  text-decoration: none;
+  border-top: 1px solid var(--line);
+}
+
+.session-block-text {
+  flex: 1;
+  min-width: 0;
+}
+
 .session-block-details {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin: 0 0 14px;
+  margin: 0;
 }
 
 .session-block-details div {
@@ -56,4 +87,6 @@
 
 @media (max-width: 600px) {
   .session-block-details { grid-template-columns: 1fr; }
+  .session-block-body { flex-direction: column; }
+  .session-block-diagram { flex-basis: auto; width: 100%; }
 }
