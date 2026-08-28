@@ -1,6 +1,6 @@
 # Plan et avancement
 
-Dernière mise à jour : 27 août 2026 (données d'équipe synchronisées web/mobile).
+Dernière mise à jour : 28 août 2026 (terrain de déploiement Docker/EAS préparé).
 
 ## Phase 0 — Fondation
 
@@ -49,8 +49,9 @@ Dernière mise à jour : 27 août 2026 (données d'équipe synchronisées web/mo
 
 ## Phase 3 — Bêta et distribution
 
-- [ ] Préproduction VPS.
-- [ ] EAS Build preview.
-- [ ] TestFlight et piste interne Google Play.
+- [x] Terrain de déploiement côté code : `Dockerfile` (cibles `web`/`migrator`, testées de bout en bout contre PostgreSQL réel), `docker-compose.yml` + `Caddyfile` (TLS automatique), `.github/workflows/cd.yml` (build/publish GHCR + déploiement SSH, déclenchement manuel en attendant les secrets), `apps/mobile/eas.json` (profils development/preview/production). Voir docs/delivery.md pour le déroulé pas-à-pas — rien n'est encore déployé, ceci prépare le terrain.
+- [ ] Préproduction VPS — attend un VPS provisionné et les secrets GitHub (`docs/delivery.md`).
+- [ ] EAS Build preview — attend un compte Expo/EAS et des icônes/splash (actuellement absents d'`app.json`).
+- [ ] TestFlight et piste interne Google Play — attend les comptes Apple Developer et Google Play Console.
 - [ ] Mesure des indicateurs MVP.
-- [ ] Déploiements de production depuis `master` uniquement.
+- [ ] Déploiements de production depuis `master` uniquement — le workflow CD passera de `workflow_dispatch` à `push: branches: [master]` une fois le premier déploiement manuel validé.
