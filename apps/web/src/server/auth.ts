@@ -39,7 +39,26 @@ export function buildClearedSessionCookie(): string {
   return cookieAttributes([`${SESSION_COOKIE_NAME}=`, "Path=/", "HttpOnly", "SameSite=Lax", "Max-Age=0"]).join("; ");
 }
 
+// L'application mobile n'a pas de pot de cookies : elle s'authentifie avec un jeton porteur
+// (`Authorization: Bearer <jeton>`) et l'identifie via cet en-tête pour recevoir ce même jeton
+// dans le corps de la réponse à l'inscription/la connexion. Le web ne l'envoie jamais et continue
+// de s'appuyer uniquement sur le cookie HttpOnly — le jeton ne doit pas être exposé au JS web.
+const MOBILE_CLIENT_HEADER = "x-client-platform";
+const MOBILE_CLIENT_VALUE = "mobile";
+
+export function isMobileClient(request: Request): boolean {
+  return request.headers.get(MOBILE_CLIENT_HEADER) === MOBILE_CLIENT_VALUE;
+}
+
 export function readSessionToken(request: Request): string | null {
+  const authorization = request.headers.get("authorization");
+  if (authorization?.startsWith("Bearer ")) {
+    const token = authorization.slice("Bearer ".length).trim();
+    if (token) {
+      return token;
+    }
+  }
+
   const cookieHeader = request.headers.get("cookie");
   if (!cookieHeader) {
     return null;
@@ -99,7 +118,10 @@ export function createRegisterHandler(
         password: body.password,
         displayName: body.displayName,
       });
-      const response = Response.json({ educator: session.educator }, { status: 201 });
+      const response = Response.json(
+        { educator: session.educator, ...(isMobileClient(request) ? { sessionToken: session.sessionToken } : {}) },
+        { status: 201 },
+      );
       response.headers.append("Set-Cookie", buildSessionCookie(session.sessionToken, session.expiresAt));
       return response;
     } catch (error) {
@@ -120,7 +142,10 @@ export function createLoginHandler(
 
     try {
       const session = await gateway.login({ email: body.email, password: body.password });
-      const response = Response.json({ educator: session.educator }, { status: 200 });
+      const response = Response.json(
+        { educator: session.educator, ...(isMobileClient(request) ? { sessionToken: session.sessionToken } : {}) },
+        { status: 200 },
+      );
       response.headers.append("Set-Cookie", buildSessionCookie(session.sessionToken, session.expiresAt));
       return response;
     } catch (error) {
