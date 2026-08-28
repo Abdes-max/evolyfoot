@@ -1,0 +1,84 @@
+name: CD
+
+# Déclenchement manuel uniquement tant que les secrets ci-dessous ne sont pas configurés
+# (voir docs/delivery.md). Une fois prêts, ajouter :
+#   push:
+#     branches: [master]
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Construire et publier les images
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.value }}
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v5
+      - name: Calculer le tag d'image
+        id: tag
+        run: echo "value=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+      - name: Préparer Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Se connecter à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Construire et publier l'image web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: web
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/web:${{ steps.tag.outputs.value }}
+            ghcr.io/${{ github.repository }}/web:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Construire et publier l'image migrator
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: migrator
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/migrator:${{ steps.tag.outputs.value }}
+            ghcr.io/${{ github.repository }}/migrator:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Déployer sur le VPS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+    steps:
+      - name: Déployer via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VPS_DEPLOY_PATH }}"
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${{ needs.build-and-push.outputs.tag }}/" .env
+            docker compose pull migrate web
+            docker compose run --rm migrate
+            docker compose up -d --remove-orphans
+            docker image prune -f
+      - name: Vérifier la santé du déploiement
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            curl -sf "https://${{ secrets.VPS_DOMAIN }}/api/health/database" | grep -q '"status":"ok"'

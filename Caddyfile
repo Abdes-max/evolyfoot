@@ -1,0 +1,6 @@
+# Reverse proxy avec TLS automatique (Let's Encrypt) vers le conteneur web.
+# {$DOMAIN} lit la variable d'environnement DOMAIN passée au service caddy (docker-compose.yml).
+
+{$DOMAIN} {
+	reverse_proxy web:3000
+}
