@@ -1,14 +1,17 @@
 import {
+  buildDevelopmentPlan,
   canCompleteObservation,
   completeObservation,
   createObservationDraft,
   diagnosticCriteria,
   rateObservation,
   setObservationNote,
+  summarizeDiagnostic,
   suggestAdjustmentFromObservation,
   togglePlayerSignal,
   type AdjustmentSuggestion,
   type DevelopmentWeek,
+  type DiagnosticScores,
   type ObservationDraft,
   type ObservationEventType,
   type ObservationLevel,
@@ -21,12 +24,20 @@ import { useState } from "react";
 import { AccessibilityInfo, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AdjustmentCard } from "../components/adjustment-card";
+import { useAuth } from "../lib/auth-context";
 
+// Aucun modèle de joueur (roster) n'existe encore dans l'application -- Team ne suit qu'un
+// nombre de joueurs. Ces joueurs restent donc de démonstration jusqu'à ce qu'une fonctionnalité
+// dédiée existe (même limite que côté web, voir observation-form.tsx).
 const demoPlayers: readonly PlayerReference[] = [
   { id: "lina-dupont", name: "Lina" },
   { id: "noah-martin", name: "Noah" },
   { id: "sami-bernard", name: "Sami" },
 ];
+
+// Diagnostic de démonstration, utilisé tant que l'éducateur connecté n'a pas encore fait le
+// sien, pour dériver la semaine en cours de la même façon que plan.tsx et session.tsx.
+const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
 
 const eventOptions: readonly { type: ObservationEventType; label: string }[] = [
   { type: "training", label: "Après une séance" },
@@ -45,14 +56,6 @@ const levelText: Record<ObservationLevel, string> = {
   achieved: "acquise aujourd’hui",
 };
 
-const currentWeek: DevelopmentWeek = {
-  week: 2,
-  phase: "Stabiliser",
-  theme: "Progresser ensemble",
-  intention: "Répéter le comportement dans des situations variées.",
-  observable: "Le comportement apparaît sans rappel dans 1 action sur 2.",
-};
-
 function eventTitle(type: ObservationEventType) {
   return type === "match" ? "Observation de match" : "Observation de séance";
 }
@@ -63,20 +66,26 @@ function createDraft(type: ObservationEventType) {
 
 export default function ObservationScreen() {
   const { type } = useLocalSearchParams<{ type?: string }>();
+  const { diagnosticScores, saveObservation } = useAuth();
   const initialEventType: ObservationEventType = type === "match" ? "match" : "training";
   const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType));
   const [report, setReport] = useState<ObservationReport>();
   const [suggestion, setSuggestion] = useState<AdjustmentSuggestion>();
+  const [saveError, setSaveError] = useState("");
   const complete = canCompleteObservation(draft);
   const remaining = diagnosticCriteria.length - draft.ratings.length;
+  // Résolu depuis le diagnostic déjà enregistré (comme dans plan.tsx et session.tsx), avec repli
+  // sur la démonstration tant que l'éducateur n'a pas encore fait le sien.
+  const currentWeek: DevelopmentWeek = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores)).weeks[0];
 
   function editDraft(nextDraft: ObservationDraft) {
     setDraft(nextDraft);
     setReport(undefined);
     setSuggestion(undefined);
+    setSaveError("");
   }
 
-  function validateObservation() {
+  async function validateObservation() {
     if (!complete) return;
 
     const nextReport = completeObservation(draft);
@@ -85,6 +94,11 @@ export default function ObservationScreen() {
 
     if (Platform.OS === "ios") {
       AccessibilityInfo.announceForAccessibility(`Observation validée. Tendance ${levelText[nextReport.summary.trend]}.`);
+    }
+
+    const result = await saveObservation(draft);
+    if (!result.ok) {
+      setSaveError(result.error);
     }
   }
 
@@ -225,6 +239,7 @@ export default function ObservationScreen() {
             <Text style={styles.resultValue}>{report.summary.weakest.label}</Text>
             <Text style={styles.resultLabel}>Joueurs signalés</Text>
             <Text style={styles.resultValue}>{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</Text>
+            {saveError ? <Text style={styles.saveError}>{saveError}</Text> : null}
           </View>
         )}
         {suggestion && <AdjustmentCard suggestion={suggestion} />}
@@ -275,4 +290,5 @@ const styles = StyleSheet.create({
   resultTitle: { color: colors.primary, fontSize: 22, fontWeight: "800", marginTop: 8 },
   resultLabel: { color: colors.muted, fontSize: 10, fontWeight: "800", letterSpacing: 0.8, marginTop: 16, textTransform: "uppercase" },
   resultValue: { color: colors.ink, fontSize: 14, fontWeight: "800", marginTop: 3 },
+  saveError: { color: colors.danger, fontSize: 11, lineHeight: 16, marginTop: 14 },
 });

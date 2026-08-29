@@ -22,16 +22,30 @@ enum TrainingDay {
   FRIDAY    @map("Vendredi")
 }
 
+enum DevelopmentTheme {
+  KEEPING_BALL @map("Conserver le ballon")
+  PROGRESSING  @map("Progresser ensemble")
+  FINISHING    @map("Finir les actions")
+  RECOVERING   @map("Récupérer rapidement")
+}
+
+enum ObservationEventType {
+  training
+  match
+}
+
 model Educator {
-  id           String      @id @default(uuid()) @db.Uuid
-  email        String      @unique
-  displayName  String      @map("display_name")
-  passwordHash String      @map("password_hash")
-  team         Team?
-  diagnostic   Diagnostic?
-  sessions     Session[]
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
+  id               String                   @id @default(uuid()) @db.Uuid
+  email            String                   @unique
+  displayName      String                   @map("display_name")
+  passwordHash     String                   @map("password_hash")
+  team             Team?
+  diagnostic       Diagnostic?
+  sessions         Session[]
+  trainingSessions TrainingSessionRecord[]
+  observations     ObservationRecord[]
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  updatedAt        DateTime                 @updatedAt @map("updated_at")
 
   @@map("educators")
 }
@@ -60,6 +74,47 @@ model Diagnostic {
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("diagnostics")
+}
+
+// Historique des séances validées par l'éducateur (contrairement à Team/Diagnostic, qui n'ont
+// qu'un seul enregistrement par éducateur, une séance en crée un nouveau à chaque validation).
+// `blocks` ne stocke que de quoi retrouver chaque activité dans le catalogue du domaine
+// (`findTrainingActivity`) -- pas l'activité complète, déjà dupliquée dans ce catalogue.
+model TrainingSessionRecord {
+  id          String           @id @default(uuid()) @db.Uuid
+  educatorId  String           @db.Uuid @map("educator_id")
+  educator    Educator         @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  title       String
+  ageGroup    AgeGroup         @map("age_group")
+  playerCount Int              @map("player_count")
+  theme       DevelopmentTheme
+  intention   String
+  blocks      Json
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@index([educatorId])
+  @@map("training_sessions")
+}
+
+// Historique des observations validées. `players`/`signals`/`ratings`/`summary` sont stockés
+// tels quels (JSON) : il n'existe pas encore d'effectif nominatif persisté (Team ne porte
+// qu'un `playerCount`), donc aucune intégrité référentielle n'est possible ni recherchée ici.
+model ObservationRecord {
+  id         String               @id @default(uuid()) @db.Uuid
+  educatorId String               @db.Uuid @map("educator_id")
+  educator   Educator             @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  eventType  ObservationEventType @map("event_type")
+  title      String
+  dateLabel  String               @map("date_label")
+  players    Json
+  ratings    Json
+  signals    Json
+  note       String?
+  summary    Json
+  createdAt  DateTime             @default(now()) @map("created_at")
+
+  @@index([educatorId])
+  @@map("observations")
 }
 
 model Team {

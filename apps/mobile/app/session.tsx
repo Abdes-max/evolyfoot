@@ -3,33 +3,58 @@ import {
   buildDevelopmentPlan,
   canReplaceSessionActivity,
   canValidateSession,
+  demoTeam,
   generateTrainingSession,
   getSessionDuration,
   moveSessionBlock,
   replaceSessionActivity,
   summarizeDiagnostic,
+  type DiagnosticScores,
 } from "@evolyfoot/domain";
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { Link } from "expo-router";
 import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useAuth } from "../lib/auth-context";
 
 const kindLabels = { welcome: "Accueil", activation: "Activation", main: "Situation principale", game: "Jeu" } as const;
 
-const plan = buildDevelopmentPlan(
-  summarizeDiagnostic({ availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 }),
-);
-const initialSession = generateTrainingSession(plan.weeks[0], "U12", 14);
+// Diagnostic et équipe de démonstration, utilisés tant que l'éducateur connecté n'a pas encore
+// fait son diagnostic ou son équipe (mobile est entièrement protégé par connexion -- voir
+// _layout.tsx -- donc jamais utilisé pour un visiteur anonyme).
+const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
 
 export default function SessionScreen() {
-  const [session, setSession] = useState(initialSession);
+  const { team, diagnosticScores, saveTrainingSession } = useAuth();
+  // Le diagnostic et l'équipe déjà enregistrés (s'ils existent) sont résolus avant que cet écran
+  // ne soit atteignable -- voir AuthContext.login -- donc un état paresseux suffit, comme pour le
+  // diagnostic dans diagnostic.tsx.
+  const [session, setSession] = useState(() => {
+    const plan = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores));
+    return generateTrainingSession(plan.weeks[0], team?.ageGroup ?? demoTeam.ageGroup, team?.playerCount ?? demoTeam.playerCount);
+  });
   const [validationStatus, setValidationStatus] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const duration = getSessionDuration(session);
   const canValidate = canValidateSession(session);
 
   function editSession(nextSession: typeof session) {
     setSession(nextSession);
     setValidationStatus("");
+    setSaveError("");
+  }
+
+  async function validateSession() {
+    setSaveError("");
+    setSaving(true);
+    const result = await saveTrainingSession(session);
+    setSaving(false);
+    if (!result.ok) {
+      setSaveError(result.error);
+      return;
+    }
+    setValidationStatus("Séance prête");
   }
 
   return (
@@ -118,13 +143,14 @@ export default function SessionScreen() {
         );})}
 
         {!canValidate && <Text style={styles.warning}>La séance doit durer entre 60 et 90 minutes.</Text>}
+        {saveError ? <Text style={styles.warning}>{saveError}</Text> : null}
         <TouchableOpacity
           accessibilityLabel="Valider cette séance"
-          disabled={!canValidate}
-          onPress={() => setValidationStatus("Séance prête")}
-          style={[styles.validate, !canValidate && styles.validateDisabled]}
+          disabled={!canValidate || saving}
+          onPress={validateSession}
+          style={[styles.validate, (!canValidate || saving) && styles.validateDisabled]}
         >
-          <Text style={styles.validateText}>Valider cette séance →</Text>
+          <Text style={styles.validateText}>{saving ? "Enregistrement…" : "Valider cette séance →"}</Text>
         </TouchableOpacity>
         <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.status}>{validationStatus}</Text>
         {validationStatus && (

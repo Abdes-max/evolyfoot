@@ -48,6 +48,22 @@ test("le plan organise la progression sur quatre semaines", async ({ page }) => 
 });
 
 test("le coach personnalise, valide puis observe sa séance", async ({ page }) => {
+  // La persistance réelle (session + PostgreSQL) est couverte par les tests d'intégration de
+  // packages/database et apps/web/src/server ; ce parcours E2E simule un éducateur déjà connecté
+  // pour vérifier le câblage client de la validation de séance et d'observation sans dépendre
+  // d'une base de données.
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({ json: { educator: { id: "e2e-educator", email: "coach@example.test", displayName: "Coach E2E" } } }),
+  );
+  await page.route("**/api/team", (route) => route.fulfill({ json: { profile: null } }));
+  await page.route("**/api/diagnostic", (route) => route.fulfill({ json: { scores: null } }));
+  await page.route("**/api/sessions", (route) =>
+    route.fulfill({ status: 201, json: { session: JSON.parse(route.request().postData() ?? "{}") } }),
+  );
+  await page.route("**/api/observations", (route) =>
+    route.fulfill({ status: 201, json: { report: JSON.parse(route.request().postData() ?? "{}") } }),
+  );
+
   await page.goto("/plan");
   await page.getByRole("link", { name: /préparer la première séance/i }).click();
   await expect(page).toHaveURL(/\/session$/);

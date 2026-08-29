@@ -1,11 +1,36 @@
-import type { AgeGroup as DomainAgeGroup, TeamProfile, TrainingDay as DomainTrainingDay } from "@evolyfoot/domain";
-import { AgeGroup as PrismaAgeGroup, TrainingDay as PrismaTrainingDay } from "./generated/prisma/client";
-import type { Diagnostic, Educator, Session, Team } from "./generated/prisma/client";
+import type {
+  AgeGroup as DomainAgeGroup,
+  DevelopmentTheme as DomainDevelopmentTheme,
+  ObservationEventType as DomainObservationEventType,
+  ObservationReportRating,
+  ObservationReportSummary,
+  PlayerReference,
+  PlayerSignal,
+  TeamProfile,
+  TrainingDay as DomainTrainingDay,
+} from "@evolyfoot/domain";
+import {
+  AgeGroup as PrismaAgeGroup,
+  DevelopmentTheme as PrismaDevelopmentTheme,
+  ObservationEventType as PrismaObservationEventType,
+  TrainingDay as PrismaTrainingDay,
+} from "./generated/prisma/client";
+import type {
+  Diagnostic,
+  Educator,
+  ObservationRecord as PrismaObservationRecord,
+  Session,
+  Team,
+  TrainingSessionRecord as PrismaTrainingSessionRecord,
+} from "./generated/prisma/client";
 import type {
   EducatorAuthRecord,
   EducatorRecord,
   PersistedDiagnostic,
+  PersistedObservation,
   PersistedTeamProfile,
+  PersistedTrainingSession,
+  PersistedTrainingSessionBlock,
   SessionRecord,
 } from "./repositories";
 
@@ -77,6 +102,58 @@ export function fromPrismaTrainingDay(trainingDay: PrismaTrainingDay): DomainTra
   }
 }
 
+export function toPrismaDevelopmentTheme(theme: DomainDevelopmentTheme): PrismaDevelopmentTheme {
+  switch (theme) {
+    case "Conserver le ballon":
+      return PrismaDevelopmentTheme.KEEPING_BALL;
+    case "Progresser ensemble":
+      return PrismaDevelopmentTheme.PROGRESSING;
+    case "Finir les actions":
+      return PrismaDevelopmentTheme.FINISHING;
+    case "Récupérer rapidement":
+      return PrismaDevelopmentTheme.RECOVERING;
+    default:
+      return exhaustive(theme);
+  }
+}
+
+export function fromPrismaDevelopmentTheme(theme: PrismaDevelopmentTheme): DomainDevelopmentTheme {
+  switch (theme) {
+    case PrismaDevelopmentTheme.KEEPING_BALL:
+      return "Conserver le ballon";
+    case PrismaDevelopmentTheme.PROGRESSING:
+      return "Progresser ensemble";
+    case PrismaDevelopmentTheme.FINISHING:
+      return "Finir les actions";
+    case PrismaDevelopmentTheme.RECOVERING:
+      return "Récupérer rapidement";
+    default:
+      return exhaustive(theme);
+  }
+}
+
+export function toPrismaObservationEventType(eventType: DomainObservationEventType): PrismaObservationEventType {
+  switch (eventType) {
+    case "training":
+      return PrismaObservationEventType.training;
+    case "match":
+      return PrismaObservationEventType.match;
+    default:
+      return exhaustive(eventType);
+  }
+}
+
+export function fromPrismaObservationEventType(eventType: PrismaObservationEventType): DomainObservationEventType {
+  switch (eventType) {
+    case PrismaObservationEventType.training:
+      return "training";
+    case PrismaObservationEventType.match:
+      return "match";
+    default:
+      return exhaustive(eventType);
+  }
+}
+
 export function toEducatorRecord(educator: Educator): EducatorRecord {
   return Object.freeze({
     id: educator.id,
@@ -115,6 +192,39 @@ export function toPersistedDiagnostic(diagnostic: Diagnostic): PersistedDiagnost
     }),
     createdAt: diagnostic.createdAt,
     updatedAt: diagnostic.updatedAt,
+  });
+}
+
+export function toPersistedTrainingSession(record: PrismaTrainingSessionRecord): PersistedTrainingSession {
+  return Object.freeze({
+    id: record.id,
+    educatorId: record.educatorId,
+    title: record.title,
+    ageGroup: fromPrismaAgeGroup(record.ageGroup),
+    playerCount: record.playerCount,
+    theme: fromPrismaDevelopmentTheme(record.theme),
+    intention: record.intention,
+    // `blocks` est un Json Prisma : on fait confiance à sa forme puisque seul ce paquet
+    // l'écrit (voir TrainingSessionService.create, qui reconstruit et valide la séance avant
+    // d'appeler ce dépôt).
+    blocks: record.blocks as unknown as PersistedTrainingSessionBlock[],
+    createdAt: record.createdAt,
+  });
+}
+
+export function toPersistedObservation(record: PrismaObservationRecord): PersistedObservation {
+  return Object.freeze({
+    id: record.id,
+    educatorId: record.educatorId,
+    eventType: fromPrismaObservationEventType(record.eventType),
+    title: record.title,
+    dateLabel: record.dateLabel,
+    players: record.players as unknown as readonly PlayerReference[],
+    ratings: record.ratings as unknown as readonly ObservationReportRating[],
+    signals: record.signals as unknown as readonly PlayerSignal[],
+    ...(record.note !== null ? { note: record.note } : {}),
+    summary: record.summary as unknown as ObservationReportSummary,
+    createdAt: record.createdAt,
   });
 }
 

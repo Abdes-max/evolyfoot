@@ -1,16 +1,19 @@
 "use client";
 
 import {
+  buildDevelopmentPlan,
   canCompleteObservation,
   completeObservation,
   createObservationDraft,
   diagnosticCriteria,
   rateObservation,
   setObservationNote,
+  summarizeDiagnostic,
   suggestAdjustmentFromObservation,
   togglePlayerSignal,
   type AdjustmentSuggestion,
   type DevelopmentWeek,
+  type DiagnosticScores,
   type ObservationDraft,
   type ObservationEventType,
   type ObservationLevel,
@@ -18,14 +21,21 @@ import {
   type PlayerReference,
 } from "@evolyfoot/domain";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdjustmentCard } from "./adjustment-card";
 
+// Aucun modèle de joueur (roster) n'existe encore dans l'application — Team ne suit qu'un nombre
+// de joueurs. Ces joueurs restent donc de démonstration jusqu'à ce qu'une fonctionnalité dédiée
+// existe.
 const demoPlayers: ReadonlyArray<PlayerReference> = [
   { id: "lina-dupont", name: "Lina" },
   { id: "noah-martin", name: "Noah" },
   { id: "sami-bernard", name: "Sami" },
 ];
+
+// Diagnostic de démonstration, utilisé tant qu'aucun diagnostic réel n'est disponible, pour
+// dériver la semaine en cours de la même façon que /plan et /session.
+const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
 
 const eventOptions: ReadonlyArray<{ type: ObservationEventType; label: string }> = [
   { type: "training", label: "Après une séance" },
@@ -44,13 +54,7 @@ const levelText: Record<ObservationLevel, string> = {
   achieved: "acquise aujourd’hui",
 };
 
-const currentWeek: DevelopmentWeek = {
-  week: 2,
-  phase: "Stabiliser",
-  theme: "Progresser ensemble",
-  intention: "Répéter le comportement dans des situations variées.",
-  observable: "Le comportement apparaît sans rappel dans 1 action sur 2.",
-};
+const demoWeek: DevelopmentWeek = buildDevelopmentPlan(summarizeDiagnostic(demoScores)).weeks[0];
 
 function eventTitle(type: ObservationEventType) {
   return type === "match" ? "Observation de match" : "Observation de séance";
@@ -60,6 +64,8 @@ function createDraft(type: ObservationEventType) {
   return createObservationDraft(type, eventTitle(type), demoPlayers);
 }
 
+type SaveState = "idle" | "pending" | "success" | "error" | "auth-required";
+
 interface ObservationFormProps {
   initialEventType: ObservationEventType;
 }
@@ -68,20 +74,73 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
   const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType));
   const [report, setReport] = useState<ObservationReport>();
   const [suggestion, setSuggestion] = useState<AdjustmentSuggestion>();
+  const [currentWeek, setCurrentWeek] = useState<DevelopmentWeek>(demoWeek);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const complete = canCompleteObservation(draft);
   const remaining = diagnosticCriteria.length - draft.ratings.length;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const sessionResponse = await fetch("/api/auth/session");
+        const sessionBody = await sessionResponse.json().catch(() => ({ educator: null }));
+        if (cancelled) {
+          return;
+        }
+        const isAuthenticated = Boolean(sessionBody.educator);
+        setAuthenticated(isAuthenticated);
+
+        if (isAuthenticated) {
+          const diagnosticResponse = await fetch("/api/diagnostic");
+          const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
+          if (!cancelled && diagnosticBody.scores) {
+            setCurrentWeek(buildDevelopmentPlan(summarizeDiagnostic(diagnosticBody.scores)).weeks[0]);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setAuthenticated(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function editDraft(nextDraft: ObservationDraft) {
     setDraft(nextDraft);
     setReport(undefined);
     setSuggestion(undefined);
+    setSaveState("idle");
   }
 
-  function submitObservation() {
+  async function submitObservation() {
     if (!complete) return;
     const nextReport = completeObservation(draft);
     setReport(nextReport);
     setSuggestion(suggestAdjustmentFromObservation(nextReport, currentWeek));
+
+    if (!authenticated) {
+      setSaveState("auth-required");
+      return;
+    }
+
+    setSaveState("pending");
+    try {
+      const response = await fetch("/api/observations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(draft),
+      });
+      setSaveState(response.ok ? "success" : "error");
+    } catch {
+      setSaveState("error");
+    }
   }
 
   function selectEventType(eventType: ObservationEventType) {
@@ -142,7 +201,10 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
         {!complete && <p>{`${remaining} comportement${remaining > 1 ? "s" : ""} reste${remaining > 1 ? "nt" : ""} à renseigner.`}</p>}
       </div>
 
-      {report && <section aria-live="polite" className="observation-result" role="status"><span className="eyebrow">SYNTHÈSE EVOLY</span><h3>{`Tendance ${levelText[report.summary.trend]}`}</h3><dl><div><dt>Point fort</dt><dd>{report.summary.strongest.label}</dd></div><div><dt>Priorité à renforcer</dt><dd>{report.summary.weakest.label}</dd></div><div><dt>Joueurs signalés</dt><dd>{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</dd></div></dl></section>}
+      {report && <section aria-live="polite" className="observation-result" role="status"><span className="eyebrow">SYNTHÈSE EVOLY</span><h3>{`Tendance ${levelText[report.summary.trend]}`}</h3><dl><div><dt>Point fort</dt><dd>{report.summary.strongest.label}</dd></div><div><dt>Priorité à renforcer</dt><dd>{report.summary.weakest.label}</dd></div><div><dt>Joueurs signalés</dt><dd>{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</dd></div></dl>
+        {saveState === "auth-required" && <p className="field-error">Connecte-toi pour enregistrer cette observation. <Link href="/connexion">Se connecter →</Link></p>}
+        {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
+      </section>}
       {suggestion && <AdjustmentCard suggestion={suggestion} />}
       {report && <Link className="observation-exit back-link" href="/">Retour au tableau de bord</Link>}
     </section>

@@ -14,7 +14,9 @@ import { useState } from "react";
 import { TacticalDiagramView } from "../tactical-diagram";
 
 interface SessionBuilderProps {
-  initialSession: TrainingSession;
+  authenticated: boolean;
+  onChange: (session: TrainingSession) => void;
+  session: TrainingSession;
 }
 
 const kindLabels = {
@@ -24,15 +26,55 @@ const kindLabels = {
   game: "Jeu",
 } as const;
 
-export function SessionBuilder({ initialSession }: SessionBuilderProps) {
-  const [session, setSession] = useState(initialSession);
+type SaveState = "idle" | "pending" | "success" | "error" | "auth-required";
+
+// Composant contrôlé : `session` vient du parent (qui charge le profil réel au montage), pour ne
+// jamais figer une copie locale figée sur la séance de démonstration initiale.
+export function SessionBuilder({ authenticated, onChange, session }: SessionBuilderProps) {
   const [validationStatus, setValidationStatus] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const duration = getSessionDuration(session);
   const isValid = canValidateSession(session);
 
   function editSession(nextSession: TrainingSession) {
-    setSession(nextSession);
+    onChange(nextSession);
     setValidationStatus("");
+    setSaveState("idle");
+  }
+
+  async function validateSession() {
+    if (!authenticated) {
+      setSaveState("auth-required");
+      return;
+    }
+
+    setSaveState("pending");
+    try {
+      const response = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          title: session.title,
+          ageGroup: session.ageGroup,
+          playerCount: session.playerCount,
+          theme: session.theme,
+          intention: session.intention,
+          blocks: session.blocks.map((block) => ({
+            id: block.id,
+            activityId: block.activity.id,
+            durationMinutes: block.durationMinutes,
+          })),
+        }),
+      });
+      if (!response.ok) {
+        setSaveState("error");
+        return;
+      }
+      setSaveState("success");
+      setValidationStatus("Séance prête");
+    } catch {
+      setSaveState("error");
+    }
   }
 
   return (
@@ -90,8 +132,12 @@ export function SessionBuilder({ initialSession }: SessionBuilderProps) {
 
       {!isValid && <p className="session-validation-error" role="alert">La séance doit durer entre 60 et 90 minutes.</p>}
       <div className="session-validation">
-        <button className="continue-button" disabled={!isValid} onClick={() => setValidationStatus("Séance prête")} type="button">Valider cette séance <span aria-hidden="true">→</span></button>
+        <button className="continue-button" disabled={!isValid || saveState === "pending"} onClick={validateSession} type="button">Valider cette séance <span aria-hidden="true">→</span></button>
         <p aria-live="polite" className="session-validation-status" role="status">{validationStatus}</p>
+        {saveState === "auth-required" && (
+          <p className="field-error">Connecte-toi pour enregistrer cette séance. <Link href="/connexion">Se connecter →</Link></p>
+        )}
+        {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
         {validationStatus && <Link className="observation-session-link" href="/observation?type=training">Observer cette séance →</Link>}
         {validationStatus && <Link className="back-link" href="/">Retour au tableau de bord</Link>}
       </div>
