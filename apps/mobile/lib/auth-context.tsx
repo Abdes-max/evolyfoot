@@ -1,4 +1,4 @@
-import type { DiagnosticScores, TeamProfile } from "@evolyfoot/domain";
+import type { DiagnosticScores, ObservationDraft, TeamProfile, TrainingSession } from "@evolyfoot/domain";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "./api";
 
@@ -19,6 +19,8 @@ export interface AuthContextValue {
   logout(): Promise<void>;
   saveTeam(profile: TeamProfile): Promise<AuthResult>;
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
+  saveTrainingSession(session: TrainingSession): Promise<AuthResult>;
+  saveObservation(draft: ObservationDraft): Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -143,9 +145,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [sessionToken],
   );
 
+  const saveTrainingSession = useCallback(
+    async (session: TrainingSession): Promise<AuthResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour enregistrer cette séance." };
+      }
+      const response = await apiFetch("/api/sessions", {
+        method: "POST",
+        sessionToken,
+        body: JSON.stringify({
+          title: session.title,
+          ageGroup: session.ageGroup,
+          playerCount: session.playerCount,
+          theme: session.theme,
+          intention: session.intention,
+          blocks: session.blocks.map((block) => ({
+            id: block.id,
+            activityId: block.activity.id,
+            durationMinutes: block.durationMinutes,
+          })),
+        }),
+      });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      return { ok: true };
+    },
+    [sessionToken],
+  );
+
+  const saveObservation = useCallback(
+    async (draft: ObservationDraft): Promise<AuthResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour enregistrer cette observation." };
+      }
+      const response = await apiFetch("/api/observations", {
+        method: "POST",
+        sessionToken,
+        body: JSON.stringify(draft),
+      });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      return { ok: true };
+    },
+    [sessionToken],
+  );
+
   const value = useMemo<AuthContextValue>(
-    () => ({ educator, team, diagnosticScores, login, register, logout, saveTeam, saveDiagnostic }),
-    [educator, team, diagnosticScores, login, register, logout, saveTeam, saveDiagnostic],
+    () => ({
+      educator,
+      team,
+      diagnosticScores,
+      login,
+      register,
+      logout,
+      saveTeam,
+      saveDiagnostic,
+      saveTrainingSession,
+      saveObservation,
+    }),
+    [
+      educator,
+      team,
+      diagnosticScores,
+      login,
+      register,
+      logout,
+      saveTeam,
+      saveDiagnostic,
+      saveTrainingSession,
+      saveObservation,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

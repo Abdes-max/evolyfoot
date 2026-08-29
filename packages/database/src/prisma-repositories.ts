@@ -5,8 +5,12 @@ import {
   toEducatorAuthRecord,
   toEducatorRecord,
   toPersistedDiagnostic,
+  toPersistedObservation,
   toPersistedTeamProfile,
+  toPersistedTrainingSession,
   toPrismaAgeGroup,
+  toPrismaDevelopmentTheme,
+  toPrismaObservationEventType,
   toPrismaTrainingDay,
   toSessionRecord,
 } from "./mappers";
@@ -16,13 +20,18 @@ import type {
   EducatorAuthRecord,
   EducatorRecord,
   EducatorRepository,
+  ObservationRepository,
   PersistedDiagnostic,
+  PersistedObservation,
   PersistedTeamProfile,
+  PersistedTrainingSession,
+  PersistedTrainingSessionBlock,
   SessionRecord,
   SessionRepository,
   TeamRepository,
+  TrainingSessionRepository,
 } from "./repositories";
-import type { DiagnosticScores, TeamProfile } from "@evolyfoot/domain";
+import type { AgeGroup, DevelopmentTheme, DiagnosticScores, ObservationReport, TeamProfile } from "@evolyfoot/domain";
 
 function translateEducatorWriteError(error: unknown): never {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -188,5 +197,74 @@ export class PrismaTeamRepository implements TeamRepository {
   async findForEducator(educatorId: string): Promise<PersistedTeamProfile | null> {
     const team = await this.prisma.team.findUnique({ where: { educatorId } });
     return team === null ? null : toPersistedTeamProfile(team);
+  }
+}
+
+// `create` ne peut échouer côté contrainte que sur la clé étrangère (P2003) : ni conflit
+// d'unicité (aucune colonne unique hors la clé primaire générée) ni "non trouvé" (pas
+// d'update/delete) ne s'appliquent à un simple ajout à l'historique.
+function translateHistoryCreateError(error: unknown): never {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+    throw new EducatorNotFoundError();
+  }
+
+  throw error;
+}
+
+export class PrismaTrainingSessionRepository implements TrainingSessionRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(
+    educatorId: string,
+    input: {
+      title: string;
+      ageGroup: AgeGroup;
+      playerCount: number;
+      theme: DevelopmentTheme;
+      intention: string;
+      blocks: PersistedTrainingSessionBlock[];
+    },
+  ): Promise<PersistedTrainingSession> {
+    try {
+      const record = await this.prisma.trainingSessionRecord.create({
+        data: {
+          educatorId,
+          title: input.title,
+          ageGroup: toPrismaAgeGroup(input.ageGroup),
+          playerCount: input.playerCount,
+          theme: toPrismaDevelopmentTheme(input.theme),
+          intention: input.intention,
+          blocks: input.blocks as unknown as Prisma.InputJsonValue,
+        },
+      });
+      return toPersistedTrainingSession(record);
+    } catch (error) {
+      return translateHistoryCreateError(error);
+    }
+  }
+}
+
+export class PrismaObservationRepository implements ObservationRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(educatorId: string, report: ObservationReport): Promise<PersistedObservation> {
+    try {
+      const record = await this.prisma.observationRecord.create({
+        data: {
+          educatorId,
+          eventType: toPrismaObservationEventType(report.eventType),
+          title: report.title,
+          dateLabel: report.dateLabel,
+          players: report.players as unknown as Prisma.InputJsonValue,
+          ratings: report.ratings as unknown as Prisma.InputJsonValue,
+          signals: report.signals as unknown as Prisma.InputJsonValue,
+          note: report.note ?? null,
+          summary: report.summary as unknown as Prisma.InputJsonValue,
+        },
+      });
+      return toPersistedObservation(record);
+    } catch (error) {
+      return translateHistoryCreateError(error);
+    }
   }
 }
