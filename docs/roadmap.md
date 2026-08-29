@@ -1,6 +1,6 @@
 # Plan et avancement
 
-Dernière mise à jour : 28 août 2026 (terrain de déploiement Docker/EAS préparé).
+Dernière mise à jour : 29 août 2026 (diagnostic et plan persistés).
 
 ## Phase 0 — Fondation
 
@@ -46,11 +46,12 @@ Dernière mise à jour : 28 août 2026 (terrain de déploiement Docker/EAS prép
 - [x] Authentification éducateur — inscription et connexion par e-mail et mot de passe, sessions révocables stockées côté serveur (`Session`), mots de passe hachés avec `scrypt`, routes `/api/auth/{register,login,logout,session}` et pages `/inscription` et `/connexion`.
 - [x] Routes d'équipe autorisées par la session — `GET`/`PUT /api/team` résolvent l'éducateur depuis le cookie de session ; aucun `educatorId` fourni par le client n'est jamais utilisé. Le tableau de bord (bloc équipe/éducateur) et l'onboarding lisent et écrivent ces données réelles pour un éducateur connecté ; un visiteur anonyme continue de voir le contenu de démonstration et une invitation à se connecter plutôt qu'un mur de connexion imposé.
 - [x] Données d'équipe synchronisées web/mobile — l'application mobile a désormais son propre inscription/connexion (`/inscription`, `/connexion`), un onboarding complet (nom, catégorie, effectif, jours d'entraînement) et un tableau de bord affichant l'éducateur et l'équipe réels, via les mêmes routes `/api/auth/*` et `/api/team` que le web. Mobile n'ayant pas de pot de cookies, les mêmes routes acceptent aussi un jeton porteur (`Authorization: Bearer`) renvoyé dans le corps de la réponse uniquement pour un client identifié comme mobile. Vérifié de bout en bout sur émulateur Android contre le serveur web et PostgreSQL réels (inscription → équipe → déconnexion/reconnexion → tableau de bord synchronisé). Limite connue : la session mobile vit uniquement en mémoire (pas de stockage persistant) et se perd au redémarrage complet de l'app — voir docs/architecture.md.
+- [x] Diagnostic et plan de progression persistés — `GET`/`PUT /api/diagnostic` (web et mobile), un diagnostic par éducateur (mêmes garanties de session que l'équipe). Le plan de développement reste calculé à la volée depuis le diagnostic enregistré (`buildDevelopmentPlan`, fonction pure, rien de dupliqué en base) plutôt que d'introduire une table séparée. Corrige au passage un vrai bug préexistant : `/plan` recalculait toujours le même cycle de démonstration à partir d'un diagnostic codé en dur, sans lien avec les réponses saisies sur `/diagnostic` — c'est maintenant le diagnostic réel de l'éducateur connecté qui alimente le plan, avec repli sur la démonstration pour un visiteur anonyme (web) ou un éducateur n'ayant pas encore fait le sien (mobile).
 
 ## Phase 3 — Bêta et distribution
 
-- [x] Terrain de déploiement côté code : `Dockerfile` (cibles `web`/`migrator`, testées de bout en bout contre PostgreSQL réel), `docker-compose.yml` + `Caddyfile` (TLS automatique), `.github/workflows/cd.yml` (build/publish GHCR + déploiement SSH, déclenchement manuel en attendant les secrets), `apps/mobile/eas.json` (profils development/preview/production). Voir docs/delivery.md pour le déroulé pas-à-pas — rien n'est encore déployé, ceci prépare le terrain.
-- [ ] Préproduction VPS — attend un VPS provisionné et les secrets GitHub (`docs/delivery.md`).
+- [x] Terrain de déploiement côté code : `Dockerfile` (cibles `web`/`migrator`, testées de bout en bout contre PostgreSQL réel), `docker-compose.yml` (construction sur place via SSH, pas de registre), `.github/workflows/cd.yml`, `apps/mobile/eas.json` (profils development/preview/production). Voir docs/delivery.md pour le déroulé pas-à-pas.
+- [ ] Préproduction VPS — VPS Hostinger réel identifié (partagé avec d'autres projets, capacité largement suffisante) et domaines `evolyfoot.com`/`.fr`/`.net`/`.org` déjà configurés (DNS + redirections). Reste : bootstrap du VPS (clone initial, réseau Docker partagé) et ajout du bloc Caddy côté du projet qui héberge déjà le Caddy partagé — voir docs/delivery.md.
 - [ ] EAS Build preview — attend un compte Expo/EAS et des icônes/splash (actuellement absents d'`app.json`).
 - [ ] TestFlight et piste interne Google Play — attend les comptes Apple Developer et Google Play Console.
 - [ ] Mesure des indicateurs MVP.

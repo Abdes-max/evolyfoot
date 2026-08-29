@@ -1,4 +1,4 @@
-import type { TeamProfile } from "@evolyfoot/domain";
+import type { DiagnosticScores, TeamProfile } from "@evolyfoot/domain";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "./api";
 
@@ -13,10 +13,12 @@ export type AuthResult = { ok: true } | { ok: false; error: string };
 export interface AuthContextValue {
   educator: Educator | null;
   team: TeamProfile | null;
+  diagnosticScores: DiagnosticScores | null;
   login(email: string, password: string): Promise<AuthResult>;
   register(email: string, password: string, displayName: string): Promise<AuthResult>;
   logout(): Promise<void>;
   saveTeam(profile: TeamProfile): Promise<AuthResult>;
+  saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -28,11 +30,10 @@ async function readErrorMessage(response: Response): Promise<string> {
   return typeof body.error === "string" ? body.error : GENERIC_ERROR;
 }
 
-// Pas de stockage persistant sur mobile pour l'instant (voir docs/architecture.md) : la session
-// vit uniquement en mémoire tant que l'application tourne et se perd à son redémarrage complet.
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [educator, setEducator] = useState<Educator | null>(null);
   const [team, setTeam] = useState<TeamProfile | null>(null);
+  const [diagnosticScores, setDiagnosticScores] = useState<DiagnosticScores | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   const fetchTeam = useCallback(async (token: string) => {
@@ -42,6 +43,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTeam(response.ok ? (body.profile ?? null) : null);
     } catch {
       setTeam(null);
+    }
+  }, []);
+
+  const fetchDiagnostic = useCallback(async (token: string) => {
+    try {
+      const response = await apiFetch("/api/diagnostic", { sessionToken: token });
+      const body = await response.json().catch(() => ({ scores: null }));
+      setDiagnosticScores(response.ok ? (body.scores ?? null) : null);
+    } catch {
+      setDiagnosticScores(null);
     }
   }, []);
 
@@ -57,10 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const body = await response.json();
       setEducator(body.educator);
       setSessionToken(body.sessionToken);
-      await fetchTeam(body.sessionToken);
+      await Promise.all([fetchTeam(body.sessionToken), fetchDiagnostic(body.sessionToken)]);
       return { ok: true };
     },
-    [fetchTeam],
+    [fetchTeam, fetchDiagnostic],
   );
 
   const register = useCallback(
@@ -76,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setEducator(body.educator);
       setSessionToken(body.sessionToken);
       setTeam(null);
+      setDiagnosticScores(null);
       return { ok: true };
     },
     [],
@@ -87,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setEducator(null);
     setTeam(null);
+    setDiagnosticScores(null);
     setSessionToken(null);
   }, [sessionToken]);
 
@@ -110,9 +123,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [sessionToken],
   );
 
+  const saveDiagnostic = useCallback(
+    async (scores: DiagnosticScores): Promise<AuthResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour enregistrer ce diagnostic." };
+      }
+      const response = await apiFetch("/api/diagnostic", {
+        method: "PUT",
+        sessionToken,
+        body: JSON.stringify(scores),
+      });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      setDiagnosticScores(body.scores);
+      return { ok: true };
+    },
+    [sessionToken],
+  );
+
   const value = useMemo<AuthContextValue>(
-    () => ({ educator, team, login, register, logout, saveTeam }),
-    [educator, team, login, register, logout, saveTeam],
+    () => ({ educator, team, diagnosticScores, login, register, logout, saveTeam, saveDiagnostic }),
+    [educator, team, diagnosticScores, login, register, logout, saveTeam, saveDiagnostic],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -121,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth doit être utilisé à l’intérieur d’un AuthProvider.");
+    throw new Error("useAuth doit être utilisé à l'intérieur d'un AuthProvider.");
   }
   return context;
 }

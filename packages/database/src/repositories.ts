@@ -1,4 +1,4 @@
-import type { TeamProfile } from "@evolyfoot/domain";
+import type { DiagnosticScores, TeamProfile } from "@evolyfoot/domain";
 
 export interface EducatorRecord {
   id: string;
@@ -30,6 +30,19 @@ export interface EducatorRepository {
 export interface TeamRepository {
   upsertForEducator(educatorId: string, profile: TeamProfile): Promise<PersistedTeamProfile>;
   findForEducator(educatorId: string): Promise<PersistedTeamProfile | null>;
+}
+
+export interface PersistedDiagnostic {
+  id: string;
+  educatorId: string;
+  scores: DiagnosticScores;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DiagnosticRepository {
+  upsertForEducator(educatorId: string, scores: DiagnosticScores): Promise<PersistedDiagnostic>;
+  findForEducator(educatorId: string): Promise<PersistedDiagnostic | null>;
 }
 
 export interface SessionRecord {

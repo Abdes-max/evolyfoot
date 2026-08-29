@@ -35,6 +35,8 @@ Le client Prisma est créé à partir de `DATABASE_URL` au point d’exécution 
 
 `GET`/`PUT /api/team` (`apps/web/src/server/team.ts`) résolvent l’éducateur depuis le cookie de session (via `AuthService.getEducatorForSession`) avant tout accès à `TeamProfileService` : la route ignore tout `educatorId` présent dans le corps de la requête et n’en accepte aucun en paramètre. Le tableau de bord (`SidebarIdentity`) et le formulaire d’onboarding sont des composants client qui interrogent `/api/auth/session` puis `/api/team` : un éducateur connecté voit et modifie son équipe réelle, tandis qu’un visiteur anonyme voit le contenu de démonstration accompagné d’une invitation à se connecter. Ce choix — un dégradé plutôt qu’un mur de connexion strict imposé par un middleware — évite de bloquer l’exploration du prototype tant que le reste du tableau de bord (priorités, séance suivante, ajustements) n’a pas encore de persistance propre.
 
+`GET`/`PUT /api/diagnostic` suivent exactement le même schéma que `/api/team` (`apps/web/src/server/diagnostic.ts`, `DiagnosticService`, un diagnostic par éducateur). Le plan de développement n’est **pas** persisté séparément : `buildDevelopmentPlan` est une fonction pure du diagnostic, donc `/plan` (web : `plan-view.tsx` ; mobile : `app/plan.tsx`) le recalcule à chaque affichage à partir du diagnostic enregistré, lu depuis `/api/diagnostic` (web) ou le contexte d’authentification déjà chargé au login (mobile). Ceci corrige un bug préexistant où `/plan` ignorait complètement les réponses saisies sur `/diagnostic` et recalculait toujours le même cycle à partir de scores codés en dur.
+
 Le constructeur de séance reste pour l’instant branché sur des données de démonstration.
 
 ## Authentification et données mobiles

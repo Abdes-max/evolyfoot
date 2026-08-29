@@ -23,14 +23,15 @@ enum TrainingDay {
 }
 
 model Educator {
-  id           String    @id @default(uuid()) @db.Uuid
-  email        String    @unique
-  displayName  String    @map("display_name")
-  passwordHash String    @map("password_hash")
+  id           String      @id @default(uuid()) @db.Uuid
+  email        String      @unique
+  displayName  String      @map("display_name")
+  passwordHash String      @map("password_hash")
   team         Team?
+  diagnostic   Diagnostic?
   sessions     Session[]
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
   @@map("educators")
 }
@@ -45,6 +46,20 @@ model Session {
 
   @@index([educatorId])
   @@map("sessions")
+}
+
+model Diagnostic {
+  id                String   @id @default(uuid()) @db.Uuid
+  educatorId        String   @unique @db.Uuid @map("educator_id")
+  educator          Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  availability      Int
+  scanning          Int
+  progression       Int
+  reactionAfterLoss Int      @map("reaction_after_loss")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("diagnostics")
 }
 
 model Team {
