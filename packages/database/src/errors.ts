@@ -12,6 +12,13 @@ export class TeamNotFoundError extends Error {
   }
 }
 
+export class DiagnosticNotFoundError extends Error {
+  constructor() {
+    super("Diagnostic introuvable.");
+    this.name = "DiagnosticNotFoundError";
+  }
+}
+
 export class DuplicateEducatorEmailError extends Error {
   constructor() {
     super("Cette adresse e-mail est déjà utilisée.");

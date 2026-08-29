@@ -1,9 +1,10 @@
 import { Prisma } from "./generated/prisma/client";
 import type { PrismaClient } from "./generated/prisma/client";
-import { DuplicateEducatorEmailError, EducatorNotFoundError, TeamNotFoundError } from "./errors";
+import { DiagnosticNotFoundError, DuplicateEducatorEmailError, EducatorNotFoundError, TeamNotFoundError } from "./errors";
 import {
   toEducatorAuthRecord,
   toEducatorRecord,
+  toPersistedDiagnostic,
   toPersistedTeamProfile,
   toPrismaAgeGroup,
   toPrismaTrainingDay,
@@ -11,15 +12,17 @@ import {
 } from "./mappers";
 import { normalizeEducatorEmail } from "./email";
 import type {
+  DiagnosticRepository,
   EducatorAuthRecord,
   EducatorRecord,
   EducatorRepository,
+  PersistedDiagnostic,
   PersistedTeamProfile,
   SessionRecord,
   SessionRepository,
   TeamRepository,
 } from "./repositories";
-import type { TeamProfile } from "@evolyfoot/domain";
+import type { DiagnosticScores, TeamProfile } from "@evolyfoot/domain";
 
 function translateEducatorWriteError(error: unknown): never {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -43,6 +46,21 @@ function translateTeamWriteError(error: unknown): never {
         throw new EducatorNotFoundError();
       case "P2025":
         throw new TeamNotFoundError();
+      default:
+        throw error;
+    }
+  }
+
+  throw error;
+}
+
+function translateDiagnosticWriteError(error: unknown): never {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    switch (error.code) {
+      case "P2003":
+        throw new EducatorNotFoundError();
+      case "P2025":
+        throw new DiagnosticNotFoundError();
       default:
         throw error;
     }
@@ -113,6 +131,28 @@ export class PrismaSessionRepository implements SessionRepository {
 
   async deleteByTokenHash(tokenHash: string): Promise<void> {
     await this.prisma.session.deleteMany({ where: { tokenHash } });
+  }
+}
+
+export class PrismaDiagnosticRepository implements DiagnosticRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async upsertForEducator(educatorId: string, scores: DiagnosticScores): Promise<PersistedDiagnostic> {
+    try {
+      const diagnostic = await this.prisma.diagnostic.upsert({
+        where: { educatorId },
+        create: { educatorId, ...scores },
+        update: { ...scores },
+      });
+      return toPersistedDiagnostic(diagnostic);
+    } catch (error) {
+      return translateDiagnosticWriteError(error);
+    }
+  }
+
+  async findForEducator(educatorId: string): Promise<PersistedDiagnostic | null> {
+    const diagnostic = await this.prisma.diagnostic.findUnique({ where: { educatorId } });
+    return diagnostic === null ? null : toPersistedDiagnostic(diagnostic);
   }
 }
 

@@ -1,7 +1,13 @@
 import type { AgeGroup as DomainAgeGroup, TeamProfile, TrainingDay as DomainTrainingDay } from "@evolyfoot/domain";
 import { AgeGroup as PrismaAgeGroup, TrainingDay as PrismaTrainingDay } from "./generated/prisma/client";
-import type { Educator, Session, Team } from "./generated/prisma/client";
-import type { EducatorAuthRecord, EducatorRecord, PersistedTeamProfile, SessionRecord } from "./repositories";
+import type { Diagnostic, Educator, Session, Team } from "./generated/prisma/client";
+import type {
+  EducatorAuthRecord,
+  EducatorRecord,
+  PersistedDiagnostic,
+  PersistedTeamProfile,
+  SessionRecord,
+} from "./repositories";
 
 function exhaustive(value: never): never {
   throw new Error(`Valeur d’énumération inconnue : ${String(value)}`);
@@ -94,6 +100,21 @@ export function toSessionRecord(session: Session): SessionRecord {
     educatorId: session.educatorId,
     expiresAt: session.expiresAt,
     createdAt: session.createdAt,
+  });
+}
+
+export function toPersistedDiagnostic(diagnostic: Diagnostic): PersistedDiagnostic {
+  return Object.freeze({
+    id: diagnostic.id,
+    educatorId: diagnostic.educatorId,
+    scores: Object.freeze({
+      availability: diagnostic.availability,
+      scanning: diagnostic.scanning,
+      progression: diagnostic.progression,
+      reactionAfterLoss: diagnostic.reactionAfterLoss,
+    }),
+    createdAt: diagnostic.createdAt,
+    updatedAt: diagnostic.updatedAt,
   });
 }
 
