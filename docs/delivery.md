@@ -46,15 +46,62 @@ docker build --target web -t evolyfoot-web:local .
 docker build --target migrator -t evolyfoot-migrator:local .
 ```
 
-### Provisionnement VPS (une fois)
+### VPS et domaines réels
 
-1. Un VPS Linux (Debian/Ubuntu) avec au moins 1 Go de RAM, Docker Engine et le plugin `docker compose` installés.
-2. Un enregistrement DNS `A`/`AAAA` pointant le domaine choisi vers l'IP du VPS.
-3. Ouvrir les ports 80 et 443 (Caddy, dans `docker-compose.yml`, obtient et renouvelle automatiquement le certificat TLS Let's Encrypt pour ce domaine — aucune configuration manuelle de certificat).
-4. Créer un utilisateur de déploiement dédié (pas `root`), avec sa clé SSH ajoutée à `~/.ssh/authorized_keys` — c'est cette clé privée qui devient le secret GitHub `VPS_SSH_KEY`.
-5. Cloner le dépôt sur le VPS (`git clone` en lecture seule suffit ; le workflow CD ne fait que `git pull`-équivalent implicite via les images, il ne pousse pas de code — en pratique il suffit que `docker-compose.yml`, `Caddyfile` et `.env` soient présents au chemin choisi).
-6. Copier `.env.production.example` en `.env` à côté de `docker-compose.yml` sur le VPS, et le remplir (`IMAGE_REPO`, `POSTGRES_PASSWORD`, `DOMAIN`). `IMAGE_TAG` est géré ensuite par le workflow CD.
-7. `docker login ghcr.io` sur le VPS avec un jeton GitHub ayant le droit `read:packages`, pour pouvoir tirer les images (privées par défaut) publiées par la CI.
+EvolyFoot est déployé sur un VPS Hostinger **partagé avec d'autres projets** (arena-pulse/TournArena, Kelto Studio) — pas une instance dédiée. Un seul Caddy, déjà en place pour ces autres projets, tourne sur les ports 80/443 ; EvolyFoot ne peut donc pas avoir son propre service Caddy et vient s'ajouter à celui qui existe déjà, sans jamais toucher au dépôt ni aux conteneurs des autres projets.
+
+- VPS : `srv1882841.hstgr.cloud`, IPv4 `186.240.151.40`, IPv6 `2a02:4780:79:bdd3::1`, Ubuntu 24.04 avec Docker préinstallé, KVM 2 (2 vCPU / 8 Go RAM / 100 Go disque). Constaté à ~2,5 % CPU et ~1,3 Go de RAM utilisés par les autres projets — largement de la marge pour EvolyFoot, pas besoin d'un VPS séparé.
+- Domaines `evolyfoot.com`, `.fr`, `.net`, `.org` déjà achetés. `evolyfoot.com` est le site principal (DNS `A`/`AAAA` déjà pointés vers le VPS ci-dessus) ; `.fr`/`.net`/`.org` redirigent en 301 vers `https://evolyfoot.com` via la redirection de domaine Hostinger — déjà configuré, rien à faire côté VPS pour ces trois-là.
+
+### Caddy partagé — bloc à ajouter côté arena-pulse
+
+`docker-compose.yml` d'EvolyFoot rejoint un réseau Docker externe `edge` (créé lors du bootstrap ci-dessous) et expose son conteneur web sous le nom fixe `evolyfoot-web`. Le Caddy existant doit être branché sur ce même réseau `edge` et recevoir un bloc de site pour `evolyfoot.com`.
+
+**Ceci ne doit pas être fait en éditant le VPS à la main** (dérive entre le disque et le dépôt Git) : c'est un changement du dépôt **arena-pulse**, hors du périmètre d'EvolyFoot — à appliquer par qui gère ce dépôt, pas par ce dépôt-ci.
+
+Dans `infra/deployment/Caddyfile` d'arena-pulse, ajouter :
+
+```caddyfile
+evolyfoot.com {
+	encode gzip
+	reverse_proxy evolyfoot-web:3000
+}
+
+www.evolyfoot.com {
+	redir https://evolyfoot.com{uri} permanent
+}
+```
+
+Dans `infra/deployment/docker-compose.prod.yml` d'arena-pulse, ajouter le réseau externe au service `caddy` :
+
+```yaml
+  caddy:
+    # ... inchangé ...
+    networks:
+      - default
+      - edge
+
+networks:
+  edge:
+    external: true
+```
+
+Puis un `restart caddy` (pas `reload`, voir le commentaire de `deploy-prod.yml` d'arena-pulse sur pourquoi) pour que le nouveau bloc soit pris en compte.
+
+### Bootstrap initial sur le VPS (une fois)
+
+À exécuter directement sur le VPS (le workflow CD suppose que le dépôt y est déjà cloné) :
+
+```bash
+docker network create edge          # idempotent : ne rien faire si déjà créé côté arena-pulse
+mkdir -p /opt/evolyfoot
+cd /opt/evolyfoot
+git clone https://github.com/<owner>/evolyfoot.git .
+cp .env.production.example .env
+# éditer .env : POSTGRES_PASSWORD au minimum
+docker compose up -d --build
+curl -s http://127.0.0.1:3000/... # web n'est pas publié sur l'hôte -- vérifier via `docker compose logs web` plutôt
+```
 
 ### Secrets GitHub à configurer
 
@@ -62,19 +109,18 @@ Sur GitHub, créer un environnement `production` (Settings → Environments) —
 
 | Secret | Contenu |
 | --- | --- |
-| `VPS_HOST` | IP ou nom d'hôte du VPS |
-| `VPS_USER` | Utilisateur de déploiement (pas `root`) |
-| `VPS_SSH_KEY` | Clé privée SSH correspondant à la clé publique autorisée sur le VPS |
-| `VPS_DEPLOY_PATH` | Chemin absolu sur le VPS contenant `docker-compose.yml`, `Caddyfile` et `.env` |
-| `VPS_DOMAIN` | Le domaine configuré (pour la vérification de santé finale du workflow) |
-
-`GITHUB_TOKEN` (fourni automatiquement par GitHub Actions) suffit pour publier les images sur GHCR ; aucun secret supplémentaire n'est nécessaire pour cette partie.
+| `DEPLOY_HOST` | `186.240.151.40` |
+| `DEPLOY_USER` | Utilisateur de déploiement sur le VPS |
+| `DEPLOY_SSH_KEY` | Clé privée SSH correspondant à une clé publique autorisée sur le VPS |
+| `DEPLOY_PORT` | Port SSH (`22` par défaut, optionnel) |
+| `DEPLOY_PATH` | `/opt/evolyfoot` (ou le chemin choisi au bootstrap) |
+| `DEPLOY_DOMAIN` | `evolyfoot.com` (pour la vérification de santé finale du workflow) |
 
 ### Premier déploiement et déploiements suivants
 
-1. Configurer le VPS et les secrets ci-dessus.
-2. Lancer manuellement `.github/workflows/cd.yml` (onglet Actions → CD → Run workflow) — il construit et publie les images, puis se connecte en SSH pour exécuter les migrations et redémarrer les conteneurs.
-3. Vérifier `https://<domaine>/api/health/database` (la dernière étape du workflow le fait déjà automatiquement et échoue le déploiement sinon).
+1. Bootstrap fait (section ci-dessus), bloc Caddy ajouté côté arena-pulse, secrets configurés.
+2. Lancer manuellement `.github/workflows/cd.yml` (onglet Actions → CD → Run workflow) — il se connecte en SSH, fait `git pull` puis `docker compose up -d --build` (`migrate` s'exécute et quitte avant que `web` ne démarre, comme le service `migrate` d'arena-pulse).
+3. Vérifier `https://evolyfoot.com/api/health/database` (la dernière étape du workflow le fait déjà automatiquement et échoue le déploiement sinon).
 4. Une fois ce parcours validé manuellement une première fois, remplacer le déclencheur `workflow_dispatch` par `push: branches: [master]` dans `cd.yml` pour un déploiement continu — l'approbation de l'environnement GitHub `production` reste le garde-fou avant l'étape `deploy`.
 
 ### Sauvegardes et supervision
@@ -116,4 +162,4 @@ Le déploiement de la fondation de persistance suit cet ordre, sur une fenêtre 
 4. Démarrer l’application.
 5. Appeler `GET /api/health/database` depuis le réseau autorisé et vérifier la réponse saine.
 
-PostgreSQL ne doit pas exposer de port public : seul le port de l’application (via Caddy) est exposé, et l’application accède à la base via le réseau privé du VPS. Les mots de passe et `DATABASE_URL` de production restent dans le gestionnaire de secrets de l’environnement, jamais dans le dépôt ou les journaux.
+PostgreSQL ne doit pas exposer de port public : seul le Caddy partagé (voir plus haut) est exposé sur 80/443, et l’application y accède via le réseau privé du VPS. Les mots de passe et `DATABASE_URL` de production restent dans le gestionnaire de secrets de l’environnement, jamais dans le dépôt ou les journaux.

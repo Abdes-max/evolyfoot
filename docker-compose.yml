@@ -1,11 +1,12 @@
-# Déploiement VPS. Les images web/migrator sont construites par la CI (voir
-# .github/workflows/cd.yml) et publiées sur GHCR — ce fichier ne construit rien lui-même.
-# Variables attendues dans un fichier .env à côté de ce fichier (voir .env.production.example) :
-#   IMAGE_REPO, IMAGE_TAG, POSTGRES_PASSWORD, DOMAIN
+# Déploiement sur un VPS partagé avec d'autres projets (voir docs/delivery.md). Ce fichier ne
+# tire pas d'image depuis un registre : le workflow de déploiement (.github/workflows/cd.yml)
+# fait `git pull` puis `docker compose up -d --build` directement sur l'hôte, comme les autres
+# projets déjà déployés dessus.
 #
-# Test local sans registre : remplacer temporairement `image:` par `build: { context: ., target: web }`
-# (et `target: migrator` pour le service migrate), comme fait manuellement pendant le
-# développement de cette configuration (voir docs/delivery.md).
+# Pas de service Caddy ici : les ports 80/443 sont déjà occupés par le Caddy d'un autre projet
+# sur ce même VPS. `web` rejoint le réseau Docker externe partagé `edge` (créé une fois lors du
+# bootstrap, voir docs/delivery.md), sur lequel ce Caddy doit aussi être branché, pour pouvoir
+# lui faire un reverse_proxy par nom de conteneur (`evolyfoot-web`).
 
 services:
   postgres:
@@ -15,51 +16,55 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-evolyfoot}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?La variable POSTGRES_PASSWORD est obligatoire}
       POSTGRES_DB: ${POSTGRES_DB:-evolyfoot}
+    # Un seul point de montage sur /var/lib/postgresql (pas .../data) -- l'image Postgres 18+
+    # gère elle-même son sous-répertoire versionné en dessous ; monter directement .../data
+    # comme sur les images Postgres < 18 fait échouer le démarrage ("PostgreSQL data in
+    # /var/lib/postgresql/data (unused mount/volume)"), trouvé en testant cette configuration.
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-evolyfoot} -d ${POSTGRES_DB:-evolyfoot}"]
       interval: 5s
       timeout: 5s
       retries: 10
     # Aucun port publié : PostgreSQL n'est joignable que depuis les autres conteneurs de ce
-    # réseau Docker, jamais publiquement (voir docs/delivery.md).
+    # réseau Docker, jamais publiquement.
 
+  # S'exécute une fois à chaque `docker compose up -d --build` (web attend sa réussite via
+  # depends_on ci-dessous), puis quitte -- pas de restart: policy. Même schéma que le service
+  # `migrate` d'arena-pulse sur ce même VPS.
   migrate:
-    image: ${IMAGE_REPO:?La variable IMAGE_REPO est obligatoire}/migrator:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      target: migrator
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-evolyfoot}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evolyfoot}?schema=public
     depends_on:
       postgres:
         condition: service_healthy
-    restart: "no"
 
   web:
-    image: ${IMAGE_REPO:?La variable IMAGE_REPO est obligatoire}/web:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      target: web
+    # Nom fixe et unique sur le réseau partagé -- indispensable puisque le service s'appelle
+    # sobrement "web" ici comme dans d'autres projets du même VPS ; le Caddy partagé doit
+    # cibler ce nom précis, jamais l'alias de service générique "web".
+    container_name: evolyfoot-web
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-evolyfoot}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evolyfoot}?schema=public
       NODE_ENV: production
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - default
+      - edge
 
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      DOMAIN: ${DOMAIN:?La variable DOMAIN est obligatoire}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    depends_on:
-      - web
+networks:
+  edge:
+    external: true
 
 volumes:
   postgres-data:
-  caddy-data:
-  caddy-config:
