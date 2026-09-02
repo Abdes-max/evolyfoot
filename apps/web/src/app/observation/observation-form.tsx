@@ -24,9 +24,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AdjustmentCard } from "./adjustment-card";
 
-// Aucun modèle de joueur (roster) n'existe encore dans l'application — Team ne suit qu'un nombre
-// de joueurs. Ces joueurs restent donc de démonstration jusqu'à ce qu'une fonctionnalité dédiée
-// existe.
+// Joueurs de démonstration, utilisés tant qu'aucun effectif nominatif réel n'est disponible
+// (visiteur anonyme, ou éducateur connecté n'ayant pas encore ajouté de joueur sur /equipe).
 const demoPlayers: ReadonlyArray<PlayerReference> = [
   { id: "lina-dupont", name: "Lina" },
   { id: "noah-martin", name: "Noah" },
@@ -60,8 +59,8 @@ function eventTitle(type: ObservationEventType) {
   return type === "match" ? "Observation de match" : "Observation de séance";
 }
 
-function createDraft(type: ObservationEventType) {
-  return createObservationDraft(type, eventTitle(type), demoPlayers);
+function createDraft(type: ObservationEventType, players: ReadonlyArray<PlayerReference>) {
+  return createObservationDraft(type, eventTitle(type), players);
 }
 
 type SaveState = "idle" | "pending" | "success" | "error" | "auth-required";
@@ -71,7 +70,8 @@ interface ObservationFormProps {
 }
 
 export function ObservationForm({ initialEventType }: ObservationFormProps) {
-  const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType));
+  const [players, setPlayers] = useState<ReadonlyArray<PlayerReference>>(demoPlayers);
+  const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType, demoPlayers));
   const [report, setReport] = useState<ObservationReport>();
   const [suggestion, setSuggestion] = useState<AdjustmentSuggestion>();
   const [currentWeek, setCurrentWeek] = useState<DevelopmentWeek>(demoWeek);
@@ -94,10 +94,24 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
         setAuthenticated(isAuthenticated);
 
         if (isAuthenticated) {
-          const diagnosticResponse = await fetch("/api/diagnostic");
+          const [diagnosticResponse, rosterResponse] = await Promise.all([
+            fetch("/api/diagnostic"),
+            fetch("/api/roster"),
+          ]);
           const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
-          if (!cancelled && diagnosticBody.scores) {
+          const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
+          if (cancelled) {
+            return;
+          }
+          if (diagnosticBody.scores) {
             setCurrentWeek(buildDevelopmentPlan(summarizeDiagnostic(diagnosticBody.scores)).weeks[0]);
+          }
+          const roster: ReadonlyArray<PlayerReference> = rosterBody.players ?? [];
+          if (roster.length > 0) {
+            setPlayers(roster);
+            // Reconstruit le brouillon avec l'effectif réel -- sans effet côté utilisateur puisque
+            // ce chargement se termine avant toute interaction possible avec le formulaire.
+            setDraft((current) => createDraft(current.eventType, roster));
           }
         }
       } catch {
@@ -144,7 +158,7 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
   }
 
   function selectEventType(eventType: ObservationEventType) {
-    editDraft(createDraft(eventType));
+    editDraft(createDraft(eventType, players));
   }
 
   return (

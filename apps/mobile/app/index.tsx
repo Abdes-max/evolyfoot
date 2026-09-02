@@ -92,6 +92,13 @@ export default function HomeScreen() {
             <Text style={styles.setupText}>→</Text>
           </TouchableOpacity>
         </Link>
+
+        <Link href="/equipe" asChild>
+          <TouchableOpacity style={styles.setupButton}>
+            <Text style={styles.setupText}>Gérer l’effectif</Text>
+            <Text style={styles.setupText}>→</Text>
+          </TouchableOpacity>
+        </Link>
       </ScrollView>
     </SafeAreaView>
   );

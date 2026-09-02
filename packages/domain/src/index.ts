@@ -1,3 +1,5 @@
+import type { GameFormat } from "./team";
+
 export type AgeGroup = "U10" | "U11" | "U12" | "U13";
 
 export type DevelopmentTheme =
@@ -27,6 +29,7 @@ export interface SessionPreview {
 export const demoTeam = {
   name: "FC Horizon",
   ageGroup: "U12" as AgeGroup,
+  gameFormat: 8 as GameFormat,
   playerCount: 14,
 };
 
@@ -52,8 +55,8 @@ export { suggestAdjustment } from "./progression";
 export type { ObservationSummary } from "./progression";
 export { suggestAdjustmentFromObservation } from "./adjustment";
 export type { AdjustmentAction, AdjustmentSuggestion } from "./adjustment";
-export { ageGroups, createTeamProfile, validateTeamProfile } from "./team";
-export type { TeamProfile, TeamProfileErrors, TrainingDay } from "./team";
+export { ageGroups, createTeamProfile, gameFormats, validateTeamProfile } from "./team";
+export type { GameFormat, TeamProfile, TeamProfileErrors, TrainingDay } from "./team";
 export { diagnosticCriteria, summarizeDiagnostic } from "./diagnostic";
 export type { DiagnosticCriterion, DiagnosticScores, DiagnosticSummary } from "./diagnostic";
 export { buildDevelopmentPlan } from "./development-plan";

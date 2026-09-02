@@ -32,6 +32,53 @@ test("l’éducateur configure son équipe avant le diagnostic", async ({ page }
   await expect(page.getByRole("status")).toContainText("Équipe prête");
 });
 
+test("l’éducateur gère l’effectif nominatif de son équipe", async ({ page }) => {
+  // Même approche que le test d'onboarding ci-dessus : la persistance réelle est couverte par
+  // les tests d'intégration, ce parcours vérifie le câblage client (ajout, renommage, retrait).
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({ json: { educator: { id: "e2e-educator", email: "coach@example.test", displayName: "Coach E2E" } } }),
+  );
+  await page.route("**/api/team", (route) =>
+    route.fulfill({ json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: ["Mardi", "Jeudi"] } } }),
+  );
+
+  let players: Array<{ id: string; name: string }> = [];
+  await page.route("**/api/roster", (route) => {
+    if (route.request().method() === "POST") {
+      const player = { id: `player-${players.length + 1}`, name: JSON.parse(route.request().postData() ?? "{}").name };
+      players = [...players, player];
+      return route.fulfill({ status: 201, json: { player } });
+    }
+    return route.fulfill({ json: { players } });
+  });
+  await page.route("**/api/roster/*", (route) => {
+    const id = route.request().url().split("/").pop();
+    if (route.request().method() === "PATCH") {
+      const name = JSON.parse(route.request().postData() ?? "{}").name;
+      players = players.map((player) => (player.id === id ? { ...player, name } : player));
+      return route.fulfill({ json: { player: players.find((player) => player.id === id) } });
+    }
+    players = players.filter((player) => player.id !== id);
+    return route.fulfill({ json: { status: "ok" } });
+  });
+
+  await page.goto("/equipe");
+  await expect(page.getByText(/foot à 8/i)).toBeVisible();
+
+  await page.getByLabel("Ajouter un joueur").fill("Kylian");
+  await page.getByRole("button", { name: "Ajouter" }).click();
+  await expect(page.getByText("Kylian")).toBeVisible();
+
+  await page.getByRole("button", { name: "Renommer Kylian" }).click();
+  await page.getByLabel("Renommer Kylian").fill("Ousmane");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByText("Ousmane")).toBeVisible();
+
+  await page.getByRole("button", { name: "Retirer Ousmane" }).click();
+  await expect(page.getByText("Ousmane")).not.toBeVisible();
+  await expect(page.getByText("Aucun joueur pour l’instant.")).toBeVisible();
+});
+
 test("le diagnostic révèle deux priorités de développement", async ({ page }) => {
   await page.goto("/diagnostic");
   await page.getByRole("button", { name: "Réagir après la perte : Rarement" }).click();

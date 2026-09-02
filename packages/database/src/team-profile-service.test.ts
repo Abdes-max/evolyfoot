@@ -12,6 +12,7 @@ import { TeamProfileService } from "./team-profile-service";
 const validProfile: TeamProfile = {
   name: "FC Horizon",
   ageGroup: "U12",
+  gameFormat: 8,
   playerCount: 14,
   sessionsPerWeek: 2,
   trainingDays: ["Mardi", "Jeudi"],

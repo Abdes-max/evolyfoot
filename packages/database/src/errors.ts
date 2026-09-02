@@ -19,6 +19,13 @@ export class DiagnosticNotFoundError extends Error {
   }
 }
 
+export class PlayerNotFoundError extends Error {
+  constructor() {
+    super("Joueur introuvable.");
+    this.name = "PlayerNotFoundError";
+  }
+}
+
 export class DuplicateEducatorEmailError extends Error {
   constructor() {
     super("Cette adresse e-mail est déjà utilisée.");

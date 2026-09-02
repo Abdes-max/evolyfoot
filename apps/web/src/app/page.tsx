@@ -19,7 +19,7 @@ export default function Home() {
           <a className="nav-item" href="#plan"><TargetIcon /> Plan de progression</a>
           <Link className="nav-item" href="/bibliotheque"><CalendarIcon /> Séances</Link>
           <a className="nav-item" href="#observations"><EyeIcon /> Observations</a>
-          <a className="nav-item" href="/onboarding"><UsersIcon /> Mon équipe</a>
+          <Link className="nav-item" href="/equipe"><UsersIcon /> Mon équipe</Link>
         </nav>
         <SidebarIdentity />
       </aside>
