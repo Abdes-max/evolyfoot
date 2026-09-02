@@ -104,9 +104,10 @@ export interface TrainingSessionRepository {
   ): Promise<PersistedTrainingSession>;
 }
 
-// Historique des observations validées. `players`/`signals` sont stockés tels quels : il
-// n'existe pas encore d'effectif nominatif persisté (Team ne porte qu'un `playerCount`), donc
-// aucune intégrité référentielle n'est recherchée ici.
+// Historique des observations validées. `players`/`signals` sont stockés tels quels (JSON), sans
+// intégrité référentielle vers `Player` ci-dessous : une observation reste une photo figée d'un
+// instant, pas une vue dynamique sur l'effectif actuel (un joueur renommé ou retiré plus tard ne
+// doit pas modifier les observations passées).
 export interface PersistedObservation {
   id: string;
   educatorId: string;
@@ -123,4 +124,24 @@ export interface PersistedObservation {
 
 export interface ObservationRepository {
   create(educatorId: string, report: ObservationReport): Promise<PersistedObservation>;
+}
+
+// Effectif nominatif de l'éducateur. Rattaché à l'éducateur (pas à Team) : CRUD complet, à
+// l'inverse du patron append-only de TrainingSessionRecord/ObservationRecord ci-dessus. `rename`
+// et `remove` prennent `educatorId` en plus de l'identifiant du joueur pour vérifier
+// l'appartenance en une seule requête (jamais un `findById` puis un `update` séparés, qui
+// laisserait une fenêtre où l'appartenance n'est plus vérifiée).
+export interface PersistedPlayer {
+  id: string;
+  educatorId: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PlayerRepository {
+  listByEducator(educatorId: string): Promise<PersistedPlayer[]>;
+  create(educatorId: string, name: string): Promise<PersistedPlayer>;
+  rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer>;
+  remove(id: string, educatorId: string): Promise<void>;
 }

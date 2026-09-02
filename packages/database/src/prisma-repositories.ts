@@ -1,11 +1,18 @@
 import { Prisma } from "./generated/prisma/client";
 import type { PrismaClient } from "./generated/prisma/client";
-import { DiagnosticNotFoundError, DuplicateEducatorEmailError, EducatorNotFoundError, TeamNotFoundError } from "./errors";
+import {
+  DiagnosticNotFoundError,
+  DuplicateEducatorEmailError,
+  EducatorNotFoundError,
+  PlayerNotFoundError,
+  TeamNotFoundError,
+} from "./errors";
 import {
   toEducatorAuthRecord,
   toEducatorRecord,
   toPersistedDiagnostic,
   toPersistedObservation,
+  toPersistedPlayer,
   toPersistedTeamProfile,
   toPersistedTrainingSession,
   toPrismaAgeGroup,
@@ -23,9 +30,11 @@ import type {
   ObservationRepository,
   PersistedDiagnostic,
   PersistedObservation,
+  PersistedPlayer,
   PersistedTeamProfile,
   PersistedTrainingSession,
   PersistedTrainingSessionBlock,
+  PlayerRepository,
   SessionRecord,
   SessionRepository,
   TeamRepository,
@@ -176,6 +185,7 @@ export class PrismaTeamRepository implements TeamRepository {
           educatorId,
           name: profile.name,
           ageGroup: toPrismaAgeGroup(profile.ageGroup),
+          gameFormat: profile.gameFormat,
           playerCount: profile.playerCount,
           sessionsPerWeek: profile.sessionsPerWeek,
           trainingDays: profile.trainingDays.map(toPrismaTrainingDay),
@@ -183,6 +193,7 @@ export class PrismaTeamRepository implements TeamRepository {
         update: {
           name: profile.name,
           ageGroup: toPrismaAgeGroup(profile.ageGroup),
+          gameFormat: profile.gameFormat,
           playerCount: profile.playerCount,
           sessionsPerWeek: profile.sessionsPerWeek,
           trainingDays: profile.trainingDays.map(toPrismaTrainingDay),
@@ -265,6 +276,51 @@ export class PrismaObservationRepository implements ObservationRepository {
       return toPersistedObservation(record);
     } catch (error) {
       return translateHistoryCreateError(error);
+    }
+  }
+}
+
+function translatePlayerCreateError(error: unknown): never {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+    throw new EducatorNotFoundError();
+  }
+  throw error;
+}
+
+export class PrismaPlayerRepository implements PlayerRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async listByEducator(educatorId: string): Promise<PersistedPlayer[]> {
+    const players = await this.prisma.player.findMany({ where: { educatorId }, orderBy: { createdAt: "asc" } });
+    return players.map(toPersistedPlayer);
+  }
+
+  async create(educatorId: string, name: string): Promise<PersistedPlayer> {
+    try {
+      const player = await this.prisma.player.create({ data: { educatorId, name } });
+      return toPersistedPlayer(player);
+    } catch (error) {
+      return translatePlayerCreateError(error);
+    }
+  }
+
+  // `updateMany`/`deleteMany` (plutôt que `update`/`delete`, qui ne peuvent filtrer que sur une
+  // clé unique) vérifient l'appartenance à `educatorId` dans la même requête que l'écriture --
+  // jamais un `findUnique` puis un `update` séparés, qui laisserait une fenêtre entre la
+  // vérification et l'écriture.
+  async rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer> {
+    const { count } = await this.prisma.player.updateMany({ where: { id, educatorId }, data: { name } });
+    if (count === 0) {
+      throw new PlayerNotFoundError();
+    }
+    const player = await this.prisma.player.findUniqueOrThrow({ where: { id } });
+    return toPersistedPlayer(player);
+  }
+
+  async remove(id: string, educatorId: string): Promise<void> {
+    const { count } = await this.prisma.player.deleteMany({ where: { id, educatorId } });
+    if (count === 0) {
+      throw new PlayerNotFoundError();
     }
   }
 }

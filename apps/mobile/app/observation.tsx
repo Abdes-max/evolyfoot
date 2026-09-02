@@ -26,9 +26,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AdjustmentCard } from "../components/adjustment-card";
 import { useAuth } from "../lib/auth-context";
 
-// Aucun modèle de joueur (roster) n'existe encore dans l'application -- Team ne suit qu'un
-// nombre de joueurs. Ces joueurs restent donc de démonstration jusqu'à ce qu'une fonctionnalité
-// dédiée existe (même limite que côté web, voir observation-form.tsx).
+// Joueurs de démonstration, utilisés tant que l'éducateur connecté n'a pas encore ajouté de
+// joueur sur /equipe (même repli que côté web, voir observation-form.tsx).
 const demoPlayers: readonly PlayerReference[] = [
   { id: "lina-dupont", name: "Lina" },
   { id: "noah-martin", name: "Noah" },
@@ -60,15 +59,16 @@ function eventTitle(type: ObservationEventType) {
   return type === "match" ? "Observation de match" : "Observation de séance";
 }
 
-function createDraft(type: ObservationEventType) {
-  return createObservationDraft(type, eventTitle(type), demoPlayers);
+function createDraft(type: ObservationEventType, players: readonly PlayerReference[]) {
+  return createObservationDraft(type, eventTitle(type), players);
 }
 
 export default function ObservationScreen() {
   const { type } = useLocalSearchParams<{ type?: string }>();
-  const { diagnosticScores, saveObservation } = useAuth();
+  const { diagnosticScores, roster, saveObservation } = useAuth();
   const initialEventType: ObservationEventType = type === "match" ? "match" : "training";
-  const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType));
+  const players = roster.length > 0 ? roster : demoPlayers;
+  const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType, players));
   const [report, setReport] = useState<ObservationReport>();
   const [suggestion, setSuggestion] = useState<AdjustmentSuggestion>();
   const [saveError, setSaveError] = useState("");
@@ -128,7 +128,7 @@ export default function ObservationScreen() {
                 accessibilityState={{ selected }}
                 hitSlop={8}
                 key={option.type}
-                onPress={() => editDraft(createDraft(option.type))}
+                onPress={() => editDraft(createDraft(option.type, players))}
                 style={[styles.eventChoice, selected && styles.selectedChoice]}
               >
                 <Text style={[styles.eventChoiceText, selected && styles.selectedChoiceText]}>{selected ? `${option.label} · sélectionné` : option.label}</Text>

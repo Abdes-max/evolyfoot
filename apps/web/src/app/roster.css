@@ -1,0 +1,32 @@
+.roster-shell{min-height:100vh;background:var(--paper)}
+.roster-header{padding:38px max(25px,calc((100vw - 720px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink)}
+.roster-header .onboarding-brand{margin-bottom:22px}
+.roster-header h1{margin:10px 0 8px;font-size:34px;letter-spacing:-1px}
+.roster-header p{max-width:620px;margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.roster-team-summary{margin-top:14px;color:var(--ink)}
+.roster-team-summary a{color:var(--accent);font-weight:800;text-decoration:none}
+.roster-auth-required,.roster-content{width:min(720px,calc(100% - 40px));margin:30px auto 60px}
+.roster-auth-required p{margin:0;color:var(--muted);font-size:12px}
+.roster-auth-required a{color:var(--accent);font-weight:800;text-decoration:none}
+.roster-no-team{margin:0 0 20px;padding:13px 15px;border-radius:10px;background:var(--info-bg);color:var(--ink);font-size:11px}
+.roster-no-team a{color:var(--accent);font-weight:800;text-decoration:none}
+.roster-add-form{padding:17px 19px;border:1px solid var(--line);border-radius:14px;background:var(--surface);margin-bottom:20px}
+.roster-add-form label{display:block;color:var(--ink);font-size:11px;font-weight:800;margin-bottom:8px}
+.roster-add-row{display:flex;gap:9px}
+.roster-add-row input{flex:1;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:11px 13px;color:var(--ink)}
+.roster-add-row button{min-height:44px;border:0;border-radius:9px;padding:0 18px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:800}
+.roster-add-row button:disabled{cursor:not-allowed;opacity:.48}
+.roster-add-form small.field-error{display:block;margin-top:8px}
+.roster-list{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.roster-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);flex-wrap:wrap}
+.roster-row strong{font-size:13px}
+.roster-row input{flex:1;min-width:140px;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:9px 11px;color:var(--ink)}
+.roster-row-actions{display:flex;gap:7px}
+.roster-row-actions button{min-height:36px;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--surface-2);color:var(--ink);font-size:10px;font-weight:800}
+.roster-row small.field-error{width:100%}
+.roster-empty{color:var(--muted);font-size:11px;text-align:center;padding:20px 0}
+.roster-content>.back-link{margin-top:20px}
+@media(max-width:600px){.roster-header{padding:28px 22px}
+.roster-header h1{font-size:28px}
+.roster-row{flex-direction:column;align-items:flex-start}
+}

@@ -1,6 +1,7 @@
 import type {
   AgeGroup as DomainAgeGroup,
   DevelopmentTheme as DomainDevelopmentTheme,
+  GameFormat,
   ObservationEventType as DomainObservationEventType,
   ObservationReportRating,
   ObservationReportSummary,
@@ -19,6 +20,7 @@ import type {
   Diagnostic,
   Educator,
   ObservationRecord as PrismaObservationRecord,
+  Player as PrismaPlayer,
   Session,
   Team,
   TrainingSessionRecord as PrismaTrainingSessionRecord,
@@ -28,6 +30,7 @@ import type {
   EducatorRecord,
   PersistedDiagnostic,
   PersistedObservation,
+  PersistedPlayer,
   PersistedTeamProfile,
   PersistedTrainingSession,
   PersistedTrainingSessionBlock,
@@ -232,6 +235,10 @@ export function toPersistedTeamProfile(team: Team): PersistedTeamProfile {
   const profile: TeamProfile = Object.freeze({
     name: team.name,
     ageGroup: fromPrismaAgeGroup(team.ageGroup),
+    // Un entier borné en base (voir schema.prisma), pas un enum Postgres : la validation du
+    // domaine (`gameFormats`, rejouée à chaque écriture par TeamProfileService) garantit déjà
+    // que seule une valeur 4-11 a pu être persistée.
+    gameFormat: team.gameFormat as GameFormat,
     playerCount: team.playerCount,
     sessionsPerWeek: team.sessionsPerWeek,
     trainingDays: team.trainingDays.map(fromPrismaTrainingDay),
@@ -243,5 +250,15 @@ export function toPersistedTeamProfile(team: Team): PersistedTeamProfile {
     profile,
     createdAt: team.createdAt,
     updatedAt: team.updatedAt,
+  });
+}
+
+export function toPersistedPlayer(player: PrismaPlayer): PersistedPlayer {
+  return Object.freeze({
+    id: player.id,
+    educatorId: player.educatorId,
+    name: player.name,
+    createdAt: player.createdAt,
+    updatedAt: player.updatedAt,
   });
 }

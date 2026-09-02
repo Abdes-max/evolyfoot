@@ -1,4 +1,4 @@
-import type { DiagnosticScores, ObservationDraft, TeamProfile, TrainingSession } from "@evolyfoot/domain";
+import type { DiagnosticScores, ObservationDraft, PlayerReference, TeamProfile, TrainingSession } from "@evolyfoot/domain";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "./api";
 
@@ -14,6 +14,7 @@ export interface AuthContextValue {
   educator: Educator | null;
   team: TeamProfile | null;
   diagnosticScores: DiagnosticScores | null;
+  roster: readonly PlayerReference[];
   login(email: string, password: string): Promise<AuthResult>;
   register(email: string, password: string, displayName: string): Promise<AuthResult>;
   logout(): Promise<void>;
@@ -21,6 +22,9 @@ export interface AuthContextValue {
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
   saveTrainingSession(session: TrainingSession): Promise<AuthResult>;
   saveObservation(draft: ObservationDraft): Promise<AuthResult>;
+  addPlayer(name: string): Promise<AuthResult>;
+  renamePlayer(id: string, name: string): Promise<AuthResult>;
+  removePlayer(id: string): Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -36,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [educator, setEducator] = useState<Educator | null>(null);
   const [team, setTeam] = useState<TeamProfile | null>(null);
   const [diagnosticScores, setDiagnosticScores] = useState<DiagnosticScores | null>(null);
+  const [roster, setRoster] = useState<readonly PlayerReference[]>([]);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   const fetchTeam = useCallback(async (token: string) => {
@@ -58,6 +63,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const fetchRoster = useCallback(async (token: string) => {
+    try {
+      const response = await apiFetch("/api/roster", { sessionToken: token });
+      const body = await response.json().catch(() => ({ players: [] }));
+      setRoster(response.ok ? (body.players ?? []) : []);
+    } catch {
+      setRoster([]);
+    }
+  }, []);
+
   const login = useCallback(
     async (email: string, password: string): Promise<AuthResult> => {
       const response = await apiFetch("/api/auth/login", {
@@ -70,10 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const body = await response.json();
       setEducator(body.educator);
       setSessionToken(body.sessionToken);
-      await Promise.all([fetchTeam(body.sessionToken), fetchDiagnostic(body.sessionToken)]);
+      await Promise.all([fetchTeam(body.sessionToken), fetchDiagnostic(body.sessionToken), fetchRoster(body.sessionToken)]);
       return { ok: true };
     },
-    [fetchTeam, fetchDiagnostic],
+    [fetchTeam, fetchDiagnostic, fetchRoster],
   );
 
   const register = useCallback(
@@ -90,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSessionToken(body.sessionToken);
       setTeam(null);
       setDiagnosticScores(null);
+      setRoster([]);
       return { ok: true };
     },
     [],
@@ -102,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setEducator(null);
     setTeam(null);
     setDiagnosticScores(null);
+    setRoster([]);
     setSessionToken(null);
   }, [sessionToken]);
 
@@ -192,11 +209,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [sessionToken],
   );
 
+  const addPlayer = useCallback(
+    async (name: string): Promise<AuthResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour ajouter un joueur." };
+      }
+      const response = await apiFetch("/api/roster", { method: "POST", sessionToken, body: JSON.stringify({ name }) });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      setRoster((current) => [...current, body.player]);
+      return { ok: true };
+    },
+    [sessionToken],
+  );
+
+  const renamePlayer = useCallback(
+    async (id: string, name: string): Promise<AuthResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour renommer un joueur." };
+      }
+      const response = await apiFetch(`/api/roster/${id}`, { method: "PATCH", sessionToken, body: JSON.stringify({ name }) });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      setRoster((current) => current.map((player) => (player.id === id ? body.player : player)));
+      return { ok: true };
+    },
+    [sessionToken],
+  );
+
+  const removePlayer = useCallback(
+    async (id: string): Promise<AuthResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour retirer un joueur." };
+      }
+      const response = await apiFetch(`/api/roster/${id}`, { method: "DELETE", sessionToken });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      setRoster((current) => current.filter((player) => player.id !== id));
+      return { ok: true };
+    },
+    [sessionToken],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       educator,
       team,
       diagnosticScores,
+      roster,
       login,
       register,
       logout,
@@ -204,11 +269,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveDiagnostic,
       saveTrainingSession,
       saveObservation,
+      addPlayer,
+      renamePlayer,
+      removePlayer,
     }),
     [
       educator,
       team,
       diagnosticScores,
+      roster,
       login,
       register,
       logout,
@@ -216,6 +285,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveDiagnostic,
       saveTrainingSession,
       saveObservation,
+      addPlayer,
+      renamePlayer,
+      removePlayer,
     ],
   );
 

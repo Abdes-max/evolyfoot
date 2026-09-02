@@ -1,6 +1,7 @@
 import {
   ageGroups,
   createTeamProfile,
+  gameFormats,
   validateTeamProfile,
   type TeamProfile,
   type TrainingDay,
@@ -12,7 +13,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity
 import { useAuth } from "../lib/auth-context";
 
 const days: TrainingDay[] = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
-const initialProfile: TeamProfile = { name: "", ageGroup: "U12", playerCount: 14, sessionsPerWeek: 2, trainingDays: [] };
+const initialProfile: TeamProfile = { name: "", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: [] };
 
 export default function OnboardingScreen() {
   const { team, saveTeam } = useAuth();
@@ -77,6 +78,22 @@ export default function OnboardingScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        <Text style={styles.label}>Format de jeu</Text>
+        <View style={styles.formatGrid}>
+          {gameFormats.map((format) => (
+            <TouchableOpacity
+              key={format}
+              onPress={() => setProfile({ ...profile, gameFormat: format })}
+              style={[styles.formatChoice, profile.gameFormat === format && styles.active]}
+            >
+              <Text style={[styles.choiceText, profile.gameFormat === format && styles.activeText]}>
+                Foot à {format}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {errors.gameFormat ? <Text style={styles.fieldError}>{errors.gameFormat}</Text> : null}
 
         <Text style={styles.label}>Nombre de joueurs</Text>
         <TextInput
@@ -143,6 +160,8 @@ const styles = StyleSheet.create({
   error: { color: colors.danger, fontSize: 11, marginTop: 20 },
   choices: { flexDirection: "row", gap: 8 },
   choice: { flex: 1, alignItems: "center", padding: 14, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
+  formatGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  formatChoice: { width: "22%", alignItems: "center", padding: 12, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
   dayGrid: { flexDirection: "row", gap: 6 },
   day: { flex: 1, alignItems: "center", padding: 11, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
   active: { backgroundColor: colors.primarySoft, borderColor: colors.primary },

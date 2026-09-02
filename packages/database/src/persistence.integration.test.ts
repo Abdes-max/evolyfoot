@@ -20,6 +20,7 @@ const service = new TeamProfileService(educatorRepository, teamRepository);
 const validProfile: TeamProfile = {
   name: "FC Horizon",
   ageGroup: "U12",
+  gameFormat: 8,
   playerCount: 14,
   sessionsPerWeek: 2,
   trainingDays: ["Mardi", "Jeudi"],

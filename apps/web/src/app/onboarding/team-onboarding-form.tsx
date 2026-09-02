@@ -1,11 +1,11 @@
 "use client";
 
-import { ageGroups, validateTeamProfile, type TeamProfile, type TrainingDay } from "@evolyfoot/domain";
+import { ageGroups, gameFormats, validateTeamProfile, type TeamProfile, type TrainingDay } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 
 const days: TrainingDay[] = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
-const initialProfile: TeamProfile = { name: "", ageGroup: "U12", playerCount: 14, sessionsPerWeek: 2, trainingDays: [] };
+const initialProfile: TeamProfile = { name: "", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: [] };
 
 type SaveState = "idle" | "pending" | "success" | "error" | "auth-required";
 
@@ -121,6 +121,24 @@ export function TeamOnboardingForm() {
             </button>
           ))}
         </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Format de jeu</legend>
+        <div className="choice-grid">
+          {gameFormats.map((format) => (
+            <button
+              aria-pressed={profile.gameFormat === format}
+              className={profile.gameFormat === format ? "choice active" : "choice"}
+              key={format}
+              onClick={() => setProfile({ ...profile, gameFormat: format })}
+              type="button"
+            >
+              Foot à {format}
+            </button>
+          ))}
+        </div>
+        {errors.gameFormat && <small className="field-error">{errors.gameFormat}</small>}
       </fieldset>
 
       <div className="form-row">

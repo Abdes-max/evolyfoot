@@ -44,6 +44,7 @@ model Educator {
   sessions         Session[]
   trainingSessions TrainingSessionRecord[]
   observations     ObservationRecord[]
+  players          Player[]
   createdAt        DateTime                 @default(now()) @map("created_at")
   updatedAt        DateTime                 @updatedAt @map("updated_at")
 
@@ -97,8 +98,9 @@ model TrainingSessionRecord {
 }
 
 // Historique des observations validées. `players`/`signals`/`ratings`/`summary` sont stockés
-// tels quels (JSON) : il n'existe pas encore d'effectif nominatif persisté (Team ne porte
-// qu'un `playerCount`), donc aucune intégrité référentielle n'est possible ni recherchée ici.
+// tels quels (JSON), sans intégrité référentielle vers `Player` ci-dessous : une observation
+// reste une photo figée d'un instant, pas une vue dynamique sur l'effectif actuel (un joueur
+// renommé ou retiré plus tard ne doit pas modifier les observations passées).
 model ObservationRecord {
   id         String               @id @default(uuid()) @db.Uuid
   educatorId String               @db.Uuid @map("educator_id")
@@ -123,6 +125,10 @@ model Team {
   educator        Educator      @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   name            String
   ageGroup        AgeGroup      @map("age_group")
+  // Format de jeu (foot à 4 jusqu'à foot à 11) : un entier borné plutôt qu'un enum Postgres,
+  // comme `playerCount`/`sessionsPerWeek` -- ce n'est pas une énumération de valeurs nommées,
+  // juste une plage validée côté domaine (voir `gameFormats` dans @evolyfoot/domain).
+  gameFormat      Int           @default(8) @map("game_format")
   playerCount     Int           @map("player_count")
   sessionsPerWeek Int           @map("sessions_per_week")
   trainingDays    TrainingDay[] @map("training_days")
@@ -130,4 +136,22 @@ model Team {
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
   @@map("teams")
+}
+
+// Effectif nominatif de l'éducateur (contrairement à `Team.playerCount`, un simple total).
+// Rattaché directement à l'éducateur plutôt qu'à `Team` : un éducateur peut renseigner ses
+// joueurs avant même d'avoir terminé l'onboarding de son équipe, et la liste ne doit pas
+// disparaître si l'équipe est un jour recréée. CRUD complet (contrairement à l'historique
+// append-only de TrainingSessionRecord/ObservationRecord) : un joueur peut être renommé ou
+// retiré à tout moment.
+model Player {
+  id         String   @id @default(uuid()) @db.Uuid
+  educatorId String   @db.Uuid @map("educator_id")
+  educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  name       String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([educatorId])
+  @@map("players")
 }
