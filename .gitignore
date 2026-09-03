@@ -21,6 +21,7 @@ test-results/
 .env.*
 !.env.example
 !.env.production.example
+apps/mobile/google-service-account.json
 
 # editors and operating systems
 .idea/
