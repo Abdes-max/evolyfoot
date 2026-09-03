@@ -1,0 +1,81 @@
+name: Mobile CD
+
+# Construit et soumet l'app mobile (TestFlight + piste interne Google Play) via EAS à chaque
+# merge dans master qui touche le mobile ou ses dépendances partagées. Inerte tant que les
+# secrets ci-dessous ne sont pas configurés (le job échoue proprement à la première étape avec
+# un message explicite plutôt que d'échouer plus loin de façon confuse) -- voir docs/delivery.md
+# pour la checklist complète (comptes Apple Developer / Google Play / Expo, icônes/splash).
+#
+# Prérequis avant que ce workflow puisse réussir, à faire une seule fois, en local et de façon
+# interactive (EAS ne permet pas de générer des identifiants Apple/Google en mode non-interactif
+# pour un premier build) :
+#   1. `npm install -g eas-cli && eas login` (compte Expo/EAS).
+#   2. Depuis apps/mobile/ : `eas build:configure`, puis `eas credentials` pour générer/importer
+#      les certificats iOS et le keystore Android (une fois les comptes Apple Developer et
+#      Google Play créés).
+#   3. Renseigner `submit.production` dans apps/mobile/eas.json (appleId, ascAppId, appleTeamId
+#      pour iOS ; le service account Google Play est fourni via le secret ci-dessous).
+#   4. Créer un token d'accès Expo (expo.dev → compte → Access Tokens) et l'ajouter comme
+#      secret GitHub EXPO_TOKEN sur l'environnement `production`.
+#   5. Créer un service account Google Play (Play Console → Configuration → Accès API), en
+#      exporter la clé JSON, et l'ajouter comme secret GitHub GOOGLE_SERVICE_ACCOUNT_JSON.
+#
+# Secrets attendus sur l'environnement GitHub `production` (déjà utilisé par cd.yml) :
+#   EXPO_TOKEN                 — jeton d'accès Expo/EAS non-interactif.
+#   GOOGLE_SERVICE_ACCOUNT_JSON — contenu JSON du compte de service Google Play.
+on:
+  push:
+    branches: [master]
+    paths:
+      - "apps/mobile/**"
+      - "packages/domain/**"
+      - "packages/design-tokens/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/mobile-cd.yml"
+  workflow_dispatch:
+
+jobs:
+  build-and-submit:
+    name: Builder et soumettre (EAS)
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v5
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Activer pnpm
+        run: corepack enable && corepack prepare pnpm@10.15.1 --activate
+
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: Écrire le compte de service Google Play
+        working-directory: apps/mobile
+        run: echo "$GOOGLE_SERVICE_ACCOUNT_JSON" > google-service-account.json
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+
+      - name: Installer eas-cli et s'authentifier
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Builder et soumettre (iOS + Android, profil production)
+        working-directory: apps/mobile
+        # --auto-submit enchaîne la soumission TestFlight/piste interne Google Play dès que le
+        # build correspondant réussit, sans étape séparée à orchestrer ni polling à écrire ici.
+        run: eas build --platform all --profile production --non-interactive --auto-submit
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Nettoyer le compte de service Google Play
+        if: always()
+        working-directory: apps/mobile
+        run: rm -f google-service-account.json

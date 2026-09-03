@@ -2,12 +2,15 @@ name: CD
 
 # Même modèle que le déploiement d'arena-pulse sur ce VPS partagé (voir docs/delivery.md) :
 # SSH + `git pull` + `docker compose up -d --build` directement sur l'hôte, pas d'image
-# pré-construite via registre. Déclenchement manuel tant que les secrets ci-dessous ne sont
-# pas configurés et que le bootstrap initial (clone du dépôt, réseau Docker partagé, .env) n'a
-# pas été fait sur le VPS -- voir docs/delivery.md. Une fois prêt, ajouter :
-#   push:
-#     branches: [master]
+# pré-construite via registre. Bootstrap initial (clone du dépôt, réseau Docker partagé, .env)
+# fait et premier déploiement manuel validé le 3 septembre 2026 (health check OK) -- voir
+# docs/delivery.md. Se déclenche donc désormais sur chaque merge dans master, sans approbation
+# manuelle (l'environnement GitHub `production` n'a aucune règle de protection configurée) :
+# c'est la dernière étape (vérification de santé) qui protège contre un déploiement cassé,
+# pas une revue humaine préalable.
 on:
+  push:
+    branches: [master]
   workflow_dispatch:
 
 jobs:

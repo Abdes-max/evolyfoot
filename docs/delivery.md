@@ -26,7 +26,7 @@
 
 Les workflows de déploiement seront activés seulement lorsque les accès VPS, Apple Developer, Google Play Console, les domaines et les secrets GitHub seront disponibles. Aucun secret ne doit être commité.
 
-**État actuel : le terrain côté code est prêt (`Dockerfile`, `docker-compose.yml`, `.github/workflows/cd.yml`, `apps/mobile/eas.json`), mais rien n'est encore déployé.** Le workflow CD est en déclenchement manuel (`workflow_dispatch`) tant que les comptes et secrets ci-dessous ne sont pas configurés — il ne se lance jamais tout seul sur un `push`.
+**État actuel : le web est déployé et le déploiement continu est actif.** Bootstrap VPS fait, premier déploiement validé le 3 septembre 2026, `cd.yml` se déclenche désormais sur chaque `push` dans `master`. Reste : brancher le Caddy partagé côté arena-pulse (section dédiée ci-dessous) pour que `evolyfoot.com` soit joignable depuis l'extérieur. Le mobile (`apps/mobile/eas.json`) reste en attente des comptes Apple Developer / Google Play / Expo — voir la section dédiée plus bas.
 
 ## Déploiement web (VPS)
 
@@ -88,40 +88,43 @@ networks:
 
 Puis un `restart caddy` (pas `reload`, voir le commentaire de `deploy-prod.yml` d'arena-pulse sur pourquoi) pour que le nouveau bloc soit pris en compte.
 
-### Bootstrap initial sur le VPS (une fois)
+### Bootstrap initial sur le VPS — fait le 3 septembre 2026
 
-À exécuter directement sur le VPS (le workflow CD suppose que le dépôt y est déjà cloné) :
+Exécuté directement sur le VPS (le workflow CD suppose que le dépôt y est déjà cloné) :
 
 ```bash
 docker network create edge          # idempotent : ne rien faire si déjà créé côté arena-pulse
 mkdir -p /opt/evolyfoot
 cd /opt/evolyfoot
-git clone https://github.com/<owner>/evolyfoot.git .
+git clone https://github.com/Abdes-max/evolyfoot.git .
 cp .env.production.example .env
-# éditer .env : POSTGRES_PASSWORD au minimum
+sed -i "s/change-me/$(openssl rand -base64 24 | tr -d '=+/')/" .env   # mot de passe généré, jamais affiché
 docker compose up -d --build
-curl -s http://127.0.0.1:3000/... # web n'est pas publié sur l'hôte -- vérifier via `docker compose logs web` plutôt
+docker exec evolyfoot-web wget -qO- http://127.0.0.1:3000/api/health/database   # web n'est pas publié sur l'hôte
 ```
 
-### Secrets GitHub à configurer
+Piège rencontré et corrigé : la branche par défaut du dépôt GitHub était restée sur une ancienne branche de travail (`agent/initialize-platform`) plutôt que `master`, donc un `git clone` nu atterrissait sur cette branche obsolète — sans `Dockerfile` ni `.env.production.example`. Corrigé une fois pour toutes (Settings → General → Default branch → `master`) ; un `git clone` nu suffit désormais.
 
-Sur GitHub, créer un environnement `production` (Settings → Environments) — c'est lui qui porte l'approbation manuelle mentionnée dans la stratégie progressive — puis y ajouter ces secrets :
+### Secrets GitHub (déjà configurés)
+
+L'environnement `production` (Settings → Environments) porte ces secrets, déjà en place :
 
 | Secret | Contenu |
 | --- | --- |
 | `DEPLOY_HOST` | `186.240.151.40` |
-| `DEPLOY_USER` | Utilisateur de déploiement sur le VPS |
+| `DEPLOY_USER` | `root` |
 | `DEPLOY_SSH_KEY` | Clé privée SSH correspondant à une clé publique autorisée sur le VPS |
 | `DEPLOY_PORT` | Port SSH (`22` par défaut, optionnel) |
-| `DEPLOY_PATH` | `/opt/evolyfoot` (ou le chemin choisi au bootstrap) |
+| `DEPLOY_PATH` | `/opt/evolyfoot` |
 | `DEPLOY_DOMAIN` | `evolyfoot.com` (pour la vérification de santé finale du workflow) |
+
+Cet environnement **ne porte aucune règle de protection** (pas d'approbateur requis, pas de délai) : rien ne met en pause un déploiement déclenché automatiquement avant l'étape `deploy` elle-même. Si une approbation manuelle est un jour souhaitée, l'ajouter explicitement dans Settings → Environments → production → Protection rules.
 
 ### Premier déploiement et déploiements suivants
 
-1. Bootstrap fait (section ci-dessus), bloc Caddy ajouté côté arena-pulse, secrets configurés.
-2. Lancer manuellement `.github/workflows/cd.yml` (onglet Actions → CD → Run workflow) — il se connecte en SSH, fait `git pull` puis `docker compose up -d --build` (`migrate` s'exécute et quitte avant que `web` ne démarre, comme le service `migrate` d'arena-pulse).
-3. Vérifier `https://evolyfoot.com/api/health/database` (la dernière étape du workflow le fait déjà automatiquement et échoue le déploiement sinon).
-4. Une fois ce parcours validé manuellement une première fois, remplacer le déclencheur `workflow_dispatch` par `push: branches: [master]` dans `cd.yml` pour un déploiement continu — l'approbation de l'environnement GitHub `production` reste le garde-fou avant l'étape `deploy`.
+1. Bootstrap fait (section ci-dessus), secrets configurés — **fait et validé le 3 septembre 2026** : `docker compose up -d --build` sur le VPS a construit les images, `migrate` a réussi, `web` est sain, `GET /api/health/database` répond `{"status":"ok"}` en interne au conteneur.
+2. `cd.yml` se déclenche désormais automatiquement sur chaque `push` dans `master` (en plus du déclenchement manuel `workflow_dispatch`, toujours disponible) : SSH, `git fetch`/`reset --hard origin/master`, `docker compose up -d --build`, puis vérification `https://evolyfoot.com/api/health/database` (le déploiement échoue si cette vérification échoue).
+3. **Reste bloquant avant que cette vérification externe ne passe** : le bloc Caddy côté arena-pulse (section ci-dessus) n'est pas encore appliqué — tant que ce n'est pas fait, `evolyfoot.com` n'est pas joignable depuis l'extérieur et l'étape 2 du workflow échoue à la vérification de santé (le déploiement lui-même, lui, réussit bien : les conteneurs tournent et sont sains).
 
 ### Sauvegardes et supervision
 
@@ -143,6 +146,19 @@ Les sauvegardes automatisées de PostgreSQL et la supervision de l'application r
 4. `eas build --platform android --profile preview` pour un premier APK de test, installable directement sur un appareil ou l'émulateur.
 5. Quand prêt pour les stores : `eas build --platform ios --profile production` et `eas build --platform android --profile production`, en ayant au préalable créé les comptes Apple Developer Program et Google Play Console (payants, à la charge du porteur du projet).
 6. `eas submit` (configuré via le profil `submit.production` de `eas.json`) envoie le build vers TestFlight (iOS) ou la piste interne Google Play (Android) — les identifiants de soumission (App Store Connect API key, service account Google Play) sont à fournir au moment de la première soumission, jamais committés.
+
+### Déploiement continu mobile — terrain prêt côté code, inerte tant que les comptes manquent
+
+`.github/workflows/mobile-cd.yml` reproduit ce même parcours (`eas build --platform all --profile production --non-interactive --auto-submit`) automatiquement à chaque `push` dans `master` touchant le mobile ou ses dépendances partagées (`packages/domain`, `packages/design-tokens`). Il échoue proprement dès sa première étape tant que les comptes et secrets ci-dessous ne sont pas en place — aucun risque de déclenchement accidentel avant.
+
+Reste à faire, une seule fois, en local et de façon interactive (EAS ne permet pas de générer des identifiants Apple/Google en mode non-interactif pour un premier build) :
+
+1. Créer le compte Expo/EAS (gratuit), Apple Developer Program (99$/an) et Google Play Console (25$ une fois) — paiement/identité du porteur du projet, hors périmètre d'un agent.
+2. `npm install -g eas-cli && eas login`, puis depuis `apps/mobile/` : `eas build:configure`.
+3. `eas credentials` pour générer/importer les certificats iOS et le keystore Android.
+4. Renseigner `submit.production.ios` dans `apps/mobile/eas.json` (`appleId`, `ascAppId`, `appleTeamId`) — `submit.production.android` pointe déjà vers `./google-service-account.json` (écrit par le workflow depuis le secret ci-dessous, jamais committé).
+5. Créer un token d'accès Expo (expo.dev → compte → Access Tokens) et un compte de service Google Play (Play Console → Configuration → Accès API, export JSON), puis les ajouter comme secrets GitHub sur l'environnement `production` : `EXPO_TOKEN` et `GOOGLE_SERVICE_ACCOUNT_JSON`.
+6. Icônes/splash screen (point suivant) avant toute vraie soumission aux stores.
 
 ### Checklist avant soumission aux stores
 
