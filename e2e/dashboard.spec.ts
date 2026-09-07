@@ -1,6 +1,21 @@
 import { expect, test } from "@playwright/test";
 import { diagnosticCriteria } from "@evolyfoot/domain";
 
+// L'application web est désormais protégée par deux garde-fous : apps/web/src/proxy.ts (toute
+// page autre que /connexion et /inscription redirige un visiteur sans cookie de session, avant
+// même que le JS client ne s'exécute -- une simple présence de cookie, valeur factice acceptée)
+// et apps/web/src/app/auth-gate.tsx (un vrai fetch("/api/auth/session") côté client, qui referme
+// la faille qu'un cookie sans session réelle en base laisserait ouverte). Ce deuxième garde-fou
+// doit donc lui aussi être mocké ici pour que ces parcours -- qui simulent de toute façon
+// l'éducateur connecté via `page.route` pour leurs propres données -- puissent atteindre leur
+// contenu.
+test.beforeEach(async ({ page }) => {
+  await page.context().addCookies([{ name: "evolyfoot_session", value: "e2e-fake-session", url: "http://localhost:3000" }]);
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({ json: { educator: { id: "e2e-educator", email: "coach@example.test", displayName: "Coach E2E" } } }),
+  );
+});
+
 test("l'éducateur accède au fil directeur de sa semaine", async ({ page }) => {
   await page.goto("/");
 
@@ -14,9 +29,6 @@ test("l’éducateur configure son équipe avant le diagnostic", async ({ page }
   // La persistance réelle (session + PostgreSQL) est couverte par les tests d'intégration
   // de packages/database et apps/web/src/server ; ce parcours E2E simule un éducateur déjà
   // connecté pour vérifier le câblage client du formulaire sans dépendre d'une base de données.
-  await page.route("**/api/auth/session", (route) =>
-    route.fulfill({ json: { educator: { id: "e2e-educator", email: "coach@example.test", displayName: "Coach E2E" } } }),
-  );
   await page.route("**/api/team", (route) => {
     if (route.request().method() === "GET") {
       return route.fulfill({ json: { profile: null } });
@@ -35,9 +47,6 @@ test("l’éducateur configure son équipe avant le diagnostic", async ({ page }
 test("l’éducateur gère l’effectif nominatif de son équipe", async ({ page }) => {
   // Même approche que le test d'onboarding ci-dessus : la persistance réelle est couverte par
   // les tests d'intégration, ce parcours vérifie le câblage client (ajout, renommage, retrait).
-  await page.route("**/api/auth/session", (route) =>
-    route.fulfill({ json: { educator: { id: "e2e-educator", email: "coach@example.test", displayName: "Coach E2E" } } }),
-  );
   await page.route("**/api/team", (route) =>
     route.fulfill({ json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: ["Mardi", "Jeudi"] } } }),
   );
@@ -99,9 +108,6 @@ test("le coach personnalise, valide puis observe sa séance", async ({ page }) =
   // packages/database et apps/web/src/server ; ce parcours E2E simule un éducateur déjà connecté
   // pour vérifier le câblage client de la validation de séance et d'observation sans dépendre
   // d'une base de données.
-  await page.route("**/api/auth/session", (route) =>
-    route.fulfill({ json: { educator: { id: "e2e-educator", email: "coach@example.test", displayName: "Coach E2E" } } }),
-  );
   await page.route("**/api/team", (route) => route.fulfill({ json: { profile: null } }));
   await page.route("**/api/diagnostic", (route) => route.fulfill({ json: { scores: null } }));
   await page.route("**/api/sessions", (route) =>
