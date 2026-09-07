@@ -15,11 +15,11 @@ export default function Home() {
       <aside className="sidebar">
         <div className="brand"><span className="brand-mark">E</span><span>EvolyFoot</span></div>
         <nav aria-label="Navigation principale">
-          <a className="nav-item active" href="#"><HomeIcon /> Vue d&apos;ensemble</a>
-          <a className="nav-item" href="#plan"><TargetIcon /> Plan de progression</a>
-          <Link className="nav-item" href="/bibliotheque"><CalendarIcon /> Séances</Link>
-          <a className="nav-item" href="#observations"><EyeIcon /> Observations</a>
-          <Link className="nav-item" href="/equipe"><UsersIcon /> Mon équipe</Link>
+          <a className="nav-item active" href="#"><HomeIcon /> <span className="nav-label">Vue d&apos;ensemble</span></a>
+          <a className="nav-item" href="#plan"><TargetIcon /> <span className="nav-label">Plan de progression</span></a>
+          <Link className="nav-item" href="/bibliotheque"><CalendarIcon /> <span className="nav-label">Séances</span></Link>
+          <a className="nav-item" href="#observations"><EyeIcon /> <span className="nav-label">Observations</span></a>
+          <Link className="nav-item" href="/equipe"><UsersIcon /> <span className="nav-label">Mon équipe</span></Link>
         </nav>
         <SidebarIdentity />
       </aside>
