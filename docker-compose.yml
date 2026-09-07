@@ -55,6 +55,10 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-evolyfoot}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evolyfoot}?schema=public
       NODE_ENV: production
+      # Liste d'e-mails séparés par des virgules autorisés à consulter /admin/metrics (voir
+      # apps/web/src/server/metrics.ts). Vide par défaut -- la route répond alors 403 pour tout
+      # le monde plutôt que d'exposer des données agrégées sans configuration explicite.
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
     depends_on:
       migrate:
         condition: service_completed_successfully

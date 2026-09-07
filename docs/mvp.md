@@ -29,7 +29,9 @@
 
 ## Indicateurs de réussite
 
-- Première séance planifiée en moins de 10 minutes.
-- Compte rendu saisi en moins de 3 minutes.
-- Au moins une suggestion d'ajustement acceptée par cycle.
-- Utilisation hebdomadaire pendant quatre semaines consécutives.
+- Première séance planifiée en moins de 10 minutes. *(non mesuré — demande un chronométrage de l'interaction, non instrumenté)*
+- Compte rendu saisi en moins de 3 minutes. *(non mesuré — idem)*
+- Au moins une suggestion d'ajustement acceptée par cycle. *(non mesuré — la décision de la carte d'ajustement reste un état local, jamais envoyée au serveur)*
+- Utilisation hebdomadaire pendant quatre semaines consécutives. *(mesuré — voir `/admin/metrics`, section « Rétention 4 semaines »)*
+
+Entonnoir d'activation complémentaire (comptes créés → équipe → diagnostic → première séance → première observation), mesuré sur `/admin/metrics` — voir docs/architecture.md.
