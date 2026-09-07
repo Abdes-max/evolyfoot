@@ -5,6 +5,7 @@ import "./session-builder.css";
 import "./tactical-diagram.css";
 import "./bibliotheque.css";
 import "./roster.css";
+import "./metrics.css";
 
 export const metadata: Metadata = {
   title: "EvolyFoot — Piloter la progression",

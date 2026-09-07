@@ -1,0 +1,47 @@
+.metrics-shell{min-height:100vh;background:var(--paper)}
+.metrics-header{padding:38px max(25px,calc((100vw - 1080px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink)}
+.metrics-header .onboarding-brand{margin-bottom:22px}
+.metrics-header h1{margin:10px 0 8px;font-size:32px;letter-spacing:-1px}
+.metrics-header p{max-width:640px;margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.metrics-content{width:min(1080px,calc(100% - 40px));margin:30px auto 60px;display:grid;gap:22px}
+.metrics-denied,.metrics-loading{width:min(560px,calc(100% - 40px));margin:60px auto;padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--muted);font-size:13px;text-align:center}
+
+.metrics-section{padding:24px;border:1px solid var(--line);border-radius:18px;background:var(--surface)}
+.metrics-section-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px}
+.metrics-section-head h2{margin:0;font-size:16px}
+.metrics-section-note{margin:0;color:var(--muted-2);font-size:10.5px;max-width:340px;text-align:right}
+
+/* Entonnoir : chaque étape est une barre dont la largeur reflète le compte relatif à la
+   première étape, avec un badge de conversion par rapport à l'étape précédente -- le motif
+   « carte KPI + badge de tendance teinté » plutôt qu'un graphique en entonnoir classique, pour
+   rester lisible avec seulement cinq étapes. */
+.funnel{display:grid;gap:12px}
+.funnel-step{display:grid;grid-template-columns:200px 1fr auto;align-items:center;gap:16px}
+.funnel-label{font-size:12.5px;color:var(--ink);font-weight:700}
+.funnel-track{position:relative;height:34px;border-radius:9px;background:var(--surface-2);overflow:hidden}
+.funnel-bar{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:9px;transition:width .4s ease}
+.funnel-count{position:relative;z-index:1;height:100%;display:flex;align-items:center;padding:0 12px;font-size:13px;font-weight:800;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.funnel-count.on-track{color:var(--ink)}
+.funnel-conversion{min-width:56px;text-align:right;font-size:11px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.funnel-conversion.first{color:var(--muted-2)}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.kpi-card{padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.kpi-label{margin:0;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+.kpi-value{margin:8px 0 4px;font-size:28px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.kpi-value small{font-size:14px;color:var(--muted);font-weight:700}
+.kpi-hint{margin:0;font-size:11px;color:var(--muted-2);line-height:1.5}
+
+.week-chart{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:8px}
+.week-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px}
+.week-bar{width:100%;max-width:34px;background:var(--accent);border-radius:6px 6px 3px 3px;min-height:3px}
+.week-value{font-size:10px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.week-label{font-size:9px;color:var(--muted-2)}
+
+@media(max-width:760px){
+  .funnel-step{grid-template-columns:1fr;gap:6px}
+  .funnel-conversion{text-align:left}
+  .kpi-grid{grid-template-columns:1fr}
+  .metrics-section-head{flex-direction:column;align-items:flex-start}
+  .metrics-section-note{text-align:left}
+}

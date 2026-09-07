@@ -1,6 +1,6 @@
 # Plan et avancement
 
-Dernière mise à jour : 3 septembre 2026 (déploiement continu web actif, terrain mobile prêt).
+Dernière mise à jour : 7 septembre 2026 (evolyfoot.com en ligne).
 
 ## Phase 0 — Fondation
 
@@ -54,7 +54,7 @@ Dernière mise à jour : 3 septembre 2026 (déploiement continu web actif, terra
 
 - [x] Terrain de déploiement côté code : `Dockerfile` (cibles `web`/`migrator`, testées de bout en bout contre PostgreSQL réel), `docker-compose.yml` (construction sur place via SSH, pas de registre), `.github/workflows/cd.yml`, `apps/mobile/eas.json` (profils development/preview/production). Voir docs/delivery.md pour le déroulé pas-à-pas.
 - [x] Préproduction VPS et déploiement continu web — bootstrap fait (réseau Docker `edge`, dépôt cloné dans `/opt/evolyfoot`, `.env` avec mot de passe généré), premier déploiement manuel validé le 3 septembre 2026 (`docker compose up -d --build` sain, `GET /api/health/database` répond `{"status":"ok"}` en interne). `cd.yml` se déclenche désormais automatiquement à chaque `push` dans `master`, sans approbation manuelle (l'environnement GitHub `production` n'a aucune règle de protection). Corrigé au passage : la branche par défaut du dépôt GitHub était restée sur une ancienne branche de travail plutôt que `master`, ce qui avait fait atterrir un premier `git clone` sur le VPS sur du code obsolète (sans `Dockerfile` ni `.env.production.example`) — remis sur `master`.
-- [ ] Reste bloquant avant que `evolyfoot.com` soit joignable depuis l'extérieur : bloc Caddy côté arena-pulse (Caddyfile + réseau `edge` sur son service `caddy`) — changement du dépôt arena-pulse, hors périmètre de ce dépôt-ci, voir docs/delivery.md.
+- [x] `evolyfoot.com` en ligne — bloc Caddy appliqué côté arena-pulse le 7 septembre 2026 (`EVOLYFOOT_DOMAIN` renseigné, `caddy` relancé). Vérifié indépendamment : `evolyfoot.com` et `www.evolyfoot.com` répondent 200 avec un certificat Let's Encrypt de production valide, `/api/health/database` répond `{"status":"ok"}`. Incident traversé au passage (documenté dans l'historique de la conversation, pas ici) : une première variante du bloc a fait planter le Caddy partagé en boucle (`EVOLYFOOT_DOMAIN` non défini produisait un bloc de site sans hôte, invalide pour Caddy) — n'a pas affecté arena-pulse/kelto-studio au-delà de quelques minutes d'indisponibilité pendant la correction.
 - [x] Terrain de déploiement continu mobile côté code : `.github/workflows/mobile-cd.yml` (build EAS + soumission TestFlight/piste interne Google Play sur chaque merge dans `master`), inerte tant que les secrets ci-dessous ne sont pas configurés.
 - [ ] EAS Build preview — attend un compte Expo/EAS et des icônes/splash (actuellement absents d'`app.json`).
 - [ ] TestFlight et piste interne Google Play — attend les comptes Apple Developer et Google Play Console (paiement/identité du porteur du projet, ne peuvent pas être créés par un agent).
