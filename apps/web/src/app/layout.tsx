@@ -6,6 +6,7 @@ import "./tactical-diagram.css";
 import "./bibliotheque.css";
 import "./roster.css";
 import "./metrics.css";
+import { AuthGate } from "./auth-gate";
 
 export const metadata: Metadata = {
   title: "EvolyFoot — Piloter la progression",
@@ -15,7 +16,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        <AuthGate>{children}</AuthGate>
+      </body>
     </html>
   );
 }
