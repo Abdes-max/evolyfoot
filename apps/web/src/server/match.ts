@@ -8,6 +8,7 @@ export interface MatchSummary {
   dateLabel: string;
   venue: MatchVenue;
   gameFormat: number;
+  formationId: string;
   status: MatchStatus;
   lineup: readonly MatchLineupAssignment[];
   captainPlayerId: string | null;
@@ -16,12 +17,16 @@ export interface MatchSummary {
 export interface MatchGateway {
   list(educatorId: string): Promise<MatchSummary[]>;
   get(educatorId: string, matchId: string): Promise<MatchSummary>;
-  create(educatorId: string, input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number }): Promise<MatchSummary>;
+  create(
+    educatorId: string,
+    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string },
+  ): Promise<MatchSummary>;
   updateLineup(
     educatorId: string,
     matchId: string,
     input: { lineup: readonly MatchLineupAssignment[]; captainPlayerId: string | null },
   ): Promise<MatchSummary>;
+  changeFormation(educatorId: string, matchId: string, formationId: string): Promise<MatchSummary>;
   markPlayed(educatorId: string, matchId: string): Promise<MatchSummary>;
   remove(educatorId: string, matchId: string): Promise<void>;
 }
@@ -93,12 +98,13 @@ export function createCreateMatchHandler(
     const dateLabel = typeof body?.dateLabel === "string" ? body.dateLabel : null;
     const venue = body?.venue === "home" || body?.venue === "away" ? body.venue : null;
     const gameFormat = typeof body?.gameFormat === "number" ? body.gameFormat : null;
+    const formationId = typeof body?.formationId === "string" ? body.formationId : undefined;
     if (opponent === null || dateLabel === null || venue === null || gameFormat === null) {
       return Response.json({ error: "Adversaire, date, lieu et format de jeu sont requis." }, { status: 400 });
     }
 
     try {
-      const match = await matches.create(educator.id, { opponent, dateLabel, venue, gameFormat });
+      const match = await matches.create(educator.id, { opponent, dateLabel, venue, gameFormat, formationId });
       return Response.json({ match }, { status: 201 });
     } catch (error) {
       return errorResponse(error, log);
@@ -144,6 +150,31 @@ export function createUpdateLineupHandler(
 
     try {
       return Response.json({ match: await matches.updateLineup(educator.id, matchId, { lineup, captainPlayerId }) });
+    } catch (error) {
+      return errorResponse(error, log);
+    }
+  };
+}
+
+export function createChangeFormationHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  matches: Pick<MatchGateway, "changeFormation">,
+  log: (error: unknown) => void,
+): (request: Request, matchId: string) => Promise<Response> {
+  return async (request, matchId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+
+    const body = await readJsonBody(request);
+    const formationId = typeof body?.formationId === "string" ? body.formationId : null;
+    if (formationId === null) {
+      return Response.json({ error: "Une formation est requise." }, { status: 400 });
+    }
+
+    try {
+      return Response.json({ match: await matches.changeFormation(educator.id, matchId, formationId) });
     } catch (error) {
       return errorResponse(error, log);
     }
@@ -199,6 +230,7 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       dateLabel: match.dateLabel,
       venue: match.venue,
       gameFormat: match.gameFormat,
+      formationId: match.formationId,
       status: match.status,
       lineup: match.lineup,
       captainPlayerId: match.captainPlayerId,
@@ -219,6 +251,9 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       },
       async updateLineup(educatorId, matchId, input) {
         return toSummary(await service.updateLineup(educatorId, matchId, input));
+      },
+      async changeFormation(educatorId, matchId, formationId) {
+        return toSummary(await service.changeFormation(educatorId, matchId, formationId));
       },
       async markPlayed(educatorId, matchId) {
         return toSummary(await service.markPlayed(educatorId, matchId));

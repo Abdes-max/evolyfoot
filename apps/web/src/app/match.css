@@ -37,18 +37,27 @@
 .match-card-link { margin-top: 6px; color: var(--accent-dark); font-size: 11.5px; font-weight: 800; text-decoration: none; }
 
 .match-prep-layout { display: grid; grid-template-columns: minmax(200px, 300px) 1fr; gap: 30px; align-items: start; }
-.match-pitch { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+.match-pitch { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
 .match-pitch svg { width: 100%; height: auto; display: block; }
 .match-pitch-turf { fill: #0f2a1c; stroke: rgba(255,255,255,.14); stroke-width: 1.5; }
 .match-pitch-line { stroke: rgba(255,255,255,.16); stroke-width: 1.5; }
-.match-pitch-token { stroke-width: 2; }
-.match-pitch-token.empty { fill: var(--surface-2); stroke: var(--line); }
-.match-pitch-token.filled { fill: var(--accent); stroke: var(--accent-dark); }
-.match-pitch-label { fill: var(--ink); font-size: 13px; font-weight: 800; }
-.match-pitch-token.filled + .match-pitch-label { fill: var(--accent-ink); }
-.match-pitch-captain { fill: var(--warn); font-size: 12px; font-weight: 900; }
+/* Superposé au SVG (mêmes proportions que son viewBox 300x460, voir match-pitch.tsx) plutôt que
+   dessiné dedans : chaque poste est un vrai <button> HTML, seul moyen d'obtenir focus clavier et
+   activation Entrée/Espace sans réimplémenter la sémantique d'un bouton dans du SVG. */
+.match-pitch-tokens { position: absolute; inset: 16px; }
+.match-pitch-token { position: absolute; transform: translate(-50%, -50%); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; border-width: 2px; border-style: solid; padding: 0; }
+.match-pitch-token.empty { background: var(--surface-2); border-color: var(--line); color: var(--ink); cursor: pointer; }
+.match-pitch-token.filled { background: var(--accent); border-color: var(--accent-dark); color: var(--accent-ink); cursor: pointer; }
+.match-pitch-token:disabled { cursor: default; }
+.match-pitch-token:not(:disabled):hover { filter: brightness(1.12); }
+.match-pitch-captain { position: absolute; top: -4px; right: -8px; color: var(--warn); font-size: 12px; font-weight: 900; }
 
-.match-slot-panel h2 { margin: 0 0 14px; font-size: 16px; }
+.match-formation-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.match-formation-picker button { min-height: 36px; padding: 0 13px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 11.5px; font-weight: 800; }
+.match-formation-picker button.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+
+.match-slot-panel h2 { margin: 0 0 4px; font-size: 16px; }
+.match-slot-hint { margin: 0 0 14px; color: var(--muted); font-size: 11px; }
 .match-slot-list { display: grid; gap: 9px; margin-bottom: 18px; }
 .match-slot-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 .match-slot-row span { color: var(--muted); font-size: 11.5px; font-weight: 700; flex-shrink: 0; }

@@ -2,41 +2,75 @@ import { describe, expect, it } from "vitest";
 import {
   assignPlayerToSlot,
   canFinalizeMatchPlan,
+  changeFormation,
   clearSlot,
   createMatchPlan,
-  formationForGameFormat,
+  defaultFormationId,
+  formationSlots,
   isLineupComplete,
+  listFormations,
   setCaptain,
   validateMatchPlan,
 } from "./match";
 import type { GameFormat } from "./team";
 
-describe("formationForGameFormat", () => {
-  it("produit exactement le nombre de postes du format de jeu, pour chaque format", () => {
+describe("listFormations", () => {
+  it("propose plusieurs formations pour chaque format de jeu", () => {
     const formats: GameFormat[] = [4, 5, 6, 7, 8, 9, 10, 11];
     for (const format of formats) {
-      expect(formationForGameFormat(format)).toHaveLength(format);
+      expect(listFormations(format).length).toBeGreaterThanOrEqual(2);
     }
   });
 
-  it("place toujours un unique gardien", () => {
-    for (const slots of [formationForGameFormat(8), formationForGameFormat(11)]) {
-      expect(slots.filter((slot) => slot.role === "goalkeeper")).toHaveLength(1);
+  it("chaque formation totalise exactement le nombre de postes du format de jeu", () => {
+    const formats: GameFormat[] = [4, 5, 6, 7, 8, 9, 10, 11];
+    for (const format of formats) {
+      for (const formation of listFormations(format)) {
+        expect(formation.slots).toHaveLength(format);
+      }
     }
   });
 
-  it("attribue des identifiants de poste stables et uniques", () => {
-    const slots = formationForGameFormat(8);
-    expect(new Set(slots.map((slot) => slot.id)).size).toBe(slots.length);
+  it("place toujours un unique gardien par formation", () => {
+    for (const formation of listFormations(8)) {
+      expect(formation.slots.filter((slot) => slot.role === "goalkeeper")).toHaveLength(1);
+    }
+  });
+
+  it("attribue des identifiants de poste stables et uniques au sein d'une formation", () => {
+    for (const formation of listFormations(11)) {
+      expect(new Set(formation.slots.map((slot) => slot.id)).size).toBe(formation.slots.length);
+    }
+  });
+});
+
+describe("formationSlots", () => {
+  it("retourne les postes de la formation demandée", () => {
+    const formations = listFormations(8);
+    const second = formations[1]!;
+    expect(formationSlots(8, second.id)).toEqual(second.slots);
+  });
+
+  it("se replie sur la première formation si l'identifiant est absent ou inconnu", () => {
+    const first = listFormations(8)[0]!;
+    expect(formationSlots(8, undefined)).toEqual(first.slots);
+    expect(formationSlots(8, "formation-inexistante")).toEqual(first.slots);
   });
 });
 
 describe("createMatchPlan", () => {
-  it("part d'une composition vide, sans capitaine, au statut programmé", () => {
+  it("part d'une composition vide, sans capitaine, au statut programmé, avec la formation par défaut", () => {
     const plan = createMatchPlan("US Vallée", "Samedi 12 septembre · 10:30", "home", 8);
     expect(plan.lineup).toHaveLength(0);
     expect(plan.captainPlayerId).toBeNull();
     expect(plan.status).toBe("scheduled");
+    expect(plan.formationId).toBe(defaultFormationId(8));
+  });
+
+  it("accepte une formation explicite", () => {
+    const chosen = listFormations(8)[1]!;
+    const plan = createMatchPlan("US Vallée", "Samedi", "home", 8, chosen.id);
+    expect(plan.formationId).toBe(chosen.id);
   });
 
   it("nettoie les espaces superflus de l'adversaire et de la date", () => {
@@ -90,6 +124,20 @@ describe("clearSlot", () => {
   });
 });
 
+describe("changeFormation", () => {
+  it("vide la composition et le capitaine, les postes n'étant plus les mêmes", () => {
+    let plan = assignPlayerToSlot(createMatchPlan("US Vallée", "Samedi", "home", 8), "goalkeeper-1", { id: "p1", name: "Lina" });
+    plan = setCaptain(plan, "p1");
+    const nextFormation = listFormations(8)[1]!;
+
+    plan = changeFormation(plan, nextFormation.id);
+
+    expect(plan.formationId).toBe(nextFormation.id);
+    expect(plan.lineup).toHaveLength(0);
+    expect(plan.captainPlayerId).toBeNull();
+  });
+});
+
 describe("isLineupComplete / validateMatchPlan / canFinalizeMatchPlan", () => {
   it("est incomplète tant que tous les postes ne sont pas pourvus", () => {
     const plan = assignPlayerToSlot(createMatchPlan("US Vallée", "Samedi", "home", 4), "goalkeeper-1", { id: "p1", name: "Lina" });
@@ -100,7 +148,7 @@ describe("isLineupComplete / validateMatchPlan / canFinalizeMatchPlan", () => {
 
   it("exige un capitaine parmi les titulaires même une fois la composition complète", () => {
     let plan = createMatchPlan("US Vallée", "Samedi", "home", 4);
-    const slots = formationForGameFormat(4);
+    const slots = formationSlots(4, plan.formationId);
     slots.forEach((slot, index) => {
       plan = assignPlayerToSlot(plan, slot.id, { id: `p${index}`, name: `Joueur ${index}` });
     });

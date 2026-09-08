@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { formationForGameFormat } from "@evolyfoot/domain";
+import { defaultFormationId, formationSlots, listFormations } from "@evolyfoot/domain";
+import type { MatchLineupAssignment } from "@evolyfoot/domain";
 import { createDatabaseClient } from "./client";
 import { MatchNotFoundError, ValidationError } from "./errors";
 import { MatchService } from "./match-service";
@@ -54,10 +55,26 @@ describe("PostgreSQL match persistence", () => {
     expect(matches.map((match) => match.opponent)).toEqual(["AS Rivière", "US Vallée"]);
   });
 
+  it("crée un match avec la formation par défaut du format de jeu", async () => {
+    const educator = await createEducator("default-formation");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+
+    expect(match.formationId).toBe(defaultFormationId(8));
+  });
+
+  it("rejette un identifiant de formation qui ne correspond pas au format de jeu", async () => {
+    const educator = await createEducator("bad-formation");
+    const otherFormatFormationId = listFormations(11)[0]!.id;
+
+    await expect(
+      service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4, formationId: otherFormatFormationId }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
   it("met à jour la composition et le capitaine", async () => {
     const educator = await createEducator("lineup");
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
-    const slots = formationForGameFormat(4);
+    const slots = formationSlots(4, match.formationId);
     const lineup = slots.map((slot, index) => ({ slotId: slot.id, playerId: `player-${index}`, playerName: `Joueur ${index}` }));
 
     const updated = await service.updateLineup(educator.id, match.id, { lineup, captainPlayerId: "player-0" });
@@ -81,7 +98,7 @@ describe("PostgreSQL match persistence", () => {
   it("rejette un capitaine qui ne fait pas partie des titulaires", async () => {
     const educator = await createEducator("bad-captain");
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
-    const slot = formationForGameFormat(4)[0]!;
+    const slot = formationSlots(4, match.formationId)[0]!;
 
     await expect(
       service.updateLineup(educator.id, match.id, {
@@ -101,13 +118,36 @@ describe("PostgreSQL match persistence", () => {
   it("marque un match joué une fois la composition complète et le capitaine désigné", async () => {
     const educator = await createEducator("played");
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
-    const slots = formationForGameFormat(4);
+    const slots = formationSlots(4, match.formationId);
     const lineup = slots.map((slot, index) => ({ slotId: slot.id, playerId: `player-${index}`, playerName: `Joueur ${index}` }));
     await service.updateLineup(educator.id, match.id, { lineup, captainPlayerId: "player-0" });
 
     const played = await service.markPlayed(educator.id, match.id);
 
     expect(played.status).toBe("played");
+  });
+
+  it("change de formation et repart d'une composition vide", async () => {
+    const educator = await createEducator("change-formation");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+    const slots = formationSlots(8, match.formationId);
+    const lineup: MatchLineupAssignment[] = slots.map((slot, index) => ({ slotId: slot.id, playerId: `player-${index}`, playerName: `Joueur ${index}` }));
+    await service.updateLineup(educator.id, match.id, { lineup, captainPlayerId: "player-0" });
+    const nextFormationId = listFormations(8)[1]!.id;
+
+    const updated = await service.changeFormation(educator.id, match.id, nextFormationId);
+
+    expect(updated.formationId).toBe(nextFormationId);
+    expect(updated.lineup).toEqual([]);
+    expect(updated.captainPlayerId).toBeNull();
+  });
+
+  it("rejette un changement vers une formation d'un autre format de jeu", async () => {
+    const educator = await createEducator("change-formation-bad");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
+    const otherFormatFormationId = listFormations(11)[0]!.id;
+
+    await expect(service.changeFormation(educator.id, match.id, otherFormatFormationId)).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("rejette l’accès à un match appartenant à un autre éducateur", async () => {

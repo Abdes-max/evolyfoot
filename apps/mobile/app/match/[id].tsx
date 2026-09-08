@@ -1,5 +1,5 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { assignPlayerToSlot, canFinalizeMatchPlan, clearSlot, formationForGameFormat } from "@evolyfoot/domain";
+import { assignPlayerToSlot, canFinalizeMatchPlan, clearSlot, formationSlots, listFormations } from "@evolyfoot/domain";
 import type { GameFormat, MatchLineupSlot, MatchPlan, MatchVenue } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -26,33 +26,39 @@ function toMatchPlan(match: MobileMatch): MatchPlan {
     dateLabel: match.dateLabel,
     venue: match.venue,
     gameFormat: match.gameFormat as GameFormat,
+    formationId: match.formationId,
     status: match.status,
     lineup: match.lineup,
     captainPlayerId: match.captainPlayerId,
   };
 }
 
-// Aperçu visuel en lecture seule, positions dérivées du format de jeu (formationForGameFormat) --
-// pas de dépendance SVG (react-native-svg n'est pas installée dans ce projet), un terrain vertical
-// en `View` positionnées en pourcentage sur un repère 300x460 fait tout aussi bien l'affaire, dans
-// le même esprit que les schémas tactiques web (TacticalDiagramView). L'affectation des postes se
-// fait via la liste de sélecteurs juste en dessous, pas en touchant directement ce schéma.
-function MatchPitch({ slots, match }: { slots: MatchLineupSlot[]; match: MobileMatch }) {
+// Positions dérivées de la formation choisie (formationSlots) -- pas de dépendance SVG
+// (react-native-svg n'est pas installée dans ce projet), un terrain vertical en `View`
+// positionnées en pourcentage sur un repère 300x460 fait tout aussi bien l'affaire, dans le même
+// esprit que les schémas tactiques web (TacticalDiagramView). Chaque poste est une vraie
+// TouchableOpacity : toucher un poste directement sur le terrain ouvre le même sélecteur que la
+// liste juste en dessous.
+function MatchPitch({ slots, match, onSlotTap }: { slots: readonly MatchLineupSlot[]; match: MobileMatch; onSlotTap?: (slotId: string) => void }) {
   return (
     <View style={pitchStyles.pitch}>
       {slots.map((slot) => {
         const assignment = match.lineup.find((candidate) => candidate.slotId === slot.id);
         const isCaptain = Boolean(assignment && assignment.playerId === match.captainPlayerId);
         return (
-          <View
+          <TouchableOpacity
+            accessibilityLabel={assignment ? `${slot.roleLabel} : ${assignment.playerName}${isCaptain ? ", capitaine" : ""}` : `${slot.roleLabel} : aucun joueur, toucher pour affecter`}
+            accessibilityRole="button"
+            disabled={!onSlotTap}
             key={slot.id}
+            onPress={() => onSlotTap?.(slot.id)}
             style={[pitchStyles.token, assignment && pitchStyles.tokenFilled, { left: `${(slot.x / 300) * 100}%`, top: `${(slot.y / 460) * 100}%` }]}
           >
             <Text style={[pitchStyles.tokenText, assignment && pitchStyles.tokenTextFilled]}>
               {assignment ? initials(assignment.playerName) : slot.roleLabel.slice(0, 1)}
             </Text>
             {isCaptain && <Text style={pitchStyles.captainBadge}>C</Text>}
-          </View>
+          </TouchableOpacity>
         );
       })}
     </View>
@@ -70,7 +76,7 @@ const pitchStyles = StyleSheet.create({
 
 export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { roster, getMatch, updateMatchLineup, markMatchPlayed } = useAuth();
+  const { roster, getMatch, updateMatchLineup, changeMatchFormation, markMatchPlayed } = useAuth();
   const [match, setMatch] = useState<MobileMatch | null>(null);
   const [loadError, setLoadError] = useState("");
   const [saveError, setSaveError] = useState("");
@@ -124,6 +130,19 @@ export default function MatchDetailScreen() {
     persist({ ...match, captainPlayerId: playerId });
   }
 
+  async function changeFormation(formationId: string) {
+    if (!match || formationId === match.formationId) {
+      return;
+    }
+    setSaveError("");
+    const result = await changeMatchFormation(id, formationId);
+    if (!result.ok) {
+      setSaveError(result.error);
+      return;
+    }
+    setMatch(result.match);
+  }
+
   async function finalize() {
     setFinalizing(true);
     setSaveError("");
@@ -150,7 +169,9 @@ export default function MatchDetailScreen() {
     return <SafeAreaView style={styles.safe} />;
   }
 
-  const slots = formationForGameFormat(match.gameFormat as GameFormat);
+  const gameFormat = match.gameFormat as GameFormat;
+  const formations = listFormations(gameFormat);
+  const slots = formationSlots(gameFormat, match.formationId);
   const readOnly = match.status === "played";
   const assignedPlayerIds = new Set(match.lineup.map((assignment) => assignment.playerId));
   const canFinalize = canFinalizeMatchPlan(toMatchPlan(match));
@@ -164,11 +185,28 @@ export default function MatchDetailScreen() {
           {match.dateLabel} · {venueLabel[match.venue]} · Foot à {match.gameFormat}
         </Text>
 
+        {!readOnly && formations.length > 1 && (
+          <View style={styles.formationRow}>
+            {formations.map((formation) => (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: formation.id === match.formationId }}
+                key={formation.id}
+                onPress={() => changeFormation(formation.id)}
+                style={[styles.formationChoice, formation.id === match.formationId && styles.formationChoiceActive]}
+              >
+                <Text style={[styles.formationChoiceText, formation.id === match.formationId && styles.formationChoiceTextActive]}>{formation.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         <View style={styles.pitchWrap}>
-          <MatchPitch match={match} slots={slots} />
+          <MatchPitch match={match} onSlotTap={readOnly ? undefined : (slotId) => { setPickerCaptain(false); setPickerSlotId(slotId); }} slots={slots} />
         </View>
 
         <Text style={styles.sectionTitle}>Composition</Text>
+        <Text style={styles.sectionHint}>Touche un poste sur le terrain ou dans la liste pour y affecter un joueur.</Text>
         {slots.map((slot) => {
           const assignment = match.lineup.find((candidate) => candidate.slotId === slot.id);
           return (
@@ -302,8 +340,14 @@ const styles = StyleSheet.create({
   step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
   title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 8 },
   body: { fontSize: 12.5, color: colors.muted, marginTop: 6 },
-  pitchWrap: { marginTop: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginTop: 24, marginBottom: 10 },
+  formationRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 16 },
+  formationChoice: { minHeight: 36, paddingHorizontal: 13, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+  formationChoiceActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  formationChoiceText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
+  formationChoiceTextActive: { color: colors.primary },
+  pitchWrap: { marginTop: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginTop: 24, marginBottom: 2 },
+  sectionHint: { fontSize: 11, color: colors.muted, marginBottom: 8 },
   slotRow: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm, backgroundColor: colors.surface, marginTop: 8 },
   slotLabel: { color: colors.muted, fontSize: 11.5, fontWeight: "700" },
   slotValue: { color: colors.ink, fontSize: 12.5, fontWeight: "700" },

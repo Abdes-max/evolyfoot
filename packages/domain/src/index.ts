@@ -107,11 +107,23 @@ export type {
 export {
   assignPlayerToSlot,
   canFinalizeMatchPlan,
+  changeFormation,
   clearSlot,
   createMatchPlan,
-  formationForGameFormat,
+  defaultFormationId,
+  formationSlots,
   isLineupComplete,
+  listFormations,
   setCaptain,
   validateMatchPlan,
 } from "./match";
-export type { LineupRole, MatchLineupAssignment, MatchLineupSlot, MatchPlan, MatchPlanErrors, MatchStatus, MatchVenue } from "./match";
+export type {
+  Formation,
+  LineupRole,
+  MatchLineupAssignment,
+  MatchLineupSlot,
+  MatchPlan,
+  MatchPlanErrors,
+  MatchStatus,
+  MatchVenue,
+} from "./match";

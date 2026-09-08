@@ -164,6 +164,9 @@ export interface PersistedMatch {
   dateLabel: string;
   venue: MatchVenue;
   gameFormat: GameFormat;
+  // Toujours une valeur concrète : résolue par le mapper (voir toPersistedMatch) sur la
+  // formation par défaut du format de jeu si la colonne est vide en base.
+  formationId: string;
   status: MatchStatus;
   lineup: readonly MatchLineupAssignment[];
   captainPlayerId: string | null;
@@ -176,7 +179,7 @@ export interface MatchRepository {
   findById(id: string, educatorId: string): Promise<PersistedMatch | null>;
   create(
     educatorId: string,
-    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: GameFormat },
+    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: GameFormat; formationId: string },
   ): Promise<PersistedMatch>;
   update(
     id: string,
@@ -185,6 +188,7 @@ export interface MatchRepository {
       opponent?: string;
       dateLabel?: string;
       venue?: MatchVenue;
+      formationId?: string;
       status?: MatchStatus;
       lineup?: readonly MatchLineupAssignment[];
       captainPlayerId?: string | null;
