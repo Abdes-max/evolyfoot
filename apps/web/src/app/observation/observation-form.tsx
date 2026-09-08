@@ -216,7 +216,7 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
           <div className="section-title"><span className="eyebrow">FACULTATIF</span><h3 id="player-observation-title">Joueurs à retenir</h3><p>Un même joueur ne peut recevoir qu&apos;un seul signal.</p></div>
           {draft.players.length === 0 && (
             <p className="player-signals-empty">
-              Aucun joueur dans ton effectif pour l&apos;instant. <Link href="/equipe">Ajouter mon effectif →</Link>
+              Aucun joueur dans ton effectif pour l&apos;instant. <Link className="inline-cta" href="/equipe">Ajouter mon effectif →</Link>
             </p>
           )}
           <div className="player-signals">
@@ -238,7 +238,7 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
       </div>
 
       {report && <section aria-live="polite" className="observation-result" role="status"><span className="eyebrow">SYNTHÈSE EVOLY</span><h3>{`Tendance ${levelText[report.summary.trend]}`}</h3><dl><div><dt>Point fort</dt><dd>{report.summary.strongest.label}</dd></div><div><dt>Priorité à renforcer</dt><dd>{report.summary.weakest.label}</dd></div><div><dt>Joueurs signalés</dt><dd>{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</dd></div></dl>
-        {saveState === "auth-required" && <p className="field-error">Connecte-toi pour enregistrer cette observation. <Link href="/connexion">Se connecter →</Link></p>}
+        {saveState === "auth-required" && <p className="field-error">Connecte-toi pour enregistrer cette observation. <Link className="inline-cta" href="/connexion">Se connecter →</Link></p>}
         {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
       </section>}
       {suggestion && <AdjustmentCard suggestion={suggestion} />}

@@ -154,7 +154,7 @@ export function RosterView() {
         {team && (
           <p className="roster-team-summary">
             {team.name} · {team.ageGroup} · Foot à {team.gameFormat} · {team.playerCount} joueurs au total ·{" "}
-            <Link href="/onboarding">Modifier mon équipe →</Link>
+            <Link className="inline-cta" href="/onboarding">Modifier mon équipe →</Link>
           </p>
         )}
       </header>
@@ -162,7 +162,7 @@ export function RosterView() {
       {authenticated === false && (
         <section className="roster-auth-required" role="status">
           <p>
-            Connecte-toi pour gérer l’effectif de ton équipe. <Link href="/connexion">Se connecter →</Link>
+            Connecte-toi pour gérer l’effectif de ton équipe. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
           </p>
         </section>
       )}
@@ -171,7 +171,7 @@ export function RosterView() {
         <section className="roster-content">
           {!team && (
             <p className="roster-no-team">
-              Configure d’abord ton équipe. <Link href="/onboarding">Configurer mon équipe →</Link>
+              Configure d’abord ton équipe. <Link className="inline-cta" href="/onboarding">Configurer mon équipe →</Link>
             </p>
           )}
 

@@ -122,7 +122,7 @@ export function MatchListView() {
       {authenticated === false && (
         <section className="match-auth-required" role="status">
           <p>
-            Connecte-toi pour préparer tes matchs. <Link href="/connexion">Se connecter →</Link>
+            Connecte-toi pour préparer tes matchs. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
           </p>
         </section>
       )}
@@ -206,20 +206,26 @@ export function MatchListView() {
           ) : (
             <ul className="match-list" aria-label="Matchs">
               {matches.map((match) => (
-                <li className="match-card" key={match.id}>
-                  <div className="match-card-top">
-                    <span className={`match-status match-status-${match.status}`}>{statusLabel[match.status]}</span>
-                    <span className="match-card-format">Foot à {match.gameFormat}</span>
-                  </div>
-                  <h2>{match.opponent}</h2>
-                  <p>
-                    {match.dateLabel} · {venueLabel[match.venue]}
-                  </p>
-                  <p className="match-card-lineup">
-                    {match.lineup.length}/{match.gameFormat} postes pourvus
-                  </p>
-                  <Link className="match-card-link" href={`/match/${match.id}`}>
-                    {match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}
+                <li key={match.id}>
+                  <Link
+                    aria-label={`${match.opponent} — ${match.status === "played" ? "Voir la composition" : "Préparer la composition"}`}
+                    className="match-card card-link"
+                    href={`/match/${match.id}`}
+                  >
+                    <div className="match-card-top">
+                      <span className={`match-status match-status-${match.status}`}>{statusLabel[match.status]}</span>
+                      <span className="match-card-format">Foot à {match.gameFormat}</span>
+                    </div>
+                    <h2 aria-hidden="true">{match.opponent}</h2>
+                    <p aria-hidden="true">
+                      {match.dateLabel} · {venueLabel[match.venue]}
+                    </p>
+                    <p aria-hidden="true" className="match-card-lineup">
+                      {match.lineup.length}/{match.gameFormat} postes pourvus
+                    </p>
+                    <span aria-hidden="true" className="match-card-link card-cta">
+                      {match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}
+                    </span>
                   </Link>
                 </li>
               ))}

@@ -34,7 +34,9 @@
 .match-card h2 { margin: 4px 0 0; font-size: 17px; }
 .match-card p { margin: 0; color: var(--muted); font-size: 11.5px; }
 .match-card-lineup { font-weight: 700; color: var(--ink) !important; }
-.match-card-link { margin-top: 6px; color: var(--accent-dark); font-size: 11.5px; font-weight: 800; text-decoration: none; }
+/* .match-card entière est désormais le lien (voir .card-link dans globals.css) ; ce repère se
+   contente maintenant de l'espacement, la couleur/graisse venant de .card-cta. */
+.match-card-link { margin-top: 6px; font-size: 11.5px; }
 
 .match-prep-layout { display: grid; grid-template-columns: minmax(200px, 300px) 1fr; gap: 30px; align-items: start; }
 .match-pitch { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; }

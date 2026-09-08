@@ -91,7 +91,7 @@ export function MetricsView() {
       {status === "loading" && <p className="metrics-loading">Chargement…</p>}
       {status === "denied" && (
         <p className="metrics-denied">
-          Accès réservé. <Link href="/connexion">Se connecter</Link> avec un compte autorisé.
+          Accès réservé. <Link className="inline-cta" href="/connexion">Se connecter</Link> avec un compte autorisé.
         </p>
       )}
       {status === "error" && <p className="metrics-denied">Une erreur est survenue, réessaie plus tard.</p>}
