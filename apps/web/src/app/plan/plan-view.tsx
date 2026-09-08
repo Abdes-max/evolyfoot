@@ -3,6 +3,7 @@
 import { buildDevelopmentPlan, summarizeDiagnostic, type DiagnosticScores } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { SidebarNav } from "../sidebar-nav";
 
 // Diagnostic de démonstration, utilisé tant qu'aucun diagnostic réel n'est disponible
 // (visiteur anonyme, ou éducateur connecté n'ayant pas encore fait le sien).
@@ -40,7 +41,9 @@ export function PlanView() {
   const plan = buildDevelopmentPlan(summarizeDiagnostic(scores));
 
   return (
-    <main className="plan-shell">
+    <>
+      <SidebarNav />
+      <main className="plan-shell">
       <header className="plan-header">
         <Link className="onboarding-brand" href="/">
           <span className="brand-mark">E</span> EvolyFoot
@@ -89,6 +92,7 @@ export function PlanView() {
           </Link>
         </div>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

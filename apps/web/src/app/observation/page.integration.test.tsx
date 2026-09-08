@@ -15,6 +15,10 @@ function completeObservationForm() {
 }
 
 describe("quick observation", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("initializes a match observation from Next search parameters", async () => {
     render(await ObservationPage({ searchParams: Promise.resolve({ type: "match" }) }));
 
@@ -23,7 +27,26 @@ describe("quick observation", () => {
   });
 
   it("completes an observation with visible selected states and an optional player signal", async () => {
+    // Le repli sur des joueurs de démonstration (Lina, Noah, Sami) a été retiré : la page n'est
+    // plus jamais atteignable sans être connecté, donc un effectif réel est mocké ici pour tester
+    // le signal joueur, plutôt que de dépendre de faux noms toujours présents.
+    vi.stubGlobal("fetch", vi.fn());
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.includes("/api/auth/session")) {
+        return jsonResponse({ educator: { id: "1", email: "coach@example.test", displayName: "Coach" } });
+      }
+      if (url.includes("/api/roster")) {
+        return jsonResponse({ players: [{ id: "player-lina", name: "Lina" }] });
+      }
+      if (url.includes("/api/diagnostic")) {
+        return jsonResponse({ scores: null });
+      }
+      return jsonResponse({});
+    });
+
     render(await ObservationPage({}));
+    await screen.findByRole("button", { name: /mettre Lina en réussite à retenir/i });
 
     const submit = screen.getByRole("button", { name: /valider l’observation/i });
     expect(submit).toBeDisabled();
