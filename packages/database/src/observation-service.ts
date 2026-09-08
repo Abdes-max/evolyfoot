@@ -9,7 +9,7 @@ export class ObservationService {
     private readonly observationRepository: ObservationRepository,
   ) {}
 
-  async save(educatorId: string, draft: ObservationDraft): Promise<PersistedObservation> {
+  async save(educatorId: string, draft: ObservationDraft, matchId?: string): Promise<PersistedObservation> {
     // Recalcule le rapport (synthèse comprise) côté serveur à partir du brouillon plutôt que
     // de faire confiance à une synthèse déjà calculée côté client.
     let report;
@@ -23,6 +23,6 @@ export class ObservationService {
       throw new EducatorNotFoundError();
     }
 
-    return this.observationRepository.create(educatorId, report);
+    return this.observationRepository.create(educatorId, report, matchId);
   }
 }

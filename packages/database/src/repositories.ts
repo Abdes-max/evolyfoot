@@ -2,6 +2,10 @@ import type {
   AgeGroup,
   DevelopmentTheme,
   DiagnosticScores,
+  GameFormat,
+  MatchLineupAssignment,
+  MatchStatus,
+  MatchVenue,
   ObservationEventType,
   ObservationReport,
   ObservationReportRating,
@@ -119,11 +123,12 @@ export interface PersistedObservation {
   signals: readonly PlayerSignal[];
   note?: string;
   summary: ObservationReportSummary;
+  matchId?: string;
   createdAt: Date;
 }
 
 export interface ObservationRepository {
-  create(educatorId: string, report: ObservationReport): Promise<PersistedObservation>;
+  create(educatorId: string, report: ObservationReport, matchId?: string): Promise<PersistedObservation>;
 }
 
 // Effectif nominatif de l'éducateur. Rattaché à l'éducateur (pas à Team) : CRUD complet, à
@@ -143,5 +148,47 @@ export interface PlayerRepository {
   listByEducator(educatorId: string): Promise<PersistedPlayer[]>;
   create(educatorId: string, name: string): Promise<PersistedPlayer>;
   rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer>;
+  remove(id: string, educatorId: string): Promise<void>;
+}
+
+// Préparation d'un match : CRUD complet comme Player (pas un historique append-only) puisque la
+// composition se modifie librement jusqu'au coup d'envoi. `lineup`/`captainPlayerId` ne
+// référencent les joueurs que par id + nom dupliqué (voir MatchLineupAssignment côté domaine),
+// jamais de clé étrangère vers `Player` -- même principe que PersistedObservation.players : un
+// joueur renommé ou retiré de l'effectif plus tard ne doit pas modifier une composition déjà
+// préparée.
+export interface PersistedMatch {
+  id: string;
+  educatorId: string;
+  opponent: string;
+  dateLabel: string;
+  venue: MatchVenue;
+  gameFormat: GameFormat;
+  status: MatchStatus;
+  lineup: readonly MatchLineupAssignment[];
+  captainPlayerId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MatchRepository {
+  listByEducator(educatorId: string): Promise<PersistedMatch[]>;
+  findById(id: string, educatorId: string): Promise<PersistedMatch | null>;
+  create(
+    educatorId: string,
+    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: GameFormat },
+  ): Promise<PersistedMatch>;
+  update(
+    id: string,
+    educatorId: string,
+    input: {
+      opponent?: string;
+      dateLabel?: string;
+      venue?: MatchVenue;
+      status?: MatchStatus;
+      lineup?: readonly MatchLineupAssignment[];
+      captainPlayerId?: string | null;
+    },
+  ): Promise<PersistedMatch>;
   remove(id: string, educatorId: string): Promise<void>;
 }

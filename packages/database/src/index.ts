@@ -5,6 +5,7 @@ export {
   DuplicateEducatorEmailError,
   EducatorNotFoundError,
   InvalidCredentialsError,
+  MatchNotFoundError,
   PlayerNotFoundError,
   TeamNotFoundError,
   ValidationError,
@@ -12,6 +13,7 @@ export {
 export {
   PrismaDiagnosticRepository,
   PrismaEducatorRepository,
+  PrismaMatchRepository,
   PrismaObservationRepository,
   PrismaPlayerRepository,
   PrismaSessionRepository,
@@ -20,6 +22,7 @@ export {
 } from "./prisma-repositories";
 export { AuthService } from "./auth-service";
 export { DiagnosticService } from "./diagnostic-service";
+export { MatchService } from "./match-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";
 export { RosterService } from "./roster-service";
@@ -33,8 +36,10 @@ export type {
   EducatorAuthRecord,
   EducatorRecord,
   EducatorRepository,
+  MatchRepository,
   ObservationRepository,
   PersistedDiagnostic,
+  PersistedMatch,
   PersistedObservation,
   PersistedPlayer,
   PersistedTeamProfile,

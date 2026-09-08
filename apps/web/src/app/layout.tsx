@@ -6,6 +6,7 @@ import "./tactical-diagram.css";
 import "./bibliotheque.css";
 import "./roster.css";
 import "./metrics.css";
+import "./match.css";
 import { AuthGate } from "./auth-gate";
 
 export const metadata: Metadata = {

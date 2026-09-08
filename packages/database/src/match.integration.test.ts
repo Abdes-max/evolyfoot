@@ -1,0 +1,141 @@
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { formationForGameFormat } from "@evolyfoot/domain";
+import { createDatabaseClient } from "./client";
+import { MatchNotFoundError, ValidationError } from "./errors";
+import { MatchService } from "./match-service";
+import { PrismaEducatorRepository, PrismaMatchRepository } from "./prisma-repositories";
+
+const testRun = `match-integration-${crypto.randomUUID()}`;
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL est obligatoire pour les tests d’intégration.");
+}
+
+const database = createDatabaseClient(databaseUrl);
+const educatorRepository = new PrismaEducatorRepository(database.prisma);
+const matchRepository = new PrismaMatchRepository(database.prisma);
+const service = new MatchService(educatorRepository, matchRepository);
+
+async function createEducator(suffix: string) {
+  return educatorRepository.create({
+    email: `${testRun}-${suffix}@example.test`,
+    displayName: `${testRun}-${suffix}`,
+    passwordHash: "test-hash",
+  });
+}
+
+async function removeTestEducators(): Promise<void> {
+  await database.prisma.educator.deleteMany({ where: { displayName: { startsWith: testRun } } });
+}
+
+describe("PostgreSQL match persistence", () => {
+  beforeAll(removeTestEducators);
+  afterEach(removeTestEducators);
+  afterAll(() => database.disconnect());
+
+  it("crée un match programmé, sans composition ni capitaine", async () => {
+    const educator = await createEducator("create");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi 12 septembre · 10:30", venue: "home", gameFormat: 8 });
+
+    expect(match.opponent).toBe("US Vallée");
+    expect(match.status).toBe("scheduled");
+    expect(match.lineup).toEqual([]);
+    expect(match.captainPlayerId).toBeNull();
+  });
+
+  it("liste les matchs du plus récent au plus ancien", async () => {
+    const educator = await createEducator("list");
+    await service.create(educator.id, { opponent: "US Vallée", dateLabel: "S1", venue: "home", gameFormat: 8 });
+    await service.create(educator.id, { opponent: "AS Rivière", dateLabel: "S2", venue: "away", gameFormat: 8 });
+
+    const matches = await service.list(educator.id);
+
+    expect(matches.map((match) => match.opponent)).toEqual(["AS Rivière", "US Vallée"]);
+  });
+
+  it("met à jour la composition et le capitaine", async () => {
+    const educator = await createEducator("lineup");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
+    const slots = formationForGameFormat(4);
+    const lineup = slots.map((slot, index) => ({ slotId: slot.id, playerId: `player-${index}`, playerName: `Joueur ${index}` }));
+
+    const updated = await service.updateLineup(educator.id, match.id, { lineup, captainPlayerId: "player-0" });
+
+    expect(updated.lineup).toEqual(lineup);
+    expect(updated.captainPlayerId).toBe("player-0");
+  });
+
+  it("rejette un identifiant de poste qui n’existe pas dans la formation du format de jeu", async () => {
+    const educator = await createEducator("bad-slot");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
+
+    await expect(
+      service.updateLineup(educator.id, match.id, {
+        lineup: [{ slotId: "attacker-9", playerId: "player-0", playerName: "Joueur 0" }],
+        captainPlayerId: null,
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("rejette un capitaine qui ne fait pas partie des titulaires", async () => {
+    const educator = await createEducator("bad-captain");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
+    const slot = formationForGameFormat(4)[0]!;
+
+    await expect(
+      service.updateLineup(educator.id, match.id, {
+        lineup: [{ slotId: slot.id, playerId: "player-0", playerName: "Joueur 0" }],
+        captainPlayerId: "player-1",
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("refuse de marquer un match joué tant que la composition est incomplète", async () => {
+    const educator = await createEducator("incomplete");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
+
+    await expect(service.markPlayed(educator.id, match.id)).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("marque un match joué une fois la composition complète et le capitaine désigné", async () => {
+    const educator = await createEducator("played");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
+    const slots = formationForGameFormat(4);
+    const lineup = slots.map((slot, index) => ({ slotId: slot.id, playerId: `player-${index}`, playerName: `Joueur ${index}` }));
+    await service.updateLineup(educator.id, match.id, { lineup, captainPlayerId: "player-0" });
+
+    const played = await service.markPlayed(educator.id, match.id);
+
+    expect(played.status).toBe("played");
+  });
+
+  it("rejette l’accès à un match appartenant à un autre éducateur", async () => {
+    const owner = await createEducator("owner");
+    const stranger = await createEducator("stranger");
+    const match = await service.create(owner.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+
+    await expect(service.get(stranger.id, match.id)).rejects.toBeInstanceOf(MatchNotFoundError);
+    await expect(
+      service.updateLineup(stranger.id, match.id, { lineup: [], captainPlayerId: null }),
+    ).rejects.toBeInstanceOf(MatchNotFoundError);
+  });
+
+  it("supprime un match appartenant à l’éducateur", async () => {
+    const educator = await createEducator("remove");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+
+    await service.remove(educator.id, match.id);
+
+    await expect(service.list(educator.id)).resolves.toHaveLength(0);
+  });
+
+  it("cascade la suppression d’un éducateur de test vers ses matchs", async () => {
+    const educator = await createEducator("cascade");
+    await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+
+    await database.prisma.educator.delete({ where: { id: educator.id } });
+
+    await expect(database.prisma.matchRecord.count({ where: { educatorId: educator.id } })).resolves.toBe(0);
+  });
+});
