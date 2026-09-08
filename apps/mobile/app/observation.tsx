@@ -19,20 +19,12 @@ import {
   type PlayerReference,
 } from "@evolyfoot/domain";
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { Link, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { AccessibilityInfo, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AdjustmentCard } from "../components/adjustment-card";
 import { useAuth } from "../lib/auth-context";
-
-// Joueurs de démonstration, utilisés tant que l'éducateur connecté n'a pas encore ajouté de
-// joueur sur /equipe (même repli que côté web, voir observation-form.tsx).
-const demoPlayers: readonly PlayerReference[] = [
-  { id: "lina-dupont", name: "Lina" },
-  { id: "noah-martin", name: "Noah" },
-  { id: "sami-bernard", name: "Sami" },
-];
 
 // Diagnostic de démonstration, utilisé tant que l'éducateur connecté n'a pas encore fait le
 // sien, pour dériver la semaine en cours de la même façon que plan.tsx et session.tsx.
@@ -64,10 +56,17 @@ function createDraft(type: ObservationEventType, players: readonly PlayerReferen
 }
 
 export default function ObservationScreen() {
-  const { type } = useLocalSearchParams<{ type?: string }>();
-  const { diagnosticScores, roster, saveObservation } = useAuth();
+  const { type, matchId } = useLocalSearchParams<{ type?: string; matchId?: string }>();
+  const { diagnosticScores, roster, saveObservation, getMatch } = useAuth();
   const initialEventType: ObservationEventType = type === "match" ? "match" : "training";
-  const players = roster.length > 0 ? roster : demoPlayers;
+  // Un match préparé (voir /match) restreint la liste aux joueurs réellement alignés -- plus
+  // pertinent que l'effectif complet pour se souvenir de qui a joué ce match précis. Le repli sur
+  // des joueurs de démonstration (Lina, Noah, Sami) a été retiré : cet écran n'est plus jamais
+  // atteignable sans être connecté, donc ce n'est plus "un visiteur anonyme voit une démo" mais
+  // "un éducateur connecté voit de faux joueurs qui ne sont pas les siens" -- un vrai état vide
+  // (voir plus bas) est plus honnête. Même correctif que côté web (observation-form.tsx).
+  const [matchPlayers, setMatchPlayers] = useState<readonly PlayerReference[] | null>(null);
+  const players = matchPlayers ?? roster;
   const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType, players));
   const [report, setReport] = useState<ObservationReport>();
   const [suggestion, setSuggestion] = useState<AdjustmentSuggestion>();
@@ -77,6 +76,31 @@ export default function ObservationScreen() {
   // Résolu depuis le diagnostic déjà enregistré (comme dans plan.tsx et session.tsx), avec repli
   // sur la démonstration tant que l'éducateur n'a pas encore fait le sien.
   const currentWeek: DevelopmentWeek = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores)).weeks[0];
+
+  useEffect(() => {
+    if (!matchId) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const result = await getMatch(matchId);
+      if (cancelled || !result.ok || result.match.lineup.length === 0) {
+        return;
+      }
+      const lineupPlayers = result.match.lineup.map((assignment) => ({ id: assignment.playerId, name: assignment.playerName }));
+      setMatchPlayers(lineupPlayers);
+      // Même garde que côté web : ne reconstruit le brouillon que si le coach n'a encore rien
+      // saisi, ce chargement réseau pouvant se terminer après le début de l'interaction.
+      setDraft((current) =>
+        current.ratings.length === 0 && current.signals.length === 0 && !current.note
+          ? createDraft(current.eventType, lineupPlayers)
+          : current,
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [matchId, getMatch]);
 
   function editDraft(nextDraft: ObservationDraft) {
     setDraft(nextDraft);
@@ -96,7 +120,7 @@ export default function ObservationScreen() {
       AccessibilityInfo.announceForAccessibility(`Observation validée. Tendance ${levelText[nextReport.summary.trend]}.`);
     }
 
-    const result = await saveObservation(draft);
+    const result = await saveObservation(draft, matchId);
     if (!result.ok) {
       setSaveError(result.error);
     }
@@ -173,6 +197,16 @@ export default function ObservationScreen() {
           <Text style={styles.step}>FACULTATIF</Text>
           <Text style={styles.sectionTitle}>Joueurs à retenir</Text>
           <Text style={styles.body}>Un même joueur ne peut recevoir qu’un seul signal.</Text>
+          {draft.players.length === 0 && (
+            <View style={styles.playersEmpty}>
+              <Text style={styles.playersEmptyText}>Aucun joueur dans ton effectif pour l’instant.</Text>
+              <Link asChild href="/equipe">
+                <TouchableOpacity accessibilityRole="button">
+                  <Text style={styles.playersEmptyLink}>Ajouter mon effectif →</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+          )}
           {draft.players.map((player) => {
             const signal = draft.signals.find((candidate) => candidate.playerId === player.id)?.kind;
             return (
@@ -273,6 +307,9 @@ const styles = StyleSheet.create({
   level: { minHeight: 44, minWidth: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
   levelText: { fontSize: 12, fontWeight: "800", color: colors.ink },
   players: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginTop: 24 },
+  playersEmpty: { padding: 13, borderRadius: radii.sm, backgroundColor: colors.primarySoft, marginTop: 12 },
+  playersEmptyText: { color: colors.ink, fontSize: 11 },
+  playersEmptyLink: { color: colors.primary, fontSize: 11, fontWeight: "800", marginTop: 6 },
   playerRow: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 12, marginTop: 12 },
   playerName: { fontSize: 14, fontWeight: "800", color: colors.ink },
   playerActions: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 9 },

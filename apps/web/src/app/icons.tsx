@@ -52,6 +52,20 @@ export function EyeIcon(props: IconProps) {
   );
 }
 
+export function BallIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 8.2 15.5 10.7 14.2 14.8h-4.4L8.5 10.7Z" />
+      <path d="M12 8.2V4.3" />
+      <path d="M15.5 10.7 19 8.6" />
+      <path d="M14.2 14.8 15.6 19" />
+      <path d="M9.8 14.8 8.4 19" />
+      <path d="M8.5 10.7 5 8.6" />
+    </svg>
+  );
+}
+
 export function UsersIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>

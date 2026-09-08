@@ -26,6 +26,13 @@ export class PlayerNotFoundError extends Error {
   }
 }
 
+export class MatchNotFoundError extends Error {
+  constructor() {
+    super("Match introuvable.");
+    this.name = "MatchNotFoundError";
+  }
+}
+
 export class DuplicateEducatorEmailError extends Error {
   constructor() {
     super("Cette adresse e-mail est déjà utilisée.");

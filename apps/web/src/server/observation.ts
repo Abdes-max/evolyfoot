@@ -3,7 +3,7 @@ import { diagnosticCriteria, type ObservationDraft, type ObservationReport } fro
 import type { PublicEducator } from "./auth";
 
 export interface ObservationGateway {
-  save(educatorId: string, draft: ObservationDraft): Promise<ObservationReport>;
+  save(educatorId: string, draft: ObservationDraft, matchId?: string): Promise<ObservationReport>;
 }
 
 const observationLevels = ["reinforce", "progress", "achieved"] as const;
@@ -87,9 +87,15 @@ export function createSaveObservationHandler(
     if (!isObservationDraftShaped(body)) {
       return Response.json({ error: "L’observation est incomplète." }, { status: 400 });
     }
+    // Rattache l'observation au match préparé qu'elle concerne, quand elle en vient -- optionnel,
+    // une observation de séance n'a pas de matchId. L'appartenance réelle du match à cet
+    // éducateur (pas juste son existence) est vérifiée par la passerelle elle-même ci-dessous,
+    // avant d'accepter cet identifiant -- la contrainte de clé étrangère en base garantit
+    // seulement qu'un match avec cet id existe, jamais qu'il appartient à qui l'invoque.
+    const matchId = typeof body.matchId === "string" ? body.matchId : undefined;
 
     try {
-      const report = await observation.save(educator.id, body);
+      const report = await observation.save(educator.id, body, matchId);
       return Response.json({ report }, { status: 201 });
     } catch (error) {
       if (error instanceof EducatorNotFoundError) {
@@ -109,18 +115,38 @@ export async function createObservationGateway(): Promise<{
   gateway: ObservationGateway;
   disconnect: () => Promise<void>;
 }> {
-  const { createDatabaseClient, ObservationService, PrismaEducatorRepository, PrismaObservationRepository } =
-    await import("@evolyfoot/database");
+  const {
+    createDatabaseClient,
+    MatchNotFoundError,
+    MatchService,
+    ObservationService,
+    PrismaEducatorRepository,
+    PrismaMatchRepository,
+    PrismaObservationRepository,
+  } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const service = new ObservationService(
-    new PrismaEducatorRepository(database.prisma),
-    new PrismaObservationRepository(database.prisma),
-  );
+  const educatorRepository = new PrismaEducatorRepository(database.prisma);
+  const service = new ObservationService(educatorRepository, new PrismaObservationRepository(database.prisma));
+  const matchService = new MatchService(educatorRepository, new PrismaMatchRepository(database.prisma));
 
   return {
     gateway: {
-      async save(educatorId, draft) {
-        const observation = await service.save(educatorId, draft);
+      async save(educatorId, draft, matchId) {
+        if (matchId) {
+          // Vérifie l'appartenance réelle avant d'accepter cet identifiant : `MatchService.get`
+          // lève `MatchNotFoundError` aussi bien pour un match inexistant que pour un match
+          // appartenant à un autre éducateur (voir match-service.ts) -- jamais distinguer les
+          // deux côté réponse HTTP, ce serait révéler l'existence d'un match d'autrui.
+          try {
+            await matchService.get(educatorId, matchId);
+          } catch (error) {
+            if (error instanceof MatchNotFoundError) {
+              throw new Error("Match introuvable.");
+            }
+            throw error;
+          }
+        }
+        const observation = await service.save(educatorId, draft, matchId);
         return {
           id: observation.id,
           eventType: observation.eventType,

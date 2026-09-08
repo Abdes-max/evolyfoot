@@ -34,6 +34,16 @@ enum ObservationEventType {
   match
 }
 
+enum MatchVenue {
+  home
+  away
+}
+
+enum MatchStatus {
+  scheduled
+  played
+}
+
 model Educator {
   id               String                   @id @default(uuid()) @db.Uuid
   email            String                   @unique
@@ -45,6 +55,7 @@ model Educator {
   trainingSessions TrainingSessionRecord[]
   observations     ObservationRecord[]
   players          Player[]
+  matches          MatchRecord[]
   createdAt        DateTime                 @default(now()) @map("created_at")
   updatedAt        DateTime                 @updatedAt @map("updated_at")
 
@@ -113,9 +124,16 @@ model ObservationRecord {
   signals    Json
   note       String?
   summary    Json
+  // Rattache l'observation au match préparé qu'elle concerne, quand elle en vient (voir
+  // MatchRecord) -- optionnel : une observation de séance n'a pas de match, et `onDelete:
+  // SetNull` plutôt que `Cascade` puisqu'une observation déjà saisie doit survivre à la
+  // suppression du match qui l'a motivée.
+  matchId    String?              @db.Uuid @map("match_id")
+  match      MatchRecord?         @relation(fields: [matchId], references: [id], onDelete: SetNull)
   createdAt  DateTime             @default(now()) @map("created_at")
 
   @@index([educatorId])
+  @@index([matchId])
   @@map("observations")
 }
 
@@ -154,4 +172,30 @@ model Player {
 
   @@index([educatorId])
   @@map("players")
+}
+
+// Préparation d'un match : composition positionnée sur le terrain (`lineup`, voir
+// MatchLineupAssignment côté domaine) et capitaine. CRUD complet comme `Player` (pas un
+// historique append-only comme TrainingSessionRecord/ObservationRecord) : la composition se
+// modifie librement jusqu'au coup d'envoi. `lineup` ne référence les joueurs que par id + nom
+// dupliqué (jamais de clé étrangère vers `Player`), même principe que ObservationRecord.players
+// -- un joueur renommé ou retiré de l'effectif après coup ne doit pas modifier une composition
+// déjà préparée ou jouée.
+model MatchRecord {
+  id              String              @id @default(uuid()) @db.Uuid
+  educatorId      String              @db.Uuid @map("educator_id")
+  educator        Educator            @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  opponent        String
+  dateLabel       String              @map("date_label")
+  venue           MatchVenue
+  gameFormat      Int                 @map("game_format")
+  status          MatchStatus         @default(scheduled)
+  lineup          Json                @default("[]")
+  captainPlayerId String?             @map("captain_player_id")
+  observations    ObservationRecord[]
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  @@index([educatorId])
+  @@map("matches")
 }

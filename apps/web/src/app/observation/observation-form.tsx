@@ -59,9 +59,10 @@ type SaveState = "idle" | "pending" | "success" | "error" | "auth-required";
 
 interface ObservationFormProps {
   initialEventType: ObservationEventType;
+  matchId?: string;
 }
 
-export function ObservationForm({ initialEventType }: ObservationFormProps) {
+export function ObservationForm({ initialEventType, matchId }: ObservationFormProps) {
   const [players, setPlayers] = useState<ReadonlyArray<PlayerReference>>([]);
   const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType, []));
   const [report, setReport] = useState<ObservationReport>();
@@ -86,12 +87,14 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
         setAuthenticated(isAuthenticated);
 
         if (isAuthenticated) {
-          const [diagnosticResponse, rosterResponse] = await Promise.all([
+          const [diagnosticResponse, rosterResponse, matchResponse] = await Promise.all([
             fetch("/api/diagnostic"),
             fetch("/api/roster"),
+            matchId ? fetch(`/api/matches/${matchId}`) : Promise.resolve(null),
           ]);
           const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
           const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
+          const matchBody = matchResponse?.ok ? await matchResponse.json().catch(() => null) : null;
           if (cancelled) {
             return;
           }
@@ -104,7 +107,18 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
           // n'est plus "un visiteur anonyme voit une démo" mais "un éducateur connecté voit de
           // faux joueurs qui ne sont pas les siens" -- un vrai état vide (voir plus bas) est plus
           // honnête.
-          const roster: ReadonlyArray<PlayerReference> = rosterBody.players ?? [];
+          // Un match préparé (voir /match) restreint la liste aux joueurs réellement alignés --
+          // plus pertinent que l'effectif complet pour se souvenir de qui a joué ce match précis.
+          // Repli sur l'effectif complet si le match n'a pas encore de composition ou n'a pas pu
+          // être chargé.
+          const matchLineup: ReadonlyArray<PlayerReference> | null =
+            matchBody?.match?.lineup?.length > 0
+              ? matchBody.match.lineup.map((assignment: { playerId: string; playerName: string }) => ({
+                  id: assignment.playerId,
+                  name: assignment.playerName,
+                }))
+              : null;
+          const roster: ReadonlyArray<PlayerReference> = matchLineup ?? rosterBody.players ?? [];
           setPlayers(roster);
           // Ne reconstruit le brouillon que si le coach n'a encore rien saisi : ce chargement
           // réseau peut se terminer bien après le montage (effectif volumineux, connexion lente),
@@ -127,7 +141,7 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [matchId]);
 
   function editDraft(nextDraft: ObservationDraft) {
     setDraft(nextDraft);
@@ -152,7 +166,7 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
       const response = await fetch("/api/observations", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(draft),
+        body: JSON.stringify(matchId ? { ...draft, matchId } : draft),
       });
       setSaveState(response.ok ? "success" : "error");
     } catch {

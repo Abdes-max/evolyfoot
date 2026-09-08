@@ -4,6 +4,7 @@ import {
   DiagnosticNotFoundError,
   DuplicateEducatorEmailError,
   EducatorNotFoundError,
+  MatchNotFoundError,
   PlayerNotFoundError,
   TeamNotFoundError,
 } from "./errors";
@@ -11,12 +12,15 @@ import {
   toEducatorAuthRecord,
   toEducatorRecord,
   toPersistedDiagnostic,
+  toPersistedMatch,
   toPersistedObservation,
   toPersistedPlayer,
   toPersistedTeamProfile,
   toPersistedTrainingSession,
   toPrismaAgeGroup,
   toPrismaDevelopmentTheme,
+  toPrismaMatchStatus,
+  toPrismaMatchVenue,
   toPrismaObservationEventType,
   toPrismaTrainingDay,
   toSessionRecord,
@@ -27,8 +31,10 @@ import type {
   EducatorAuthRecord,
   EducatorRecord,
   EducatorRepository,
+  MatchRepository,
   ObservationRepository,
   PersistedDiagnostic,
+  PersistedMatch,
   PersistedObservation,
   PersistedPlayer,
   PersistedTeamProfile,
@@ -40,7 +46,7 @@ import type {
   TeamRepository,
   TrainingSessionRepository,
 } from "./repositories";
-import type { AgeGroup, DevelopmentTheme, DiagnosticScores, ObservationReport, TeamProfile } from "@evolyfoot/domain";
+import type { AgeGroup, DevelopmentTheme, DiagnosticScores, GameFormat, MatchLineupAssignment, MatchStatus, MatchVenue, ObservationReport, TeamProfile } from "@evolyfoot/domain";
 
 function translateEducatorWriteError(error: unknown): never {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -258,7 +264,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
 export class PrismaObservationRepository implements ObservationRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async create(educatorId: string, report: ObservationReport): Promise<PersistedObservation> {
+  async create(educatorId: string, report: ObservationReport, matchId?: string): Promise<PersistedObservation> {
     try {
       const record = await this.prisma.observationRecord.create({
         data: {
@@ -271,6 +277,7 @@ export class PrismaObservationRepository implements ObservationRepository {
           signals: report.signals as unknown as Prisma.InputJsonValue,
           note: report.note ?? null,
           summary: report.summary as unknown as Prisma.InputJsonValue,
+          matchId: matchId ?? null,
         },
       });
       return toPersistedObservation(record);
@@ -321,6 +328,87 @@ export class PrismaPlayerRepository implements PlayerRepository {
     const { count } = await this.prisma.player.deleteMany({ where: { id, educatorId } });
     if (count === 0) {
       throw new PlayerNotFoundError();
+    }
+  }
+}
+
+function translateMatchCreateError(error: unknown): never {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+    throw new EducatorNotFoundError();
+  }
+  throw error;
+}
+
+export class PrismaMatchRepository implements MatchRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async listByEducator(educatorId: string): Promise<PersistedMatch[]> {
+    const matches = await this.prisma.matchRecord.findMany({ where: { educatorId }, orderBy: { createdAt: "desc" } });
+    return matches.map(toPersistedMatch);
+  }
+
+  async findById(id: string, educatorId: string): Promise<PersistedMatch | null> {
+    const match = await this.prisma.matchRecord.findFirst({ where: { id, educatorId } });
+    return match === null ? null : toPersistedMatch(match);
+  }
+
+  async create(
+    educatorId: string,
+    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: GameFormat },
+  ): Promise<PersistedMatch> {
+    try {
+      const match = await this.prisma.matchRecord.create({
+        data: {
+          educatorId,
+          opponent: input.opponent,
+          dateLabel: input.dateLabel,
+          venue: toPrismaMatchVenue(input.venue),
+          gameFormat: input.gameFormat,
+        },
+      });
+      return toPersistedMatch(match);
+    } catch (error) {
+      return translateMatchCreateError(error);
+    }
+  }
+
+  // `updateMany` (plutôt que `update`, qui ne peut filtrer que sur une clé unique) vérifie
+  // l'appartenance à `educatorId` dans la même requête que l'écriture -- même principe que
+  // PrismaPlayerRepository.rename ci-dessus.
+  async update(
+    id: string,
+    educatorId: string,
+    input: {
+      opponent?: string;
+      dateLabel?: string;
+      venue?: MatchVenue;
+      status?: MatchStatus;
+      lineup?: readonly MatchLineupAssignment[];
+      captainPlayerId?: string | null;
+    },
+  ): Promise<PersistedMatch> {
+    const { count } = await this.prisma.matchRecord.updateMany({
+      where: { id, educatorId },
+      data: {
+        ...(input.opponent !== undefined ? { opponent: input.opponent } : {}),
+        ...(input.dateLabel !== undefined ? { dateLabel: input.dateLabel } : {}),
+        ...(input.venue !== undefined ? { venue: toPrismaMatchVenue(input.venue) } : {}),
+        ...(input.status !== undefined ? { status: toPrismaMatchStatus(input.status) } : {}),
+        ...(input.lineup !== undefined ? { lineup: input.lineup as unknown as Prisma.InputJsonValue } : {}),
+        ...(input.captainPlayerId !== undefined ? { captainPlayerId: input.captainPlayerId } : {}),
+      },
+    });
+    if (count === 0) {
+      throw new MatchNotFoundError();
+    }
+    const match = await this.prisma.matchRecord.findUniqueOrThrow({ where: { id } });
+    return toPersistedMatch(match);
+  }
+
+  async remove(id: string, educatorId: string): Promise<void> {
+    const { count } = await this.prisma.matchRecord.deleteMany({ where: { id, educatorId } });
+    if (count === 0) {
+      throw new MatchNotFoundError();
     }
   }
 }

@@ -2,6 +2,9 @@ import type {
   AgeGroup as DomainAgeGroup,
   DevelopmentTheme as DomainDevelopmentTheme,
   GameFormat,
+  MatchLineupAssignment,
+  MatchStatus as DomainMatchStatus,
+  MatchVenue as DomainMatchVenue,
   ObservationEventType as DomainObservationEventType,
   ObservationReportRating,
   ObservationReportSummary,
@@ -13,12 +16,15 @@ import type {
 import {
   AgeGroup as PrismaAgeGroup,
   DevelopmentTheme as PrismaDevelopmentTheme,
+  MatchStatus as PrismaMatchStatus,
+  MatchVenue as PrismaMatchVenue,
   ObservationEventType as PrismaObservationEventType,
   TrainingDay as PrismaTrainingDay,
 } from "./generated/prisma/client";
 import type {
   Diagnostic,
   Educator,
+  MatchRecord as PrismaMatchRecord,
   ObservationRecord as PrismaObservationRecord,
   Player as PrismaPlayer,
   Session,
@@ -29,6 +35,7 @@ import type {
   EducatorAuthRecord,
   EducatorRecord,
   PersistedDiagnostic,
+  PersistedMatch,
   PersistedObservation,
   PersistedPlayer,
   PersistedTeamProfile,
@@ -157,6 +164,50 @@ export function fromPrismaObservationEventType(eventType: PrismaObservationEvent
   }
 }
 
+export function toPrismaMatchVenue(venue: DomainMatchVenue): PrismaMatchVenue {
+  switch (venue) {
+    case "home":
+      return PrismaMatchVenue.home;
+    case "away":
+      return PrismaMatchVenue.away;
+    default:
+      return exhaustive(venue);
+  }
+}
+
+export function fromPrismaMatchVenue(venue: PrismaMatchVenue): DomainMatchVenue {
+  switch (venue) {
+    case PrismaMatchVenue.home:
+      return "home";
+    case PrismaMatchVenue.away:
+      return "away";
+    default:
+      return exhaustive(venue);
+  }
+}
+
+export function toPrismaMatchStatus(status: DomainMatchStatus): PrismaMatchStatus {
+  switch (status) {
+    case "scheduled":
+      return PrismaMatchStatus.scheduled;
+    case "played":
+      return PrismaMatchStatus.played;
+    default:
+      return exhaustive(status);
+  }
+}
+
+export function fromPrismaMatchStatus(status: PrismaMatchStatus): DomainMatchStatus {
+  switch (status) {
+    case PrismaMatchStatus.scheduled:
+      return "scheduled";
+    case PrismaMatchStatus.played:
+      return "played";
+    default:
+      return exhaustive(status);
+  }
+}
+
 export function toEducatorRecord(educator: Educator): EducatorRecord {
   return Object.freeze({
     id: educator.id,
@@ -227,7 +278,26 @@ export function toPersistedObservation(record: PrismaObservationRecord): Persist
     signals: record.signals as unknown as readonly PlayerSignal[],
     ...(record.note !== null ? { note: record.note } : {}),
     summary: record.summary as unknown as ObservationReportSummary,
+    ...(record.matchId !== null ? { matchId: record.matchId } : {}),
     createdAt: record.createdAt,
+  });
+}
+
+export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
+  return Object.freeze({
+    id: record.id,
+    educatorId: record.educatorId,
+    opponent: record.opponent,
+    dateLabel: record.dateLabel,
+    venue: fromPrismaMatchVenue(record.venue),
+    // Un entier borné en base, pas un enum Postgres, même principe que `Team.gameFormat` : la
+    // validation du domaine garantit qu'une valeur 4-11 est seule persistée ici.
+    gameFormat: record.gameFormat as GameFormat,
+    status: fromPrismaMatchStatus(record.status),
+    lineup: record.lineup as unknown as readonly MatchLineupAssignment[],
+    captainPlayerId: record.captainPlayerId,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
   });
 }
 
