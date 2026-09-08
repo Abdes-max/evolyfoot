@@ -2,16 +2,27 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ConnexionPage from "./page";
 
+// LoginForm redirige vers le tableau de bord via useRouter().replace() -- ce hook lève hors d'un
+// vrai contexte App Router (jamais présent ici, un simple render() de @testing-library/react),
+// contrairement à usePathname() qui se contente de rendre null. Mocké une fois pour tout le
+// fichier plutôt que par test : le routeur n'est jamais l'objet sous test ici, seul son appel
+// compte.
+const routerReplace = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: routerReplace, push: vi.fn() }),
+}));
+
 describe("connexion", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
+    routerReplace.mockClear();
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("connecte l’éducateur et affiche le lien vers le tableau de bord", async () => {
+  it("connecte l’éducateur et redirige directement vers le tableau de bord", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ educator: { id: "1" } }), { status: 200 }));
     render(<ConnexionPage />);
 
@@ -20,7 +31,7 @@ describe("connexion", () => {
     fireEvent.click(screen.getByRole("button", { name: /se connecter/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Connexion réussie");
-    expect(screen.getByRole("link", { name: /aller au tableau de bord/i })).toHaveAttribute("href", "/");
+    expect(routerReplace).toHaveBeenCalledWith("/");
     expect(fetch).toHaveBeenCalledWith(
       "/api/auth/login",
       expect.objectContaining({ method: "POST" }),
