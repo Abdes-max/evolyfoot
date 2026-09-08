@@ -198,7 +198,7 @@ export function TeamOnboardingForm() {
       )}
       {saveState === "auth-required" && (
         <p className="field-error" role="alert">
-          Connecte-toi pour enregistrer ton équipe. <Link href="/connexion">Se connecter →</Link>
+          Connecte-toi pour enregistrer ton équipe. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
         </p>
       )}
       {saveState === "error" && (

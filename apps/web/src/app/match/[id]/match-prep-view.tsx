@@ -197,7 +197,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       <main className="match-shell">
         <section className="match-auth-required" role="status">
           <p>
-            Connecte-toi pour préparer ce match. <Link href="/connexion">Se connecter →</Link>
+            Connecte-toi pour préparer ce match. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
           </p>
         </section>
       </main>
