@@ -6,9 +6,10 @@ export type LineupRole = "goalkeeper" | "defender" | "midfielder" | "attacker";
 
 // Un poste sur le terrain, positionné pour un affichage vertical (gardien en bas, attaque en
 // haut) -- x/y en pourcentage d'un repère 300x460, indépendant de tout composant d'affichage
-// (web en SVG, mobile en vues positionnées). Dérivé du format de jeu à chaque lecture plutôt que
-// stocké : si l'algorithme de formation change un jour, les matchs déjà préparés en bénéficient
-// automatiquement, même principe que le plan de développement recalculé depuis le diagnostic.
+// (web en SVG, mobile en vues positionnées). Dérivé de la formation choisie à chaque lecture
+// plutôt que stocké : si l'algorithme de formation change un jour, les matchs déjà préparés en
+// bénéficient automatiquement, même principe que le plan de développement recalculé depuis le
+// diagnostic.
 export interface MatchLineupSlot {
   readonly id: string;
   readonly role: LineupRole;
@@ -23,11 +24,20 @@ export interface MatchLineupAssignment {
   readonly playerName: string;
 }
 
+export interface Formation {
+  readonly id: string;
+  readonly label: string;
+  readonly slots: ReadonlyArray<MatchLineupSlot>;
+}
+
 export interface MatchPlan {
   readonly opponent: string;
   readonly dateLabel: string;
   readonly venue: MatchVenue;
   readonly gameFormat: GameFormat;
+  // Identifiant de la formation choisie parmi celles de `listFormations(gameFormat)` (ex.
+  // "4-3-3") -- détermine les postes disponibles, voir `formationSlots`.
+  readonly formationId: string;
   readonly status: MatchStatus;
   readonly lineup: ReadonlyArray<MatchLineupAssignment>;
   readonly captainPlayerId: string | null;
@@ -40,63 +50,74 @@ const roleLabels: Record<LineupRole, string> = {
   attacker: "Attaquant",
 };
 
-// Une seule formation par format de jeu, pas de choix multiple : garde la préparation rapide et
-// reste cohérent avec le reste de l'application (un seul diagnostic actif, un seul plan actif...).
-const rowsByGameFormat: Record<GameFormat, ReadonlyArray<readonly [LineupRole, number]>> = {
+const rowY: Record<LineupRole, number> = { goalkeeper: 430, defender: 340, midfielder: 220, attacker: 90 };
+
+type FormationRow = readonly [LineupRole, number];
+
+interface FormationDefinition {
+  readonly id: string;
+  readonly label: string;
+  readonly rows: ReadonlyArray<FormationRow>;
+}
+
+function outfieldRows(defenders: number, midfielders: number, attackers: number): FormationRow[] {
+  const rows: FormationRow[] = [["goalkeeper", 1]];
+  if (defenders > 0) rows.push(["defender", defenders]);
+  if (midfielders > 0) rows.push(["midfielder", midfielders]);
+  if (attackers > 0) rows.push(["attacker", attackers]);
+  return rows;
+}
+
+// Plusieurs formations par format de jeu, chacune un partage plausible du nombre de joueurs de
+// champ entre défense/milieu/attaque (des formations réelles, pas une génération combinatoire
+// exhaustive qui produirait des répartitions absurdes). La première de chaque liste reste celle
+// utilisée avant l'introduction du choix multiple : mêmes postes, mêmes identifiants, pour que les
+// matchs déjà préparés restent valides.
+const formationDefinitionsByGameFormat: Record<GameFormat, ReadonlyArray<FormationDefinition>> = {
   4: [
-    ["goalkeeper", 1],
-    ["defender", 1],
-    ["midfielder", 1],
-    ["attacker", 1],
+    { id: "1-1-1", label: "1-1-1", rows: outfieldRows(1, 1, 1) },
+    { id: "2-1-0", label: "2-1-0", rows: outfieldRows(2, 1, 0) },
   ],
   5: [
-    ["goalkeeper", 1],
-    ["defender", 2],
-    ["midfielder", 1],
-    ["attacker", 1],
+    { id: "2-1-1", label: "2-1-1", rows: outfieldRows(2, 1, 1) },
+    { id: "1-2-1", label: "1-2-1", rows: outfieldRows(1, 2, 1) },
+    { id: "1-1-2", label: "1-1-2", rows: outfieldRows(1, 1, 2) },
   ],
   6: [
-    ["goalkeeper", 1],
-    ["defender", 2],
-    ["midfielder", 2],
-    ["attacker", 1],
+    { id: "2-2-1", label: "2-2-1", rows: outfieldRows(2, 2, 1) },
+    { id: "2-1-2", label: "2-1-2", rows: outfieldRows(2, 1, 2) },
+    { id: "1-3-1", label: "1-3-1", rows: outfieldRows(1, 3, 1) },
   ],
   7: [
-    ["goalkeeper", 1],
-    ["defender", 2],
-    ["midfielder", 3],
-    ["attacker", 1],
+    { id: "2-3-1", label: "2-3-1", rows: outfieldRows(2, 3, 1) },
+    { id: "3-2-1", label: "3-2-1", rows: outfieldRows(3, 2, 1) },
+    { id: "2-2-2", label: "2-2-2", rows: outfieldRows(2, 2, 2) },
   ],
   8: [
-    ["goalkeeper", 1],
-    ["defender", 3],
-    ["midfielder", 3],
-    ["attacker", 1],
+    { id: "3-3-1", label: "3-3-1", rows: outfieldRows(3, 3, 1) },
+    { id: "2-3-2", label: "2-3-2", rows: outfieldRows(2, 3, 2) },
+    { id: "3-2-2", label: "3-2-2", rows: outfieldRows(3, 2, 2) },
+    { id: "2-4-1", label: "2-4-1", rows: outfieldRows(2, 4, 1) },
   ],
   9: [
-    ["goalkeeper", 1],
-    ["defender", 3],
-    ["midfielder", 3],
-    ["attacker", 2],
+    { id: "3-3-2", label: "3-3-2", rows: outfieldRows(3, 3, 2) },
+    { id: "3-4-1", label: "3-4-1", rows: outfieldRows(3, 4, 1) },
+    { id: "4-3-1", label: "4-3-1", rows: outfieldRows(4, 3, 1) },
   ],
   10: [
-    ["goalkeeper", 1],
-    ["defender", 4],
-    ["midfielder", 3],
-    ["attacker", 2],
+    { id: "4-3-2", label: "4-3-2", rows: outfieldRows(4, 3, 2) },
+    { id: "3-4-2", label: "3-4-2", rows: outfieldRows(3, 4, 2) },
+    { id: "4-4-1", label: "4-4-1", rows: outfieldRows(4, 4, 1) },
   ],
   11: [
-    ["goalkeeper", 1],
-    ["defender", 4],
-    ["midfielder", 3],
-    ["attacker", 3],
+    { id: "4-3-3", label: "4-3-3", rows: outfieldRows(4, 3, 3) },
+    { id: "4-4-2", label: "4-4-2", rows: outfieldRows(4, 4, 2) },
+    { id: "3-5-2", label: "3-5-2", rows: outfieldRows(3, 5, 2) },
+    { id: "3-4-3", label: "3-4-3", rows: outfieldRows(3, 4, 3) },
   ],
 };
 
-const rowY: Record<LineupRole, number> = { goalkeeper: 430, defender: 340, midfielder: 220, attacker: 90 };
-
-export function formationForGameFormat(gameFormat: GameFormat): MatchLineupSlot[] {
-  const rows = rowsByGameFormat[gameFormat];
+function buildSlots(rows: ReadonlyArray<FormationRow>): MatchLineupSlot[] {
   const slots: MatchLineupSlot[] = [];
   for (const [role, count] of rows) {
     for (let index = 0; index < count; index += 1) {
@@ -112,8 +133,44 @@ export function formationForGameFormat(gameFormat: GameFormat): MatchLineupSlot[
   return slots;
 }
 
-export function createMatchPlan(opponent: string, dateLabel: string, venue: MatchVenue, gameFormat: GameFormat): MatchPlan {
-  return { opponent: opponent.trim(), dateLabel: dateLabel.trim(), venue, gameFormat, status: "scheduled", lineup: [], captainPlayerId: null };
+export function listFormations(gameFormat: GameFormat): Formation[] {
+  return formationDefinitionsByGameFormat[gameFormat].map((definition) => ({
+    id: definition.id,
+    label: definition.label,
+    slots: buildSlots(definition.rows),
+  }));
+}
+
+// Résout les postes d'une formation. Repli sur la première formation du format de jeu si
+// `formationId` est absent ou ne correspond à aucune formation connue -- un match préparé avant
+// l'introduction du choix multiple n'a pas de formationId enregistré, et doit continuer à afficher
+// exactement la même formation qu'avant (voir le commentaire sur `formationDefinitionsByGameFormat`).
+export function formationSlots(gameFormat: GameFormat, formationId?: string | null): ReadonlyArray<MatchLineupSlot> {
+  const formations = listFormations(gameFormat);
+  return (formations.find((formation) => formation.id === formationId) ?? formations[0]!).slots;
+}
+
+export function defaultFormationId(gameFormat: GameFormat): string {
+  return formationDefinitionsByGameFormat[gameFormat][0]!.id;
+}
+
+export function createMatchPlan(
+  opponent: string,
+  dateLabel: string,
+  venue: MatchVenue,
+  gameFormat: GameFormat,
+  formationId?: string,
+): MatchPlan {
+  return {
+    opponent: opponent.trim(),
+    dateLabel: dateLabel.trim(),
+    venue,
+    gameFormat,
+    formationId: formationId ?? defaultFormationId(gameFormat),
+    status: "scheduled",
+    lineup: [],
+    captainPlayerId: null,
+  };
 }
 
 function withoutSlotAndPlayer(
@@ -144,8 +201,16 @@ export function setCaptain(plan: MatchPlan, playerId: string | null): MatchPlan 
   return { ...plan, captainPlayerId: playerId };
 }
 
+// Change de formation : les postes (et donc leurs identifiants) diffèrent d'une formation à
+// l'autre pour un même format de jeu, une composition déjà commencée ne peut donc pas être
+// reportée telle quelle -- repart d'une composition vide plutôt que de laisser des affectations
+// orphelines pointer vers des postes qui n'existent plus.
+export function changeFormation(plan: MatchPlan, formationId: string): MatchPlan {
+  return { ...plan, formationId, lineup: [], captainPlayerId: null };
+}
+
 export function isLineupComplete(plan: MatchPlan): boolean {
-  return plan.lineup.length === formationForGameFormat(plan.gameFormat).length;
+  return plan.lineup.length === formationSlots(plan.gameFormat, plan.formationId).length;
 }
 
 export interface MatchPlanErrors {

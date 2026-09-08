@@ -1,6 +1,7 @@
 import { EducatorNotFoundError, MatchNotFoundError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
 import {
+  createChangeFormationHandler,
   createCreateMatchHandler,
   createGetMatchHandler,
   createListMatchesHandler,
@@ -18,6 +19,7 @@ const match: MatchSummary = {
   dateLabel: "Samedi",
   venue: "home",
   gameFormat: 8,
+  formationId: "3-3-1",
   status: "scheduled",
   lineup: [],
   captainPlayerId: null,
@@ -139,6 +141,45 @@ describe("createUpdateLineupHandler", () => {
 
     expect(response.status).toBe(200);
     expect(received).toEqual([{ educatorId: educator.id, matchId: "match-1", input: { lineup, captainPlayerId: "p1" } }]);
+  });
+});
+
+describe("createChangeFormationHandler", () => {
+  it("rejects a request missing formationId", async () => {
+    const handler = createChangeFormationHandler(authenticated, { changeFormation: async () => { throw new Error("not called"); } }, () => undefined);
+
+    const response = await handler(jsonRequest("PUT", {}), "match-1");
+
+    expect(response.status).toBe(400);
+  });
+
+  it("forwards the chosen formation to the gateway", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<MatchGateway, "changeFormation"> = {
+      changeFormation: async (educatorId, matchId, formationId) => {
+        received.push({ educatorId, matchId, formationId });
+        return { ...match, formationId };
+      },
+    };
+    const handler = createChangeFormationHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(jsonRequest("PUT", { formationId: "2-3-2" }), "match-1");
+
+    expect(response.status).toBe(200);
+    expect(received).toEqual([{ educatorId: educator.id, matchId: "match-1", formationId: "2-3-2" }]);
+  });
+
+  it("translates a formation/format mismatch into a 400", async () => {
+    const gateway: Pick<MatchGateway, "changeFormation"> = {
+      changeFormation: async () => {
+        throw new Error("Cette formation ne correspond pas au format de jeu.");
+      },
+    };
+    const handler = createChangeFormationHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(jsonRequest("PUT", { formationId: "4-3-3" }), "match-1");
+
+    expect(response.status).toBe(400);
   });
 });
 

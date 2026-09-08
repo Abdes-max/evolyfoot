@@ -1,6 +1,6 @@
 "use client";
 
-import { gameFormats } from "@evolyfoot/domain";
+import { gameFormats, listFormations } from "@evolyfoot/domain";
 import type { GameFormat, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
@@ -37,6 +37,12 @@ export function MatchListView() {
   const [dateLabel, setDateLabel] = useState("");
   const [venue, setVenue] = useState<MatchVenue>("home");
   const [gameFormat, setGameFormat] = useState<GameFormat>(8);
+  // `null` tant que le coach n'a pas explicitement choisi une formation : reprend la première du
+  // format de jeu courant au moment de la création plutôt que d'être copiée dans un état séparé à
+  // chaque changement de format (éviterait un rendu en cascade, même correctif que sidebar-nav.tsx).
+  const [selectedFormationId, setSelectedFormationId] = useState<string | null>(null);
+  const availableFormations = listFormations(gameFormat);
+  const formationId = availableFormations.some((formation) => formation.id === selectedFormationId) ? selectedFormationId! : availableFormations[0]!.id;
   const [createError, setCreateError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -87,7 +93,7 @@ export function MatchListView() {
       const response = await fetch("/api/matches", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ opponent, dateLabel, venue, gameFormat }),
+        body: JSON.stringify({ opponent, dateLabel, venue, gameFormat, formationId }),
       });
       if (!response.ok) {
         setCreateError(await readErrorMessage(response));
@@ -167,6 +173,22 @@ export function MatchListView() {
                   </select>
                 </label>
               </div>
+              <fieldset>
+                <legend>Formation</legend>
+                <div className="choice-grid">
+                  {availableFormations.map((formation) => (
+                    <button
+                      aria-pressed={formation.id === formationId}
+                      className={formation.id === formationId ? "choice active" : "choice"}
+                      key={formation.id}
+                      onClick={() => setSelectedFormationId(formation.id)}
+                      type="button"
+                    >
+                      {formation.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
               {createError && <p className="field-error" role="alert">{createError}</p>}
               <div className="match-create-actions">
                 <button disabled={submitting} type="submit">

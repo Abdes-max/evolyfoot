@@ -354,7 +354,7 @@ export class PrismaMatchRepository implements MatchRepository {
 
   async create(
     educatorId: string,
-    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: GameFormat },
+    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: GameFormat; formationId: string },
   ): Promise<PersistedMatch> {
     try {
       const match = await this.prisma.matchRecord.create({
@@ -364,6 +364,7 @@ export class PrismaMatchRepository implements MatchRepository {
           dateLabel: input.dateLabel,
           venue: toPrismaMatchVenue(input.venue),
           gameFormat: input.gameFormat,
+          formationId: input.formationId,
         },
       });
       return toPersistedMatch(match);
@@ -382,6 +383,7 @@ export class PrismaMatchRepository implements MatchRepository {
       opponent?: string;
       dateLabel?: string;
       venue?: MatchVenue;
+      formationId?: string;
       status?: MatchStatus;
       lineup?: readonly MatchLineupAssignment[];
       captainPlayerId?: string | null;
@@ -393,6 +395,7 @@ export class PrismaMatchRepository implements MatchRepository {
         ...(input.opponent !== undefined ? { opponent: input.opponent } : {}),
         ...(input.dateLabel !== undefined ? { dateLabel: input.dateLabel } : {}),
         ...(input.venue !== undefined ? { venue: toPrismaMatchVenue(input.venue) } : {}),
+        ...(input.formationId !== undefined ? { formationId: input.formationId } : {}),
         ...(input.status !== undefined ? { status: toPrismaMatchStatus(input.status) } : {}),
         ...(input.lineup !== undefined ? { lineup: input.lineup as unknown as Prisma.InputJsonValue } : {}),
         ...(input.captainPlayerId !== undefined ? { captainPlayerId: input.captainPlayerId } : {}),

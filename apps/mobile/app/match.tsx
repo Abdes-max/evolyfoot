@@ -1,5 +1,5 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { gameFormats } from "@evolyfoot/domain";
+import { gameFormats, listFormations } from "@evolyfoot/domain";
 import type { GameFormat, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -23,6 +23,9 @@ export default function MatchListScreen() {
   // web pour un problème analogue).
   const [selectedGameFormat, setSelectedGameFormat] = useState<GameFormat | null>(null);
   const gameFormat = selectedGameFormat ?? (team && gameFormats.includes(team.gameFormat as GameFormat) ? (team.gameFormat as GameFormat) : 8);
+  const availableFormations = listFormations(gameFormat);
+  const [selectedFormationId, setSelectedFormationId] = useState<string | null>(null);
+  const formationId = availableFormations.some((formation) => formation.id === selectedFormationId) ? selectedFormationId! : availableFormations[0]!.id;
   const [createError, setCreateError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -38,7 +41,7 @@ export default function MatchListScreen() {
   async function submitCreate() {
     setSubmitting(true);
     setCreateError("");
-    const result = await createMatch({ opponent, dateLabel, venue, gameFormat });
+    const result = await createMatch({ opponent, dateLabel, venue, gameFormat, formationId });
     setSubmitting(false);
     if (!result.ok) {
       setCreateError(result.error);
@@ -91,6 +94,21 @@ export default function MatchListScreen() {
                   style={[styles.formatChoice, gameFormat === format && styles.choiceActive]}
                 >
                   <Text style={[styles.choiceText, gameFormat === format && styles.choiceTextActive]}>{format}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.label}>Formation</Text>
+            <View style={styles.choiceRow}>
+              {availableFormations.map((formation) => (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: formation.id === formationId }}
+                  key={formation.id}
+                  onPress={() => setSelectedFormationId(formation.id)}
+                  style={[styles.choice, formation.id === formationId && styles.choiceActive]}
+                >
+                  <Text style={[styles.choiceText, formation.id === formationId && styles.choiceTextActive]}>{formation.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>

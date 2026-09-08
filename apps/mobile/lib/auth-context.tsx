@@ -23,6 +23,7 @@ export interface MobileMatch {
   dateLabel: string;
   venue: MatchVenue;
   gameFormat: number;
+  formationId: string;
   status: MatchStatus;
   lineup: MatchLineupAssignment[];
   captainPlayerId: string | null;
@@ -49,8 +50,9 @@ export interface AuthContextValue {
   removePlayer(id: string): Promise<AuthResult>;
   listMatches(): Promise<MatchListResult>;
   getMatch(id: string): Promise<MatchResult>;
-  createMatch(input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number }): Promise<MatchResult>;
+  createMatch(input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string }): Promise<MatchResult>;
   updateMatchLineup(id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null): Promise<MatchResult>;
+  changeMatchFormation(id: string, formationId: string): Promise<MatchResult>;
   markMatchPlayed(id: string): Promise<MatchResult>;
 }
 
@@ -311,7 +313,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const createMatch = useCallback(
-    async (input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number }): Promise<MatchResult> => {
+    async (input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string }): Promise<MatchResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour préparer un match." };
       }
@@ -334,6 +336,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "PUT",
         sessionToken,
         body: JSON.stringify({ lineup, captainPlayerId }),
+      });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      return { ok: true, match: body.match };
+    },
+    [sessionToken],
+  );
+
+  const changeMatchFormation = useCallback(
+    async (id: string, formationId: string): Promise<MatchResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour changer de formation." };
+      }
+      const response = await apiFetch(`/api/matches/${id}/formation`, {
+        method: "PUT",
+        sessionToken,
+        body: JSON.stringify({ formationId }),
       });
       if (!response.ok) {
         return { ok: false, error: await readErrorMessage(response) };
@@ -379,6 +400,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       getMatch,
       createMatch,
       updateMatchLineup,
+      changeMatchFormation,
       markMatchPlayed,
     }),
     [
@@ -400,6 +422,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       getMatch,
       createMatch,
       updateMatchLineup,
+      changeMatchFormation,
       markMatchPlayed,
     ],
   );

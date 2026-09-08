@@ -1,4 +1,4 @@
-import { formationForGameFormat, gameFormats, validateMatchPlan } from "@evolyfoot/domain";
+import { defaultFormationId, formationSlots, gameFormats, listFormations, validateMatchPlan } from "@evolyfoot/domain";
 import type { GameFormat, MatchLineupAssignment, MatchPlan, MatchVenue } from "@evolyfoot/domain";
 import { EducatorNotFoundError, MatchNotFoundError, ValidationError } from "./errors";
 import type { EducatorRepository, MatchRepository, PersistedMatch } from "./repositories";
@@ -26,23 +26,41 @@ function normalizeGameFormat(gameFormat: number): GameFormat {
   return gameFormat as GameFormat;
 }
 
+function normalizeFormationId(gameFormat: GameFormat, formationId: string | undefined): string {
+  if (formationId === undefined) {
+    return defaultFormationId(gameFormat);
+  }
+  if (!listFormations(gameFormat).some((formation) => formation.id === formationId)) {
+    throw new ValidationError("Cette formation ne correspond pas au format de jeu.");
+  }
+  return formationId;
+}
+
 // Reconstruit un MatchPlan (voir @evolyfoot/domain) à partir d'un match persisté, pour rejouer la
 // validation du domaine côté serveur avant chaque écriture -- jamais faire confiance à une
 // composition déjà validée telle quelle côté client.
-function toMatchPlan(match: PersistedMatch, overrides: Partial<Pick<MatchPlan, "lineup" | "captainPlayerId">> = {}): MatchPlan {
+function toMatchPlan(
+  match: PersistedMatch,
+  overrides: Partial<Pick<MatchPlan, "lineup" | "captainPlayerId" | "formationId">> = {},
+): MatchPlan {
   return {
     opponent: match.opponent,
     dateLabel: match.dateLabel,
     venue: match.venue,
     gameFormat: match.gameFormat,
+    formationId: overrides.formationId ?? match.formationId,
     status: match.status,
     lineup: overrides.lineup ?? match.lineup,
     captainPlayerId: overrides.captainPlayerId !== undefined ? overrides.captainPlayerId : match.captainPlayerId,
   };
 }
 
-function validateLineupAgainstFormation(gameFormat: GameFormat, lineup: readonly MatchLineupAssignment[]): void {
-  const validSlotIds = new Set(formationForGameFormat(gameFormat).map((slot) => slot.id));
+function validateLineupAgainstFormation(
+  gameFormat: GameFormat,
+  formationId: string,
+  lineup: readonly MatchLineupAssignment[],
+): void {
+  const validSlotIds = new Set(formationSlots(gameFormat, formationId).map((slot) => slot.id));
   const seenSlots = new Set<string>();
   const seenPlayers = new Set<string>();
   for (const assignment of lineup) {
@@ -80,15 +98,16 @@ export class MatchService {
 
   async create(
     educatorId: string,
-    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number },
+    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string },
   ): Promise<PersistedMatch> {
     const opponent = normalizeOpponent(input.opponent);
     const dateLabel = normalizeDateLabel(input.dateLabel);
     const gameFormat = normalizeGameFormat(input.gameFormat);
+    const formationId = normalizeFormationId(gameFormat, input.formationId);
     if (!(await this.educatorRepository.existsById(educatorId))) {
       throw new EducatorNotFoundError();
     }
-    return this.matchRepository.create(educatorId, { opponent, dateLabel, venue: input.venue, gameFormat });
+    return this.matchRepository.create(educatorId, { opponent, dateLabel, venue: input.venue, gameFormat, formationId });
   }
 
   // Composition et capitaine modifiables librement tant que le match n'est pas marqué joué --
@@ -101,11 +120,22 @@ export class MatchService {
     input: { lineup: readonly MatchLineupAssignment[]; captainPlayerId: string | null },
   ): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
-    validateLineupAgainstFormation(match.gameFormat, input.lineup);
+    validateLineupAgainstFormation(match.gameFormat, match.formationId, input.lineup);
     if (input.captainPlayerId && !input.lineup.some((assignment) => assignment.playerId === input.captainPlayerId)) {
       throw new ValidationError("Le capitaine doit faire partie des titulaires.");
     }
     return this.matchRepository.update(matchId, educatorId, { lineup: input.lineup, captainPlayerId: input.captainPlayerId });
+  }
+
+  // Change de formation : les postes diffèrent d'une formation à l'autre pour un même format de
+  // jeu, donc repart d'une composition vide plutôt que de laisser des affectations orphelines
+  // (même principe que `changeFormation` côté domaine, rejoué ici côté serveur).
+  async changeFormation(educatorId: string, matchId: string, formationId: string): Promise<PersistedMatch> {
+    const match = await this.get(educatorId, matchId);
+    if (!listFormations(match.gameFormat).some((formation) => formation.id === formationId)) {
+      throw new ValidationError("Cette formation ne correspond pas au format de jeu.");
+    }
+    return this.matchRepository.update(matchId, educatorId, { formationId, lineup: [], captainPlayerId: null });
   }
 
   async markPlayed(educatorId: string, matchId: string): Promise<PersistedMatch> {

@@ -1,3 +1,4 @@
+import { defaultFormationId } from "@evolyfoot/domain";
 import type {
   AgeGroup as DomainAgeGroup,
   DevelopmentTheme as DomainDevelopmentTheme,
@@ -284,6 +285,7 @@ export function toPersistedObservation(record: PrismaObservationRecord): Persist
 }
 
 export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
+  const gameFormat = record.gameFormat as GameFormat;
   return Object.freeze({
     id: record.id,
     educatorId: record.educatorId,
@@ -292,7 +294,10 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     venue: fromPrismaMatchVenue(record.venue),
     // Un entier borné en base, pas un enum Postgres, même principe que `Team.gameFormat` : la
     // validation du domaine garantit qu'une valeur 4-11 est seule persistée ici.
-    gameFormat: record.gameFormat as GameFormat,
+    gameFormat,
+    // Repli sur la formation par défaut du format de jeu si la colonne est vide (match préparé
+    // avant l'introduction du choix multiple) -- voir le commentaire sur `PersistedMatch`.
+    formationId: record.formationId ?? defaultFormationId(gameFormat),
     status: fromPrismaMatchStatus(record.status),
     lineup: record.lineup as unknown as readonly MatchLineupAssignment[],
     captainPlayerId: record.captainPlayerId,

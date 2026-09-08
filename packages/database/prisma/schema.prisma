@@ -189,6 +189,11 @@ model MatchRecord {
   dateLabel       String              @map("date_label")
   venue           MatchVenue
   gameFormat      Int                 @map("game_format")
+  // Identifiant de la formation choisie (ex. "4-3-3", voir listFormations côté domaine) parmi
+  // celles du format de jeu -- nullable : un match préparé avant l'introduction du choix
+  // multiple n'en a pas, et doit se replier sur la première formation de son format de jeu
+  // plutôt qu'échouer (voir formationSlots côté domaine, et toPersistedMatch côté mappers).
+  formationId     String?             @map("formation_id")
   status          MatchStatus         @default(scheduled)
   lineup          Json                @default("[]")
   captainPlayerId String?             @map("captain_player_id")
