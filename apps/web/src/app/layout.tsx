@@ -12,6 +12,9 @@ import "./charts.css";
 import "./statistics.css";
 import "./seances.css";
 import "./profil.css";
+// Chargé en dernier : n'ajoute qu'un `background-image` discret par-dessus le fond déjà posé
+// par chaque page (voir page-backgrounds.css).
+import "./page-backgrounds.css";
 import { AuthGate } from "./auth-gate";
 
 export const metadata: Metadata = {
