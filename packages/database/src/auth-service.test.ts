@@ -44,6 +44,10 @@ class InMemoryEducatorRepository implements EducatorRepository {
   async findByEmail(email: string): Promise<EducatorAuthRecord | null> {
     return [...this.byId.values()].find((educator) => educator.email === email) ?? null;
   }
+
+  async findByLinkedPlayerId(): Promise<null> {
+    return null;
+  }
 }
 
 class InMemorySessionRepository implements SessionRepository {

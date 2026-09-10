@@ -67,6 +67,8 @@ export class AuthService {
       id: record.id,
       email: record.email,
       displayName: record.displayName,
+      role: record.role,
+      linkedPlayerId: record.linkedPlayerId,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     };
@@ -77,12 +79,33 @@ export class AuthService {
     await this.sessionRepository.deleteByTokenHash(hashSessionToken(sessionToken));
   }
 
-  async getEducatorForSession(sessionToken: string): Promise<EducatorRecord | null> {
+  // Compte lié à la session, quel que soit son rôle -- utilisé par /api/auth/session pour dire
+  // au client quel type de compte est connecté (et donc vers quel tableau de bord aller).
+  async getAccountForSession(sessionToken: string): Promise<EducatorRecord | null> {
     const session = await this.sessionRepository.findValidByTokenHash(hashSessionToken(sessionToken));
     if (!session) {
       return null;
     }
     return this.educatorRepository.findById(session.educatorId);
+  }
+
+  // Ne résout QUE les comptes "coach" : un jeton de compte joueur renvoie `null`, donc toutes les
+  // routes API éducateur (qui appellent cette méthode) rejettent automatiquement un compte joueur.
+  // `role` absent ⇒ coach (comptes créés avant l'introduction du rôle).
+  async getEducatorForSession(sessionToken: string): Promise<EducatorRecord | null> {
+    const account = await this.getAccountForSession(sessionToken);
+    return account && account.role !== "player" ? account : null;
+  }
+
+  // L'inverse : ne résout que les comptes "player".
+  async getPlayerAccountForSession(sessionToken: string): Promise<EducatorRecord | null> {
+    const account = await this.getAccountForSession(sessionToken);
+    return account && account.role === "player" ? account : null;
+  }
+
+  // Exposé pour PlayerInviteService, qui crée le compte joueur puis a besoin d'ouvrir sa session.
+  async openSession(educator: EducatorRecord): Promise<AuthenticatedSession> {
+    return this.createSession(educator);
   }
 
   private async createSession(educator: EducatorRecord): Promise<AuthenticatedSession> {

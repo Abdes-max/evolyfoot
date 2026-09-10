@@ -27,6 +27,10 @@ class InMemoryEducatorRepository implements EducatorRepository {
   async findByEmail(): Promise<null> {
     return null;
   }
+
+  async findByLinkedPlayerId(): Promise<null> {
+    return null;
+  }
 }
 
 class InMemoryPlayerRepository implements PlayerRepository {
@@ -40,6 +44,10 @@ class InMemoryPlayerRepository implements PlayerRepository {
   async findById(id: string, educatorId: string): Promise<PersistedPlayer | null> {
     const player = this.players.get(id);
     return player && player.educatorId === educatorId ? player : null;
+  }
+
+  async findAnyById(id: string): Promise<PersistedPlayer | null> {
+    return this.players.get(id) ?? null;
   }
 
   async create(educatorId: string, name: string): Promise<PersistedPlayer> {

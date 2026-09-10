@@ -83,6 +83,9 @@
 .player-evaluation-history strong{display:block;font-size:12px}
 .player-evaluation-history span{color:var(--muted);font-size:10.5px}
 .player-evaluation-history button{min-height:32px;border:1px solid var(--line);border-radius:7px;padding:6px 11px;background:var(--surface);color:var(--ink);font-size:9.5px;font-weight:800}
+.player-invite-lead{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.5}
+.player-invite-result{display:flex;gap:8px;flex-wrap:wrap}
+.player-invite-result input{flex:1;min-width:200px;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:10px 12px;color:var(--ink);font-size:11.5px}
 @media(max-width:950px){.player-shell{padding-left:0;padding-bottom:90px}}
 @media(max-width:760px){
   .player-identity{grid-template-columns:1fr;justify-items:center}

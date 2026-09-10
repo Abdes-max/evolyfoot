@@ -28,13 +28,14 @@ export function LoginForm() {
         setSubmitting(false);
         return;
       }
-      // Redirige directement vers le tableau de bord plutôt que de laisser l'éducateur cliquer
-      // sur un lien manuel -- une fois connecté, il n'y a plus de raison de le retenir sur cette
-      // page. `success` reste affiché un court instant pendant la navigation (état de secours si
-      // jamais celle-ci tardait), et `router.replace` (pas `push`) pour qu'un retour arrière ne
-      // ramène pas sur le formulaire de connexion déjà validé.
+      // Redirige directement vers le bon tableau de bord selon le rôle du compte (coach → /app,
+      // tuteur/joueur → /joueur) plutôt que de laisser cliquer sur un lien manuel. `router.replace`
+      // (pas `push`) pour qu'un retour arrière ne ramène pas sur le formulaire déjà validé.
       setSuccess(true);
-      router.replace("/app");
+      const sessionBody = await fetch("/api/auth/session")
+        .then((sessionResponse) => sessionResponse.json())
+        .catch(() => ({ role: "coach" }));
+      router.replace(sessionBody.role === "player" ? "/joueur" : "/app");
     } finally {
       setSubmitting(false);
     }

@@ -14,8 +14,15 @@ export const MARKETING_PATHS = [
   "/cgu",
 ] as const;
 
-// `true` si le chemin est une page vitrine (correspondance exacte -- ces pages n'ont pas de
-// sous-chemins ; `/` ne doit surtout pas se comporter comme un préfixe).
+// Chemins publics à préfixe (pas une page vitrine listée ci-dessus, mais accessible sans
+// session) : la page d'acceptation d'invitation tuteur `/rejoindre/:token`.
+const PUBLIC_PREFIXES = ["/rejoindre/"];
+
+// `true` si le chemin est public : une page vitrine (correspondance exacte -- `/` ne doit surtout
+// pas se comporter comme un préfixe) ou un chemin sous un préfixe public.
 export function isMarketingPath(pathname: string): boolean {
-  return (MARKETING_PATHS as readonly string[]).includes(pathname);
+  return (
+    (MARKETING_PATHS as readonly string[]).includes(pathname) ||
+    PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  );
 }

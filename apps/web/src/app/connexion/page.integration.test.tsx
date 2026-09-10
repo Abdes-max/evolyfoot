@@ -22,8 +22,18 @@ describe("connexion", () => {
     vi.unstubAllGlobals();
   });
 
-  it("connecte l’éducateur et redirige directement vers le tableau de bord", async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ educator: { id: "1" } }), { status: 200 }));
+  function mockAuth(role: "coach" | "player") {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.includes("/api/auth/session")) {
+        return new Response(JSON.stringify({ educator: role === "coach" ? { id: "1" } : null, role }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ educator: { id: "1" } }), { status: 200 });
+    });
+  }
+
+  it("connecte un coach et le redirige vers /app", async () => {
+    mockAuth("coach");
     render(<ConnexionPage />);
 
     fireEvent.change(screen.getByLabelText("Adresse e-mail"), { target: { value: "coach@example.test" } });
@@ -31,11 +41,19 @@ describe("connexion", () => {
     fireEvent.click(screen.getByRole("button", { name: /se connecter/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Connexion réussie");
-    expect(routerReplace).toHaveBeenCalledWith("/app");
-    expect(fetch).toHaveBeenCalledWith(
-      "/api/auth/login",
-      expect.objectContaining({ method: "POST" }),
-    );
+    await vi.waitFor(() => expect(routerReplace).toHaveBeenCalledWith("/app"));
+    expect(fetch).toHaveBeenCalledWith("/api/auth/login", expect.objectContaining({ method: "POST" }));
+  });
+
+  it("connecte un compte joueur/tuteur et le redirige vers /joueur", async () => {
+    mockAuth("player");
+    render(<ConnexionPage />);
+
+    fireEvent.change(screen.getByLabelText("Adresse e-mail"), { target: { value: "tuteur@example.test" } });
+    fireEvent.change(screen.getByLabelText("Mot de passe"), { target: { value: "motdepasse1" } });
+    fireEvent.click(screen.getByRole("button", { name: /se connecter/i }));
+
+    await vi.waitFor(() => expect(routerReplace).toHaveBeenCalledWith("/joueur"));
   });
 
   it("affiche l’erreur renvoyée par l’API en cas d’échec", async () => {

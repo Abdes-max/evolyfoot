@@ -248,28 +248,43 @@ describe("createLogoutHandler", () => {
 });
 
 describe("createSessionHandler", () => {
+  const coachAccount = { ...educator, role: "coach" as const, linkedPlayerId: null };
+
   it("returns a null educator when there is no session cookie", async () => {
-    const handler = createSessionHandler({ getEducatorForSession: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createSessionHandler({ getAccountForSession: async () => { throw new Error("not called"); } }, () => undefined);
 
     const response = await handler(new Request("https://evolyfoot.test"));
 
-    expect(await response.json()).toEqual({ educator: null });
+    expect(await response.json()).toEqual({ educator: null, role: null });
   });
 
-  it("returns the educator for a valid session cookie", async () => {
-    const handler = createSessionHandler({ getEducatorForSession: async () => educator }, () => undefined);
+  it("returns the educator and role 'coach' for a coach session", async () => {
+    const handler = createSessionHandler({ getAccountForSession: async () => coachAccount }, () => undefined);
 
     const response = await handler(
       new Request("https://evolyfoot.test", { headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }),
     );
 
-    expect(await response.json()).toEqual({ educator });
+    expect(await response.json()).toEqual({ educator: coachAccount, role: "coach" });
+  });
+
+  it("hides a player account behind a null educator but reports role 'player'", async () => {
+    const handler = createSessionHandler(
+      { getAccountForSession: async () => ({ ...educator, role: "player" as const, linkedPlayerId: "player-1" }) },
+      () => undefined,
+    );
+
+    const response = await handler(
+      new Request("https://evolyfoot.test", { headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }),
+    );
+
+    expect(await response.json()).toEqual({ educator: null, role: "player" });
   });
 
   it("returns a null educator and logs when the lookup fails", async () => {
     const errors: unknown[] = [];
     const handler = createSessionHandler(
-      { getEducatorForSession: async () => { throw new Error("boom"); } },
+      { getAccountForSession: async () => { throw new Error("boom"); } },
       errors.push.bind(errors),
     );
 
@@ -277,7 +292,7 @@ describe("createSessionHandler", () => {
       new Request("https://evolyfoot.test", { headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }),
     );
 
-    expect(await response.json()).toEqual({ educator: null });
+    expect(await response.json()).toEqual({ educator: null, role: null });
     expect(errors).toHaveLength(1);
   });
 });

@@ -17,16 +17,41 @@ import type {
   TeamProfile,
 } from "@evolyfoot/domain";
 
+export type AccountRole = "coach" | "player";
+
 export interface EducatorRecord {
   id: string;
   email: string;
   displayName: string;
+  // "coach" : compte éducateur classique (valeur par défaut, absente ⇒ coach). "player" : compte
+  // tuteur/joueur, `linkedPlayerId` renseigné, ne voit que le suivi de ce joueur.
+  role?: AccountRole;
+  linkedPlayerId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface EducatorAuthRecord extends EducatorRecord {
   passwordHash: string;
+}
+
+// Invitation coach -> tuteur (voir PlayerInvite côté schéma). `tokenHash` seulement, jamais le
+// jeton en clair.
+export interface PlayerInviteRecord {
+  id: string;
+  educatorId: string;
+  playerId: string;
+  tokenHash: string;
+  expiresAt: Date;
+  consumedAt: Date | null;
+  createdAt: Date;
+}
+
+export interface PlayerInviteRepository {
+  create(input: { educatorId: string; playerId: string; tokenHash: string; expiresAt: Date }): Promise<PlayerInviteRecord>;
+  findByTokenHash(tokenHash: string): Promise<PlayerInviteRecord | null>;
+  findActiveForPlayer(playerId: string): Promise<PlayerInviteRecord | null>;
+  markConsumed(id: string): Promise<void>;
 }
 
 // Fiche profil (page /profil) : champs optionnels renseignés après l'inscription. Sans
@@ -67,10 +92,18 @@ export interface PersistedTeamProfile {
 }
 
 export interface EducatorRepository {
-  create(input: { email: string; displayName: string; passwordHash: string }): Promise<EducatorRecord>;
+  create(input: {
+    email: string;
+    displayName: string;
+    passwordHash: string;
+    role?: AccountRole;
+    linkedPlayerId?: string;
+  }): Promise<EducatorRecord>;
   existsById(id: string): Promise<boolean>;
   findById(id: string): Promise<EducatorRecord | null>;
   findByEmail(email: string): Promise<EducatorAuthRecord | null>;
+  // Compte "player" lié à ce joueur, s'il existe (0..1 via l'unique sur linked_player_id).
+  findByLinkedPlayerId(playerId: string): Promise<EducatorRecord | null>;
 }
 
 // Lecture/écriture de la fiche profil et du mot de passe -- interface distincte d'EducatorRepository
@@ -220,6 +253,9 @@ export type PlayerDetailsPatch = Partial<{
 export interface PlayerRepository {
   listByEducator(educatorId: string): Promise<PersistedPlayer[]>;
   findById(id: string, educatorId: string): Promise<PersistedPlayer | null>;
+  // Sans filtre d'appartenance -- réservé au tableau de bord joueur, qui a déjà résolu le joueur
+  // via `Educator.linkedPlayerId` (relation de confiance).
+  findAnyById(id: string): Promise<PersistedPlayer | null>;
   create(educatorId: string, name: string): Promise<PersistedPlayer>;
   rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer>;
   update(id: string, educatorId: string, patch: PlayerDetailsPatch): Promise<PersistedPlayer>;

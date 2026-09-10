@@ -331,3 +331,64 @@ test("les fichiers SEO restent publics (pas de redirection vers /connexion)", as
   expect(robots.status()).toBe(200);
   expect(await robots.text()).toContain("Sitemap:");
 });
+
+test("un coach invite un tuteur, qui crée son compte et arrive sur son espace joueur", async ({ page }) => {
+  // Parcours client de bout en bout, données simulées : fiche joueur → génération du lien →
+  // page /rejoindre → création du compte joueur → /joueur.
+  await page.route("**/api/roster", (route) =>
+    route.fulfill({ json: { players: [{ id: "player-1", name: "Kylian", photo: null, birthDate: null, phone: null, email: null }] } }),
+  );
+  await page.route("**/api/player-evaluations**", (route) => route.fulfill({ json: { evaluations: [] } }));
+  await page.route("**/api/invites", (route) =>
+    route.fulfill({ status: 201, json: { url: "http://localhost:3000/rejoindre/tok-123", expiresAt: "2026-09-24T00:00:00.000Z" } }),
+  );
+
+  await page.goto("/equipe/player-1");
+  await page.getByRole("button", { name: "Générer un lien d’invitation" }).click();
+  await expect(page.getByLabel("Lien d’invitation")).toHaveValue(/\/rejoindre\/tok-123$/);
+
+  // Le tuteur ouvre le lien (pas de session tant qu'il n'a pas créé son compte).
+  await page.context().clearCookies();
+  let registered = false;
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({ json: registered ? { educator: null, role: "player" } : { educator: null, role: null } }),
+  );
+  await page.route("**/api/invites/tok-123", (route) =>
+    route.fulfill({ json: { invite: { playerName: "Kylian", teamName: "FC Horizon", coachName: "Coach E2E" } } }),
+  );
+  await page.route("**/api/auth/register-player", (route) => {
+    registered = true;
+    // Le cookie de session laisse le proxy autoriser /joueur ; AuthGate confirme ensuite le rôle.
+    return route.fulfill({
+      status: 201,
+      headers: { "set-cookie": "evolyfoot_session=e2e-player-session; Path=/" },
+      json: { account: { role: "player" } },
+    });
+  });
+  await page.route("**/api/joueur", (route) =>
+    route.fulfill({
+      json: {
+        dashboard: {
+          player: { id: "player-1", name: "Kylian", photo: null },
+          team: { name: "FC Horizon", ageGroup: "U12", trainingDays: ["Mardi"] },
+          evaluations: [],
+          trainingAttendance: { present: 0, absent: 0, total: 0, rate: 0 },
+          matchAttendance: { present: 0, absent: 0, total: 0, rate: 0 },
+          upcomingMatches: [{ id: "m1", opponent: "US Vallée", dateLabel: "Samedi", venue: "home", convoked: true }],
+        },
+      },
+    }),
+  );
+
+  await page.goto("/rejoindre/tok-123");
+  await expect(page.getByRole("heading", { name: /suis la progression de kylian/i })).toBeVisible();
+  await page.getByLabel("Ton nom").fill("Parent de Kylian");
+  await page.getByLabel("Adresse e-mail").fill("parent@example.test");
+  await page.getByLabel(/mot de passe/i).fill("un-mot-de-passe");
+  await page.getByRole("button", { name: /créer mon accès/i }).click();
+
+  await expect(page).toHaveURL(/\/joueur$/);
+  await expect(page.getByRole("heading", { name: "Kylian" })).toBeVisible();
+  await expect(page.getByText("US Vallée")).toBeVisible();
+  await expect(page.getByText("Convoqué")).toBeVisible();
+});

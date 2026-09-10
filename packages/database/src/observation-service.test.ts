@@ -38,6 +38,10 @@ class InMemoryEducatorRepository implements EducatorRepository {
   async findByEmail(): Promise<null> {
     return null;
   }
+
+  async findByLinkedPlayerId(): Promise<null> {
+    return null;
+  }
 }
 
 class InMemoryObservationRepository implements ObservationRepository {
