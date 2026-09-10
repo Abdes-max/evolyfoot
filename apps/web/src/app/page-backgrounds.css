@@ -1,0 +1,107 @@
+/* Fond d'écran discret par page : un motif en trait, en lien avec le thème de la page, répété
+   très légèrement (trait blanc à ~2 % d'opacité) et fixé au viewport pour ne pas défiler.
+   Chargé après globals.css et les feuilles de page, donc ne fait qu'AJOUTER `background-image`
+   par-dessus la couleur de fond déjà posée par chaque `*-shell`. */
+.shell,
+.plan-shell,
+.seances-shell,
+.session-shell,
+.bibliotheque-shell,
+.exercise-shell,
+.match-shell,
+.observation-shell,
+.observations-shell,
+.statistics-shell,
+.roster-shell,
+.player-shell,
+.profil-shell,
+.diagnostic-shell,
+.onboarding-shell,
+.metrics-shell {
+  background-repeat: repeat;
+  background-position: center -20px;
+  background-attachment: fixed;
+  background-size: 200px 200px;
+}
+
+/* Tableau de bord — mosaïque de vue d'ensemble */
+.shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Crect x='30' y='30' width='60' height='40' rx='6'/%3E%3Crect x='110' y='30' width='60' height='40' rx='6'/%3E%3Crect x='30' y='90' width='140' height='30' rx='6'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Plan de progression — escalier ascendant */
+.plan-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Cpath d='M30 150h30v-25h30v-25h30v-25h30v-25h30'/%3E%3Cpath d='M150 25l8 8m-8-8l-2 11'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Séances — plots d'entraînement */
+.seances-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Cpath d='M55 120l15-45 15 45zm-6 0h42'/%3E%3Cpath d='M120 135l18-55 18 55zm-7 0h50'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Constructeur de séance — chronomètre */
+.session-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.02' stroke-width='2'%3E%3Ccircle cx='100' cy='105' r='34'/%3E%3Cpath d='M100 105v-20M100 85V72m-9 0h18'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Bibliothèque — fiches empilées */
+.bibliotheque-shell,
+.exercise-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Crect x='55' y='60' width='90' height='60' rx='6'/%3E%3Cpath d='M65 50h90M75 40h90'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Matchs & compétitions — ballon */
+.match-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Ccircle cx='100' cy='100' r='34'/%3E%3Cpath d='M100 82l16 12-6 19h-20l-6-19z'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Observations — œil */
+.observation-shell,
+.observations-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Cpath d='M60 100c12-20 68-20 80 0-12 20-68 20-80 0z'/%3E%3Ccircle cx='100' cy='100' r='9'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Statistiques — histogramme */
+.statistics-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Cpath d='M60 130V95M85 130V75M110 130V105M135 130V85M52 130h95'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Mon équipe — maillots */
+.roster-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Cpath d='M70 75l14-8 14 8-6 10v30H76V85z'/%3E%3Cpath d='M108 105l12-7 12 7-5 8v24h-14v-24z'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Fiche joueur — maillot avec numéro */
+.player-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Cpath d='M78 72l22-10 22 10-8 14v42H86V86z'/%3E%3Cpath d='M100 100v22m-6-22h12'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Profil — silhouette */
+.profil-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Ccircle cx='100' cy='84' r='16'/%3E%3Cpath d='M70 135c4-20 56-20 60 0'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Diagnostic — jauge */
+.diagnostic-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='2'%3E%3Cpath d='M64 120a36 36 0 0 1 72 0'/%3E%3Cpath d='M100 120l20-16'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Onboarding — fanion */
+.onboarding-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.02' stroke-width='2'%3E%3Cpath d='M80 70v70M80 74l44 12-44 12'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Admin — courbe */
+.metrics-shell {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.02' stroke-width='2'%3E%3Cpath d='M55 130l25-25 20 12 30-35 15 10M52 130h95'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Sur mobile, la barre d'onglets fixe en bas peut recouvrir un motif ; on garde le fond mais on
+   réduit un peu pour ne pas surcharger un écran étroit. */
+@media (max-width: 950px) {
+  .shell,
+  .plan-shell,
+  .seances-shell,
+  .session-shell,
+  .bibliotheque-shell,
+  .exercise-shell,
+  .match-shell,
+  .observation-shell,
+  .observations-shell,
+  .statistics-shell,
+  .roster-shell,
+  .player-shell,
+  .profil-shell,
+  .diagnostic-shell,
+  .onboarding-shell,
+  .metrics-shell {
+    background-size: 150px 150px;
+  }
+}
