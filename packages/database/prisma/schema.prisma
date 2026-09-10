@@ -312,6 +312,19 @@ model PlateauRecord {
   @@map("plateaux")
 }
 
+// Message envoyé depuis le formulaire de contact du site vitrine (public, sans compte). Pas d'e-mail
+// sortant pour l'instant : les messages sont simplement stockés et relus depuis /admin.
+model ContactMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("contact_messages")
+}
+
 // Évaluation courante d'un joueur sur les 7 aspects de la toile d'araignée (voir
 // PlayerEvaluationScores côté domaine) -- un seul enregistrement par joueur, mis à jour en place
 // (même principe que Diagnostic, pas un historique append-only) : `playerId` est donc unique,

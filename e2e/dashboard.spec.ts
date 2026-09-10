@@ -317,7 +317,31 @@ test("un visiteur non connecté découvre la vitrine sur la page d'accueil", asy
   // masqué sous 820px en attendant un menu mobile dédié).
   await page.locator(".m-footer").getByRole("link", { name: "Tarifs" }).click();
   await expect(page).toHaveURL(/\/tarifs$/);
-  await expect(page.getByRole("heading", { name: "Tarifs" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /gratuit pour une équipe/i })).toBeVisible();
+});
+
+test("un visiteur envoie un message depuis le formulaire de contact", async ({ page }) => {
+  await page.context().clearCookies();
+  await page.route("**/api/auth/session", (route) => route.fulfill({ json: { educator: null, role: null } }));
+
+  let received: unknown = null;
+  await page.route("**/api/contact", async (route) => {
+    received = route.request().postDataJSON();
+    await route.fulfill({ status: 201, json: { status: "ok" } });
+  });
+
+  await page.goto("/contact");
+  await page.getByLabel("Ton nom").fill("Camille Éducatrice");
+  await page.getByLabel("Adresse e-mail").fill("camille@example.test");
+  await page.getByLabel("Ton message").fill("Une idée pour la bibliothèque d’exercices.");
+  await page.getByRole("button", { name: "Envoyer le message" }).click();
+
+  await expect(page.getByText(/message envoyé/i)).toBeVisible();
+  expect(received).toEqual({
+    name: "Camille Éducatrice",
+    email: "camille@example.test",
+    message: "Une idée pour la bibliothèque d’exercices.",
+  });
 });
 
 test("les fichiers SEO restent publics (pas de redirection vers /connexion)", async ({ page }) => {

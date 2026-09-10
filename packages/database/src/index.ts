@@ -16,6 +16,7 @@ export {
   PrismaEducatorRepository,
   PrismaMatchRepository,
   PrismaObservationRepository,
+  PrismaContactMessageRepository,
   PrismaPlateauRepository,
   PrismaPlayerEvaluationRepository,
   PrismaPlayerInviteRepository,
@@ -31,6 +32,7 @@ export { EducatorProfileService, seasonFormats } from "./educator-profile-servic
 export { MatchService } from "./match-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";
+export { ContactMessageService } from "./contact-message-service";
 export { PlateauService } from "./plateau-service";
 export { PlayerDashboardService } from "./player-dashboard-service";
 export { PlayerInviteService, InviteInvalidError, PlayerAccountExistsError } from "./player-invite-service";
@@ -41,6 +43,11 @@ export { TeamProfileService } from "./team-profile-service";
 export { TournamentService } from "./tournament-service";
 export { TrainingSessionService, trainingCycleWeekCount } from "./training-session-service";
 export type { AuthenticatedSession } from "./auth-service";
+export type {
+  ContactMessageInput,
+  ContactMessageRecord,
+  ContactMessageRepository,
+} from "./contact-message-service";
 export type { EducatorProfileInput, SeasonFormat } from "./educator-profile-service";
 export type { FunnelStep, MvpMetrics, WeeklyActivityPoint } from "./metrics-service";
 export type { PlayerDashboard, PlayerDashboardMatch } from "./player-dashboard-service";
