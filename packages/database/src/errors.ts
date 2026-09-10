@@ -33,6 +33,13 @@ export class MatchNotFoundError extends Error {
   }
 }
 
+export class ObservationNotFoundError extends Error {
+  constructor() {
+    super("Observation introuvable.");
+    this.name = "ObservationNotFoundError";
+  }
+}
+
 export class DuplicateEducatorEmailError extends Error {
   constructor() {
     super("Cette adresse e-mail est déjà utilisée.");

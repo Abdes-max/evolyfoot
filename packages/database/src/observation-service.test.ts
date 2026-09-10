@@ -2,7 +2,7 @@ import { createObservationDraft, diagnosticCriteria, rateObservation } from "@ev
 import type { ObservationDraft } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
 import { ObservationService } from "./observation-service";
-import { EducatorNotFoundError, ValidationError } from "./errors";
+import { EducatorNotFoundError, ObservationNotFoundError, ValidationError } from "./errors";
 import type {
   EducatorRecord,
   EducatorRepository,
@@ -60,6 +60,14 @@ class InMemoryObservationRepository implements ObservationRepository {
     this.created.push(record);
     return record;
   }
+
+  async listByEducator(educatorId: string): Promise<PersistedObservation[]> {
+    return this.created.filter((observation) => observation.educatorId === educatorId);
+  }
+
+  async findById(id: string, educatorId: string): Promise<PersistedObservation | null> {
+    return this.created.find((observation) => observation.id === id && observation.educatorId === educatorId) ?? null;
+  }
 }
 
 describe("ObservationService.save", () => {
@@ -87,5 +95,38 @@ describe("ObservationService.save", () => {
     expect(saved.educatorId).toBe("educator-1");
     expect(saved.summary.trend).toBe("progress");
     expect(saved.ratings).toHaveLength(diagnosticCriteria.length);
+  });
+});
+
+describe("ObservationService.list / get", () => {
+  it("lists only the requesting educator's observations, most recent first", async () => {
+    const observationRepository = new InMemoryObservationRepository();
+    const service = new ObservationService(new InMemoryEducatorRepository(["educator-1", "educator-2"]), observationRepository);
+    await service.save("educator-1", completeDraft());
+    await service.save("educator-2", completeDraft());
+
+    const observations = await service.list("educator-1");
+
+    expect(observations).toHaveLength(1);
+    expect(observations[0].educatorId).toBe("educator-1");
+  });
+
+  it("gets a single observation belonging to the requesting educator", async () => {
+    const observationRepository = new InMemoryObservationRepository();
+    const service = new ObservationService(new InMemoryEducatorRepository(["educator-1"]), observationRepository);
+    const saved = await service.save("educator-1", completeDraft());
+
+    const fetched = await service.get("educator-1", saved.id);
+
+    expect(fetched).toEqual(saved);
+  });
+
+  it("rejects getting an observation that does not exist, or belongs to another educator", async () => {
+    const observationRepository = new InMemoryObservationRepository();
+    const service = new ObservationService(new InMemoryEducatorRepository(["educator-1", "educator-2"]), observationRepository);
+    const saved = await service.save("educator-1", completeDraft());
+
+    await expect(service.get("educator-1", "missing")).rejects.toBeInstanceOf(ObservationNotFoundError);
+    await expect(service.get("educator-2", saved.id)).rejects.toBeInstanceOf(ObservationNotFoundError);
   });
 });

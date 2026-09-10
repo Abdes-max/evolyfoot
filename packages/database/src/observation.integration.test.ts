@@ -78,4 +78,26 @@ describe("PostgreSQL observation persistence", () => {
     await expect(service.save(educator.id, incomplete)).rejects.toThrow();
     await expect(database.prisma.observationRecord.count({ where: { educatorId: educator.id } })).resolves.toBe(0);
   });
+
+  it("lists an educator's observations most recent first, excluding other educators'", async () => {
+    const owner = await createEducator("list-owner");
+    const other = await createEducator("list-other");
+    const first = await service.save(owner.id, completeDraft());
+    const second = await service.save(owner.id, completeDraft());
+    await service.save(other.id, completeDraft());
+
+    const observations = await service.list(owner.id);
+
+    expect(observations.map((observation) => observation.id)).toEqual([second.id, first.id]);
+  });
+
+  it("gets a single observation only for its owning educator", async () => {
+    const owner = await createEducator("get-owner");
+    const other = await createEducator("get-other");
+    const saved = await service.save(owner.id, completeDraft());
+
+    await expect(service.get(owner.id, saved.id)).resolves.toMatchObject({ id: saved.id });
+    await expect(service.get(other.id, saved.id)).rejects.toThrow("Observation introuvable.");
+    await expect(service.get(owner.id, "00000000-0000-0000-0000-000000000000")).rejects.toThrow("Observation introuvable.");
+  });
 });

@@ -129,6 +129,8 @@ export interface PersistedObservation {
 
 export interface ObservationRepository {
   create(educatorId: string, report: ObservationReport, matchId?: string): Promise<PersistedObservation>;
+  listByEducator(educatorId: string): Promise<PersistedObservation[]>;
+  findById(id: string, educatorId: string): Promise<PersistedObservation | null>;
 }
 
 // Effectif nominatif de l'éducateur. Rattaché à l'éducateur (pas à Team) : CRUD complet, à

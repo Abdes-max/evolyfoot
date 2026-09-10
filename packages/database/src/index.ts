@@ -6,6 +6,7 @@ export {
   EducatorNotFoundError,
   InvalidCredentialsError,
   MatchNotFoundError,
+  ObservationNotFoundError,
   PlayerNotFoundError,
   TeamNotFoundError,
   ValidationError,

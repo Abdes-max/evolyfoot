@@ -264,6 +264,16 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
 export class PrismaObservationRepository implements ObservationRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
+  async listByEducator(educatorId: string): Promise<PersistedObservation[]> {
+    const records = await this.prisma.observationRecord.findMany({ where: { educatorId }, orderBy: { createdAt: "desc" } });
+    return records.map(toPersistedObservation);
+  }
+
+  async findById(id: string, educatorId: string): Promise<PersistedObservation | null> {
+    const record = await this.prisma.observationRecord.findFirst({ where: { id, educatorId } });
+    return record === null ? null : toPersistedObservation(record);
+  }
+
   async create(educatorId: string, report: ObservationReport, matchId?: string): Promise<PersistedObservation> {
     try {
       const record = await this.prisma.observationRecord.create({
