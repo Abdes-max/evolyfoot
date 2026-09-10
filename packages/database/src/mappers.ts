@@ -32,6 +32,7 @@ import type {
   PlateauRecord as PrismaPlateauRecord,
   Player as PrismaPlayer,
   PlayerEvaluationRecord as PrismaPlayerEvaluationRecord,
+  PlayerInvite as PrismaPlayerInvite,
   Session,
   Team,
   TournamentRecord as PrismaTournamentRecord,
@@ -41,6 +42,7 @@ import type {
   EducatorAuthRecord,
   EducatorProfile,
   EducatorRecord,
+  PlayerInviteRecord,
   PersistedDiagnostic,
   PersistedMatch,
   PersistedObservation,
@@ -230,8 +232,24 @@ export function toEducatorRecord(educator: Educator): EducatorRecord {
     id: educator.id,
     email: educator.email,
     displayName: educator.displayName,
+    // `role` est un texte libre en base (voir schema.prisma) : on retombe sur "coach" pour toute
+    // valeur inattendue, jamais "player" par erreur.
+    role: educator.role === "player" ? "player" : "coach",
+    linkedPlayerId: educator.linkedPlayerId,
     createdAt: educator.createdAt,
     updatedAt: educator.updatedAt,
+  });
+}
+
+export function toPlayerInviteRecord(invite: PrismaPlayerInvite): PlayerInviteRecord {
+  return Object.freeze({
+    id: invite.id,
+    educatorId: invite.educatorId,
+    playerId: invite.playerId,
+    tokenHash: invite.tokenHash,
+    expiresAt: invite.expiresAt,
+    consumedAt: invite.consumedAt,
+    createdAt: invite.createdAt,
   });
 }
 

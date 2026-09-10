@@ -27,6 +27,7 @@ import {
   toPrismaMatchVenue,
   toPrismaObservationEventType,
   toPrismaTrainingDay,
+  toPlayerInviteRecord,
   toSessionRecord,
 } from "./mappers";
 import { normalizeEducatorEmail } from "./email";
@@ -54,6 +55,8 @@ import type {
   PlayerDetailsPatch,
   PlayerEvaluationRepository,
   PlayerRepository,
+  PlayerInviteRecord,
+  PlayerInviteRepository,
   SessionRecord,
   SessionRepository,
   TeamRepository,
@@ -122,13 +125,21 @@ function translateDiagnosticWriteError(error: unknown): never {
 export class PrismaEducatorRepository implements EducatorRepository, EducatorProfileRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async create(input: { email: string; displayName: string; passwordHash: string }): Promise<EducatorRecord> {
+  async create(input: {
+    email: string;
+    displayName: string;
+    passwordHash: string;
+    role?: "coach" | "player";
+    linkedPlayerId?: string;
+  }): Promise<EducatorRecord> {
     try {
       const educator = await this.prisma.educator.create({
         data: {
           email: normalizeEducatorEmail(input.email),
           displayName: input.displayName,
           passwordHash: input.passwordHash,
+          ...(input.role ? { role: input.role } : {}),
+          ...(input.linkedPlayerId ? { linkedPlayerId: input.linkedPlayerId } : {}),
         },
       });
       return toEducatorRecord(educator);
@@ -155,6 +166,11 @@ export class PrismaEducatorRepository implements EducatorRepository, EducatorPro
       where: { email: normalizeEducatorEmail(email) },
     });
     return educator === null ? null : toEducatorAuthRecord(educator);
+  }
+
+  async findByLinkedPlayerId(playerId: string): Promise<EducatorRecord | null> {
+    const educator = await this.prisma.educator.findUnique({ where: { linkedPlayerId: playerId } });
+    return educator === null ? null : toEducatorRecord(educator);
   }
 
   async findProfileById(id: string): Promise<EducatorProfile | null> {
@@ -200,6 +216,33 @@ export class PrismaSessionRepository implements SessionRepository {
 
   async deleteByTokenHash(tokenHash: string): Promise<void> {
     await this.prisma.session.deleteMany({ where: { tokenHash } });
+  }
+}
+
+export class PrismaPlayerInviteRepository implements PlayerInviteRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(input: { educatorId: string; playerId: string; tokenHash: string; expiresAt: Date }): Promise<PlayerInviteRecord> {
+    const invite = await this.prisma.playerInvite.create({ data: input });
+    return toPlayerInviteRecord(invite);
+  }
+
+  async findByTokenHash(tokenHash: string): Promise<PlayerInviteRecord | null> {
+    const invite = await this.prisma.playerInvite.findUnique({ where: { tokenHash } });
+    return invite === null ? null : toPlayerInviteRecord(invite);
+  }
+
+  // Invitation encore utilisable pour ce joueur : non consommée et non expirée.
+  async findActiveForPlayer(playerId: string): Promise<PlayerInviteRecord | null> {
+    const invite = await this.prisma.playerInvite.findFirst({
+      where: { playerId, consumedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: "desc" },
+    });
+    return invite === null ? null : toPlayerInviteRecord(invite);
+  }
+
+  async markConsumed(id: string): Promise<void> {
+    await this.prisma.playerInvite.update({ where: { id }, data: { consumedAt: new Date() } });
   }
 }
 
@@ -390,6 +433,11 @@ export class PrismaPlayerRepository implements PlayerRepository {
 
   async findById(id: string, educatorId: string): Promise<PersistedPlayer | null> {
     const player = await this.prisma.player.findFirst({ where: { id, educatorId } });
+    return player === null ? null : toPersistedPlayer(player);
+  }
+
+  async findAnyById(id: string): Promise<PersistedPlayer | null> {
+    const player = await this.prisma.player.findUnique({ where: { id } });
     return player === null ? null : toPersistedPlayer(player);
   }
 

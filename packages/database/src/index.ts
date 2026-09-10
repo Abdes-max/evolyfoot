@@ -18,6 +18,7 @@ export {
   PrismaObservationRepository,
   PrismaPlateauRepository,
   PrismaPlayerEvaluationRepository,
+  PrismaPlayerInviteRepository,
   PrismaPlayerRepository,
   PrismaSessionRepository,
   PrismaTeamRepository,
@@ -31,6 +32,8 @@ export { MatchService } from "./match-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";
 export { PlateauService } from "./plateau-service";
+export { PlayerDashboardService } from "./player-dashboard-service";
+export { PlayerInviteService, InviteInvalidError, PlayerAccountExistsError } from "./player-invite-service";
 export { PlayerEvaluationService } from "./player-evaluation-service";
 export { RosterService } from "./roster-service";
 export { StatsService } from "./stats-service";
@@ -40,10 +43,13 @@ export { TrainingSessionService, trainingCycleWeekCount } from "./training-sessi
 export type { AuthenticatedSession } from "./auth-service";
 export type { EducatorProfileInput, SeasonFormat } from "./educator-profile-service";
 export type { FunnelStep, MvpMetrics, WeeklyActivityPoint } from "./metrics-service";
+export type { PlayerDashboard, PlayerDashboardMatch } from "./player-dashboard-service";
+export type { CreatedInvite, InvitePreview } from "./player-invite-service";
 export type { PlayerDetailsInput } from "./roster-service";
 export type { TeamStats } from "./stats-service";
 export type { TrainingSessionInput } from "./training-session-service";
 export type {
+  AccountRole,
   DiagnosticRepository,
   EducatorAuthRecord,
   EducatorProfile,
@@ -66,6 +72,8 @@ export type {
   PlateauRepository,
   PlayerDetailsPatch,
   PlayerEvaluationRepository,
+  PlayerInviteRecord,
+  PlayerInviteRepository,
   PlayerRepository,
   SessionRecord,
   SessionRepository,

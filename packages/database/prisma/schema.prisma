@@ -44,11 +44,24 @@ enum MatchStatus {
   played
 }
 
+// Compte de l'application. Historiquement « éducateur » (le seul rôle) ; désormais discriminé
+// par `role` : un compte `coach` a une équipe, un plan, un effectif... ; un compte `player`
+// (tuteur/joueur) n'a que `linkedPlayerId` -- le joueur de l'effectif d'un coach qu'il suit --
+// et ne voit que ce suivi (voir PlayerDashboardService). Le nom du modèle et de la table
+// (`educators`) reste, ainsi que `sessions.educator_id`, pour éviter une migration de renommage
+// massive ; c'est bien le modèle de compte pour les deux rôles.
 model Educator {
   id                String                   @id @default(uuid()) @db.Uuid
   email             String                   @unique
   displayName       String                   @map("display_name")
   passwordHash      String                   @map("password_hash")
+  // "coach" | "player". `getEducatorForSession` ne résout que les comptes "coach", donc les
+  // routes API éducateur rejettent automatiquement un jeton de compte joueur.
+  role              String                   @default("coach")
+  // Renseigné uniquement pour un compte "player" : le joueur suivi (dans l'effectif d'un coach).
+  linkedPlayerId    String?                  @unique @db.Uuid @map("linked_player_id")
+  linkedPlayer      Player?                  @relation("PlayerFollowers", fields: [linkedPlayerId], references: [id], onDelete: Cascade)
+  invitesCreated    PlayerInvite[]
   // Fiche profil de l'éducateur (page /profil). Tous optionnels : renseignés après l'inscription,
   // qui ne demande que nom / e-mail / mot de passe. `birthDate` est stocké en texte ISO
   // (`YYYY-MM-DD`) plutôt qu'en `DateTime` -- une date de naissance n'a pas d'heure ni de fuseau,
@@ -204,11 +217,34 @@ model Player {
   // Historique borné d'évaluations datées (voir playerEvaluationMaxPerSeason côté domaine),
   // plus « une seule par joueur » : d'où la relation 1-N ci-dessous au lieu d'un `?`.
   evaluations PlayerEvaluationRecord[]
+  // Comptes tuteur/joueur qui suivent ce joueur (0..1 en pratique via l'unique sur
+  // Educator.linkedPlayerId).
+  followers   Educator[]              @relation("PlayerFollowers")
+  invites     PlayerInvite[]
   createdAt  DateTime                @default(now()) @map("created_at")
   updatedAt  DateTime                @updatedAt @map("updated_at")
 
   @@index([educatorId])
   @@map("players")
+}
+
+// Invitation générée par un coach pour qu'un tuteur crée un compte lié à un joueur de son
+// effectif. Le jeton n'est stocké que haché (comme Session.tokenHash) ; `consumedAt` marque la
+// consommation (usage unique).
+model PlayerInvite {
+  id         String    @id @default(uuid()) @db.Uuid
+  educatorId String    @db.Uuid @map("educator_id")
+  educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  playerId   String    @db.Uuid @map("player_id")
+  player     Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([educatorId])
+  @@index([playerId])
+  @@map("player_invites")
 }
 
 // Préparation d'un match : composition positionnée sur le terrain (`lineup`, voir

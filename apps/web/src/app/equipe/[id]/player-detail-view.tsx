@@ -99,6 +99,11 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [addingEvaluation, setAddingEvaluation] = useState(false);
   const [evaluationError, setEvaluationError] = useState("");
 
+  const [inviteUrl, setInviteUrl] = useState("");
+  const [inviteError, setInviteError] = useState("");
+  const [invitingTutor, setInvitingTutor] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -236,6 +241,41 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
       setEvaluationError("L’enregistrement a échoué, réessaie.");
     } finally {
       setAddingEvaluation(false);
+    }
+  }
+
+  async function inviteTutor() {
+    if (!player) {
+      return;
+    }
+    setInvitingTutor(true);
+    setInviteError("");
+    setInviteCopied(false);
+    try {
+      const response = await fetch("/api/invites", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ playerId: player.id }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setInviteError(typeof body.error === "string" ? body.error : "La génération du lien a échoué.");
+        return;
+      }
+      setInviteUrl(body.url);
+    } catch {
+      setInviteError("La génération du lien a échoué, réessaie.");
+    } finally {
+      setInvitingTutor(false);
+    }
+  }
+
+  async function copyInvite() {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setInviteCopied(true);
+    } catch {
+      // Le champ reste sélectionnable manuellement.
     }
   }
 
@@ -459,6 +499,33 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                     );
                   })}
                 </ul>
+              )}
+            </div>
+
+            <div className="player-block">
+              <div className="player-block-head">
+                <h2>Accès tuteur / joueur</h2>
+              </div>
+              <p className="player-invite-lead">
+                Génère un lien à transmettre au tuteur : il crée un compte séparé qui ne voit que le suivi de{" "}
+                {player.name} (évaluations, présences, calendrier, convocations).
+              </p>
+              {inviteUrl ? (
+                <div className="player-invite-result">
+                  <input aria-label="Lien d’invitation" readOnly value={inviteUrl} />
+                  <button className="player-ghost" onClick={copyInvite} type="button">
+                    {inviteCopied ? "Copié" : "Copier"}
+                  </button>
+                </div>
+              ) : (
+                <button className="player-primary" disabled={invitingTutor} onClick={inviteTutor} type="button">
+                  {invitingTutor ? "…" : "Générer un lien d’invitation"}
+                </button>
+              )}
+              {inviteError && (
+                <p className="player-error" role="alert">
+                  {inviteError}
+                </p>
               )}
             </div>
           </>

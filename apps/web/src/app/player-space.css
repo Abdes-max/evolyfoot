@@ -1,0 +1,37 @@
+/* Espace joueur / tuteur (/joueur) : compte séparé du compte éducateur, en lecture seule.
+   Thème sombre comme l'app, sans barre latérale. */
+.player-space { min-height: 100vh; background: var(--paper); color: var(--ink); }
+.player-space-header { display: flex; align-items: center; justify-content: space-between; padding: 16px clamp(16px, 5vw, 40px); border-bottom: 1px solid var(--line); background: var(--surface); }
+.player-space-logout { min-height: 38px; border: 1px solid var(--line); border-radius: 9px; padding: 0 14px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 800; }
+
+.player-space-content { width: min(920px, calc(100% - 40px)); margin: 30px auto 60px; display: grid; gap: 16px; }
+.player-space-note, .player-space-empty { margin: 0; color: var(--muted); font-size: 12.5px; }
+
+.player-space-hero { display: flex; align-items: center; gap: 16px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(150deg, var(--accent-dark), var(--accent)); color: var(--accent-ink); }
+.player-space-avatar { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: rgba(255, 255, 255, .16); border: 2px solid rgba(255, 255, 255, .4); font-size: 20px; font-weight: 800; }
+.player-space-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.player-space-hero h1 { margin: 0 0 2px; font-size: 20px; letter-spacing: -.4px; }
+.player-space-hero p { margin: 0; font-size: 12.5px; opacity: .9; }
+
+.player-space-block { padding: 20px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.player-space-block h2 { margin: 0 0 14px; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; }
+.player-space-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.player-space-progress { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center; }
+.player-space-caption { margin: 0 0 10px; color: var(--muted); font-size: 11px; }
+.player-space-history { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.player-space-history li { font-size: 11.5px; color: var(--muted); }
+.player-space-days { margin: 0; font-size: 13px; }
+
+.player-space-matches { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.player-space-matches li { display: grid; gap: 3px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+.player-space-matches li.convoked { border-color: var(--accent-dark); }
+.player-space-matches strong { font-size: 13px; }
+.player-space-matches span { color: var(--muted); font-size: 11px; }
+.player-space-tag { font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
+.player-space-matches li.convoked .player-space-tag { color: var(--good); }
+
+@media (max-width: 720px) {
+  .player-space-grid, .player-space-progress { grid-template-columns: 1fr; }
+  .player-space-progress { justify-items: center; }
+}

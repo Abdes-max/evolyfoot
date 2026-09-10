@@ -14,6 +14,12 @@ import { isMarketingPath } from "@/marketing-routes";
 // apps/mobile/app/_layout.tsx, côté web.
 const AUTH_PATHS = ["/connexion", "/inscription"];
 
+// Un compte "player" (tuteur/joueur) ne peut voir QUE l'espace /joueur ; un compte "coach" ne
+// peut PAS y aller. AuthGate redirige selon le rôle renvoyé par /api/auth/session.
+function isPlayerArea(pathname: string): boolean {
+  return pathname === "/joueur" || pathname.startsWith("/joueur/");
+}
+
 type SessionCheck = {
   // Le pathname pour lequel `status` a été établi. Tant qu'il ne correspond pas au pathname
   // courant, la vérification pour cette page n'est pas encore terminée -- dérivé au rendu (voir
@@ -41,15 +47,23 @@ export function AuthGate({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const response = await fetch("/api/auth/session");
-        const body = await response.json().catch(() => ({ educator: null }));
+        const body = await response.json().catch(() => ({ educator: null, role: null }));
         if (cancelled) {
           return;
         }
-        if (body.educator) {
-          setSessionCheck({ pathname, status: "authenticated" });
-        } else {
+        const role: "coach" | "player" | null = body.role ?? (body.educator ? "coach" : null);
+        const playerArea = isPlayerArea(pathname);
+        if (!role) {
           setSessionCheck({ pathname, status: "redirecting" });
           router.replace("/connexion");
+        } else if (role === "player" && !playerArea) {
+          setSessionCheck({ pathname, status: "redirecting" });
+          router.replace("/joueur");
+        } else if (role === "coach" && playerArea) {
+          setSessionCheck({ pathname, status: "redirecting" });
+          router.replace("/app");
+        } else {
+          setSessionCheck({ pathname, status: "authenticated" });
         }
       } catch {
         if (!cancelled) {

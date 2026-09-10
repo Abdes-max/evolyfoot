@@ -2,10 +2,17 @@ import { DuplicateEducatorEmailError, InvalidCredentialsError, ValidationError }
 
 export const SESSION_COOKIE_NAME = "evolyfoot_session";
 
+export type AccountRole = "coach" | "player";
+
 export interface PublicEducator {
   id: string;
   email: string;
   displayName: string;
+}
+
+export interface PublicAccount extends PublicEducator {
+  role: AccountRole;
+  linkedPlayerId: string | null;
 }
 
 export interface AuthenticatedSessionResult {
@@ -19,6 +26,10 @@ export interface AuthGateway {
   login(input: { email: string; password: string }): Promise<AuthenticatedSessionResult>;
   logout(sessionToken: string): Promise<void>;
   getEducatorForSession(sessionToken: string): Promise<PublicEducator | null>;
+  // Compte quel que soit le rôle (avec `role`), pour /api/auth/session et le cloisonnement.
+  getAccountForSession(sessionToken: string): Promise<PublicAccount | null>;
+  // Compte "player" uniquement (miroir de getEducatorForSession), pour les routes /api/joueur/*.
+  getPlayerAccountForSession(sessionToken: string): Promise<PublicAccount | null>;
 }
 
 function cookieAttributes(extra: string[]): string[] {
@@ -175,27 +186,65 @@ export function createLogoutHandler(
 }
 
 export function createSessionHandler(
-  gateway: Pick<AuthGateway, "getEducatorForSession">,
+  gateway: Pick<AuthGateway, "getAccountForSession">,
   log: (error: unknown) => void,
 ): (request: Request) => Promise<Response> {
   return async (request) => {
     const token = readSessionToken(request);
     if (!token) {
-      return Response.json({ educator: null });
+      return Response.json({ educator: null, role: null });
     }
 
     try {
-      const educator = await gateway.getEducatorForSession(token);
-      return Response.json({ educator });
+      const account = await gateway.getAccountForSession(token);
+      if (!account) {
+        return Response.json({ educator: null, role: null });
+      }
+      // Un compte "player" n'est jamais exposé comme `educator` (les pages/routes éducateur
+      // testent `sessionBody.educator`) ; le client lit `role` pour aiguiller vers /joueur.
+      return Response.json({
+        educator: account.role === "player" ? null : account,
+        role: account.role,
+      });
     } catch (error) {
       log(error);
-      return Response.json({ educator: null });
+      return Response.json({ educator: null, role: null });
     }
   };
 }
 
 function toPublicEducator(educator: { id: string; email: string; displayName: string }): PublicEducator {
   return { id: educator.id, email: educator.email, displayName: educator.displayName };
+}
+
+function toPublicAccount(account: {
+  id: string;
+  email: string;
+  displayName: string;
+  role?: "coach" | "player";
+  linkedPlayerId?: string | null;
+}): PublicAccount {
+  return {
+    id: account.id,
+    email: account.email,
+    displayName: account.displayName,
+    role: account.role === "player" ? "player" : "coach",
+    linkedPlayerId: account.linkedPlayerId ?? null,
+  };
+}
+
+// Résout le compte "player" lié à la session, ou null (jeton absent, invalide, ou compte coach).
+export async function resolvePlayerAccountFromRequest(request: Request): Promise<PublicAccount | null> {
+  const token = readSessionToken(request);
+  if (!token) {
+    return null;
+  }
+  const { gateway, disconnect } = await createAuthGateway();
+  try {
+    return await gateway.getPlayerAccountForSession(token);
+  } finally {
+    await disconnect();
+  }
 }
 
 export async function createAuthGateway(): Promise<{ gateway: AuthGateway; disconnect: () => Promise<void> }> {
@@ -222,6 +271,14 @@ export async function createAuthGateway(): Promise<{ gateway: AuthGateway; disco
       async getEducatorForSession(sessionToken) {
         const educator = await service.getEducatorForSession(sessionToken);
         return educator === null ? null : toPublicEducator(educator);
+      },
+      async getAccountForSession(sessionToken) {
+        const account = await service.getAccountForSession(sessionToken);
+        return account === null ? null : toPublicAccount(account);
+      },
+      async getPlayerAccountForSession(sessionToken) {
+        const account = await service.getPlayerAccountForSession(sessionToken);
+        return account === null ? null : toPublicAccount(account);
       },
     },
     disconnect: database.disconnect,
