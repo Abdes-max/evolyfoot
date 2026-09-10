@@ -12,7 +12,7 @@ interface Educator {
 interface TeamProfile {
   name: string;
   ageGroup: string;
-  playerCount: number;
+  gameFormat: number;
 }
 
 function initials(displayName: string): string {
@@ -29,6 +29,10 @@ function initials(displayName: string): string {
 export function SidebarIdentity() {
   const [educator, setEducator] = useState<Educator | null | undefined>(undefined);
   const [team, setTeam] = useState<TeamProfile | null>(null);
+  // Le nombre de joueurs affiché ici doit refléter l'effectif nominatif réel (`/equipe`), pas
+  // `Team.playerCount` -- un chiffre saisi une fois à l'onboarding, avant que l'effectif nominatif
+  // n'existe (voir roadmap.md, phase 2), qui se désynchronise dès qu'un joueur est ajouté/retiré.
+  const [playerCount, setPlayerCount] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,10 +47,12 @@ export function SidebarIdentity() {
         setEducator(sessionBody.educator ?? null);
 
         if (sessionBody.educator) {
-          const teamResponse = await fetch("/api/team");
+          const [teamResponse, rosterResponse] = await Promise.all([fetch("/api/team"), fetch("/api/roster")]);
           const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
+          const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
           if (!cancelled) {
             setTeam(teamBody.profile ?? null);
+            setPlayerCount(Array.isArray(rosterBody.players) ? rosterBody.players.length : 0);
           }
         }
       } catch {
@@ -111,7 +117,9 @@ export function SidebarIdentity() {
             <strong>
               {team.name} · {team.ageGroup}
             </strong>
-            <span>{team.playerCount} joueurs</span>
+            <span>
+              Foot à {team.gameFormat} · {playerCount ?? 0} joueur{(playerCount ?? 0) > 1 ? "s" : ""}
+            </span>
           </>
         ) : (
           <>

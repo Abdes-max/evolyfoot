@@ -43,7 +43,12 @@ describe("roster", () => {
     render(<EquipePage />);
 
     expect(await screen.findByText("Kylian")).toBeInTheDocument();
-    expect(screen.getByText(/foot à 8/i)).toBeInTheDocument();
+    // "Foot à 8" apparaît aussi dans le widget saison du sidebar (SidebarIdentity, rendu par
+    // SidebarNav ici) -- on cible la formulation propre au bandeau de cette page pour éviter une
+    // requête ambiguë entre les deux. Le nombre (1) vient de l'effectif réel (`players`), pas de
+    // `team.playerCount` (14 dans `team` ci-dessus) -- vérifie au passage qu'il ne s'agit plus de
+    // ce dernier.
+    expect(screen.getByText(/foot à 8 · 1 joueur au total/i)).toBeInTheDocument();
   });
 
   it("ajoute un joueur", async () => {

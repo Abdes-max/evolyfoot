@@ -6,9 +6,9 @@
 /* padding-left/right seulement (jamais le raccourci `padding`) : sous 760px, .page-header applique
    son propre padding-top/bottom (26px, globals.css) -- un raccourci ici cascaderait après lui et
    les remettrait à 0, écrasant l'espacement vertical mobile. */
-.bibliotheque-header { padding-left: max(25px, calc((100% - 1200px) / 2)); padding-right: max(25px, calc((100% - 1200px) / 2)); }
+.bibliotheque-header { padding-left: max(25px, calc((100% - 1280px) / 2)); padding-right: max(25px, calc((100% - 1280px) / 2)); }
 
-.bibliotheque { width: min(1200px, calc(100% - 40px)); margin: 30px auto 60px; }
+.bibliotheque { width: min(1280px, calc(100% - 40px)); margin: 30px auto 60px; }
 .bibliotheque-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 22px; }
 .bibliotheque-search { flex: 1; min-width: 220px; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; color: var(--muted); }
 .bibliotheque-search input { flex: 1; border: 0; background: none; color: var(--ink); font: inherit; font-size: 12.5px; }

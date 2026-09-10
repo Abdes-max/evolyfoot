@@ -63,7 +63,7 @@ export default function EquipeScreen() {
         <Text style={styles.body}>Ajoute, renomme ou retire un joueur à tout moment — utile pour tes observations.</Text>
         {team && (
           <Text style={styles.teamSummary}>
-            {team.name} · {team.ageGroup} · Foot à {team.gameFormat} · {team.playerCount} joueurs au total
+            {team.name} · {team.ageGroup} · Foot à {team.gameFormat} · {roster.length} joueur{roster.length > 1 ? "s" : ""} au total
           </Text>
         )}
 

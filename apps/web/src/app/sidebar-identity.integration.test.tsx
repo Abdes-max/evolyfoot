@@ -24,20 +24,27 @@ describe("SidebarIdentity", () => {
     expect(screen.getAllByRole("link", { name: /se connecter/i })[0]).toHaveAttribute("href", "/connexion");
   });
 
-  it("affiche l’éducateur connecté et son équipe", async () => {
+  it("affiche l’éducateur connecté, son équipe et l’effectif nominatif réel", async () => {
     vi.mocked(fetch).mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : (input as Request).url;
       if (url.includes("/api/auth/session")) {
         return jsonResponse({ educator: { id: "1", email: "coach@example.test", displayName: "Coach Test" } });
       }
-      return jsonResponse({ profile: { name: "FC Horizon", ageGroup: "U12", playerCount: 14 } });
+      if (url.includes("/api/roster")) {
+        // Le nombre affiché doit venir de l'effectif nominatif réel, pas de Team.playerCount
+        // (un chiffre saisi une fois à l'onboarding, désynchronisé dès qu'un joueur est
+        // ajouté/retiré) -- volontairement différent des 14 de Team.playerCount ci-dessous pour
+        // vérifier que ce dernier n'est plus utilisé.
+        return jsonResponse({ players: [{ id: "p1", name: "Kylian" }, { id: "p2", name: "Léo" }] });
+      }
+      return jsonResponse({ profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14 } });
     });
 
     render(<SidebarIdentity />);
 
     expect(await screen.findByText("Coach Test")).toBeInTheDocument();
     expect(screen.getByText("FC Horizon · U12")).toBeInTheDocument();
-    expect(screen.getByText("14 joueurs")).toBeInTheDocument();
+    expect(screen.getByText("Foot à 8 · 2 joueurs")).toBeInTheDocument();
     expect(screen.getByText("CT")).toBeInTheDocument();
   });
 

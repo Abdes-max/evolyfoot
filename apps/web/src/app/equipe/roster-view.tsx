@@ -167,7 +167,7 @@ export function RosterView() {
         <section className="roster-content">
           {team && (
             <p className="roster-team-summary">
-              {team.name} · {team.ageGroup} · Foot à {team.gameFormat} · {team.playerCount} joueurs au total ·{" "}
+              {team.name} · {team.ageGroup} · Foot à {team.gameFormat} · {players.length} joueur{players.length > 1 ? "s" : ""} au total ·{" "}
               <Link className="inline-cta" href="/onboarding">Modifier mon équipe →</Link>
             </p>
           )}

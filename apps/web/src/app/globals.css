@@ -288,7 +288,10 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
    réservation, la zone réellement disponible pour le titre se retrouvait ~264px plus étroite que
    prévu, ce qui tronquait le titre bien plus tôt que nécessaire une fois celui-ci limité à une
    seule ligne (voir .page-header h1 ci-dessous). Même calcul que .plan-content etc. en dessous. */
-.page-header{height:150px;padding:0 max(25px,calc((100% - 1050px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:180px 1fr auto;gap:30px;align-items:center;overflow:hidden}
+/* 1280px partout (en-tête ET contenu en dessous, sur toutes les pages) : aligné sur .content de
+   Vue d'ensemble -- chaque page choisissait auparavant sa propre largeur (1000, 1200, 900, 720...),
+   incohérent d'une page à l'autre en navigant. */
+.page-header{height:150px;padding:0 max(25px,calc((100% - 1280px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:180px 1fr auto;gap:30px;align-items:center;overflow:hidden}
 /* min-width:0 annule le min-width:auto par défaut des enfants de grille (qui les empêcherait de
    rétrécir sous la largeur de leur contenu) -- sans lui, ni le titre sur une ligne ni la
    description sur deux lignes ci-dessous ne pourraient réellement se limiter. */
@@ -307,9 +310,9 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 /* padding-left/right seulement (jamais le raccourci `padding`) : sous 760px, .page-header applique
    son propre padding-top/bottom (26px) -- un raccourci ici les remettrait à 0 en cascadant après
    lui (roster.css etc. sont chargés après globals.css), écrasant l'espacement vertical mobile. */
-.plan-header{padding-left:max(25px,calc((100% - 1050px)/2));padding-right:max(25px,calc((100% - 1050px)/2))}
+.plan-header{padding-left:max(25px,calc((100% - 1280px)/2));padding-right:max(25px,calc((100% - 1280px)/2))}
 .plan-duration{background:var(--accent);color:var(--accent-ink);padding:9px 12px;border-radius:99px;font-size:9px;font-weight:800}
-.plan-content{width:min(1000px,calc(100% - 40px));margin:30px auto 60px}
+.plan-content{width:min(1280px,calc(100% - 40px));margin:30px auto 60px}
 .plan-summary{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px;margin-bottom:22px}
 .plan-summary>div{padding:17px;background:var(--surface);border:1px solid var(--line);border-radius:13px;display:flex;flex-direction:column}
 .plan-summary h2{font-size:18px;margin:6px 0}
