@@ -37,7 +37,7 @@ export default function Home() {
           </Link>
         </section>
 
-        <section className="section-head" id="observations"><div><span className="eyebrow">SIGNAL TERRAIN</span><h2>Ce qui mérite ton attention</h2></div><button className="text-button">Toutes les observations →</button></section>
+        <section className="section-head"><div><span className="eyebrow">SIGNAL TERRAIN</span><h2>Ce qui mérite ton attention</h2></div><Link className="text-button" href="/observations">Toutes les observations →</Link></section>
         <section className="priority-grid">
           {priorities.map((priority) => (
             <article className="priority-card" key={priority.label}>

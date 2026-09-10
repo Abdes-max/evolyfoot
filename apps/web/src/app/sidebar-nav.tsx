@@ -14,7 +14,7 @@ const navItems: ReadonlyArray<{ href: string; label: string; icon: typeof HomeIc
   { href: "/plan", label: "Plan de progression", icon: TargetIcon },
   { href: "/bibliotheque", label: "Séances", icon: CalendarIcon },
   { href: "/match", label: "Matchs", icon: BallIcon },
-  { href: "/#observations", label: "Observations", icon: EyeIcon },
+  { href: "/observations", label: "Observations", icon: EyeIcon },
   { href: "/equipe", label: "Mon équipe", icon: UsersIcon },
 ];
 
@@ -32,9 +32,7 @@ export function SidebarNav() {
       </div>
       <nav aria-label="Navigation principale">
         {navItems.map(({ href, label, icon: Icon }) => {
-          // "/#observations" cible une section de l'accueil, pas une page dédiée (aucun
-          // historique des observations n'existe encore) : jamais "active" au sens navigation.
-          const isActive = href !== "/#observations" && (href === "/" ? pathname === "/" : pathname.startsWith(href));
+          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link className={isActive ? "nav-item active" : "nav-item"} href={href} key={href}>
               <Icon /> <span className="nav-label">{label}</span>
