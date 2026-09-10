@@ -1,7 +1,10 @@
 .observations-shell { min-height: 100vh; background: var(--paper); padding-left: 264px; }
 /* Structure/hauteur/fond venant de .page-header (globals.css) -- ne garde ici que le padding
-   horizontal propre à cette page, aligné sur la largeur de .observations-content en dessous. */
-.observations-header { padding: 0 max(25px, calc((100vw - 900px) / 2)); }
+   horizontal propre à cette page, aligné sur la largeur de .observations-content en dessous.
+   padding-left/right seulement (jamais le raccourci `padding`) : sous 760px, .page-header
+   applique son propre padding-top/bottom (26px) -- un raccourci ici cascaderait après lui (ce
+   fichier est chargé après globals.css) et les remettrait à 0. */
+.observations-header { padding-left: max(25px, calc((100% - 900px) / 2)); padding-right: max(25px, calc((100% - 900px) / 2)); }
 
 .observations-auth-required { width: min(900px, calc(100% - 40px)); margin: 30px auto; }
 .observations-auth-required p { margin: 0; color: var(--muted); font-size: 12px; }

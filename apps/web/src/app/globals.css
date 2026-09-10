@@ -275,14 +275,31 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
    l'autre) pour que la transition entre pages ne fasse pas "sauter" la mise en page. Chaque page
    ajoute sa propre classe (`.plan-header`, `.bibliotheque-header`...) juste pour la largeur de
    contenu en dessous, à laquelle son padding horizontal s'aligne. */
-.page-header{height:150px;padding:0 max(25px,calc((100vw - 1050px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:180px 1fr auto;gap:30px;align-items:center;overflow:hidden}
-.page-header h1{margin:10px 0 8px;font-size:32px;line-height:1.15}
-.page-header p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}
+/* 100% (pas 100vw) : le calcul doit se baser sur la largeur du conteneur local, déjà amputée des
+   264px réservés au sidebar fixe (voir <x>-shell ci-dessus) -- avec 100vw, qui ignore cette
+   réservation, la zone réellement disponible pour le titre se retrouvait ~264px plus étroite que
+   prévu, ce qui tronquait le titre bien plus tôt que nécessaire une fois celui-ci limité à une
+   seule ligne (voir .page-header h1 ci-dessous). Même calcul que .plan-content etc. en dessous. */
+.page-header{height:150px;padding:0 max(25px,calc((100% - 1050px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:180px 1fr auto;gap:30px;align-items:center;overflow:hidden}
+/* min-width:0 annule le min-width:auto par défaut des enfants de grille (qui les empêcherait de
+   rétrécir sous la largeur de leur contenu) -- sans lui, ni le titre sur une ligne ni la
+   description sur deux lignes ci-dessous ne pourraient réellement se limiter. */
+.page-header > div{min-width:0}
+/* Titre toujours sur une seule ligne : un adversaire de match ou un titre d'observation trop long
+   est tronqué avec une ellipse plutôt que de passer à la ligne et casser la hauteur fixe --
+   `title` sur chaque <h1> (voir plan-view.tsx etc.) restitue le texte complet au survol. */
+.page-header h1{margin:10px 0 8px;font-size:32px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Description limitée à deux lignes pour la même raison, via le "line-clamp" multi-ligne plutôt
+   qu'un simple overflow:hidden qui couperait une deuxième ligne à mi-hauteur. */
+.page-header p{margin:0;color:var(--muted);font-size:11px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 /* Sous 760px, une hauteur fixe ne laisse plus la place à un titre qui passe sur deux lignes --
    repli sur une colonne, hauteur libre. */
 @media(max-width:760px){.page-header{height:auto;grid-template-columns:1fr;gap:8px;padding-top:26px;padding-bottom:26px;overflow:visible}
 .page-header h1{font-size:26px}}
-.plan-header{padding:0 max(25px,calc((100vw - 1050px)/2))}
+/* padding-left/right seulement (jamais le raccourci `padding`) : sous 760px, .page-header applique
+   son propre padding-top/bottom (26px) -- un raccourci ici les remettrait à 0 en cascadant après
+   lui (roster.css etc. sont chargés après globals.css), écrasant l'espacement vertical mobile. */
+.plan-header{padding-left:max(25px,calc((100% - 1050px)/2));padding-right:max(25px,calc((100% - 1050px)/2))}
 .plan-duration{background:var(--accent);color:var(--accent-ink);padding:9px 12px;border-radius:99px;font-size:9px;font-weight:800}
 .plan-content{width:min(1000px,calc(100% - 40px));margin:30px auto 60px}
 .plan-summary{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px;margin-bottom:22px}

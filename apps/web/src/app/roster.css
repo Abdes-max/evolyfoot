@@ -2,8 +2,11 @@
    devient une barre d'onglets en bas plutôt qu'une colonne à gauche -- voir globals.css. */
 .roster-shell{min-height:100vh;background:var(--paper);padding-left:264px}
 /* Structure/hauteur/fond venant de .page-header (globals.css) -- ne garde ici que le padding
-   horizontal propre à cette page, aligné sur la largeur de .roster-content en dessous. */
-.roster-header{padding:0 max(25px,calc((100vw - 720px)/2))}
+   horizontal propre à cette page, aligné sur la largeur de .roster-content en dessous.
+   padding-left/right seulement (jamais le raccourci `padding`) : sous 760px, .page-header
+   applique son propre padding-top/bottom (26px) -- un raccourci ici cascaderait après lui (ce
+   fichier est chargé après globals.css) et les remettrait à 0. */
+.roster-header{padding-left:max(25px,calc((100% - 720px)/2));padding-right:max(25px,calc((100% - 720px)/2))}
 .roster-team-summary{margin:0 0 20px;padding:13px 15px;border-radius:10px;background:var(--surface);border:1px solid var(--line);color:var(--ink);font-size:11.5px}
 .roster-auth-required,.roster-content{width:min(720px,calc(100% - 40px));margin:30px auto 60px}
 .roster-auth-required p{margin:0;color:var(--muted);font-size:12px}

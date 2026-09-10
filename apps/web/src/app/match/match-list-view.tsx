@@ -116,8 +116,10 @@ export function MatchListView() {
         </Link>
         <div>
           <span className="eyebrow light">MATCHS</span>
-          <h1>Prépare et suis tes matchs.</h1>
-          <p>Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire.</p>
+          <h1 title="Prépare et suis tes matchs.">Prépare et suis tes matchs.</h1>
+          <p title="Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire.">
+            Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire.
+          </p>
         </div>
       </header>
 
