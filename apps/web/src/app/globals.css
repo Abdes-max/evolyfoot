@@ -123,13 +123,31 @@ nav { display:flex; flex-direction:column; gap:4px; }
 .small-ghost { border:1px solid var(--line);background:transparent;color:var(--muted); }
 .week-card { padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:18px; }
 .week-card h3 { margin-top:5px; }
-.mini-badge { padding:7px 10px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;font-size:10.5px;font-weight:800; }
-.timeline { margin-top:15px;border-top:1px solid var(--line); }
-.timeline>div { display:flex;gap:11px;align-items:center;padding-top:12px; }
-.dot { width:9px;height:9px;border:2px solid var(--line);border-radius:50%; }
-.dot.filled { background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px rgba(62,198,245,.18); }
-.timeline p { margin:0;display:flex;flex-direction:column;font-size:11px; }
-.timeline small { color:var(--muted);font-size:9.5px;margin-top:2px; }
+
+.week-calendar{display:flex;flex-direction:column;gap:16px}
+.week-calendar h3{text-transform:uppercase;letter-spacing:.5px;font-size:13px}
+.week-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.week-calendar-day{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0}
+.week-calendar-day-label{font-size:9px;font-weight:800;letter-spacing:.4px;color:var(--accent-dark)}
+.week-calendar-cell{width:100%;aspect-ratio:1;border-radius:12px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;gap:2px}
+/* Les badges "séance"/"match" sont de vrais liens (voir weekly-calendar.tsx : ils ouvrent la
+   séance ou la fiche du match concerné) -- text-decoration:none pour ne pas hériter du style de
+   lien par défaut, et un léger agrandissement au survol pour signaler qu'ils sont cliquables. */
+.week-calendar-badge{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;text-decoration:none;transition:transform .12s}
+a.week-calendar-badge:hover,a.week-calendar-badge:focus-visible{transform:scale(1.1)}
+.week-calendar-badge svg{width:14px;height:14px}
+.week-calendar-badge.training{background:var(--accent);color:var(--accent-ink)}
+.week-calendar-badge.match{background:var(--good);color:#06210f}
+.week-calendar-badge.other{background:var(--info);color:#0b1330}
+.week-calendar-legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.week-calendar-legend li{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:11px}
+.week-calendar-legend .week-calendar-badge{width:20px;height:20px}
+.week-calendar-legend .week-calendar-badge svg{width:11px;height:11px}
+.week-calendar-footer{align-self:flex-start;margin-top:-4px}
+@media(max-width:420px){.week-calendar-day-label{font-size:7.5px}
+.week-calendar-badge{width:20px;height:20px}
+.week-calendar-badge svg{width:11px;height:11px}
+}
 
 /* En dessous de 950px, la barre latérale devient une barre d'onglets fixée en bas de l'écran :
    c'est la seule navigation disponible sur mobile (elle était entièrement masquée auparavant --
@@ -330,10 +348,6 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 .theme-chip{grid-column:2}
 .plan-duration{justify-self:start}
 }
-
-/* .week-card entière est désormais le lien (voir .card-link) ; ce repère reste juste pour son
-   emplacement en bas de carte. */
-.match-observation-link { display:block; margin-top:15px; }
 
 .session-shell{min-height:100vh;background:var(--paper)}
 .session-header{padding:38px max(25px,calc((100vw - 920px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink)}

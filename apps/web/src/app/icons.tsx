@@ -66,6 +66,17 @@ export function BallIcon(props: IconProps) {
   );
 }
 
+export function DotsGridIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="7" cy="7" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="17" cy="7" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="7" cy="17" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="17" cy="17" r="1.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function UsersIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
