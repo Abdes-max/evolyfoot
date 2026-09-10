@@ -332,6 +332,21 @@ test("les fichiers SEO restent publics (pas de redirection vers /connexion)", as
   expect(await robots.text()).toContain("Sitemap:");
 });
 
+test("le visiteur navigue dans la vitrine via le menu (mobile) ou la nav (desktop)", async ({ page, isMobile }) => {
+  await page.context().clearCookies();
+  await page.route("**/api/auth/session", (route) => route.fulfill({ json: { educator: null, role: null } }));
+  await page.goto("/");
+
+  if (isMobile) {
+    await page.getByRole("button", { name: "Ouvrir le menu" }).click();
+    await page.locator(".m-menu-panel").getByRole("link", { name: "Méthode" }).click();
+  } else {
+    await page.locator(".m-nav").getByRole("link", { name: "Méthode" }).click();
+  }
+  await expect(page).toHaveURL(/\/methode$/);
+  await expect(page.getByRole("heading", { name: /une boucle claire/i })).toBeVisible();
+});
+
 test("un coach invite un tuteur, qui crée son compte et arrive sur son espace joueur", async ({ page }) => {
   // Parcours client de bout en bout, données simulées : fiche joueur → génération du lien →
   // page /rejoindre → création du compte joueur → /joueur.
