@@ -150,8 +150,8 @@ export function RosterView() {
         </Link>
         <div>
           <span className="eyebrow light">MON ÉQUIPE</span>
-          <h1>L’effectif nominatif.</h1>
-          <p>Ajoute, renomme ou retire un joueur à tout moment.</p>
+          <h1 title="L’effectif nominatif.">L’effectif nominatif.</h1>
+          <p title="Ajoute, renomme ou retire un joueur à tout moment.">Ajoute, renomme ou retire un joueur à tout moment.</p>
         </div>
       </header>
 

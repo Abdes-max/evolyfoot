@@ -238,8 +238,8 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         </Link>
         <div>
           <span className="eyebrow light">{match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</span>
-          <h1>{match.opponent}</h1>
-          <p>
+          <h1 title={match.opponent}>{match.opponent}</h1>
+          <p title={`${match.dateLabel} · ${venueLabel[match.venue]} · Foot à ${match.gameFormat}`}>
             {match.dateLabel} · {venueLabel[match.venue]} · Foot à {match.gameFormat}
           </p>
         </div>

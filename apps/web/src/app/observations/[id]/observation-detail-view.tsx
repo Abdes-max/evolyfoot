@@ -125,8 +125,8 @@ export function ObservationDetailView({ observationId }: { observationId: string
         </Link>
         <div>
           <span className="eyebrow light">{eventTypeLabel[observation.eventType]}</span>
-          <h1>{observation.title}</h1>
-          <p>{observation.dateLabel}</p>
+          <h1 title={observation.title}>{observation.title}</h1>
+          <p title={observation.dateLabel}>{observation.dateLabel}</p>
         </div>
       </header>
 

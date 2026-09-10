@@ -61,8 +61,10 @@ export function ObservationsListView() {
         </Link>
         <div>
           <span className="eyebrow light">OBSERVATIONS</span>
-          <h1>L’historique de tes observations.</h1>
-          <p>Chaque observation validée après une séance ou un match, pour suivre ce qui progresse.</p>
+          <h1 title="L’historique de tes observations.">L’historique de tes observations.</h1>
+          <p title="Chaque observation validée après une séance ou un match, pour suivre ce qui progresse.">
+            Chaque observation validée après une séance ou un match, pour suivre ce qui progresse.
+          </p>
         </div>
       </header>
 

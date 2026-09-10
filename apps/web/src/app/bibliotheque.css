@@ -3,7 +3,10 @@
 .bibliotheque-shell { min-height: 100vh; background: var(--paper); padding-left: 264px; }
 /* Structure/hauteur/fond venant de .page-header (globals.css) -- ne garde ici que le padding
    horizontal propre à cette page, aligné sur la largeur de .bibliotheque en dessous. */
-.bibliotheque-header { padding: 0 max(25px, calc((100vw - 1200px) / 2)); }
+/* padding-left/right seulement (jamais le raccourci `padding`) : sous 760px, .page-header applique
+   son propre padding-top/bottom (26px, globals.css) -- un raccourci ici cascaderait après lui et
+   les remettrait à 0, écrasant l'espacement vertical mobile. */
+.bibliotheque-header { padding-left: max(25px, calc((100% - 1200px) / 2)); padding-right: max(25px, calc((100% - 1200px) / 2)); }
 
 .bibliotheque { width: min(1200px, calc(100% - 40px)); margin: 30px auto 60px; }
 .bibliotheque-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 22px; }
