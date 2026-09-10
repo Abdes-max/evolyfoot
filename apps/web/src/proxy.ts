@@ -38,7 +38,8 @@ export const config = {
   matcher: [
     // Tout sauf les routes API (chacune vérifie déjà sa propre session et renvoie 401/403 --
     // /api/auth/* doit d'ailleurs rester joignable pour pouvoir se connecter), les fichiers
-    // statiques Next.js et le favicon.
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    // statiques Next.js, le favicon, et les fichiers SEO générés (sitemap.xml, robots.txt) qui
+    // doivent rester publics pour les moteurs.
+    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 };
