@@ -268,9 +268,21 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 
 .diagnostic-result>a{color:var(--accent-dark);font-size:10px;font-weight:800}
 .plan-shell{min-height:100vh;background:var(--paper);padding-left:264px}
-.plan-header{padding:34px max(25px,calc((100vw - 1050px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:180px 1fr auto;gap:30px;align-items:center}
-.plan-header h1{margin:10px 0 8px;font-size:34px}
-.plan-header p{margin:0;color:var(--muted);font-size:11px}
+
+/* En-tête partagé par toutes les pages principales de la navigation (Plan, Séances, Mon équipe,
+   Matchs) : logo à gauche, titre + description au centre, repère optionnel à droite -- hauteur
+   fixe (`height`, pas `min-height` : le contenu ne doit jamais la faire varier d'une page à
+   l'autre) pour que la transition entre pages ne fasse pas "sauter" la mise en page. Chaque page
+   ajoute sa propre classe (`.plan-header`, `.bibliotheque-header`...) juste pour la largeur de
+   contenu en dessous, à laquelle son padding horizontal s'aligne. */
+.page-header{height:150px;padding:0 max(25px,calc((100vw - 1050px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:180px 1fr auto;gap:30px;align-items:center;overflow:hidden}
+.page-header h1{margin:10px 0 8px;font-size:32px;line-height:1.15}
+.page-header p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}
+/* Sous 760px, une hauteur fixe ne laisse plus la place à un titre qui passe sur deux lignes --
+   repli sur une colonne, hauteur libre. */
+@media(max-width:760px){.page-header{height:auto;grid-template-columns:1fr;gap:8px;padding-top:26px;padding-bottom:26px;overflow:visible}
+.page-header h1{font-size:26px}}
+.plan-header{padding:0 max(25px,calc((100vw - 1050px)/2))}
 .plan-duration{background:var(--accent);color:var(--accent-ink);padding:9px 12px;border-radius:99px;font-size:9px;font-weight:800}
 .plan-content{width:min(1000px,calc(100% - 40px));margin:30px auto 60px}
 .plan-summary{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px;margin-bottom:22px}
@@ -285,8 +297,7 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 .development-week p{font-size:9px;color:var(--muted);margin:0}
 .theme-chip{padding:7px 9px;background:var(--surface-2);border:1px solid var(--line);border-radius:99px;font-size:8px;font-weight:750}
 .plan-actions{width:min(420px,100%);margin:24px auto}
-@media(max-width:700px){.plan-header{grid-template-columns:1fr}
-.plan-summary{grid-template-columns:1fr}
+@media(max-width:700px){.plan-summary{grid-template-columns:1fr}
 .development-week{grid-template-columns:50px 1fr}
 .theme-chip{grid-column:2}
 .plan-duration{justify-self:start}

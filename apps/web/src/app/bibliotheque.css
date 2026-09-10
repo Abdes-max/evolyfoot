@@ -1,10 +1,9 @@
 /* padding-left réserve la place du sidebar fixe (sidebar-nav.tsx), remis à 0 sous 950px où il
    devient une barre d'onglets en bas plutôt qu'une colonne à gauche -- voir globals.css. */
 .bibliotheque-shell { min-height: 100vh; background: var(--paper); padding-left: 264px; }
-.bibliotheque-header { padding: 38px max(25px, calc((100vw - 1200px) / 2)); background: linear-gradient(155deg, #123349, #0a1219); color: var(--ink); }
-.bibliotheque-header .onboarding-brand { margin-bottom: 22px; }
-.bibliotheque-header h1 { margin: 10px 0 8px; font-size: 30px; letter-spacing: -0.7px; }
-.bibliotheque-header p { margin: 0; color: var(--muted); font-size: 13px; }
+/* Structure/hauteur/fond venant de .page-header (globals.css) -- ne garde ici que le padding
+   horizontal propre à cette page, aligné sur la largeur de .bibliotheque en dessous. */
+.bibliotheque-header { padding: 0 max(25px, calc((100vw - 1200px) / 2)); }
 
 .bibliotheque { width: min(1200px, calc(100% - 40px)); margin: 30px auto 60px; }
 .bibliotheque-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 22px; }
@@ -71,7 +70,6 @@
   .exercise-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
-  .bibliotheque-header { padding: 30px 22px; }
   .bibliotheque-toolbar { flex-direction: column; align-items: stretch; }
 }
 @media (max-width: 950px) {

@@ -44,7 +44,7 @@ export function PlanView() {
     <>
       <SidebarNav />
       <main className="plan-shell">
-      <header className="plan-header">
+      <header className="page-header plan-header">
         <Link className="onboarding-brand" href="/">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>

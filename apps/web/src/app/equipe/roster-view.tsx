@@ -144,19 +144,15 @@ export function RosterView() {
     <>
       <SidebarNav />
       <main className="roster-shell">
-      <header className="roster-header">
+      <header className="page-header roster-header">
         <Link className="onboarding-brand" href="/">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
-        <span className="eyebrow light">MON ÉQUIPE</span>
-        <h1>L’effectif nominatif.</h1>
-        <p>Ajoute, renomme ou retire un joueur à tout moment — utile pour tes observations.</p>
-        {team && (
-          <p className="roster-team-summary">
-            {team.name} · {team.ageGroup} · Foot à {team.gameFormat} · {team.playerCount} joueurs au total ·{" "}
-            <Link className="inline-cta" href="/onboarding">Modifier mon équipe →</Link>
-          </p>
-        )}
+        <div>
+          <span className="eyebrow light">MON ÉQUIPE</span>
+          <h1>L’effectif nominatif.</h1>
+          <p>Ajoute, renomme ou retire un joueur à tout moment.</p>
+        </div>
       </header>
 
       {authenticated === false && (
@@ -169,6 +165,12 @@ export function RosterView() {
 
       {authenticated && (
         <section className="roster-content">
+          {team && (
+            <p className="roster-team-summary">
+              {team.name} · {team.ageGroup} · Foot à {team.gameFormat} · {team.playerCount} joueurs au total ·{" "}
+              <Link className="inline-cta" href="/onboarding">Modifier mon équipe →</Link>
+            </p>
+          )}
           {!team && (
             <p className="roster-no-team">
               Configure d’abord ton équipe. <Link className="inline-cta" href="/onboarding">Configurer mon équipe →</Link>
