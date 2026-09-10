@@ -131,11 +131,13 @@ export function SidebarIdentity() {
         )}
       </div>
       <div className="coach">
-        <span className="avatar">{initials(educator.displayName)}</span>
-        <div>
-          <strong>{educator.displayName}</strong>
-          <span>Éducateur</span>
-        </div>
+        <Link aria-label="Ouvrir mon profil" className="coach-link" href="/profil">
+          <span className="avatar">{initials(educator.displayName)}</span>
+          <div>
+            <strong>{educator.displayName}</strong>
+            <span>Voir mon profil</span>
+          </div>
+        </Link>
         <button aria-label="Se déconnecter" onClick={logout} type="button">
           Déconnexion
         </button>

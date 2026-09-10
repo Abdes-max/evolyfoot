@@ -49,6 +49,17 @@ model Educator {
   email             String                   @unique
   displayName       String                   @map("display_name")
   passwordHash      String                   @map("password_hash")
+  // Fiche profil de l'éducateur (page /profil). Tous optionnels : renseignés après l'inscription,
+  // qui ne demande que nom / e-mail / mot de passe. `birthDate` est stocké en texte ISO
+  // (`YYYY-MM-DD`) plutôt qu'en `DateTime` -- une date de naissance n'a pas d'heure ni de fuseau,
+  // et l'app manipule déjà ses dates en texte libre ailleurs (MatchRecord.dateLabel).
+  birthDate         String?                  @map("birth_date")
+  club              String?
+  country           String?
+  address           String?
+  phone             String?
+  diploma           String?
+  seasonFormat      String?                  @map("season_format")
   team              Team?
   diagnostic        Diagnostic?
   sessions          Session[]

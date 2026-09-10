@@ -10,6 +10,7 @@ import {
 } from "./errors";
 import {
   toEducatorAuthRecord,
+  toEducatorProfile,
   toEducatorRecord,
   toPersistedDiagnostic,
   toPersistedMatch,
@@ -31,6 +32,9 @@ import { normalizeEducatorEmail } from "./email";
 import type {
   DiagnosticRepository,
   EducatorAuthRecord,
+  EducatorProfile,
+  EducatorProfilePatch,
+  EducatorProfileRepository,
   EducatorRecord,
   EducatorRepository,
   MatchRepository,
@@ -111,7 +115,7 @@ function translateDiagnosticWriteError(error: unknown): never {
   throw error;
 }
 
-export class PrismaEducatorRepository implements EducatorRepository {
+export class PrismaEducatorRepository implements EducatorRepository, EducatorProfileRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async create(input: { email: string; displayName: string; passwordHash: string }): Promise<EducatorRecord> {
@@ -147,6 +151,25 @@ export class PrismaEducatorRepository implements EducatorRepository {
       where: { email: normalizeEducatorEmail(email) },
     });
     return educator === null ? null : toEducatorAuthRecord(educator);
+  }
+
+  async findProfileById(id: string): Promise<EducatorProfile | null> {
+    const educator = await this.prisma.educator.findUnique({ where: { id } });
+    return educator === null ? null : toEducatorProfile(educator);
+  }
+
+  async findAuthById(id: string): Promise<EducatorAuthRecord | null> {
+    const educator = await this.prisma.educator.findUnique({ where: { id } });
+    return educator === null ? null : toEducatorAuthRecord(educator);
+  }
+
+  async updateProfile(id: string, patch: EducatorProfilePatch): Promise<EducatorProfile> {
+    const educator = await this.prisma.educator.update({ where: { id }, data: patch });
+    return toEducatorProfile(educator);
+  }
+
+  async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
+    await this.prisma.educator.update({ where: { id }, data: { passwordHash } });
   }
 }
 

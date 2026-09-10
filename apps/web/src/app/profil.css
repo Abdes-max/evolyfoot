@@ -1,0 +1,55 @@
+.profil-shell { min-height: 100vh; background: var(--paper); padding-left: 264px; }
+.profil-header { padding-left: max(25px, calc((100% - 1280px) / 2)); padding-right: max(25px, calc((100% - 1280px) / 2)); }
+
+.profil-content { width: min(1280px, calc(100% - 40px)); margin: 30px auto 60px; display: grid; gap: 18px; }
+.profil-note { margin: 0; color: var(--muted); font-size: 12px; }
+.profil-note a { color: var(--accent); font-weight: 800; text-decoration: none; }
+
+.profil-banner { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 24px 26px; border-radius: 18px; background: linear-gradient(150deg, var(--accent-dark), var(--accent)); color: var(--accent-ink); }
+.profil-identity { display: flex; align-items: center; gap: 16px; }
+.profil-avatar { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .16); border: 2px solid rgba(255, 255, 255, .4); font-size: 18px; font-weight: 800; }
+.profil-identity h2 { margin: 0 0 2px; font-size: 20px; letter-spacing: -.4px; }
+.profil-rating { font-size: 13px; letter-spacing: 2px; opacity: .85; }
+.profil-plan { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+.profil-plan-name { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; }
+.profil-plan-note { font-size: 11px; opacity: .85; }
+.profil-plan-cta { margin-top: 6px; min-height: 38px; padding: 0 16px; border: 0; border-radius: 99px; background: rgba(255, 255, 255, .9); color: var(--accent-dark); font-size: 10.5px; font-weight: 800; }
+.profil-plan-cta:disabled { opacity: .7; cursor: not-allowed; }
+
+.profil-block { padding: 20px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.profil-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.profil-block-head h3 { margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: .5px; }
+.profil-edit { min-height: 34px; border: 1px solid var(--line); border-radius: 8px; padding: 0 14px; background: var(--surface-2); color: var(--ink); font-size: 10.5px; font-weight: 800; }
+.profil-saved { margin: 0 0 14px; color: var(--good); font-size: 11px; font-weight: 700; }
+
+.profil-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0; }
+.profil-grid > div { padding: 13px 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+.profil-grid dt { color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+.profil-grid dd { margin: 0; font-size: 13px; font-weight: 600; word-break: break-word; }
+.profil-grid dd.profil-todo { color: var(--accent-dark); font-weight: 800; }
+
+.profil-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.profil-field { display: flex; flex-direction: column; gap: 6px; }
+.profil-field span { color: var(--ink); font-size: 11px; font-weight: 800; }
+.profil-field input { border: 1px solid var(--line); background: var(--surface-2); border-radius: 9px; padding: 10px 12px; color: var(--ink); font-size: 12.5px; }
+.profil-field input:disabled { color: var(--muted); }
+.profil-error { grid-column: 1 / -1; margin: 0; color: var(--danger, #c0392b); font-size: 11px; font-weight: 700; }
+.profil-form-actions { grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 4px; }
+.profil-primary { min-height: 42px; border: 0; border-radius: 9px; padding: 0 18px; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 800; }
+.profil-primary:disabled { opacity: .5; cursor: not-allowed; }
+.profil-ghost { min-height: 42px; border: 1px solid var(--line); border-radius: 9px; padding: 0 16px; background: transparent; color: var(--ink); font-size: 11px; font-weight: 800; }
+
+.profil-password-form { display: grid; gap: 12px; max-width: 420px; }
+.profil-password-form .profil-field span { font-weight: 700; }
+.profil-account-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.profil-logout { color: var(--muted); }
+
+@media (max-width: 950px) {
+  .profil-shell { padding-left: 0; padding-bottom: 90px; }
+}
+
+@media (max-width: 760px) {
+  .profil-grid, .profil-form { grid-template-columns: 1fr; }
+  .profil-banner { flex-direction: column; align-items: flex-start; }
+  .profil-plan { align-items: flex-start; text-align: left; }
+}

@@ -25,6 +25,7 @@ export {
 } from "./prisma-repositories";
 export { AuthService } from "./auth-service";
 export { DiagnosticService } from "./diagnostic-service";
+export { EducatorProfileService, seasonFormats } from "./educator-profile-service";
 export { MatchService } from "./match-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";
@@ -35,12 +36,16 @@ export { TeamProfileService } from "./team-profile-service";
 export { TournamentService } from "./tournament-service";
 export { TrainingSessionService, trainingCycleWeekCount } from "./training-session-service";
 export type { AuthenticatedSession } from "./auth-service";
+export type { EducatorProfileInput, SeasonFormat } from "./educator-profile-service";
 export type { FunnelStep, MvpMetrics, WeeklyActivityPoint } from "./metrics-service";
 export type { TeamStats } from "./stats-service";
 export type { TrainingSessionInput } from "./training-session-service";
 export type {
   DiagnosticRepository,
   EducatorAuthRecord,
+  EducatorProfile,
+  EducatorProfilePatch,
+  EducatorProfileRepository,
   EducatorRecord,
   EducatorRepository,
   MatchRepository,

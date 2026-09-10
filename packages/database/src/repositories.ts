@@ -29,6 +29,35 @@ export interface EducatorAuthRecord extends EducatorRecord {
   passwordHash: string;
 }
 
+// Fiche profil (page /profil) : champs optionnels renseignés après l'inscription. Sans
+// `passwordHash` -- jamais renvoyé au client (le changement de mot de passe passe par
+// `findAuthById` + `updatePasswordHash`).
+export interface EducatorProfile {
+  id: string;
+  email: string;
+  displayName: string;
+  birthDate: string | null;
+  club: string | null;
+  country: string | null;
+  address: string | null;
+  phone: string | null;
+  diploma: string | null;
+  seasonFormat: string | null;
+  createdAt: Date;
+}
+
+// Patch partiel : une clé absente n'est pas touchée, une clé à `null` efface le champ.
+export type EducatorProfilePatch = Partial<{
+  displayName: string;
+  birthDate: string | null;
+  club: string | null;
+  country: string | null;
+  address: string | null;
+  phone: string | null;
+  diploma: string | null;
+  seasonFormat: string | null;
+}>;
+
 export interface PersistedTeamProfile {
   id: string;
   educatorId: string;
@@ -42,6 +71,17 @@ export interface EducatorRepository {
   existsById(id: string): Promise<boolean>;
   findById(id: string): Promise<EducatorRecord | null>;
   findByEmail(email: string): Promise<EducatorAuthRecord | null>;
+}
+
+// Lecture/écriture de la fiche profil et du mot de passe -- interface distincte d'EducatorRepository
+// (auth/inscription) pour que les services qui n'en ont pas besoin, ni leurs faux de test, n'aient
+// pas à l'implémenter. PrismaEducatorRepository implémente les deux.
+export interface EducatorProfileRepository {
+  existsById(id: string): Promise<boolean>;
+  findProfileById(id: string): Promise<EducatorProfile | null>;
+  findAuthById(id: string): Promise<EducatorAuthRecord | null>;
+  updateProfile(id: string, patch: EducatorProfilePatch): Promise<EducatorProfile>;
+  updatePasswordHash(id: string, passwordHash: string): Promise<void>;
 }
 
 export interface TeamRepository {
