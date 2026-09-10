@@ -29,6 +29,7 @@ import type {
   Educator,
   MatchRecord as PrismaMatchRecord,
   ObservationRecord as PrismaObservationRecord,
+  PlateauRecord as PrismaPlateauRecord,
   Player as PrismaPlayer,
   PlayerEvaluationRecord as PrismaPlayerEvaluationRecord,
   Session,
@@ -43,6 +44,7 @@ import type {
   PersistedDiagnostic,
   PersistedMatch,
   PersistedObservation,
+  PersistedPlateau,
   PersistedPlayer,
   PersistedPlayerEvaluation,
   PersistedTeamProfile,
@@ -341,6 +343,17 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
 }
 
 export function toPersistedTournament(record: PrismaTournamentRecord): PersistedTournament {
+  return Object.freeze({
+    id: record.id,
+    educatorId: record.educatorId,
+    name: record.name,
+    dateLabel: record.dateLabel,
+    result: record.result,
+    createdAt: record.createdAt,
+  });
+}
+
+export function toPersistedPlateau(record: PrismaPlateauRecord): PersistedPlateau {
   return Object.freeze({
     id: record.id,
     educatorId: record.educatorId,

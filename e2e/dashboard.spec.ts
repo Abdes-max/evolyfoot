@@ -265,3 +265,35 @@ test("l’éducateur ouvre la fiche d’un joueur et enregistre une évaluation 
   await expect(page.locator(".player-count")).toHaveText("1/10");
   await expect(page.getByRole("button", { name: /retirer l’évaluation/i })).toBeVisible();
 });
+
+test("l’éducateur enregistre un tournoi et un plateau depuis Matchs & compétitions", async ({ page }) => {
+  await page.route("**/api/team", (route) => route.fulfill({ json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14 } } }));
+  await page.route("**/api/matches", (route) => route.fulfill({ json: { matches: [] } }));
+  const tournaments: Array<Record<string, unknown>> = [];
+  const plateaux: Array<Record<string, unknown>> = [];
+  const competitionRoute = (bucket: Array<Record<string, unknown>>, key: string, listKey: string) => (route: import("@playwright/test").Route) => {
+    if (route.request().method() === "POST") {
+      const created = { id: `${key}-${bucket.length + 1}`, result: null, ...JSON.parse(route.request().postData() ?? "{}") };
+      bucket.unshift(created);
+      return route.fulfill({ status: 201, json: { [key]: created } });
+    }
+    return route.fulfill({ json: { [listKey]: bucket } });
+  };
+  await page.route("**/api/tournaments", competitionRoute(tournaments, "tournament", "tournaments"));
+  await page.route("**/api/plateaux", competitionRoute(plateaux, "plateau", "plateaux"));
+
+  await page.goto("/match");
+  await expect(page.getByRole("heading", { name: "Prépare tes matchs, note tes compétitions." })).toBeVisible();
+
+  const tournoiForm = page.locator(".competitions-panel", { hasText: "Tournois" });
+  await tournoiForm.getByPlaceholder("Nom du tournoi").fill("Tournoi de printemps");
+  await tournoiForm.getByPlaceholder("Date").fill("12 avril");
+  await tournoiForm.getByRole("button", { name: "Ajouter" }).click();
+  await expect(tournoiForm.getByText("Tournoi de printemps")).toBeVisible();
+
+  const plateauForm = page.locator(".competitions-panel", { hasText: "Plateaux" });
+  await plateauForm.getByPlaceholder("Nom du plateau").fill("Plateau de rentrée");
+  await plateauForm.getByPlaceholder("Date").fill("14 septembre");
+  await plateauForm.getByRole("button", { name: "Ajouter" }).click();
+  await expect(plateauForm.getByText("Plateau de rentrée")).toBeVisible();
+});

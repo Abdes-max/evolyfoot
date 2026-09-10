@@ -5,6 +5,7 @@ import type { GameFormat, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { CompetitionsPanel } from "./competitions-panel";
 
 interface MatchSummary {
   id: string;
@@ -115,10 +116,10 @@ export function MatchListView() {
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
         <div>
-          <span className="eyebrow light">MATCHS</span>
-          <h1 title="Prépare et suis tes matchs.">Prépare et suis tes matchs.</h1>
-          <p title="Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire.">
-            Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire.
+          <span className="eyebrow light">MATCHS &amp; COMPÉTITIONS</span>
+          <h1 title="Prépare tes matchs, note tes compétitions.">Prépare tes matchs, note tes compétitions.</h1>
+          <p title="Compose ton équipe et observe le match une fois joué ; garde aussi une trace de tes tournois et plateaux.">
+            Compose ton équipe et observe le match une fois joué ; garde aussi une trace de tes tournois et plateaux.
           </p>
         </div>
       </header>
@@ -235,6 +236,21 @@ export function MatchListView() {
               ))}
             </ul>
           )}
+
+          <CompetitionsPanel
+            endpoint="/api/tournaments"
+            itemKey="tournament"
+            listKey="tournaments"
+            singular="tournoi"
+            title="Tournois"
+          />
+          <CompetitionsPanel
+            endpoint="/api/plateaux"
+            itemKey="plateau"
+            listKey="plateaux"
+            singular="plateau"
+            title="Plateaux"
+          />
 
           <Link className="back-link" href="/">
             Retour au tableau de bord

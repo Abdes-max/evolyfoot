@@ -293,6 +293,22 @@ export interface TournamentRepository {
   remove(id: string, educatorId: string): Promise<void>;
 }
 
+// Fiche simple d'un plateau -- même forme que PersistedTournament, comptée à part.
+export interface PersistedPlateau {
+  id: string;
+  educatorId: string;
+  name: string;
+  dateLabel: string;
+  result: string | null;
+  createdAt: Date;
+}
+
+export interface PlateauRepository {
+  listByEducator(educatorId: string): Promise<PersistedPlateau[]>;
+  create(educatorId: string, input: { name: string; dateLabel: string; result?: string }): Promise<PersistedPlateau>;
+  remove(id: string, educatorId: string): Promise<void>;
+}
+
 // Évaluation courante d'un joueur sur les 7 aspects de la toile d'araignée -- un seul
 // enregistrement par joueur, mis à jour en place (même principe que Diagnostic).
 export interface PersistedPlayerEvaluation {

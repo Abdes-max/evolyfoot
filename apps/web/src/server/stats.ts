@@ -7,6 +7,7 @@ export interface TeamStatsSummary {
   matchesPlayed: number;
   matchesScheduled: number;
   tournamentCount: number;
+  plateauCount: number;
   trainingAttendance: AttendanceSummary;
   matchAttendance: AttendanceSummary;
 }
@@ -38,6 +39,7 @@ export async function createStatsGateway(): Promise<{ gateway: StatsGateway; dis
   const {
     createDatabaseClient,
     PrismaMatchRepository,
+    PrismaPlateauRepository,
     PrismaTournamentRepository,
     PrismaTrainingSessionRepository,
     StatsService,
@@ -47,6 +49,7 @@ export async function createStatsGateway(): Promise<{ gateway: StatsGateway; dis
     new PrismaTrainingSessionRepository(database.prisma),
     new PrismaMatchRepository(database.prisma),
     new PrismaTournamentRepository(database.prisma),
+    new PrismaPlateauRepository(database.prisma),
   );
 
   return {
