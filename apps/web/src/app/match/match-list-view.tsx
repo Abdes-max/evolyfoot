@@ -110,13 +110,15 @@ export function MatchListView() {
 
   return (
     <main className="match-shell">
-      <header className="match-header">
+      <header className="page-header match-header">
         <Link className="onboarding-brand" href="/">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
-        <span className="eyebrow light">MATCHS</span>
-        <h1>Prépare et suis tes matchs.</h1>
-        <p>Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire.</p>
+        <div>
+          <span className="eyebrow light">MATCHS</span>
+          <h1>Prépare et suis tes matchs.</h1>
+          <p>Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire.</p>
+        </div>
       </header>
 
       {authenticated === false && (

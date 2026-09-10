@@ -1,8 +1,7 @@
 .match-shell { min-height: 100vh; background: var(--paper); padding-left: 264px; }
-.match-header { padding: 38px max(25px, calc((100vw - 900px) / 2)); background: linear-gradient(155deg, #123349, #0a1219); color: var(--ink); }
-.match-header .onboarding-brand { margin-bottom: 22px; }
-.match-header h1 { margin: 10px 0 8px; font-size: 30px; letter-spacing: -0.7px; }
-.match-header p { max-width: 560px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+/* Structure/hauteur/fond venant de .page-header (globals.css) -- ne garde ici que le padding
+   horizontal propre à cette page, aligné sur la largeur de .match-content en dessous. */
+.match-header { padding: 0 max(25px, calc((100vw - 900px) / 2)); }
 
 .match-auth-required { width: min(900px, calc(100% - 40px)); margin: 30px auto; }
 .match-auth-required p { margin: 0; color: var(--muted); font-size: 12px; }
@@ -76,7 +75,6 @@
 }
 
 @media (max-width: 760px) {
-  .match-header { padding: 30px 22px; }
   .match-create-form .form-row { grid-template-columns: 1fr; }
   .match-prep-layout { grid-template-columns: 1fr; }
   .match-pitch { max-width: 320px; margin: 0 auto; }

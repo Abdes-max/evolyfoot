@@ -232,15 +232,17 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
 
   return (
     <main className="match-shell">
-      <header className="match-header">
+      <header className="page-header match-header">
         <Link className="onboarding-brand" href="/">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
-        <span className="eyebrow light">{match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</span>
-        <h1>{match.opponent}</h1>
-        <p>
-          {match.dateLabel} · {venueLabel[match.venue]} · Foot à {match.gameFormat}
-        </p>
+        <div>
+          <span className="eyebrow light">{match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</span>
+          <h1>{match.opponent}</h1>
+          <p>
+            {match.dateLabel} · {venueLabel[match.venue]} · Foot à {match.gameFormat}
+          </p>
+        </div>
       </header>
 
       <section className="match-content match-prep-layout">
