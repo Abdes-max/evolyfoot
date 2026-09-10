@@ -31,7 +31,7 @@ describe("connexion", () => {
     fireEvent.click(screen.getByRole("button", { name: /se connecter/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Connexion réussie");
-    expect(routerReplace).toHaveBeenCalledWith("/");
+    expect(routerReplace).toHaveBeenCalledWith("/app");
     expect(fetch).toHaveBeenCalledWith(
       "/api/auth/login",
       expect.objectContaining({ method: "POST" }),

@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { isMarketingPath } from "@/marketing-routes";
 
 // Le proxy (apps/web/src/proxy.ts) ne vérifie que la présence du cookie de session, pas sa
 // validité en base -- une vérification bon marché à chaque navigation, avant même que le JS
@@ -11,7 +12,7 @@ import { useEffect, useState, type ReactNode } from "react";
 // son propre contenu de démonstration pour ce cas précis -- exactement l'écran accessible sans
 // être connecté que cette page doit éliminer. Même rôle que AuthGate dans
 // apps/mobile/app/_layout.tsx, côté web.
-const PUBLIC_PATHS = ["/connexion", "/inscription"];
+const AUTH_PATHS = ["/connexion", "/inscription"];
 
 type SessionCheck = {
   // Le pathname pour lequel `status` a été établi. Tant qu'il ne correspond pas au pathname
@@ -26,7 +27,8 @@ type SessionCheck = {
 export function AuthGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isPublicPath = PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const isPublicPath =
+    isMarketingPath(pathname) || AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const [sessionCheck, setSessionCheck] = useState<SessionCheck | null>(null);
 
   useEffect(() => {

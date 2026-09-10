@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("l'éducateur accède au fil directeur de sa semaine", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/app");
 
   await expect(page.getByRole("heading", { name: "Bonjour Abdes," })).toBeVisible();
   await expect(page.getByText("Créer des solutions autour du porteur")).toBeVisible();
@@ -176,7 +176,7 @@ test("l’éducateur retrouve ses séances par créneau du cycle et ouvre celle 
   await expect(page.getByRole("link", { name: /ouvrir la séance/i }).first()).toHaveAttribute("href", "/session/session-mardi-s1");
   await expect(page.getByRole("link", { name: /générer cette séance/i }).first()).toHaveAttribute("href", /\/session\?week=1&slot=1/);
 
-  await page.goto("/");
+  await page.goto("/app");
   await page.getByRole("link", { name: /ouvrir la séance de mardi/i }).click();
   await expect(page).toHaveURL(/\/session\/session-mardi-s1$/);
 });
@@ -224,7 +224,7 @@ test("l’éducateur ouvre son profil, complète une information et la voit enre
     return route.fulfill({ json: { profile: stored } });
   });
 
-  await page.goto("/");
+  await page.goto("/app");
   await page.getByRole("link", { name: "Ouvrir mon profil" }).click();
   await expect(page).toHaveURL(/\/profil$/);
   await expect(page.getByRole("heading", { name: "Coach E2E" })).toBeVisible();
@@ -296,4 +296,26 @@ test("l’éducateur enregistre un tournoi et un plateau depuis Matchs & compét
   await plateauForm.getByPlaceholder("Date").fill("14 septembre");
   await plateauForm.getByRole("button", { name: "Ajouter" }).click();
   await expect(plateauForm.getByText("Plateau de rentrée")).toBeVisible();
+});
+
+test("un visiteur non connecté découvre la vitrine sur la page d'accueil", async ({ page }) => {
+  // La page d'accueil est publique : pas de cookie de session, pas de redirection vers /connexion.
+  await page.context().clearCookies();
+  // Le beforeEach simule un éducateur connecté -- on l'annule ici pour rester un vrai visiteur
+  // (sinon AuthedRedirect renverrait vers /app).
+  await page.route("**/api/auth/session", (route) => route.fulfill({ json: { educator: null } }));
+  await page.goto("/");
+
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole("heading", { name: /prépare des séances qui font progresser/i }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Essayer gratuitement" }).first()).toHaveAttribute("href", "/inscription");
+  await expect(page.getByRole("link", { name: "Éducateurs" }).first()).toHaveAttribute("href", "/educateurs");
+
+  // Le pied de page porte la navigation complète à toutes les tailles (le menu du header est
+  // masqué sous 820px en attendant un menu mobile dédié).
+  await page.locator(".m-footer").getByRole("link", { name: "Tarifs" }).click();
+  await expect(page).toHaveURL(/\/tarifs$/);
+  await expect(page.getByRole("heading", { name: "Tarifs" })).toBeVisible();
 });

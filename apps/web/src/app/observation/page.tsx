@@ -15,7 +15,7 @@ export default async function ObservationPage({ searchParams }: ObservationPageP
   return (
     <main className="observation-shell">
       <header className="observation-header">
-        <Link className="onboarding-brand" href="/"><span className="brand-mark">E</span> EvolyFoot</Link>
+        <Link className="onboarding-brand" href="/app"><span className="brand-mark">E</span> EvolyFoot</Link>
         <span className="eyebrow light">OBSERVATION RAPIDE</span>
         <h1>Ce que tu as vu aujourd&apos;hui.</h1>
         <p>Garde une trace simple des comportements collectifs et des joueurs à retenir.</p>

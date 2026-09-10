@@ -10,7 +10,7 @@ import { SidebarIdentity } from "./sidebar-identity";
 // sans cette navigation, qui disparaissait donc dès qu'on quittait le tableau de bord. Partagée
 // ici et rendue sur chaque page qui fait partie de la navigation principale.
 const navItems: ReadonlyArray<{ href: string; label: string; icon: typeof HomeIcon }> = [
-  { href: "/", label: "Vue d'ensemble", icon: HomeIcon },
+  { href: "/app", label: "Vue d'ensemble", icon: HomeIcon },
   { href: "/plan", label: "Plan de progression", icon: TargetIcon },
   // La bibliothèque d'exercices n'est pas dans le menu : on y accède depuis la page Séances
   // (elle sert à composer une séance, pas de destination autonome).
@@ -35,7 +35,7 @@ export function SidebarNav() {
       </div>
       <nav aria-label="Navigation principale">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          const isActive = href === "/app" ? pathname === "/app" : pathname.startsWith(href);
           return (
             <Link className={isActive ? "nav-item active" : "nav-item"} href={href} key={href}>
               <Icon /> <span className="nav-label">{label}</span>

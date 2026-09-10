@@ -112,7 +112,7 @@ export function MatchListView() {
   return (
     <main className="match-shell">
       <header className="page-header match-header">
-        <Link className="onboarding-brand" href="/">
+        <Link className="onboarding-brand" href="/app">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
         <div>
@@ -252,7 +252,7 @@ export function MatchListView() {
             title="Plateaux"
           />
 
-          <Link className="back-link" href="/">
+          <Link className="back-link" href="/app">
             Retour au tableau de bord
           </Link>
         </section>

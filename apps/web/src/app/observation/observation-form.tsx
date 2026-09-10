@@ -242,7 +242,7 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
         {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
       </section>}
       {suggestion && <AdjustmentCard suggestion={suggestion} />}
-      {report && <Link className="observation-exit back-link" href="/">Retour au tableau de bord</Link>}
+      {report && <Link className="observation-exit back-link" href="/app">Retour au tableau de bord</Link>}
     </section>
   );
 }

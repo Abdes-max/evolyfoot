@@ -210,7 +210,7 @@ export function TeamOnboardingForm() {
       <button className="continue-button" disabled={saveState === "pending"} type="submit">
         {saveState === "pending" ? "Enregistrement…" : "Valider mon équipe"} <span>→</span>
       </button>
-      <Link className="back-link" href="/">
+      <Link className="back-link" href="/app">
         Retour au tableau de bord
       </Link>
     </form>

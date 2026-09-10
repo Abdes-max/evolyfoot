@@ -34,7 +34,7 @@ export function LoginForm() {
       // jamais celle-ci tardait), et `router.replace` (pas `push`) pour qu'un retour arrière ne
       // ramène pas sur le formulaire de connexion déjà validé.
       setSuccess(true);
-      router.replace("/");
+      router.replace("/app");
     } finally {
       setSubmitting(false);
     }
@@ -76,7 +76,7 @@ export function LoginForm() {
         <div className="success-message" role="status">
           <strong>Connexion réussie !</strong>
           <span>Ton compte est prêt.</span>
-          <Link href="/">Aller au tableau de bord →</Link>
+          <Link href="/app">Aller au tableau de bord →</Link>
         </div>
       )}
       <button className="continue-button" disabled={submitting} type="submit">

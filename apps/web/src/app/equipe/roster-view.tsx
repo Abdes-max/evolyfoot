@@ -151,7 +151,7 @@ export function RosterView() {
       <SidebarNav />
       <main className="roster-shell">
       <header className="page-header roster-header">
-        <Link className="onboarding-brand" href="/">
+        <Link className="onboarding-brand" href="/app">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
         <div>
@@ -247,7 +247,7 @@ export function RosterView() {
             {players.length === 0 && <p className="roster-empty">Aucun joueur pour l’instant.</p>}
           </ul>
 
-          <Link className="back-link" href="/">
+          <Link className="back-link" href="/app">
             Retour au tableau de bord
           </Link>
         </section>
