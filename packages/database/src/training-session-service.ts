@@ -7,6 +7,9 @@ import type {
   TrainingSessionRepository,
 } from "./repositories";
 
+// Cycle du plan de progression : 4 semaines (voir buildDevelopmentPlan côté domaine).
+export const trainingCycleWeekCount = 4;
+
 export interface TrainingSessionInput {
   title: string;
   ageGroup: AgeGroup;
@@ -14,6 +17,8 @@ export interface TrainingSessionInput {
   theme: DevelopmentTheme;
   intention: string;
   blocks: ReadonlyArray<{ id: string; activityId: string; durationMinutes: number }>;
+  weekNumber: number;
+  slot: number;
   attendance?: ReadonlyArray<AttendanceEntry>;
 }
 
@@ -33,12 +38,26 @@ export class TrainingSessionService {
     private readonly trainingSessionRepository: TrainingSessionRepository,
   ) {}
 
+  async list(educatorId: string): Promise<PersistedTrainingSession[]> {
+    return this.trainingSessionRepository.listByEducator(educatorId);
+  }
+
+  async getById(educatorId: string, id: string): Promise<PersistedTrainingSession | null> {
+    return this.trainingSessionRepository.findById(id, educatorId);
+  }
+
   async save(educatorId: string, input: TrainingSessionInput): Promise<PersistedTrainingSession> {
     if (!ageGroups.includes(input.ageGroup)) {
       throw new ValidationError("Choisis une catégorie U10 à U13.");
     }
     if (!developmentThemes.includes(input.theme)) {
       throw new ValidationError("Le thème de la séance est invalide.");
+    }
+    if (!Number.isInteger(input.weekNumber) || input.weekNumber < 1 || input.weekNumber > trainingCycleWeekCount) {
+      throw new ValidationError("La semaine du cycle doit être comprise entre 1 et 4.");
+    }
+    if (!Number.isInteger(input.slot) || input.slot < 0) {
+      throw new ValidationError("Le créneau de la séance est invalide.");
     }
 
     // Reconstruit la séance complète (activités résolues depuis le catalogue du domaine, pas
@@ -81,6 +100,8 @@ export class TrainingSessionService {
         activityId: block.activityId,
         durationMinutes: block.durationMinutes,
       })),
+      weekNumber: input.weekNumber,
+      slot: input.slot,
       ...(input.attendance ? { attendance: input.attendance } : {}),
     });
   }

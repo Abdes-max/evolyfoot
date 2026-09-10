@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SessionPage from "./page";
+import { SessionView } from "./session-view";
 
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), { status: 200 });
@@ -8,7 +8,7 @@ function jsonResponse(body: unknown): Response {
 
 describe("session builder", () => {
   it("recalcule la durée d’une séance modifiée", () => {
-    render(<SessionPage />);
+    render(<SessionView slot={0} weekNumber={1} />);
 
     expect(screen.getByLabelText("Durée totale : 75 minutes")).toHaveAttribute("aria-live", "polite");
     fireEvent.click(screen.getAllByRole("button", { name: "Ajouter 5 minutes" })[0]);
@@ -43,7 +43,7 @@ describe("session builder", () => {
         return jsonResponse({});
       });
 
-      render(<SessionPage />);
+      render(<SessionView slot={0} weekNumber={1} />);
       await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/diagnostic"));
       fireEvent.click(screen.getByRole("button", { name: "Valider cette séance" }));
 
@@ -57,7 +57,7 @@ describe("session builder", () => {
     it("invite à se connecter plutôt que de prétendre sauvegarder sans compte", async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse({ educator: null }));
 
-      render(<SessionPage />);
+      render(<SessionView slot={0} weekNumber={1} />);
       await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/auth/session"));
       fireEvent.click(screen.getByRole("button", { name: "Valider cette séance" }));
 
@@ -66,7 +66,7 @@ describe("session builder", () => {
   });
 
   it("affiche les informations pratiques de chaque situation et l’effectif", () => {
-    render(<SessionPage />);
+    render(<SessionView slot={0} weekNumber={1} />);
 
     expect(screen.getByText("14 joueurs")).toBeVisible();
     expect(screen.getAllByText("Organisation")).toHaveLength(4);
@@ -78,7 +78,7 @@ describe("session builder", () => {
   });
 
   it("explique pourquoi une situation sans alternative ne peut pas être remplacée", () => {
-    render(<SessionPage />);
+    render(<SessionView slot={0} weekNumber={1} />);
 
     const replaceButtons = screen.getAllByRole("button", { name: /remplacer la situation/i });
     expect(replaceButtons[0]).toBeDisabled();
@@ -87,7 +87,7 @@ describe("session builder", () => {
   });
 
   it("affiche le schéma tactique de chaque situation avec un lien vers la bibliothèque", () => {
-    render(<SessionPage />);
+    render(<SessionView slot={0} weekNumber={1} />);
 
     expect(screen.getAllByRole("img", { name: /schéma tactique/i })).toHaveLength(4);
     const detailLinks = screen.getAllByRole("link", { name: /voir le détail/i });
@@ -96,7 +96,7 @@ describe("session builder", () => {
   });
 
   it("conserve le focus sur le contrôle du même bloc après un déplacement", () => {
-    render(<SessionPage />);
+    render(<SessionView slot={0} weekNumber={1} />);
     const activationCard = screen.getByRole("heading", { name: "Duel et contre-pression" }).closest("li");
     expect(activationCard).not.toBeNull();
     const moveUp = within(activationCard!).getByRole("button", { name: "Monter" });

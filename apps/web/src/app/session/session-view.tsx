@@ -11,15 +11,22 @@ import {
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { cycleWeekLabel } from "./cycle";
 import { SessionBuilder } from "./session-builder";
 
 // Diagnostic et équipe de démonstration, utilisés tant qu'aucune donnée réelle n'est disponible
 // (visiteur anonyme, ou éducateur connecté n'ayant pas encore fait son diagnostic ou son équipe).
 const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
 
-function buildInitialSession(scores: DiagnosticScores, ageGroup: AgeGroup, playerCount: number): TrainingSession {
+function buildSessionForWeek(
+  scores: DiagnosticScores,
+  ageGroup: AgeGroup,
+  playerCount: number,
+  weekNumber: number,
+): TrainingSession {
   const plan = buildDevelopmentPlan(summarizeDiagnostic(scores));
-  return generateTrainingSession(plan.weeks[0], ageGroup, playerCount);
+  const week = plan.weeks[weekNumber - 1] ?? plan.weeks[0]!;
+  return generateTrainingSession(week, ageGroup, playerCount);
 }
 
 interface RosterPlayer {
@@ -27,9 +34,14 @@ interface RosterPlayer {
   name: string;
 }
 
-export function SessionView() {
+interface SessionViewProps {
+  weekNumber: number;
+  slot: number;
+}
+
+export function SessionView({ weekNumber, slot }: SessionViewProps) {
   const [session, setSession] = useState<TrainingSession>(() =>
-    buildInitialSession(demoScores, demoTeam.ageGroup, demoTeam.playerCount),
+    buildSessionForWeek(demoScores, demoTeam.ageGroup, demoTeam.playerCount, weekNumber),
   );
   const [authenticated, setAuthenticated] = useState(false);
   const [roster, setRoster] = useState<RosterPlayer[]>([]);
@@ -65,7 +77,7 @@ export function SessionView() {
         const ageGroup: AgeGroup = teamBody.profile?.ageGroup ?? demoTeam.ageGroup;
         const playerCount: number = teamBody.profile?.playerCount ?? demoTeam.playerCount;
         const scores: DiagnosticScores = diagnosticBody.scores ?? demoScores;
-        setSession(buildInitialSession(scores, ageGroup, playerCount));
+        setSession(buildSessionForWeek(scores, ageGroup, playerCount, weekNumber));
         setRoster(rosterBody.players ?? []);
       } catch {
         // Reste sur la séance de démonstration.
@@ -75,7 +87,7 @@ export function SessionView() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [weekNumber]);
 
   return (
     <main className="session-shell">
@@ -83,11 +95,20 @@ export function SessionView() {
         <Link className="onboarding-brand" href="/">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
-        <span className="eyebrow light">SÉANCE 1 · SEMAINE 1</span>
-        <h1>Prépare ta première séance.</h1>
+        <span className="eyebrow light">
+          {cycleWeekLabel(weekNumber)} · Séance {slot + 1}
+        </span>
+        <h1>Prépare ta séance.</h1>
         <p>{session.intention}</p>
       </header>
-      <SessionBuilder authenticated={authenticated} onChange={setSession} roster={roster} session={session} />
+      <SessionBuilder
+        authenticated={authenticated}
+        onChange={setSession}
+        roster={roster}
+        session={session}
+        slot={slot}
+        weekNumber={weekNumber}
+      />
     </main>
   );
 }

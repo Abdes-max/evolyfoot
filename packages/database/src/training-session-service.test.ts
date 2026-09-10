@@ -31,6 +31,8 @@ const validInput: TrainingSessionInput = {
     activityId: block.activity.id,
     durationMinutes: block.durationMinutes,
   })),
+  weekNumber: 1,
+  slot: 0,
 };
 
 class InMemoryEducatorRepository implements EducatorRepository {
@@ -65,8 +67,18 @@ class InMemoryTrainingSessionRepository implements TrainingSessionRepository {
       theme: PersistedTrainingSession["theme"];
       intention: string;
       blocks: PersistedTrainingSessionBlock[];
+      weekNumber: number;
+      slot: number;
     },
   ): Promise<PersistedTrainingSession> {
+    const existing = this.created.find(
+      (session) =>
+        session.educatorId === educatorId && session.weekNumber === input.weekNumber && session.slot === input.slot,
+    );
+    if (existing) {
+      Object.assign(existing, input);
+      return existing;
+    }
     const record: PersistedTrainingSession = {
       id: `session-${this.created.length + 1}`,
       educatorId,
@@ -79,6 +91,10 @@ class InMemoryTrainingSessionRepository implements TrainingSessionRepository {
 
   async listByEducator(educatorId: string): Promise<PersistedTrainingSession[]> {
     return this.created.filter((session) => session.educatorId === educatorId);
+  }
+
+  async findById(id: string, educatorId: string): Promise<PersistedTrainingSession | null> {
+    return this.created.find((session) => session.id === id && session.educatorId === educatorId) ?? null;
   }
 }
 
@@ -160,5 +176,48 @@ describe("TrainingSessionService.save", () => {
     expect(saved.educatorId).toBe("educator-1");
     expect(saved.title).toBe(validInput.title);
     expect(saved.blocks).toEqual(validInput.blocks);
+    expect(saved.weekNumber).toBe(1);
+    expect(saved.slot).toBe(0);
+  });
+
+  it("rejects a cycle week outside 1..4", async () => {
+    const trainingSessionRepository = new InMemoryTrainingSessionRepository();
+    const service = new TrainingSessionService(
+      new InMemoryEducatorRepository(["educator-1"]),
+      trainingSessionRepository,
+    );
+
+    await expect(service.save("educator-1", { ...validInput, weekNumber: 5 })).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.save("educator-1", { ...validInput, slot: -1 })).rejects.toBeInstanceOf(ValidationError);
+    expect(trainingSessionRepository.created).toHaveLength(0);
+  });
+
+  it("replaces the session already stored for the same cycle slot", async () => {
+    const trainingSessionRepository = new InMemoryTrainingSessionRepository();
+    const service = new TrainingSessionService(
+      new InMemoryEducatorRepository(["educator-1"]),
+      trainingSessionRepository,
+    );
+
+    const first = await service.save("educator-1", { ...validInput, weekNumber: 2, slot: 1, title: "Séance A" });
+    const second = await service.save("educator-1", { ...validInput, weekNumber: 2, slot: 1, title: "Séance B" });
+
+    expect(trainingSessionRepository.created).toHaveLength(1);
+    expect(second.id).toBe(first.id);
+    expect(second.title).toBe("Séance B");
+  });
+
+  it("lists and fetches saved sessions by id", async () => {
+    const trainingSessionRepository = new InMemoryTrainingSessionRepository();
+    const service = new TrainingSessionService(
+      new InMemoryEducatorRepository(["educator-1"]),
+      trainingSessionRepository,
+    );
+
+    const saved = await service.save("educator-1", { ...validInput, weekNumber: 1, slot: 0 });
+
+    expect(await service.list("educator-1")).toHaveLength(1);
+    expect(await service.getById("educator-1", saved.id)).toMatchObject({ id: saved.id });
+    expect(await service.getById("educator-2", saved.id)).toBeNull();
   });
 });

@@ -142,9 +142,49 @@ test("le coach personnalise, valide puis observe sa séance", async ({ page }) =
   await expect(page.getByRole("status").filter({ hasText: "Ajustement appliqué à la prochaine séance" })).toContainText("Ajustement appliqué à la prochaine séance");
 });
 
-test("l’éducateur parcourt la bibliothèque et consulte le schéma d’un exercice", async ({ page }) => {
+test("l’éducateur retrouve ses séances par créneau du cycle et ouvre celle du calendrier", async ({ page }) => {
+  // Persistance réelle couverte par les tests d'intégration ; on simule ici les données de
+  // l'éducateur pour vérifier le câblage client : page Séances, créneaux générés / non générés,
+  // et pastille du calendrier qui ouvre la bonne séance.
+  await page.route("**/api/team", (route) =>
+    route.fulfill({ json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: ["Mardi", "Jeudi"] } } }),
+  );
+  await page.route("**/api/diagnostic", (route) => route.fulfill({ json: { scores: null } }));
+  await page.route("**/api/matches", (route) => route.fulfill({ json: { matches: [] } }));
+  await page.route("**/api/sessions", (route) =>
+    route.fulfill({
+      json: {
+        sessions: [
+          {
+            id: "session-mardi-s1",
+            title: "Séance du mardi",
+            theme: "Récupérer rapidement",
+            intention: "x",
+            ageGroup: "U12",
+            playerCount: 14,
+            weekNumber: 1,
+            slot: 0,
+            blocks: [{ id: "b1", activityId: "welcome-recuperer", durationMinutes: 75 }],
+          },
+        ],
+      },
+    }),
+  );
+
+  await page.goto("/seances");
+  await expect(page.getByRole("heading", { name: "Le cycle de quatre semaines, séance par séance." })).toBeVisible();
+  await expect(page.getByRole("link", { name: /ouvrir la séance/i }).first()).toHaveAttribute("href", "/session/session-mardi-s1");
+  await expect(page.getByRole("link", { name: /générer cette séance/i }).first()).toHaveAttribute("href", /\/session\?week=1&slot=1/);
+
   await page.goto("/");
-  await page.getByRole("link", { name: "Séances" }).click();
+  await page.getByRole("link", { name: /ouvrir la séance de mardi/i }).click();
+  await expect(page).toHaveURL(/\/session\/session-mardi-s1$/);
+});
+
+test("l’éducateur parcourt la bibliothèque et consulte le schéma d’un exercice", async ({ page }) => {
+  // La bibliothèque d'exercices n'est plus dans le menu : on y entre depuis la page Séances.
+  await page.goto("/seances");
+  await page.getByRole("link", { name: /parcourir la bibliothèque/i }).click();
   await expect(page).toHaveURL(/\/bibliotheque$/);
 
   await page.getByRole("button", { name: "Activation" }).click();

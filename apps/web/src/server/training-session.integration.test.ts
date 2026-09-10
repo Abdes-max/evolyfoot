@@ -1,6 +1,8 @@
 import { EducatorNotFoundError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
 import {
+  createGetTrainingSessionHandler,
+  createListTrainingSessionsHandler,
   createSaveTrainingSessionHandler,
   type PersistedTrainingSession,
   type TrainingSessionGateway,
@@ -16,6 +18,8 @@ const validInput: TrainingSessionInput = {
   theme: "Récupérer rapidement",
   intention: "Provoquer des pertes de balle pour s’entraîner à réagir vite.",
   blocks: [{ id: "b1", activityId: "activite-1", durationMinutes: 75 }],
+  weekNumber: 1,
+  slot: 0,
 };
 
 const persisted: PersistedTrainingSession = { ...validInput, id: "session-1", createdAt: "2026-08-29T12:00:00.000Z" };
@@ -83,6 +87,17 @@ describe("createSaveTrainingSessionHandler", () => {
     expect(response.status).toBe(400);
   });
 
+  it("rejects a cycle week outside 1..4 without calling the gateway", async () => {
+    const handler = createSaveTrainingSessionHandler(
+      authenticated,
+      { save: async () => { throw new Error("not called"); } },
+      () => undefined,
+    );
+
+    expect((await handler(jsonRequest({ ...validInput, weekNumber: 9 }))).status).toBe(400);
+    expect((await handler(jsonRequest({ ...validInput, slot: -1 }))).status).toBe(400);
+  });
+
   it("maps a domain validation failure to a 400 with its message", async () => {
     const gateway: Pick<TrainingSessionGateway, "save"> = {
       save: async () => {
@@ -121,6 +136,39 @@ describe("createSaveTrainingSessionHandler", () => {
     const response = await handler(jsonRequest(validInput));
 
     expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ session: persisted });
+  });
+});
+
+describe("createListTrainingSessionsHandler", () => {
+  it("requires an authenticated session", async () => {
+    const handler = createListTrainingSessionsHandler(anonymous, { list: async () => [] });
+    expect((await handler(jsonRequest(validInput))).status).toBe(401);
+  });
+
+  it("returns the educator's saved sessions", async () => {
+    const handler = createListTrainingSessionsHandler(authenticated, { list: async () => [persisted] });
+    const response = await handler(jsonRequest(validInput));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ sessions: [persisted] });
+  });
+});
+
+describe("createGetTrainingSessionHandler", () => {
+  it("requires an authenticated session", async () => {
+    const handler = createGetTrainingSessionHandler(anonymous, { getById: async () => null });
+    expect((await handler(jsonRequest(validInput), "session-1")).status).toBe(401);
+  });
+
+  it("maps an unknown id to a 404", async () => {
+    const handler = createGetTrainingSessionHandler(authenticated, { getById: async () => null });
+    expect((await handler(jsonRequest(validInput), "missing")).status).toBe(404);
+  });
+
+  it("returns the session when found", async () => {
+    const handler = createGetTrainingSessionHandler(authenticated, { getById: async () => persisted });
+    const response = await handler(jsonRequest(validInput), "session-1");
+    expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ session: persisted });
   });
 });

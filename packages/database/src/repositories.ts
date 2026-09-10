@@ -93,6 +93,10 @@ export interface PersistedTrainingSession {
   theme: DevelopmentTheme;
   intention: string;
   blocks: PersistedTrainingSessionBlock[];
+  // Créneau dans le cycle de 4 semaines : semaine du plan (1 à 4) + slot (index 0-basé dans les
+  // jours d'entraînement de l'équipe). Une seule séance par créneau (voir `create`, un upsert).
+  weekNumber: number;
+  slot: number;
   // `undefined` pour une séance validée avant l'introduction du suivi de présence, distingué
   // d'un tableau vide (présence saisie mais personne de présent) -- voir summarizeAttendance
   // côté domaine et /statistiques, qui doivent pouvoir faire la différence.
@@ -101,6 +105,8 @@ export interface PersistedTrainingSession {
 }
 
 export interface TrainingSessionRepository {
+  // Upsert sur le créneau (educatorId, weekNumber, slot) : (re)générer une séance pour un créneau
+  // déjà occupé remplace la précédente plutôt que d'en empiler une deuxième.
   create(
     educatorId: string,
     input: {
@@ -110,10 +116,13 @@ export interface TrainingSessionRepository {
       theme: DevelopmentTheme;
       intention: string;
       blocks: PersistedTrainingSessionBlock[];
+      weekNumber: number;
+      slot: number;
       attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedTrainingSession>;
   listByEducator(educatorId: string): Promise<PersistedTrainingSession[]>;
+  findById(id: string, educatorId: string): Promise<PersistedTrainingSession | null>;
 }
 
 // Historique des observations validées. `players`/`signals` sont stockés tels quels (JSON), sans

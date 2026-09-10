@@ -3,6 +3,7 @@
 import type { TrainingDay } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { currentCycleWeek } from "./session/cycle";
 import { BallIcon, DotsGridIcon, TargetIcon } from "./icons";
 
 const weekDays: ReadonlyArray<{ short: string; full: TrainingDay | "Samedi" | "Dimanche" }> = [
@@ -22,15 +23,28 @@ interface MatchSummary {
   status: string;
 }
 
+interface SavedSession {
+  id: string;
+  weekNumber: number;
+  slot: number;
+}
+
 interface DayMatch {
   id: string;
   opponent: string;
 }
 
+// Séance d'un jour d'entraînement : soit déjà générée (on connaît son id, on l'ouvre), soit à
+// générer pour le créneau (semaine du cycle + slot) que ce jour occupe.
+interface DayTraining {
+  slot: number;
+  weekNumber: number;
+  sessionId: string | null;
+}
+
 export function WeeklyCalendar() {
   const [trainingDays, setTrainingDays] = useState<readonly TrainingDay[]>([]);
-  // Jour → match correspondant (id + adversaire, pour ouvrir sa fiche et pour l'intitulé
-  // accessible du lien), pas juste un ensemble de jours : il faut savoir VERS QUEL match ouvrir.
+  const [sessions, setSessions] = useState<readonly SavedSession[]>([]);
   const [matchByDay, setMatchByDay] = useState<ReadonlyMap<string, DayMatch>>(new Map());
 
   useEffect(() => {
@@ -44,22 +58,25 @@ export function WeeklyCalendar() {
           return;
         }
 
-        const [teamResponse, matchesResponse] = await Promise.all([fetch("/api/team"), fetch("/api/matches")]);
+        const [teamResponse, matchesResponse, sessionsResponse] = await Promise.all([
+          fetch("/api/team"),
+          fetch("/api/matches"),
+          fetch("/api/sessions"),
+        ]);
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const matchesBody = await matchesResponse.json().catch(() => ({ matches: [] }));
+        const sessionsBody = await sessionsResponse.json().catch(() => ({ sessions: [] }));
         if (cancelled) {
           return;
         }
 
         setTrainingDays(teamBody.profile?.trainingDays ?? []);
+        setSessions(sessionsBody.sessions ?? []);
 
         // `dateLabel` est un texte libre saisi par l'éducateur ("Samedi 26 septembre · 14:00 ·
-        // Domicile"), pas une date structurée -- impossible de savoir avec certitude à quelle
-        // semaine calendaire un match appartient. On se contente de repérer le jour de la semaine
-        // en tête du texte, suffisant pour ce calendrier hebdomadaire indicatif (repli silencieux
-        // si le format ne commence pas par un nom de jour reconnu). Si deux matchs tombent sur le
-        // même jour, seul le premier rencontré garde la main sur l'icône -- cas rare, acceptable
-        // pour un simple repère visuel plutôt qu'un vrai agenda.
+        // Domicile"), pas une date structurée -- on se contente de repérer le nom du jour en tête
+        // du texte, suffisant pour ce calendrier hebdomadaire indicatif (repli silencieux sinon).
+        // Si deux matchs tombent le même jour, seul le premier garde l'icône.
         const matches: MatchSummary[] = matchesBody.matches ?? [];
         const byDay = new Map<string, DayMatch>();
         for (const match of matches) {
@@ -82,30 +99,53 @@ export function WeeklyCalendar() {
     };
   }, []);
 
+  const activeWeek = currentCycleWeek(sessions, Math.max(trainingDays.length, 1));
+  // Chaque jour d'entraînement de la semaine occupe un slot, dans l'ordre où il apparaît dans la
+  // semaine (lundi = slot 0, etc.) -- même convention que la page Séances.
+  const trainingByDay = new Map<string, DayTraining>();
+  let slot = 0;
+  for (const day of weekDays) {
+    if (trainingDays.includes(day.full as TrainingDay)) {
+      const saved = sessions.find((session) => session.weekNumber === activeWeek && session.slot === slot);
+      trainingByDay.set(day.full, { slot, weekNumber: activeWeek, sessionId: saved?.id ?? null });
+      slot += 1;
+    }
+  }
+
   return (
     <div className="week-card week-calendar">
       <h3>Calendrier</h3>
       <div className="week-calendar-grid">
         {weekDays.map((day) => {
-          const hasTraining = trainingDays.includes(day.full as TrainingDay);
+          const training = trainingByDay.get(day.full);
           const match = matchByDay.get(day.full);
           return (
             <div className="week-calendar-day" key={day.full}>
               <span className="week-calendar-day-label">{day.short}</span>
               <div className="week-calendar-cell">
-                {hasTraining && (
-                  <Link
-                    aria-label={`Ouvrir la séance du ${day.full.toLowerCase()}`}
-                    className="week-calendar-badge training"
-                    href="/session"
-                    title="Séance d’entraînement"
-                  >
-                    <TargetIcon />
-                  </Link>
-                )}
+                {training &&
+                  (training.sessionId ? (
+                    <Link
+                      aria-label={`Ouvrir la séance de ${day.full.toLowerCase()}`}
+                      className="week-calendar-badge training"
+                      href={`/session/${training.sessionId}`}
+                      title="Séance d’entraînement"
+                    >
+                      <TargetIcon />
+                    </Link>
+                  ) : (
+                    <Link
+                      aria-label={`Générer la séance de ${day.full.toLowerCase()} (non générée)`}
+                      className="week-calendar-badge training pending"
+                      href={`/session?week=${training.weekNumber}&slot=${training.slot}`}
+                      title="Séance non générée"
+                    >
+                      <TargetIcon />
+                    </Link>
+                  ))}
                 {match && (
                   <Link
-                    aria-label={`Ouvrir le match du ${day.full.toLowerCase()} contre ${match.opponent}`}
+                    aria-label={`Ouvrir le match de ${day.full.toLowerCase()} contre ${match.opponent}`}
                     className="week-calendar-badge match"
                     href={`/match/${match.id}`}
                     title={`Match contre ${match.opponent}`}
@@ -126,6 +166,12 @@ export function WeeklyCalendar() {
           Séance d’entraînement
         </li>
         <li>
+          <span className="week-calendar-badge training pending">
+            <TargetIcon />
+          </span>
+          Séance non générée
+        </li>
+        <li>
           <span className="week-calendar-badge match">
             <BallIcon />
           </span>
@@ -138,8 +184,8 @@ export function WeeklyCalendar() {
           Autres
         </li>
       </ul>
-      <Link aria-label="Voir tous les matchs" className="text-button week-calendar-footer" href="/match">
-        Voir mes matchs →
+      <Link aria-label="Voir toutes mes séances" className="text-button week-calendar-footer" href="/seances">
+        Voir mes séances →
       </Link>
     </div>
   );

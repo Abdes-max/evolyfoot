@@ -8,6 +8,9 @@ export interface TrainingSessionBlockInput {
   durationMinutes: number;
 }
 
+// Cycle du plan de progression : 4 semaines (aligné sur trainingCycleWeekCount côté base).
+const cycleWeekCount = 4;
+
 export interface TrainingSessionInput {
   title: string;
   ageGroup: AgeGroup;
@@ -15,6 +18,8 @@ export interface TrainingSessionInput {
   theme: DevelopmentTheme;
   intention: string;
   blocks: readonly TrainingSessionBlockInput[];
+  weekNumber: number;
+  slot: number;
   attendance?: readonly AttendanceEntry[];
 }
 
@@ -25,6 +30,8 @@ export interface PersistedTrainingSession extends TrainingSessionInput {
 
 export interface TrainingSessionGateway {
   save(educatorId: string, input: TrainingSessionInput): Promise<PersistedTrainingSession>;
+  list(educatorId: string): Promise<PersistedTrainingSession[]>;
+  getById(educatorId: string, id: string): Promise<PersistedTrainingSession | null>;
 }
 
 // Pas de constante partagée côté domaine pour les thèmes (contrairement à `ageGroups`) : on la
@@ -83,6 +90,13 @@ function isTrainingSessionInputShaped(
     Array.isArray(value.blocks) &&
     value.blocks.length > 0 &&
     value.blocks.every(isBlockShaped) &&
+    typeof value.weekNumber === "number" &&
+    Number.isInteger(value.weekNumber) &&
+    value.weekNumber >= 1 &&
+    value.weekNumber <= cycleWeekCount &&
+    typeof value.slot === "number" &&
+    Number.isInteger(value.slot) &&
+    value.slot >= 0 &&
     (value.attendance === undefined || (Array.isArray(value.attendance) && value.attendance.every(isAttendanceEntryShaped)))
   );
 }
@@ -121,6 +135,37 @@ export function createSaveTrainingSessionHandler(
   };
 }
 
+export function createListTrainingSessionsHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  trainingSession: Pick<TrainingSessionGateway, "list">,
+): (request: Request) => Promise<Response> {
+  return async (request) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const sessions = await trainingSession.list(educator.id);
+    return Response.json({ sessions });
+  };
+}
+
+export function createGetTrainingSessionHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  trainingSession: Pick<TrainingSessionGateway, "getById">,
+): (request: Request, id: string) => Promise<Response> {
+  return async (request, id) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const session = await trainingSession.getById(educator.id, id);
+    if (!session) {
+      return Response.json({ error: "Séance introuvable." }, { status: 404 });
+    }
+    return Response.json({ session });
+  };
+}
+
 export async function createTrainingSessionGateway(): Promise<{
   gateway: TrainingSessionGateway;
   disconnect: () => Promise<void>;
@@ -133,21 +178,31 @@ export async function createTrainingSessionGateway(): Promise<{
     new PrismaTrainingSessionRepository(database.prisma),
   );
 
+  const toSummary = (session: Awaited<ReturnType<typeof service.save>>): PersistedTrainingSession => ({
+    id: session.id,
+    title: session.title,
+    ageGroup: session.ageGroup,
+    playerCount: session.playerCount,
+    theme: session.theme,
+    intention: session.intention,
+    blocks: session.blocks,
+    weekNumber: session.weekNumber,
+    slot: session.slot,
+    ...(session.attendance ? { attendance: session.attendance } : {}),
+    createdAt: session.createdAt.toISOString(),
+  });
+
   return {
     gateway: {
       async save(educatorId, input) {
-        const session = await service.save(educatorId, input);
-        return {
-          id: session.id,
-          title: session.title,
-          ageGroup: session.ageGroup,
-          playerCount: session.playerCount,
-          theme: session.theme,
-          intention: session.intention,
-          blocks: session.blocks,
-          ...(session.attendance ? { attendance: session.attendance } : {}),
-          createdAt: session.createdAt.toISOString(),
-        };
+        return toSummary(await service.save(educatorId, input));
+      },
+      async list(educatorId) {
+        return (await service.list(educatorId)).map(toSummary);
+      },
+      async getById(educatorId, id) {
+        const session = await service.getById(educatorId, id);
+        return session ? toSummary(session) : null;
       },
     },
     disconnect: database.disconnect,
