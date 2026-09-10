@@ -18,6 +18,7 @@ import {
   toPersistedPlayer,
   toPersistedPlayerEvaluation,
   toPersistedTeamProfile,
+  toPersistedPlateau,
   toPersistedTournament,
   toPersistedTrainingSession,
   toPrismaAgeGroup,
@@ -42,12 +43,14 @@ import type {
   PersistedDiagnostic,
   PersistedMatch,
   PersistedObservation,
+  PersistedPlateau,
   PersistedPlayer,
   PersistedPlayerEvaluation,
   PersistedTeamProfile,
   PersistedTournament,
   PersistedTrainingSession,
   PersistedTrainingSessionBlock,
+  PlateauRepository,
   PlayerDetailsPatch,
   PlayerEvaluationRepository,
   PlayerRepository,
@@ -531,6 +534,28 @@ export class PrismaTournamentRepository implements TournamentRepository {
   // d'autres données, contrairement à un match (composition, observations liées).
   async remove(id: string, educatorId: string): Promise<void> {
     await this.prisma.tournamentRecord.deleteMany({ where: { id, educatorId } });
+  }
+}
+
+export class PrismaPlateauRepository implements PlateauRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async listByEducator(educatorId: string): Promise<PersistedPlateau[]> {
+    const records = await this.prisma.plateauRecord.findMany({ where: { educatorId }, orderBy: { createdAt: "desc" } });
+    return records.map(toPersistedPlateau);
+  }
+
+  async create(educatorId: string, input: { name: string; dateLabel: string; result?: string }): Promise<PersistedPlateau> {
+    const record = await this.prisma.plateauRecord.create({
+      data: { educatorId, name: input.name, dateLabel: input.dateLabel, result: input.result ?? null },
+    });
+    return toPersistedPlateau(record);
+  }
+
+  // Même choix que PrismaTournamentRepository.remove : supprimer une fiche inexistante ou d'un
+  // autre éducateur ne fait rien plutôt que d'échouer.
+  async remove(id: string, educatorId: string): Promise<void> {
+    await this.prisma.plateauRecord.deleteMany({ where: { id, educatorId } });
   }
 }
 

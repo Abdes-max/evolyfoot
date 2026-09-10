@@ -16,6 +16,7 @@ export {
   PrismaEducatorRepository,
   PrismaMatchRepository,
   PrismaObservationRepository,
+  PrismaPlateauRepository,
   PrismaPlayerEvaluationRepository,
   PrismaPlayerRepository,
   PrismaSessionRepository,
@@ -29,6 +30,7 @@ export { EducatorProfileService, seasonFormats } from "./educator-profile-servic
 export { MatchService } from "./match-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";
+export { PlateauService } from "./plateau-service";
 export { PlayerEvaluationService } from "./player-evaluation-service";
 export { RosterService } from "./roster-service";
 export { StatsService } from "./stats-service";
@@ -54,12 +56,14 @@ export type {
   PersistedDiagnostic,
   PersistedMatch,
   PersistedObservation,
+  PersistedPlateau,
   PersistedPlayer,
   PersistedPlayerEvaluation,
   PersistedTeamProfile,
   PersistedTournament,
   PersistedTrainingSession,
   PersistedTrainingSessionBlock,
+  PlateauRepository,
   PlayerDetailsPatch,
   PlayerEvaluationRepository,
   PlayerRepository,

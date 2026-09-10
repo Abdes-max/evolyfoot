@@ -36,3 +36,9 @@ pnpm-debug.log*
 # ChatGPT project mirror metadata (not part of EvolyFoot)
 sources/
 AGENTS.md
+.agents/
+
+# Skills CLI (npx skills) — outillage local, non versionné
+.claude/skills/
+skills-lock.json
+.agents/

@@ -13,6 +13,8 @@
 .statistics-block { padding: 20px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
 .statistics-block h2 { margin: 0 0 16px; font-size: 15px; }
 .statistics-hint { margin: 14px 0 0; color: var(--muted); font-size: 11.5px; text-align: center; }
+.statistics-report { margin: 0; padding-left: 18px; display: grid; gap: 7px; }
+.statistics-report li { font-size: 12.5px; line-height: 1.55; color: var(--ink); }
 
 .statistics-attendance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 

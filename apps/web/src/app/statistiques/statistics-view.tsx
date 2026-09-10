@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { BarChart, DonutChart } from "../charts";
 
 interface TeamStats {
@@ -10,32 +10,44 @@ interface TeamStats {
   matchesPlayed: number;
   matchesScheduled: number;
   tournamentCount: number;
+  plateauCount: number;
   trainingAttendance: { present: number; absent: number; total: number; rate: number };
   matchAttendance: { present: number; absent: number; total: number; rate: number };
 }
 
-interface Tournament {
-  id: string;
-  name: string;
-  dateLabel: string;
-  result: string | null;
+function plural(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count > 1 ? plural : singular}`;
 }
 
-async function readErrorMessage(response: Response): Promise<string> {
-  const body = await response.json().catch(() => ({}));
-  return typeof body.error === "string" ? body.error : "Une erreur est survenue.";
+// Rapport = synthèse purement factuelle des chiffres ci-dessus, pas d'analyse « intelligente ».
+function buildReport(stats: TeamStats): string[] {
+  const lines: string[] = [];
+  lines.push(
+    `Depuis le début de la saison : ${plural(stats.trainingCount, "séance")} et ${plural(
+      stats.matchCount,
+      "match",
+      "matchs",
+    )} (${plural(stats.matchesPlayed, "joué", "joués")}, ${stats.matchesScheduled} à venir).`,
+  );
+  if (stats.tournamentCount > 0 || stats.plateauCount > 0) {
+    lines.push(`${plural(stats.tournamentCount, "tournoi")} et ${plural(stats.plateauCount, "plateau", "plateaux")}.`);
+  }
+  if (stats.trainingAttendance.total > 0) {
+    lines.push(
+      `Présence moyenne à l’entraînement : ${stats.trainingAttendance.rate}% (${stats.trainingAttendance.present} présences sur ${stats.trainingAttendance.total} relevées).`,
+    );
+  } else {
+    lines.push("Aucune présence n’a encore été relevée à l’entraînement (elle se saisit à la préparation d’une séance).");
+  }
+  if (stats.matchAttendance.total > 0) {
+    lines.push(`Présence moyenne en match : ${stats.matchAttendance.rate}%.`);
+  }
+  return lines;
 }
 
 export function StatisticsView() {
   const [authenticated, setAuthenticated] = useState<boolean | undefined>(undefined);
   const [stats, setStats] = useState<TeamStats | null>(null);
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-
-  const [tournamentName, setTournamentName] = useState("");
-  const [tournamentDate, setTournamentDate] = useState("");
-  const [tournamentResult, setTournamentResult] = useState("");
-  const [tournamentError, setTournamentError] = useState("");
-  const [addingTournament, setAddingTournament] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,18 +62,11 @@ export function StatisticsView() {
         }
         setAuthenticated(true);
 
-        const [statsResponse, tournamentsResponse] = await Promise.all([
-          fetch("/api/stats"),
-          fetch("/api/tournaments"),
-        ]);
+        const statsResponse = await fetch("/api/stats");
         const statsBody = await statsResponse.json().catch(() => ({ stats: null }));
-        const tournamentsBody = await tournamentsResponse.json().catch(() => ({ tournaments: [] }));
-        if (cancelled) {
-          return;
+        if (!cancelled) {
+          setStats(statsBody.stats ?? null);
         }
-
-        setStats(statsBody.stats ?? null);
-        setTournaments(tournamentsBody.tournaments ?? []);
       } catch {
         if (!cancelled) {
           setAuthenticated(false);
@@ -74,48 +79,15 @@ export function StatisticsView() {
     };
   }, []);
 
-  async function addTournament(event: FormEvent) {
-    event.preventDefault();
-    setAddingTournament(true);
-    setTournamentError("");
-    try {
-      const response = await fetch("/api/tournaments", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: tournamentName, dateLabel: tournamentDate, result: tournamentResult || undefined }),
-      });
-      if (!response.ok) {
-        setTournamentError(await readErrorMessage(response));
-        return;
-      }
-      const body = await response.json();
-      setTournaments((current) => [body.tournament, ...current]);
-      setTournamentName("");
-      setTournamentDate("");
-      setTournamentResult("");
-    } catch {
-      setTournamentError("Une erreur est survenue.");
-    } finally {
-      setAddingTournament(false);
-    }
-  }
-
-  async function removeTournament(tournamentId: string) {
-    setTournaments((current) => current.filter((tournament) => tournament.id !== tournamentId));
-    try {
-      await fetch(`/api/tournaments/${tournamentId}`, { method: "DELETE" });
-    } catch {
-      // Rien à faire de plus : une fiche simple, sans conséquence si la suppression réseau
-      // échoue silencieusement -- la page reflète déjà l'intention de l'éducateur.
-    }
-  }
-
   if (authenticated === false) {
     return (
       <main className="statistics-shell">
         <section className="statistics-auth-required" role="status">
           <p>
-            Connecte-toi pour voir les statistiques de ton équipe. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
+            Connecte-toi pour voir les statistiques de ton équipe.{" "}
+            <Link className="inline-cta" href="/connexion">
+              Se connecter →
+            </Link>
           </p>
         </section>
       </main>
@@ -131,7 +103,9 @@ export function StatisticsView() {
         <div>
           <span className="eyebrow light">STATISTIQUES</span>
           <h1 title="Le suivi de ta saison.">Le suivi de ta saison.</h1>
-          <p title="Présences, activité et évaluation individuelle des joueurs.">Présences, activité et évaluation individuelle des joueurs.</p>
+          <p title="Les chiffres de la saison, en diagrammes et en une synthèse.">
+            Les chiffres de la saison, en diagrammes et en une synthèse.
+          </p>
         </div>
       </header>
 
@@ -144,10 +118,11 @@ export function StatisticsView() {
                 { label: "Séances", value: stats.trainingCount },
                 { label: "Matchs", value: stats.matchCount },
                 { label: "Tournois", value: stats.tournamentCount },
+                { label: "Plateaux", value: stats.plateauCount },
               ]}
             />
             <p className="statistics-hint">
-              {stats.matchesPlayed} match{stats.matchesPlayed > 1 ? "s" : ""} joué{stats.matchesPlayed > 1 ? "s" : ""} · {stats.matchesScheduled} à venir
+              {plural(stats.matchesPlayed, "match joué", "matchs joués")} · {stats.matchesScheduled} à venir
             </p>
           </div>
 
@@ -185,38 +160,17 @@ export function StatisticsView() {
           </div>
 
           <div className="statistics-block">
-            <h2>Tournois</h2>
-            <form className="statistics-tournament-form" onSubmit={addTournament}>
-              <input onChange={(event) => setTournamentName(event.target.value)} placeholder="Nom du tournoi" value={tournamentName} />
-              <input onChange={(event) => setTournamentDate(event.target.value)} placeholder="Date" value={tournamentDate} />
-              <input onChange={(event) => setTournamentResult(event.target.value)} placeholder="Bilan (optionnel)" value={tournamentResult} />
-              <button disabled={addingTournament} type="submit">
-                {addingTournament ? "Ajout…" : "Ajouter"}
-              </button>
-            </form>
-            {tournamentError && <p className="field-error" role="alert">{tournamentError}</p>}
-            {tournaments.length === 0 ? (
-              <p className="statistics-empty">Aucun tournoi pour l’instant.</p>
-            ) : (
-              <ul className="statistics-tournament-list">
-                {tournaments.map((tournament) => (
-                  <li key={tournament.id}>
-                    <div>
-                      <strong>{tournament.name}</strong>
-                      <span>{tournament.dateLabel}{tournament.result ? ` · ${tournament.result}` : ""}</span>
-                    </div>
-                    <button aria-label={`Retirer ${tournament.name}`} onClick={() => removeTournament(tournament.id)} type="button">
-                      Retirer
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <h2>Rapport</h2>
+            <ul className="statistics-report">
+              {buildReport(stats).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <p className="statistics-hint">
+              Tournois et plateaux se gèrent depuis <Link className="inline-cta" href="/match">Matchs &amp; compétitions</Link> ·
+              l’évaluation individuelle est sur chaque <Link className="inline-cta" href="/equipe">fiche joueur</Link>.
+            </p>
           </div>
-
-          <p className="statistics-hint">
-            L’évaluation individuelle des joueurs (toile d’araignée) est sur chaque <Link className="inline-cta" href="/equipe">fiche joueur</Link>.
-          </p>
 
           <Link className="back-link" href="/">
             Retour au tableau de bord

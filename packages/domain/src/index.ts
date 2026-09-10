@@ -140,5 +140,7 @@ export {
 export type { PlayerEvaluationAspect, PlayerEvaluationScores } from "./player-evaluation";
 export { validateTournament } from "./tournament";
 export type { TournamentErrors, TournamentInput } from "./tournament";
+export { validatePlateau } from "./plateau";
+export type { PlateauErrors, PlateauInput } from "./plateau";
 export { summarizeAttendance } from "./attendance";
 export type { AttendanceEntry, AttendanceSummary } from "./attendance";

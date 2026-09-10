@@ -5,9 +5,11 @@ import { MatchService } from "./match-service";
 import {
   PrismaEducatorRepository,
   PrismaMatchRepository,
+  PrismaPlateauRepository,
   PrismaTournamentRepository,
   PrismaTrainingSessionRepository,
 } from "./prisma-repositories";
+import { PlateauService } from "./plateau-service";
 import { StatsService } from "./stats-service";
 import { TournamentService } from "./tournament-service";
 import { TrainingSessionService } from "./training-session-service";
@@ -24,11 +26,13 @@ const educatorRepository = new PrismaEducatorRepository(database.prisma);
 const trainingSessionRepository = new PrismaTrainingSessionRepository(database.prisma);
 const matchRepository = new PrismaMatchRepository(database.prisma);
 const tournamentRepository = new PrismaTournamentRepository(database.prisma);
+const plateauRepository = new PrismaPlateauRepository(database.prisma);
 
 const trainingSessionService = new TrainingSessionService(educatorRepository, trainingSessionRepository);
 const matchService = new MatchService(educatorRepository, matchRepository);
 const tournamentService = new TournamentService(educatorRepository, tournamentRepository);
-const statsService = new StatsService(trainingSessionRepository, matchRepository, tournamentRepository);
+const plateauService = new PlateauService(educatorRepository, plateauRepository);
+const statsService = new StatsService(trainingSessionRepository, matchRepository, tournamentRepository, plateauRepository);
 
 const demoWeek = {
   week: 1,
@@ -73,7 +77,7 @@ describe("PostgreSQL stats aggregation", () => {
   afterEach(removeTestEducators);
   afterAll(() => database.disconnect());
 
-  it("compte séances, matchs et tournois pour l’éducateur demandeur uniquement", async () => {
+  it("compte séances, matchs, tournois et plateaux pour l’éducateur demandeur uniquement", async () => {
     const owner = await createEducator("counts-owner");
     const stranger = await createEducator("counts-stranger");
 
@@ -81,7 +85,10 @@ describe("PostgreSQL stats aggregation", () => {
     await trainingSessionService.save(owner.id, sessionInput(undefined, 1));
     await matchService.create(owner.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
     await tournamentService.create(owner.id, { name: "Tournoi de printemps", dateLabel: "12 avril 2026" });
+    await plateauService.create(owner.id, { name: "Plateau de rentrée", dateLabel: "14 septembre 2026" });
+    await plateauService.create(owner.id, { name: "Plateau d’hiver", dateLabel: "10 janvier 2027" });
     await trainingSessionService.save(stranger.id, sessionInput());
+    await plateauService.create(stranger.id, { name: "Plateau voisin", dateLabel: "1 mars 2027" });
 
     const stats = await statsService.get(owner.id);
 
@@ -90,6 +97,7 @@ describe("PostgreSQL stats aggregation", () => {
     expect(stats.matchesScheduled).toBe(1);
     expect(stats.matchesPlayed).toBe(0);
     expect(stats.tournamentCount).toBe(1);
+    expect(stats.plateauCount).toBe(2);
   });
 
   it("agrège la présence aux séances, saisie à la validation", async () => {

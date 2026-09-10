@@ -1,6 +1,11 @@
 import { summarizeAttendance } from "@evolyfoot/domain";
 import type { AttendanceEntry, AttendanceSummary } from "@evolyfoot/domain";
-import type { MatchRepository, TournamentRepository, TrainingSessionRepository } from "./repositories";
+import type {
+  MatchRepository,
+  PlateauRepository,
+  TournamentRepository,
+  TrainingSessionRepository,
+} from "./repositories";
 
 export interface TeamStats {
   trainingCount: number;
@@ -8,25 +13,28 @@ export interface TeamStats {
   matchesPlayed: number;
   matchesScheduled: number;
   tournamentCount: number;
+  plateauCount: number;
   trainingAttendance: AttendanceSummary;
   matchAttendance: AttendanceSummary;
 }
 
 // Lit et agrège en mémoire (pas de SQL brut, contrairement à MetricsService qui a besoin de
 // regrouper par semaine calendaire) : le volume par éducateur (ses propres séances/matchs/
-// tournois) reste petit, un simple `Array.filter`/`flatMap` suffit et reste lisible.
+// tournois/plateaux) reste petit, un simple `Array.filter`/`flatMap` suffit et reste lisible.
 export class StatsService {
   constructor(
     private readonly trainingSessionRepository: TrainingSessionRepository,
     private readonly matchRepository: MatchRepository,
     private readonly tournamentRepository: TournamentRepository,
+    private readonly plateauRepository: PlateauRepository,
   ) {}
 
   async get(educatorId: string): Promise<TeamStats> {
-    const [sessions, matches, tournaments] = await Promise.all([
+    const [sessions, matches, tournaments, plateaux] = await Promise.all([
       this.trainingSessionRepository.listByEducator(educatorId),
       this.matchRepository.listByEducator(educatorId),
       this.tournamentRepository.listByEducator(educatorId),
+      this.plateauRepository.listByEducator(educatorId),
     ]);
 
     const trainingAttendanceEntries: AttendanceEntry[] = sessions.flatMap((session) => [...(session.attendance ?? [])]);
@@ -38,6 +46,7 @@ export class StatsService {
       matchesPlayed: matches.filter((match) => match.status === "played").length,
       matchesScheduled: matches.filter((match) => match.status === "scheduled").length,
       tournamentCount: tournaments.length,
+      plateauCount: plateaux.length,
       trainingAttendance: summarizeAttendance(trainingAttendanceEntries),
       matchAttendance: summarizeAttendance(matchAttendanceEntries),
     };

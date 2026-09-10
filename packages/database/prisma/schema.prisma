@@ -68,6 +68,7 @@ model Educator {
   players           Player[]
   matches           MatchRecord[]
   tournaments       TournamentRecord[]
+  plateaux          PlateauRecord[]
   playerEvaluations PlayerEvaluationRecord[]
   createdAt         DateTime                 @default(now()) @map("created_at")
   updatedAt         DateTime                 @updatedAt @map("updated_at")
@@ -258,6 +259,21 @@ model TournamentRecord {
 
   @@index([educatorId])
   @@map("tournaments")
+}
+
+// Fiche simple d'un plateau (rassemblement U6–U11) -- même forme que TournamentRecord, comptée à
+// part dans /statistiques.
+model PlateauRecord {
+  id         String   @id @default(uuid()) @db.Uuid
+  educatorId String   @db.Uuid @map("educator_id")
+  educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  name       String
+  dateLabel  String   @map("date_label")
+  result     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([educatorId])
+  @@map("plateaux")
 }
 
 // Évaluation courante d'un joueur sur les 7 aspects de la toile d'araignée (voir
