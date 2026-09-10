@@ -1,0 +1,36 @@
+.seances-shell { min-height: 100vh; background: var(--paper); padding-left: 264px; }
+/* Structure/hauteur/fond venant de .page-header (globals.css) -- ne garde ici que le padding
+   horizontal propre à cette page, aligné sur la largeur de .seances-content en dessous et sur
+   celle des autres pages principales (1280px, voir Vue d'ensemble). */
+.seances-header { padding-left: max(25px, calc((100% - 1280px) / 2)); padding-right: max(25px, calc((100% - 1280px) / 2)); }
+.seances-create { align-self: center; min-height: 40px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+
+.seances-content { width: min(1280px, calc(100% - 40px)); margin: 30px auto 60px; display: grid; gap: 16px; }
+.seances-library-link { justify-self: start; color: var(--accent); font-weight: 800; font-size: 12px; text-decoration: none; }
+.seances-auth, .seances-hint { margin: 0; color: var(--muted); font-size: 12px; }
+.seances-auth a, .seances-hint a { color: var(--accent); font-weight: 800; text-decoration: none; }
+
+.seances-week { padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.seances-week.active { border-color: var(--accent); }
+.seances-week-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.seances-week-head > div { display: flex; gap: 12px; align-items: flex-start; }
+.seances-week-number { flex: 0 0 auto; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--surface-2); color: var(--accent-dark); font-size: 12px; font-weight: 800; }
+.seances-week-head h2 { margin: 0 0 3px; font-size: 14px; }
+.seances-week-head p { margin: 0; color: var(--muted); font-size: 11px; }
+.seances-week-tag { flex: 0 0 auto; padding: 5px 10px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+
+.seances-slot-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.seances-slot { display: flex; flex-direction: column; gap: 6px; }
+.seances-slot-label { color: var(--muted); font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; }
+.seances-slot-card { display: flex; flex-direction: column; gap: 4px; padding: 13px 15px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); text-decoration: none; color: var(--ink); }
+.seances-slot-card strong { font-size: 12.5px; }
+.seances-slot-card span { color: var(--muted); font-size: 11px; }
+.seances-slot-card.generated { border-color: var(--accent-dark); }
+.seances-slot-card.pending { border-style: dashed; }
+.seances-slot-cta { color: var(--accent) !important; font-weight: 800; font-size: 11px; }
+
+.seances-foot { margin: 4px 0 0; color: var(--muted); font-size: 11px; text-align: center; }
+
+@media (max-width: 950px) {
+  .seances-shell { padding-left: 0; padding-bottom: 90px; }
+}

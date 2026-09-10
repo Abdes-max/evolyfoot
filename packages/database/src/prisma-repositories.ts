@@ -258,20 +258,39 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
       theme: DevelopmentTheme;
       intention: string;
       blocks: PersistedTrainingSessionBlock[];
+      weekNumber: number;
+      slot: number;
       attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedTrainingSession> {
+    const blocks = input.blocks as unknown as Prisma.InputJsonValue;
+    const attendance = input.attendance ? (input.attendance as unknown as Prisma.InputJsonValue) : undefined;
     try {
-      const record = await this.prisma.trainingSessionRecord.create({
-        data: {
+      // Upsert sur le créneau : (re)générer la séance d'un créneau déjà occupé la remplace.
+      const record = await this.prisma.trainingSessionRecord.upsert({
+        where: {
+          training_session_slot: { educatorId, weekNumber: input.weekNumber, slot: input.slot },
+        },
+        create: {
           educatorId,
           title: input.title,
           ageGroup: toPrismaAgeGroup(input.ageGroup),
           playerCount: input.playerCount,
           theme: toPrismaDevelopmentTheme(input.theme),
           intention: input.intention,
-          blocks: input.blocks as unknown as Prisma.InputJsonValue,
-          attendance: input.attendance ? (input.attendance as unknown as Prisma.InputJsonValue) : undefined,
+          blocks,
+          weekNumber: input.weekNumber,
+          slot: input.slot,
+          attendance,
+        },
+        update: {
+          title: input.title,
+          ageGroup: toPrismaAgeGroup(input.ageGroup),
+          playerCount: input.playerCount,
+          theme: toPrismaDevelopmentTheme(input.theme),
+          intention: input.intention,
+          blocks,
+          ...(attendance !== undefined ? { attendance } : {}),
         },
       });
       return toPersistedTrainingSession(record);
@@ -283,6 +302,11 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
   async listByEducator(educatorId: string): Promise<PersistedTrainingSession[]> {
     const records = await this.prisma.trainingSessionRecord.findMany({ where: { educatorId }, orderBy: { createdAt: "desc" } });
     return records.map(toPersistedTrainingSession);
+  }
+
+  async findById(id: string, educatorId: string): Promise<PersistedTrainingSession | null> {
+    const record = await this.prisma.trainingSessionRecord.findFirst({ where: { id, educatorId } });
+    return record ? toPersistedTrainingSession(record) : null;
   }
 }
 

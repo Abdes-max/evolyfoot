@@ -10,6 +10,7 @@ import "./match.css";
 import "./observations.css";
 import "./charts.css";
 import "./statistics.css";
+import "./seances.css";
 import { AuthGate } from "./auth-gate";
 
 export const metadata: Metadata = {

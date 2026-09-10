@@ -276,6 +276,8 @@ export function toPersistedTrainingSession(record: PrismaTrainingSessionRecord):
     // l'écrit (voir TrainingSessionService.create, qui reconstruit et valide la séance avant
     // d'appeler ce dépôt).
     blocks: record.blocks as unknown as PersistedTrainingSessionBlock[],
+    weekNumber: record.weekNumber,
+    slot: record.slot,
     attendance: toAttendanceEntries(record.attendance),
     createdAt: record.createdAt,
   });

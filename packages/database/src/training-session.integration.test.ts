@@ -38,6 +38,8 @@ const validInput: TrainingSessionInput = {
     activityId: block.activity.id,
     durationMinutes: block.durationMinutes,
   })),
+  weekNumber: 1,
+  slot: 0,
 };
 
 async function createEducator(suffix: string) {
@@ -59,14 +61,35 @@ describe("PostgreSQL training session persistence", () => {
   afterEach(removeTestEducators);
   afterAll(() => database.disconnect());
 
-  it("creates a new history record on every save, unlike the single-record team/diagnostic", async () => {
+  it("keeps one record per cycle slot, several per educator", async () => {
     const educator = await createEducator("history");
-    await service.save(educator.id, validInput);
-    await service.save(educator.id, validInput);
+    await service.save(educator.id, { ...validInput, weekNumber: 1, slot: 0 });
+    await service.save(educator.id, { ...validInput, weekNumber: 1, slot: 1 });
 
     await expect(
       database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } }),
     ).resolves.toBe(2);
+  });
+
+  it("replaces (upserts) the session already stored for a cycle slot", async () => {
+    const educator = await createEducator("upsert-slot");
+    const first = await service.save(educator.id, { ...validInput, weekNumber: 2, slot: 0, title: "Séance A" });
+    const second = await service.save(educator.id, { ...validInput, weekNumber: 2, slot: 0, title: "Séance B" });
+
+    expect(second.id).toBe(first.id);
+    expect(second.title).toBe("Séance B");
+    await expect(
+      database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } }),
+    ).resolves.toBe(1);
+  });
+
+  it("fetches a saved session by id, scoped to its educator", async () => {
+    const educator = await createEducator("find-by-id");
+    const other = await createEducator("find-by-id-other");
+    const saved = await service.save(educator.id, validInput);
+
+    await expect(service.getById(educator.id, saved.id)).resolves.toMatchObject({ id: saved.id });
+    await expect(service.getById(other.id, saved.id)).resolves.toBeNull();
   });
 
   it("round-trips the theme enum and the block list", async () => {

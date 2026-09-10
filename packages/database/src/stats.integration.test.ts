@@ -38,7 +38,10 @@ const demoWeek = {
   observable: "Les joueurs identifient le moment de la perte.",
 };
 
-function sessionInput(attendance?: Array<{ playerId: string; playerName: string; present: boolean }>) {
+function sessionInput(
+  attendance?: Array<{ playerId: string; playerName: string; present: boolean }>,
+  slot = 0,
+) {
   const generated = generateTrainingSession(demoWeek, "U12", 14);
   return {
     title: generated.title,
@@ -47,6 +50,8 @@ function sessionInput(attendance?: Array<{ playerId: string; playerName: string;
     theme: generated.theme,
     intention: generated.intention,
     blocks: generated.blocks.map((block) => ({ id: block.id, activityId: block.activity.id, durationMinutes: block.durationMinutes })),
+    weekNumber: 1,
+    slot,
     ...(attendance ? { attendance } : {}),
   };
 }
@@ -72,8 +77,8 @@ describe("PostgreSQL stats aggregation", () => {
     const owner = await createEducator("counts-owner");
     const stranger = await createEducator("counts-stranger");
 
-    await trainingSessionService.save(owner.id, sessionInput());
-    await trainingSessionService.save(owner.id, sessionInput());
+    await trainingSessionService.save(owner.id, sessionInput(undefined, 0));
+    await trainingSessionService.save(owner.id, sessionInput(undefined, 1));
     await matchService.create(owner.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
     await tournamentService.create(owner.id, { name: "Tournoi de printemps", dateLabel: "12 avril 2026" });
     await trainingSessionService.save(stranger.id, sessionInput());
@@ -91,17 +96,23 @@ describe("PostgreSQL stats aggregation", () => {
     const educator = await createEducator("training-attendance");
     await trainingSessionService.save(
       educator.id,
-      sessionInput([
-        { playerId: "p1", playerName: "Lina", present: true },
-        { playerId: "p2", playerName: "Noah", present: false },
-      ]),
+      sessionInput(
+        [
+          { playerId: "p1", playerName: "Lina", present: true },
+          { playerId: "p2", playerName: "Noah", present: false },
+        ],
+        0,
+      ),
     );
     await trainingSessionService.save(
       educator.id,
-      sessionInput([
-        { playerId: "p1", playerName: "Lina", present: true },
-        { playerId: "p2", playerName: "Noah", present: true },
-      ]),
+      sessionInput(
+        [
+          { playerId: "p1", playerName: "Lina", present: true },
+          { playerId: "p2", playerName: "Noah", present: true },
+        ],
+        1,
+      ),
     );
 
     const stats = await statsService.get(educator.id);

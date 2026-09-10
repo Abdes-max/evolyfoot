@@ -33,7 +33,7 @@ export { RosterService } from "./roster-service";
 export { StatsService } from "./stats-service";
 export { TeamProfileService } from "./team-profile-service";
 export { TournamentService } from "./tournament-service";
-export { TrainingSessionService } from "./training-session-service";
+export { TrainingSessionService, trainingCycleWeekCount } from "./training-session-service";
 export type { AuthenticatedSession } from "./auth-service";
 export type { FunnelStep, MvpMetrics, WeeklyActivityPoint } from "./metrics-service";
 export type { TeamStats } from "./stats-service";

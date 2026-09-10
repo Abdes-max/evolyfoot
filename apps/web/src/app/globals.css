@@ -141,6 +141,9 @@ nav { display:flex; flex-direction:column; gap:4px; }
 a.week-calendar-badge:hover,a.week-calendar-badge:focus-visible{transform:scale(1.1)}
 .week-calendar-badge svg{width:14px;height:14px}
 .week-calendar-badge.training{background:var(--accent);color:var(--accent-ink)}
+/* Jour d'entraînement dont la séance n'est pas encore générée : pastille creuse (contour, fond
+   transparent) plutôt que pleine, pour la distinguer d'une séance prête au premier coup d'œil. */
+.week-calendar-badge.training.pending{background:transparent;color:var(--accent-dark);border:1px dashed var(--accent-dark)}
 .week-calendar-badge.match{background:var(--good);color:#06210f}
 .week-calendar-badge.other{background:var(--info);color:#0b1330}
 .week-calendar-legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
@@ -357,6 +360,8 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 .session-header{padding:38px max(25px,calc((100vw - 920px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink)}
 .session-header h1{margin:10px 0 8px;font-size:34px;letter-spacing:-1px}
 .session-header p{max-width:640px;margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.session-loading,.session-missing{width:min(920px,calc(100% - 40px));margin:40px auto 60px;color:var(--muted);font-size:13px}
+.session-missing p{margin:0 0 14px}
 .session-builder{width:min(920px,calc(100% - 40px));margin:30px auto 60px}
 .session-builder-summary{display:flex;justify-content:space-between;gap:25px;align-items:flex-start;padding:22px;background:var(--surface);border:1px solid var(--line);border-radius:16px}
 .session-builder-summary h2{margin:6px 0;font-size:21px}

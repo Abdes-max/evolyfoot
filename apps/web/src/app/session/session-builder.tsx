@@ -24,6 +24,13 @@ interface SessionBuilderProps {
   onChange: (session: TrainingSession) => void;
   roster: readonly RosterPlayer[];
   session: TrainingSession;
+  // Créneau du cycle où la séance est enregistrée (upsert sur (éducateur, semaine, slot)).
+  weekNumber: number;
+  slot: number;
+  // "create" : nouvelle séance générée pour un créneau, on saisit la présence. "edit" : on ré-ouvre
+  // une séance déjà enregistrée pour ajuster son déroulé -- la présence, saisie à la préparation,
+  // n'est pas redemandée (et n'est pas réécrite) ici.
+  mode?: "create" | "edit";
 }
 
 const kindLabels = {
@@ -37,7 +44,16 @@ type SaveState = "idle" | "pending" | "success" | "error" | "auth-required";
 
 // Composant contrôlé : `session` vient du parent (qui charge le profil réel au montage), pour ne
 // jamais figer une copie locale figée sur la séance de démonstration initiale.
-export function SessionBuilder({ authenticated, onChange, roster, session }: SessionBuilderProps) {
+export function SessionBuilder({
+  authenticated,
+  onChange,
+  roster,
+  session,
+  weekNumber,
+  slot,
+  mode = "create",
+}: SessionBuilderProps) {
+  const capturesAttendance = mode === "create" && roster.length > 0;
   const [validationStatus, setValidationStatus] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   // Ensemble des absents plutôt qu'une carte complète pré-remplie pour tout l'effectif : tout le
@@ -74,11 +90,13 @@ export function SessionBuilder({ authenticated, onChange, roster, session }: Ses
 
     setSaveState("pending");
     try {
-      const attendance: AttendanceEntry[] = roster.map((player) => ({
-        playerId: player.id,
-        playerName: player.name,
-        present: !absentPlayerIds.has(player.id),
-      }));
+      const attendance: AttendanceEntry[] = capturesAttendance
+        ? roster.map((player) => ({
+            playerId: player.id,
+            playerName: player.name,
+            present: !absentPlayerIds.has(player.id),
+          }))
+        : [];
       const response = await fetch("/api/sessions", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -93,6 +111,8 @@ export function SessionBuilder({ authenticated, onChange, roster, session }: Ses
             activityId: block.activity.id,
             durationMinutes: block.durationMinutes,
           })),
+          weekNumber,
+          slot,
           ...(attendance.length > 0 ? { attendance } : {}),
         }),
       });
@@ -160,7 +180,7 @@ export function SessionBuilder({ authenticated, onChange, roster, session }: Ses
         );})}
       </ol>
 
-      {roster.length > 0 && (
+      {capturesAttendance && (
         <section aria-labelledby="session-attendance-title" className="session-attendance">
           <h2 id="session-attendance-title">Présence</h2>
           <p>Décoche les joueurs absents.</p>
@@ -189,7 +209,7 @@ export function SessionBuilder({ authenticated, onChange, roster, session }: Ses
         )}
         {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
         {validationStatus && <Link className="observation-session-link" href="/observation?type=training">Observer cette séance →</Link>}
-        {validationStatus && <Link className="back-link" href="/">Retour au tableau de bord</Link>}
+        {validationStatus && <Link className="back-link" href="/seances">Voir toutes mes séances</Link>}
       </div>
     </section>
   );

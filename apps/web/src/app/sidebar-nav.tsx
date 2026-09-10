@@ -12,7 +12,9 @@ import { SidebarIdentity } from "./sidebar-identity";
 const navItems: ReadonlyArray<{ href: string; label: string; icon: typeof HomeIcon }> = [
   { href: "/", label: "Vue d'ensemble", icon: HomeIcon },
   { href: "/plan", label: "Plan de progression", icon: TargetIcon },
-  { href: "/bibliotheque", label: "Séances", icon: CalendarIcon },
+  // La bibliothèque d'exercices n'est pas dans le menu : on y accède depuis la page Séances
+  // (elle sert à composer une séance, pas de destination autonome).
+  { href: "/seances", label: "Séances", icon: CalendarIcon },
   { href: "/match", label: "Matchs", icon: BallIcon },
   { href: "/observations", label: "Observations", icon: EyeIcon },
   { href: "/statistiques", label: "Statistiques", icon: ChartIcon },

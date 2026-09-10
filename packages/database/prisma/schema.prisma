@@ -104,6 +104,13 @@ model TrainingSessionRecord {
   theme       DevelopmentTheme
   intention   String
   blocks      Json
+  // Créneau de la séance dans le cycle de 4 semaines du plan de progression : `weekNumber` (1 à 4,
+  // aligné sur DevelopmentPlan.weeks) et `slot` (index 0-basé dans les jours d'entraînement de
+  // l'équipe). Une seule séance par créneau (contrainte d'unicité) : la (re)générer remplace la
+  // précédente. Le calendrier du tableau de bord s'en sert pour ouvrir la bonne séance ou signaler
+  // « non générée ».
+  weekNumber  Int              @default(1) @map("week_number")
+  slot        Int              @default(0)
   // Présence à cette séance (id + nom de joueur dupliqués, voir AttendanceEntry côté domaine et
   // MatchRecord.lineup pour le même principe) -- nullable : une séance validée avant
   // l'introduction du suivi de présence n'en a pas, distingué d'une liste vide (`[]`, présence
@@ -111,6 +118,7 @@ model TrainingSessionRecord {
   attendance  Json?
   createdAt   DateTime         @default(now()) @map("created_at")
 
+  @@unique([educatorId, weekNumber, slot], name: "training_session_slot")
   @@index([educatorId])
   @@map("training_sessions")
 }

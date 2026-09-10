@@ -52,6 +52,8 @@ const validSession = {
   theme: generated.theme,
   intention: generated.intention,
   blocks: generated.blocks.map((block) => ({ id: block.id, activityId: block.activity.id, durationMinutes: block.durationMinutes })),
+  weekNumber: 1,
+  slot: 0,
 };
 
 function completeDraft(): ObservationDraft {
@@ -90,7 +92,7 @@ describe("PostgreSQL MVP metrics", () => {
     await trainingSessionService.save(withSession.id, validSession);
     // Une deuxième séance pour le même éducateur ne doit pas être comptée deux fois dans
     // l'entonnoir (compte d'éducateurs distincts, pas de lignes).
-    await trainingSessionService.save(withSession.id, validSession);
+    await trainingSessionService.save(withSession.id, { ...validSession, slot: 1 });
 
     const metrics = await metricsService.get();
     const byLabel = Object.fromEntries(metrics.funnel.map((step) => [step.label, step.count]));
