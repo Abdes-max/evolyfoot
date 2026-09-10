@@ -18,6 +18,11 @@ button { cursor:pointer; }
    respectives) réserve donc lui-même l'espace via `padding-left`, remis à 0 sous 950px où le
    sidebar devient une barre d'onglets fixée en bas plutôt qu'une colonne à gauche. */
 .shell { min-height:100vh; padding-left:264px; }
+/* Doit être définie ici, avant la règle mobile ci-dessous (ligne ~136) qui la remet à 0 : sinon,
+   à spécificité égale, une règle non conditionnelle plus tardive dans le fichier l'emporterait à
+   toutes les largeurs d'écran -- c'est exactement le bug qui rendait /plan non responsive sur
+   mobile (le contenu restait poussé de 264px, débordant hors de l'écran) avant ce correctif. */
+.plan-shell{min-height:100vh;background:var(--paper);padding-left:264px}
 
 .sidebar { position:fixed; left:0; top:0; z-index:20; width:264px; height:100vh; padding:32px 24px 24px; background:var(--surface); border-right:1px solid var(--line); display:flex; flex-direction:column; }
 
@@ -267,7 +272,6 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 }
 
 .diagnostic-result>a{color:var(--accent-dark);font-size:10px;font-weight:800}
-.plan-shell{min-height:100vh;background:var(--paper);padding-left:264px}
 
 /* En-tête partagé par toutes les pages principales de la navigation (Plan, Séances, Mon équipe,
    Matchs) : logo à gauche, titre + description au centre, repère optionnel à droite -- hauteur
