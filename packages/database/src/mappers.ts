@@ -1,6 +1,7 @@
 import { defaultFormationId } from "@evolyfoot/domain";
 import type {
   AgeGroup as DomainAgeGroup,
+  AttendanceEntry,
   DevelopmentTheme as DomainDevelopmentTheme,
   GameFormat,
   MatchLineupAssignment,
@@ -9,6 +10,7 @@ import type {
   ObservationEventType as DomainObservationEventType,
   ObservationReportRating,
   ObservationReportSummary,
+  PlayerEvaluationScores,
   PlayerReference,
   PlayerSignal,
   TeamProfile,
@@ -28,8 +30,10 @@ import type {
   MatchRecord as PrismaMatchRecord,
   ObservationRecord as PrismaObservationRecord,
   Player as PrismaPlayer,
+  PlayerEvaluationRecord as PrismaPlayerEvaluationRecord,
   Session,
   Team,
+  TournamentRecord as PrismaTournamentRecord,
   TrainingSessionRecord as PrismaTrainingSessionRecord,
 } from "./generated/prisma/client";
 import type {
@@ -39,11 +43,20 @@ import type {
   PersistedMatch,
   PersistedObservation,
   PersistedPlayer,
+  PersistedPlayerEvaluation,
   PersistedTeamProfile,
+  PersistedTournament,
   PersistedTrainingSession,
   PersistedTrainingSessionBlock,
   SessionRecord,
 } from "./repositories";
+
+// `attendance` est un Json Prisma nullable : `null` (jamais saisi) devient `undefined` côté
+// domaine, distingué d'un tableau vide (saisi mais personne de présent) -- voir le commentaire
+// sur PersistedTrainingSession.attendance/PersistedMatch.attendance.
+function toAttendanceEntries(value: unknown): readonly AttendanceEntry[] | undefined {
+  return value === null || value === undefined ? undefined : (value as readonly AttendanceEntry[]);
+}
 
 function exhaustive(value: never): never {
   throw new Error(`Valeur d’énumération inconnue : ${String(value)}`);
@@ -263,6 +276,7 @@ export function toPersistedTrainingSession(record: PrismaTrainingSessionRecord):
     // l'écrit (voir TrainingSessionService.create, qui reconstruit et valide la séance avant
     // d'appeler ce dépôt).
     blocks: record.blocks as unknown as PersistedTrainingSessionBlock[],
+    attendance: toAttendanceEntries(record.attendance),
     createdAt: record.createdAt,
   });
 }
@@ -301,7 +315,31 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     status: fromPrismaMatchStatus(record.status),
     lineup: record.lineup as unknown as readonly MatchLineupAssignment[],
     captainPlayerId: record.captainPlayerId,
+    attendance: toAttendanceEntries(record.attendance),
     createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  });
+}
+
+export function toPersistedTournament(record: PrismaTournamentRecord): PersistedTournament {
+  return Object.freeze({
+    id: record.id,
+    educatorId: record.educatorId,
+    name: record.name,
+    dateLabel: record.dateLabel,
+    result: record.result,
+    createdAt: record.createdAt,
+  });
+}
+
+export function toPersistedPlayerEvaluation(record: PrismaPlayerEvaluationRecord): PersistedPlayerEvaluation {
+  return Object.freeze({
+    id: record.id,
+    educatorId: record.educatorId,
+    playerId: record.playerId,
+    // `scores` est un Json Prisma : on fait confiance à sa forme, seul ce paquet l'écrit (voir
+    // PlayerEvaluationService.save, qui valide les scores avant d'appeler ce dépôt).
+    scores: record.scores as unknown as PlayerEvaluationScores,
     updatedAt: record.updatedAt,
   });
 }

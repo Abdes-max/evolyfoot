@@ -76,6 +76,10 @@ class InMemoryTrainingSessionRepository implements TrainingSessionRepository {
     this.created.push(record);
     return record;
   }
+
+  async listByEducator(educatorId: string): Promise<PersistedTrainingSession[]> {
+    return this.created.filter((session) => session.educatorId === educatorId);
+  }
 }
 
 describe("TrainingSessionService.save", () => {

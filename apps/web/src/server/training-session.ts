@@ -1,5 +1,5 @@
 import { EducatorNotFoundError } from "@evolyfoot/database";
-import { ageGroups, type AgeGroup, type DevelopmentTheme } from "@evolyfoot/domain";
+import { ageGroups, type AgeGroup, type AttendanceEntry, type DevelopmentTheme } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface TrainingSessionBlockInput {
@@ -15,6 +15,7 @@ export interface TrainingSessionInput {
   theme: DevelopmentTheme;
   intention: string;
   blocks: readonly TrainingSessionBlockInput[];
+  attendance?: readonly AttendanceEntry[];
 }
 
 export interface PersistedTrainingSession extends TrainingSessionInput {
@@ -57,6 +58,14 @@ function isBlockShaped(value: unknown): value is TrainingSessionBlockInput {
   );
 }
 
+function isAttendanceEntryShaped(value: unknown): value is AttendanceEntry {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const entry = value as Record<string, unknown>;
+  return typeof entry.playerId === "string" && typeof entry.playerName === "string" && typeof entry.present === "boolean";
+}
+
 function isTrainingSessionInputShaped(
   value: Record<string, unknown> | null,
 ): value is Record<string, unknown> & TrainingSessionInput {
@@ -73,7 +82,8 @@ function isTrainingSessionInputShaped(
     typeof value.intention === "string" &&
     Array.isArray(value.blocks) &&
     value.blocks.length > 0 &&
-    value.blocks.every(isBlockShaped)
+    value.blocks.every(isBlockShaped) &&
+    (value.attendance === undefined || (Array.isArray(value.attendance) && value.attendance.every(isAttendanceEntryShaped)))
   );
 }
 
@@ -135,6 +145,7 @@ export async function createTrainingSessionGateway(): Promise<{
           theme: session.theme,
           intention: session.intention,
           blocks: session.blocks,
+          ...(session.attendance ? { attendance: session.attendance } : {}),
           createdAt: session.createdAt.toISOString(),
         };
       },

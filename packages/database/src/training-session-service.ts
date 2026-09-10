@@ -1,5 +1,5 @@
 import { ageGroups, canValidateSession, findTrainingActivity } from "@evolyfoot/domain";
-import type { AgeGroup, DevelopmentTheme, TrainingBlock, TrainingSession } from "@evolyfoot/domain";
+import type { AgeGroup, AttendanceEntry, DevelopmentTheme, TrainingBlock, TrainingSession } from "@evolyfoot/domain";
 import { EducatorNotFoundError, ValidationError } from "./errors";
 import type {
   EducatorRepository,
@@ -14,6 +14,7 @@ export interface TrainingSessionInput {
   theme: DevelopmentTheme;
   intention: string;
   blocks: ReadonlyArray<{ id: string; activityId: string; durationMinutes: number }>;
+  attendance?: ReadonlyArray<AttendanceEntry>;
 }
 
 // Pas de constante partagée côté domaine pour les thèmes (contrairement à `ageGroups`) : on la
@@ -80,6 +81,7 @@ export class TrainingSessionService {
         activityId: block.activityId,
         durationMinutes: block.durationMinutes,
       })),
+      ...(input.attendance ? { attendance: input.attendance } : {}),
     });
   }
 }

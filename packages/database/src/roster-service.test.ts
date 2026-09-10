@@ -31,6 +31,11 @@ class InMemoryPlayerRepository implements PlayerRepository {
     return [...this.players.values()].filter((player) => player.educatorId === educatorId);
   }
 
+  async findById(id: string, educatorId: string): Promise<PersistedPlayer | null> {
+    const player = this.players.get(id);
+    return player && player.educatorId === educatorId ? player : null;
+  }
+
   async create(educatorId: string, name: string): Promise<PersistedPlayer> {
     this.sequence += 1;
     const player: PersistedPlayer = {

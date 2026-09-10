@@ -71,6 +71,14 @@
 .match-captain-row span { color: var(--ink); font-size: 11.5px; font-weight: 800; }
 .match-captain-row select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; color: var(--ink); font-size: 12px; }
 
+.match-attendance { margin-bottom: 18px; padding: 15px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.match-attendance h2 { margin: 0 0 3px; font-size: 12.5px; }
+.match-attendance > p { margin: 0 0 11px; color: var(--muted); font-size: 10.5px; }
+.match-attendance-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 7px; }
+.match-attendance-list label { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); color: var(--ink); font-size: 11px; font-weight: 700; }
+.match-attendance-list label.absent { color: var(--muted); text-decoration: line-through; }
+.match-attendance-list input { accent-color: var(--accent); }
+
 .match-back-link { display: block; width: min(1280px, calc(100% - 40px)); margin: 0 auto 40px; }
 
 @media (max-width: 950px) {

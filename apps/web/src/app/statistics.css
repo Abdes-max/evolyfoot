@@ -1,0 +1,50 @@
+.statistics-shell { min-height: 100vh; background: var(--paper); padding-left: 264px; }
+/* Structure/hauteur/fond venant de .page-header (globals.css) -- ne garde ici que le padding
+   horizontal propre à cette page, aligné sur la largeur de .statistics-content en dessous et sur
+   celle des autres pages principales (1280px, voir Vue d'ensemble). */
+.statistics-header { padding-left: max(25px, calc((100% - 1280px) / 2)); padding-right: max(25px, calc((100% - 1280px) / 2)); }
+
+.statistics-auth-required { width: min(1280px, calc(100% - 40px)); margin: 30px auto; }
+.statistics-auth-required p { margin: 0; color: var(--muted); font-size: 12px; }
+
+.statistics-content { width: min(1280px, calc(100% - 40px)); margin: 30px auto 60px; display: grid; gap: 18px; }
+.statistics-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 20px 0; margin: 0; }
+
+.statistics-block { padding: 20px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.statistics-block h2 { margin: 0 0 16px; font-size: 15px; }
+.statistics-hint { margin: 14px 0 0; color: var(--muted); font-size: 11.5px; text-align: center; }
+
+.statistics-attendance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+.statistics-tournament-form { display: grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap: 10px; margin-bottom: 14px; }
+.statistics-tournament-form input { border: 1px solid var(--line); background: var(--surface-2); border-radius: 9px; padding: 11px 13px; color: var(--ink); font-size: 12.5px; }
+.statistics-tournament-form button { min-height: 44px; border: 0; border-radius: 9px; padding: 0 16px; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 800; }
+.statistics-tournament-form button:disabled { cursor: not-allowed; opacity: .48; }
+
+.statistics-tournament-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.statistics-tournament-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); flex-wrap: wrap; }
+.statistics-tournament-list strong { display: block; font-size: 12.5px; }
+.statistics-tournament-list span { color: var(--muted); font-size: 11px; }
+.statistics-tournament-list button { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: var(--surface); color: var(--ink); font-size: 10px; font-weight: 800; }
+
+.statistics-evaluation { display: grid; grid-template-columns: 1fr auto; gap: 26px; align-items: start; }
+.statistics-evaluation-form { display: flex; flex-direction: column; gap: 12px; min-width: 260px; }
+.statistics-evaluation-form label { font-size: 11px; font-weight: 800; color: var(--ink); }
+.statistics-evaluation-form select { border: 1px solid var(--line); background: var(--surface-2); border-radius: 9px; padding: 10px 12px; color: var(--ink); font-size: 12.5px; }
+.statistics-evaluation-row { display: grid; grid-template-columns: 90px 1fr 20px; align-items: center; gap: 10px; }
+.statistics-evaluation-row span { font-size: 11.5px; color: var(--muted); font-weight: 700; }
+.statistics-evaluation-row input[type="range"] { width: 100%; accent-color: var(--accent); }
+.statistics-evaluation-row strong { font-size: 12px; text-align: right; }
+.statistics-evaluation-form button { min-height: 44px; border: 0; border-radius: 9px; padding: 0 16px; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 800; margin-top: 4px; }
+.statistics-evaluation-form button:disabled { cursor: not-allowed; opacity: .48; }
+.statistics-saved { margin: 0; color: var(--good); font-size: 11px; font-weight: 700; }
+
+@media (max-width: 950px) {
+  .statistics-shell { padding-left: 0; padding-bottom: 90px; }
+}
+
+@media (max-width: 760px) {
+  .statistics-attendance-grid { grid-template-columns: 1fr; }
+  .statistics-tournament-form { grid-template-columns: 1fr; }
+  .statistics-evaluation { grid-template-columns: 1fr; justify-items: center; }
+}

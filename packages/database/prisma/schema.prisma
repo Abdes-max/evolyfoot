@@ -45,19 +45,21 @@ enum MatchStatus {
 }
 
 model Educator {
-  id               String                   @id @default(uuid()) @db.Uuid
-  email            String                   @unique
-  displayName      String                   @map("display_name")
-  passwordHash     String                   @map("password_hash")
-  team             Team?
-  diagnostic       Diagnostic?
-  sessions         Session[]
-  trainingSessions TrainingSessionRecord[]
-  observations     ObservationRecord[]
-  players          Player[]
-  matches          MatchRecord[]
-  createdAt        DateTime                 @default(now()) @map("created_at")
-  updatedAt        DateTime                 @updatedAt @map("updated_at")
+  id                String                   @id @default(uuid()) @db.Uuid
+  email             String                   @unique
+  displayName       String                   @map("display_name")
+  passwordHash      String                   @map("password_hash")
+  team              Team?
+  diagnostic        Diagnostic?
+  sessions          Session[]
+  trainingSessions  TrainingSessionRecord[]
+  observations      ObservationRecord[]
+  players           Player[]
+  matches           MatchRecord[]
+  tournaments       TournamentRecord[]
+  playerEvaluations PlayerEvaluationRecord[]
+  createdAt         DateTime                 @default(now()) @map("created_at")
+  updatedAt         DateTime                 @updatedAt @map("updated_at")
 
   @@map("educators")
 }
@@ -102,6 +104,11 @@ model TrainingSessionRecord {
   theme       DevelopmentTheme
   intention   String
   blocks      Json
+  // Présence à cette séance (id + nom de joueur dupliqués, voir AttendanceEntry côté domaine et
+  // MatchRecord.lineup pour le même principe) -- nullable : une séance validée avant
+  // l'introduction du suivi de présence n'en a pas, distingué d'une liste vide (`[]`, présence
+  // saisie mais personne de présent) dans les agrégats de /statistiques.
+  attendance  Json?
   createdAt   DateTime         @default(now()) @map("created_at")
 
   @@index([educatorId])
@@ -163,12 +170,13 @@ model Team {
 // append-only de TrainingSessionRecord/ObservationRecord) : un joueur peut être renommé ou
 // retiré à tout moment.
 model Player {
-  id         String   @id @default(uuid()) @db.Uuid
-  educatorId String   @db.Uuid @map("educator_id")
-  educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  id         String                  @id @default(uuid()) @db.Uuid
+  educatorId String                  @db.Uuid @map("educator_id")
+  educator   Educator                @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   name       String
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  evaluation PlayerEvaluationRecord?
+  createdAt  DateTime                @default(now()) @map("created_at")
+  updatedAt  DateTime                @updatedAt @map("updated_at")
 
   @@index([educatorId])
   @@map("players")
@@ -197,10 +205,49 @@ model MatchRecord {
   status          MatchStatus         @default(scheduled)
   lineup          Json                @default("[]")
   captainPlayerId String?             @map("captain_player_id")
+  // Présence à ce match -- distincte de `lineup` (qui joueur est *prévu* à quel poste) : un
+  // joueur peut être prévu dans la composition et ne pas s'être présenté, ou inversement.
+  // Nullable pour la même raison que TrainingSessionRecord.attendance ci-dessus.
+  attendance      Json?
   observations    ObservationRecord[]
   createdAt       DateTime            @default(now()) @map("created_at")
   updatedAt       DateTime            @updatedAt @map("updated_at")
 
   @@index([educatorId])
   @@map("matches")
+}
+
+// Fiche simple (nom, date, bilan) comptée à part des matchs dans /statistiques -- pas de
+// composition ni de matchs individuels rattachés, contrairement à MatchRecord.
+model TournamentRecord {
+  id         String   @id @default(uuid()) @db.Uuid
+  educatorId String   @db.Uuid @map("educator_id")
+  educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  name       String
+  dateLabel  String   @map("date_label")
+  result     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([educatorId])
+  @@map("tournaments")
+}
+
+// Évaluation courante d'un joueur sur les 7 aspects de la toile d'araignée (voir
+// PlayerEvaluationScores côté domaine) -- un seul enregistrement par joueur, mis à jour en place
+// (même principe que Diagnostic, pas un historique append-only) : `playerId` est donc unique,
+// pas juste indexé. `onDelete: Cascade` sur `player` (contrairement à ObservationRecord.players,
+// qui duplique id+nom sans clé étrangère) : une évaluation n'a de sens que pour un joueur présent
+// dans l'effectif courant, ce n'est pas une photo figée d'un instant passé.
+model PlayerEvaluationRecord {
+  id         String   @id @default(uuid()) @db.Uuid
+  educatorId String   @db.Uuid @map("educator_id")
+  educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  playerId   String   @unique @db.Uuid @map("player_id")
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  scores     Json
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([educatorId])
+  @@map("player_evaluations")
 }

@@ -7,15 +7,22 @@ import {
   getSessionDuration,
   moveSessionBlock,
   replaceSessionActivity,
+  type AttendanceEntry,
   type TrainingSession,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useState } from "react";
 import { TacticalDiagramView } from "../tactical-diagram";
 
+interface RosterPlayer {
+  id: string;
+  name: string;
+}
+
 interface SessionBuilderProps {
   authenticated: boolean;
   onChange: (session: TrainingSession) => void;
+  roster: readonly RosterPlayer[];
   session: TrainingSession;
 }
 
@@ -30,9 +37,14 @@ type SaveState = "idle" | "pending" | "success" | "error" | "auth-required";
 
 // Composant contrôlé : `session` vient du parent (qui charge le profil réel au montage), pour ne
 // jamais figer une copie locale figée sur la séance de démonstration initiale.
-export function SessionBuilder({ authenticated, onChange, session }: SessionBuilderProps) {
+export function SessionBuilder({ authenticated, onChange, roster, session }: SessionBuilderProps) {
   const [validationStatus, setValidationStatus] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  // Ensemble des absents plutôt qu'une carte complète pré-remplie pour tout l'effectif : tout le
+  // monde est présent par défaut (le cas le plus fréquent, l'éducateur décoche les absents plutôt
+  // que de tout cocher) -- et ça évite de devoir recopier `roster` dans un état local via un
+  // useEffect à chaque fois qu'il arrive du parent (voir sidebar-nav.tsx pour le même correctif).
+  const [absentPlayerIds, setAbsentPlayerIds] = useState<ReadonlySet<string>>(new Set());
   const duration = getSessionDuration(session);
   const isValid = canValidateSession(session);
 
@@ -40,6 +52,18 @@ export function SessionBuilder({ authenticated, onChange, session }: SessionBuil
     onChange(nextSession);
     setValidationStatus("");
     setSaveState("idle");
+  }
+
+  function toggleAttendance(playerId: string) {
+    setAbsentPlayerIds((current) => {
+      const next = new Set(current);
+      if (next.has(playerId)) {
+        next.delete(playerId);
+      } else {
+        next.add(playerId);
+      }
+      return next;
+    });
   }
 
   async function validateSession() {
@@ -50,6 +74,11 @@ export function SessionBuilder({ authenticated, onChange, session }: SessionBuil
 
     setSaveState("pending");
     try {
+      const attendance: AttendanceEntry[] = roster.map((player) => ({
+        playerId: player.id,
+        playerName: player.name,
+        present: !absentPlayerIds.has(player.id),
+      }));
       const response = await fetch("/api/sessions", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -64,6 +93,7 @@ export function SessionBuilder({ authenticated, onChange, session }: SessionBuil
             activityId: block.activity.id,
             durationMinutes: block.durationMinutes,
           })),
+          ...(attendance.length > 0 ? { attendance } : {}),
         }),
       });
       if (!response.ok) {
@@ -129,6 +159,26 @@ export function SessionBuilder({ authenticated, onChange, session }: SessionBuil
           </li>
         );})}
       </ol>
+
+      {roster.length > 0 && (
+        <section aria-labelledby="session-attendance-title" className="session-attendance">
+          <h2 id="session-attendance-title">Présence</h2>
+          <p>Décoche les joueurs absents.</p>
+          <ul className="session-attendance-list">
+            {roster.map((player) => {
+              const present = !absentPlayerIds.has(player.id);
+              return (
+                <li key={player.id}>
+                  <label className={present ? "" : "absent"}>
+                    <input checked={present} onChange={() => toggleAttendance(player.id)} type="checkbox" />
+                    {player.name}
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {!isValid && <p className="session-validation-error" role="alert">La séance doit durer entre 60 et 90 minutes.</p>}
       <div className="session-validation">

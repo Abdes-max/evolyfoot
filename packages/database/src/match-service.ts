@@ -1,5 +1,5 @@
 import { defaultFormationId, formationSlots, gameFormats, listFormations, validateMatchPlan } from "@evolyfoot/domain";
-import type { GameFormat, MatchLineupAssignment, MatchPlan, MatchVenue } from "@evolyfoot/domain";
+import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchVenue } from "@evolyfoot/domain";
 import { EducatorNotFoundError, MatchNotFoundError, ValidationError } from "./errors";
 import type { EducatorRepository, MatchRepository, PersistedMatch } from "./repositories";
 
@@ -138,13 +138,20 @@ export class MatchService {
     return this.matchRepository.update(matchId, educatorId, { formationId, lineup: [], captainPlayerId: null });
   }
 
-  async markPlayed(educatorId: string, matchId: string): Promise<PersistedMatch> {
+  async markPlayed(
+    educatorId: string,
+    matchId: string,
+    attendance?: readonly AttendanceEntry[],
+  ): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
     const errors = validateMatchPlan(toMatchPlan(match));
     if (Object.keys(errors).length > 0) {
       throw new ValidationError(Object.values(errors)[0]!);
     }
-    return this.matchRepository.update(matchId, educatorId, { status: "played" });
+    return this.matchRepository.update(matchId, educatorId, {
+      status: "played",
+      ...(attendance ? { attendance } : {}),
+    });
   }
 
   async remove(educatorId: string, matchId: string): Promise<void> {

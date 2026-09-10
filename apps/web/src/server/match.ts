@@ -1,5 +1,5 @@
 import { EducatorNotFoundError, MatchNotFoundError } from "@evolyfoot/database";
-import type { MatchLineupAssignment, MatchStatus, MatchVenue } from "@evolyfoot/domain";
+import type { AttendanceEntry, MatchLineupAssignment, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface MatchSummary {
@@ -12,6 +12,7 @@ export interface MatchSummary {
   status: MatchStatus;
   lineup: readonly MatchLineupAssignment[];
   captainPlayerId: string | null;
+  attendance?: readonly AttendanceEntry[];
 }
 
 export interface MatchGateway {
@@ -27,7 +28,7 @@ export interface MatchGateway {
     input: { lineup: readonly MatchLineupAssignment[]; captainPlayerId: string | null },
   ): Promise<MatchSummary>;
   changeFormation(educatorId: string, matchId: string, formationId: string): Promise<MatchSummary>;
-  markPlayed(educatorId: string, matchId: string): Promise<MatchSummary>;
+  markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<MatchSummary>;
   remove(educatorId: string, matchId: string): Promise<void>;
 }
 
@@ -46,6 +47,14 @@ function isLineupAssignmentShaped(value: unknown): value is MatchLineupAssignmen
   }
   const assignment = value as Record<string, unknown>;
   return typeof assignment.slotId === "string" && typeof assignment.playerId === "string" && typeof assignment.playerName === "string";
+}
+
+function isAttendanceEntryShaped(value: unknown): value is AttendanceEntry {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const entry = value as Record<string, unknown>;
+  return typeof entry.playerId === "string" && typeof entry.playerName === "string" && typeof entry.present === "boolean";
 }
 
 function errorResponse(error: unknown, log: (error: unknown) => void): Response {
@@ -191,8 +200,18 @@ export function createMarkPlayedHandler(
     if (!educator) {
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
+
+    // La présence est optionnelle -- marquer un match joué sans avoir saisi qui était là ne doit
+    // pas échouer, contrairement à un corps mal formé quand une valeur est bien fournie.
+    const body = await readJsonBody(request);
+    const rawAttendance = body?.attendance;
+    if (rawAttendance !== undefined && !(Array.isArray(rawAttendance) && rawAttendance.every(isAttendanceEntryShaped))) {
+      return Response.json({ error: "La présence est invalide." }, { status: 400 });
+    }
+    const attendance = rawAttendance as readonly AttendanceEntry[] | undefined;
+
     try {
-      return Response.json({ match: await matches.markPlayed(educator.id, matchId) });
+      return Response.json({ match: await matches.markPlayed(educator.id, matchId, attendance) });
     } catch (error) {
       return errorResponse(error, log);
     }
@@ -234,6 +253,7 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       status: match.status,
       lineup: match.lineup,
       captainPlayerId: match.captainPlayerId,
+      ...(match.attendance ? { attendance: match.attendance } : {}),
     };
   }
 
@@ -255,8 +275,8 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       async changeFormation(educatorId, matchId, formationId) {
         return toSummary(await service.changeFormation(educatorId, matchId, formationId));
       },
-      async markPlayed(educatorId, matchId) {
-        return toSummary(await service.markPlayed(educatorId, matchId));
+      async markPlayed(educatorId, matchId, attendance) {
+        return toSummary(await service.markPlayed(educatorId, matchId, attendance));
       },
       remove(educatorId, matchId) {
         return service.remove(educatorId, matchId);

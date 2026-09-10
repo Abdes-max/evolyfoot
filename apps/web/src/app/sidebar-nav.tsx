@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BallIcon, CalendarIcon, EyeIcon, HomeIcon, TargetIcon, UsersIcon } from "./icons";
+import { BallIcon, CalendarIcon, ChartIcon, EyeIcon, HomeIcon, TargetIcon, UsersIcon } from "./icons";
 import { SidebarIdentity } from "./sidebar-identity";
 
 // Auparavant définie une seule fois, en dur, dans page.tsx (l'accueil) : chaque autre page
@@ -15,6 +15,7 @@ const navItems: ReadonlyArray<{ href: string; label: string; icon: typeof HomeIc
   { href: "/bibliotheque", label: "Séances", icon: CalendarIcon },
   { href: "/match", label: "Matchs", icon: BallIcon },
   { href: "/observations", label: "Observations", icon: EyeIcon },
+  { href: "/statistiques", label: "Statistiques", icon: ChartIcon },
   { href: "/equipe", label: "Mon équipe", icon: UsersIcon },
 ];
 
