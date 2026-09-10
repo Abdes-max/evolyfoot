@@ -10,9 +10,16 @@ button,a { font:inherit; }
 
 button { cursor:pointer; }
 
-.shell { min-height:100vh; display:grid; grid-template-columns:264px 1fr; }
+/* `.sidebar` (voir sidebar-nav.tsx) est en `position:fixed` à toutes les largeurs -- plus une
+   colonne de grille réservée uniquement sur la page d'accueil, elle est maintenant rendue sur
+   chaque page qui fait partie de la navigation principale (`/`, `/plan`, `/bibliotheque`,
+   `/bibliotheque/[id]`, `/equipe`). Chaque conteneur racine de ces pages (`.shell` ici,
+   `.plan-shell`, `.bibliotheque-shell`, `.exercise-shell`, `.roster-shell` dans leurs feuilles
+   respectives) réserve donc lui-même l'espace via `padding-left`, remis à 0 sous 950px où le
+   sidebar devient une barre d'onglets fixée en bas plutôt qu'une colonne à gauche. */
+.shell { min-height:100vh; padding-left:264px; }
 
-.sidebar { position:sticky; top:0; height:100vh; padding:32px 24px 24px; background:var(--surface); border-right:1px solid var(--line); display:flex; flex-direction:column; }
+.sidebar { position:fixed; left:0; top:0; z-index:20; width:264px; height:100vh; padding:32px 24px 24px; background:var(--surface); border-right:1px solid var(--line); display:flex; flex-direction:column; }
 
 .brand { display:flex; align-items:center; gap:10px; padding:0 10px 36px; font-size:20px; font-weight:800; letter-spacing:-.5px; }
 
@@ -115,8 +122,8 @@ nav { display:flex; flex-direction:column; gap:4px; }
    d'écran mais est masqué visuellement, même technique que `.visually-hidden`
    (session-builder.css) -- réécrite ici plutôt qu'importée pour ne pas dépendre de l'ordre de
    chargement des feuilles de style entre pages. */
-@media (max-width:950px) { .shell{grid-template-columns:1fr}
-.sidebar{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;z-index:30;padding:6px 8px calc(6px + env(safe-area-inset-bottom));flex-direction:row;align-items:stretch;border-right:0;border-top:1px solid var(--line)}
+@media (max-width:950px) { .shell,.plan-shell{padding-left:0}
+.sidebar{left:0;right:0;bottom:0;top:auto;height:auto;z-index:30;padding:6px 8px calc(6px + env(safe-area-inset-bottom));flex-direction:row;align-items:stretch;border-right:0;border-top:1px solid var(--line)}
 .brand,.season-card,.coach{display:none}
 nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 .nav-item{flex:1;flex-direction:column;gap:3px;min-height:52px;padding:8px 4px;justify-content:center;text-align:center;border-radius:12px}
@@ -127,6 +134,7 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 /* Deux colonnes plutôt qu'une pile intégrale : les trois cartes de priorité sont compactes,
    les empiler en une seule colonne gaspille toute la largeur disponible sur tablette/téléphone. */
 .priority-grid{grid-template-columns:repeat(2,1fr)}
+.plan-shell{padding-bottom:90px}
  }
 
 @media (max-width:560px) { .content{padding:24px 15px 90px}
@@ -225,7 +233,7 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 }
 
 .diagnostic-result>a{color:var(--accent-dark);font-size:10px;font-weight:800}
-.plan-shell{min-height:100vh;background:var(--paper)}
+.plan-shell{min-height:100vh;background:var(--paper);padding-left:264px}
 .plan-header{padding:34px max(25px,calc((100vw - 1050px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:180px 1fr auto;gap:30px;align-items:center}
 .plan-header h1{margin:10px 0 8px;font-size:34px}
 .plan-header p{margin:0;color:var(--muted);font-size:11px}

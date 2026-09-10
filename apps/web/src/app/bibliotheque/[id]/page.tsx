@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TacticalDiagramView } from "../../tactical-diagram";
 import { ExerciseFeedback } from "./exercise-feedback";
+import { SidebarNav } from "../../sidebar-nav";
 
 const kindLabels: Record<TrainingBlockKind, string> = {
   welcome: "Accueil",
@@ -29,7 +30,9 @@ export default async function ExercisePage({ params }: ExercisePageProps) {
   const next = trainingActivityCatalogue[index + 1];
 
   return (
-    <main className="exercise-shell">
+    <>
+      <SidebarNav />
+      <main className="exercise-shell">
       <header className="exercise-topbar">
         <Link aria-label="Retour à la bibliothèque" className="exercise-back" href="/bibliotheque">
           <svg fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="18">
@@ -133,6 +136,7 @@ export default async function ExercisePage({ params }: ExercisePageProps) {
           <span />
         )}
       </nav>
-    </main>
+      </main>
+    </>
   );
 }

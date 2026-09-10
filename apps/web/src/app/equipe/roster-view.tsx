@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import { SidebarNav } from "../sidebar-nav";
 
 interface RosterPlayer {
   id: string;
@@ -140,7 +141,9 @@ export function RosterView() {
   }
 
   return (
-    <main className="roster-shell">
+    <>
+      <SidebarNav />
+      <main className="roster-shell">
       <header className="roster-header">
         <Link className="onboarding-brand" href="/">
           <span className="brand-mark">E</span> EvolyFoot
@@ -231,6 +234,7 @@ export function RosterView() {
           </Link>
         </section>
       )}
-    </main>
+      </main>
+    </>
   );
 }

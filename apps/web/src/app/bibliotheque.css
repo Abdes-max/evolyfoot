@@ -1,4 +1,6 @@
-.bibliotheque-shell { min-height: 100vh; background: var(--paper); }
+/* padding-left réserve la place du sidebar fixe (sidebar-nav.tsx), remis à 0 sous 950px où il
+   devient une barre d'onglets en bas plutôt qu'une colonne à gauche -- voir globals.css. */
+.bibliotheque-shell { min-height: 100vh; background: var(--paper); padding-left: 264px; }
 .bibliotheque-header { padding: 38px max(25px, calc((100vw - 1200px) / 2)); background: linear-gradient(155deg, #123349, #0a1219); color: var(--ink); }
 .bibliotheque-header .onboarding-brand { margin-bottom: 22px; }
 .bibliotheque-header h1 { margin: 10px 0 8px; font-size: 30px; letter-spacing: -0.7px; }
@@ -24,7 +26,7 @@
 .bibliotheque-card-body h3 { margin: 2px 0 8px; font-size: 15px; }
 .bibliotheque-card-body p { margin: 0; color: var(--muted); font-size: 11.5px; line-height: 1.5; }
 
-.exercise-shell { min-height: 100vh; background: var(--paper); }
+.exercise-shell { min-height: 100vh; background: var(--paper); padding-left: 264px; }
 .exercise-topbar { display: flex; align-items: center; gap: 16px; padding: 22px max(25px, calc((100vw - 1220px) / 2)); border-bottom: 1px solid var(--line); }
 .exercise-back { min-height: 40px; min-width: 40px; display: grid; place-items: center; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
 .exercise-crumb { color: var(--muted); font-size: 12.5px; }
@@ -71,4 +73,9 @@
 @media (max-width: 700px) {
   .bibliotheque-header { padding: 30px 22px; }
   .bibliotheque-toolbar { flex-direction: column; align-items: stretch; }
+}
+@media (max-width: 950px) {
+  /* Le sidebar devient une barre d'onglets fixée en bas d'écran (voir globals.css) : plus de
+     colonne à gauche, mais il faut une marge basse pour ne pas passer dessous. */
+  .bibliotheque-shell, .exercise-shell { padding-left: 0; padding-bottom: 90px; }
 }

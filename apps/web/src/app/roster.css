@@ -1,4 +1,6 @@
-.roster-shell{min-height:100vh;background:var(--paper)}
+/* padding-left réserve la place du sidebar fixe (sidebar-nav.tsx), remis à 0 sous 950px où il
+   devient une barre d'onglets en bas plutôt qu'une colonne à gauche -- voir globals.css. */
+.roster-shell{min-height:100vh;background:var(--paper);padding-left:264px}
 .roster-header{padding:38px max(25px,calc((100vw - 720px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink)}
 .roster-header .onboarding-brand{margin-bottom:22px}
 .roster-header h1{margin:10px 0 8px;font-size:34px;letter-spacing:-1px}
@@ -30,3 +32,4 @@
 .roster-header h1{font-size:28px}
 .roster-row{flex-direction:column;align-items:flex-start}
 }
+@media(max-width:950px){.roster-shell{padding-left:0;padding-bottom:90px}}

@@ -1,7 +1,6 @@
 import { demoFocus, nextSession } from "@evolyfoot/domain";
 import Link from "next/link";
-import { CalendarIcon, EyeIcon, HomeIcon, TargetIcon, UsersIcon } from "./icons";
-import { SidebarIdentity } from "./sidebar-identity";
+import { SidebarNav } from "./sidebar-nav";
 
 const priorities = [
   { label: "Se rendre disponible", score: 78, tone: "strong" },
@@ -12,28 +11,18 @@ const priorities = [
 export default function Home() {
   return (
     <main className="shell">
-      <aside className="sidebar">
-        <div className="brand"><span className="brand-mark">E</span><span>EvolyFoot</span></div>
-        <nav aria-label="Navigation principale">
-          <a className="nav-item active" href="#"><HomeIcon /> <span className="nav-label">Vue d&apos;ensemble</span></a>
-          <a className="nav-item" href="#plan"><TargetIcon /> <span className="nav-label">Plan de progression</span></a>
-          <Link className="nav-item" href="/bibliotheque"><CalendarIcon /> <span className="nav-label">Séances</span></Link>
-          <a className="nav-item" href="#observations"><EyeIcon /> <span className="nav-label">Observations</span></a>
-          <Link className="nav-item" href="/equipe"><UsersIcon /> <span className="nav-label">Mon équipe</span></Link>
-        </nav>
-        <SidebarIdentity />
-      </aside>
+      <SidebarNav />
 
       <section className="content">
         <header className="topbar"><div><span className="date">LUNDI 17 AOÛT</span><h1>Bonjour Abdes,</h1><p>Voici l&apos;essentiel pour faire progresser ton équipe cette semaine.</p></div><button className="bell" aria-label="Notifications">Notifications</button></header>
 
         <section className="hero-grid">
-          <article className="focus-card" id="plan">
+          <article className="focus-card">
             <div className="card-top"><span className="eyebrow light">PRIORITÉ DU CYCLE · SEMAINE 3/4</span><span className="trend">En progression</span></div>
             <h2>{demoFocus.label}</h2>
             <p>Faire émerger davantage de soutien proche et de solutions devant le ballon.</p>
             <div className="progress-row"><div className="progress-track"><span style={{ width: `${demoFocus.progress}%` }} /></div><strong>{demoFocus.progress}%</strong></div>
-            <div className="focus-footer"><span>{demoFocus.sessionsCompleted}/{demoFocus.sessionsTotal} séances réalisées</span><a href="#observations">Voir le plan →</a></div>
+            <div className="focus-footer"><span>{demoFocus.sessionsCompleted}/{demoFocus.sessionsTotal} séances réalisées</span><Link href="/plan">Voir le plan →</Link></div>
           </article>
 
           <article className="session-card" id="session">

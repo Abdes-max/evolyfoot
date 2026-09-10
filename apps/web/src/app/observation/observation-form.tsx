@@ -24,14 +24,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AdjustmentCard } from "./adjustment-card";
 
-// Joueurs de démonstration, utilisés tant qu'aucun effectif nominatif réel n'est disponible
-// (visiteur anonyme, ou éducateur connecté n'ayant pas encore ajouté de joueur sur /equipe).
-const demoPlayers: ReadonlyArray<PlayerReference> = [
-  { id: "lina-dupont", name: "Lina" },
-  { id: "noah-martin", name: "Noah" },
-  { id: "sami-bernard", name: "Sami" },
-];
-
 // Diagnostic de démonstration, utilisé tant qu'aucun diagnostic réel n'est disponible, pour
 // dériver la semaine en cours de la même façon que /plan et /session.
 const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
@@ -70,8 +62,8 @@ interface ObservationFormProps {
 }
 
 export function ObservationForm({ initialEventType }: ObservationFormProps) {
-  const [players, setPlayers] = useState<ReadonlyArray<PlayerReference>>(demoPlayers);
-  const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType, demoPlayers));
+  const [players, setPlayers] = useState<ReadonlyArray<PlayerReference>>([]);
+  const [draft, setDraft] = useState<ObservationDraft>(() => createDraft(initialEventType, []));
   const [report, setReport] = useState<ObservationReport>();
   const [suggestion, setSuggestion] = useState<AdjustmentSuggestion>();
   const [currentWeek, setCurrentWeek] = useState<DevelopmentWeek>(demoWeek);
@@ -106,13 +98,24 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
           if (diagnosticBody.scores) {
             setCurrentWeek(buildDevelopmentPlan(summarizeDiagnostic(diagnosticBody.scores)).weeks[0]);
           }
+          // Toujours synchronisé avec l'effectif réel, y compris vide -- l'ancien repli sur des
+          // joueurs de démonstration (Lina, Noah, Sami) n'a plus lieu d'être : cette page n'est
+          // plus jamais atteignable sans être connecté (garde-fou d'authentification), donc ce
+          // n'est plus "un visiteur anonyme voit une démo" mais "un éducateur connecté voit de
+          // faux joueurs qui ne sont pas les siens" -- un vrai état vide (voir plus bas) est plus
+          // honnête.
           const roster: ReadonlyArray<PlayerReference> = rosterBody.players ?? [];
-          if (roster.length > 0) {
-            setPlayers(roster);
-            // Reconstruit le brouillon avec l'effectif réel -- sans effet côté utilisateur puisque
-            // ce chargement se termine avant toute interaction possible avec le formulaire.
-            setDraft((current) => createDraft(current.eventType, roster));
-          }
+          setPlayers(roster);
+          // Ne reconstruit le brouillon que si le coach n'a encore rien saisi : ce chargement
+          // réseau peut se terminer bien après le montage (effectif volumineux, connexion lente),
+          // pas forcément "avant toute interaction possible" comme le supposait la version
+          // précédente -- un `createDraft` inconditionnel ici effaçait alors silencieusement les
+          // évaluations et la note déjà saisies dès que la réponse arrivait.
+          setDraft((current) =>
+            current.ratings.length === 0 && current.signals.length === 0 && !current.note
+              ? createDraft(current.eventType, roster)
+              : current,
+          );
         }
       } catch {
         if (!cancelled) {
@@ -197,6 +200,11 @@ export function ObservationForm({ initialEventType }: ObservationFormProps) {
 
         <aside className="observation-aside" aria-labelledby="player-observation-title">
           <div className="section-title"><span className="eyebrow">FACULTATIF</span><h3 id="player-observation-title">Joueurs à retenir</h3><p>Un même joueur ne peut recevoir qu&apos;un seul signal.</p></div>
+          {draft.players.length === 0 && (
+            <p className="player-signals-empty">
+              Aucun joueur dans ton effectif pour l&apos;instant. <Link href="/equipe">Ajouter mon effectif →</Link>
+            </p>
+          )}
           <div className="player-signals">
             {draft.players.map((player) => {
               const signal = draft.signals.find((candidate) => candidate.playerId === player.id)?.kind;
