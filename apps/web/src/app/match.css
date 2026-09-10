@@ -4,13 +4,13 @@
    padding-left/right seulement (jamais le raccourci `padding`) : sous 760px, .page-header
    applique son propre padding-top/bottom (26px) -- un raccourci ici cascaderait après lui (ce
    fichier est chargé après globals.css) et les remettrait à 0. */
-.match-header { padding-left: max(25px, calc((100% - 900px) / 2)); padding-right: max(25px, calc((100% - 900px) / 2)); }
+.match-header { padding-left: max(25px, calc((100% - 1280px) / 2)); padding-right: max(25px, calc((100% - 1280px) / 2)); }
 
-.match-auth-required { width: min(900px, calc(100% - 40px)); margin: 30px auto; }
+.match-auth-required { width: min(1280px, calc(100% - 40px)); margin: 30px auto; }
 .match-auth-required p { margin: 0; color: var(--muted); font-size: 12px; }
 .match-auth-required a { color: var(--accent); font-weight: 800; text-decoration: none; }
 
-.match-content { width: min(900px, calc(100% - 40px)); margin: 30px auto 60px; }
+.match-content { width: min(1280px, calc(100% - 40px)); margin: 30px auto 60px; }
 
 .match-new-button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font-size: 12px; font-weight: 800; margin-bottom: 24px; }
 
@@ -71,7 +71,7 @@
 .match-captain-row span { color: var(--ink); font-size: 11.5px; font-weight: 800; }
 .match-captain-row select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; color: var(--ink); font-size: 12px; }
 
-.match-back-link { display: block; width: min(900px, calc(100% - 40px)); margin: 0 auto 40px; }
+.match-back-link { display: block; width: min(1280px, calc(100% - 40px)); margin: 0 auto 40px; }
 
 @media (max-width: 950px) {
   .match-shell { padding-left: 0; padding-bottom: 90px; }

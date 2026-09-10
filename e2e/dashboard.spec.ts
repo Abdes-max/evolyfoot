@@ -72,7 +72,9 @@ test("l’éducateur gère l’effectif nominatif de son équipe", async ({ page
   });
 
   await page.goto("/equipe");
-  await expect(page.getByText(/foot à 8/i)).toBeVisible();
+  // "Foot à 8" apparaît aussi dans le widget saison du sidebar (SidebarIdentity) -- on cible le
+  // bandeau propre à cette page pour éviter une requête ambiguë entre les deux.
+  await expect(page.locator(".roster-team-summary")).toContainText("Foot à 8");
 
   await page.getByLabel("Ajouter un joueur").fill("Kylian");
   await page.getByRole("button", { name: "Ajouter" }).click();
