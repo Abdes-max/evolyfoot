@@ -38,6 +38,7 @@ import type {
 } from "./generated/prisma/client";
 import type {
   EducatorAuthRecord,
+  EducatorProfile,
   EducatorRecord,
   PersistedDiagnostic,
   PersistedMatch,
@@ -236,6 +237,22 @@ export function toEducatorAuthRecord(educator: Educator): EducatorAuthRecord {
   return Object.freeze({
     ...toEducatorRecord(educator),
     passwordHash: educator.passwordHash,
+  });
+}
+
+export function toEducatorProfile(educator: Educator): EducatorProfile {
+  return Object.freeze({
+    id: educator.id,
+    email: educator.email,
+    displayName: educator.displayName,
+    birthDate: educator.birthDate,
+    club: educator.club,
+    country: educator.country,
+    address: educator.address,
+    phone: educator.phone,
+    diploma: educator.diploma,
+    seasonFormat: educator.seasonFormat,
+    createdAt: educator.createdAt,
   });
 }
 

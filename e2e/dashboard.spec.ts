@@ -199,3 +199,40 @@ test("l’éducateur parcourt la bibliothèque et consulte le schéma d’un exe
   await page.getByRole("link", { name: "Bibliothèque", exact: true }).click();
   await expect(page).toHaveURL(/\/bibliotheque$/);
 });
+
+test("l’éducateur ouvre son profil, complète une information et la voit enregistrée", async ({ page }) => {
+  // Persistance réelle couverte par les tests d'intégration ; ici on vérifie le câblage client de
+  // la fiche profil (chargement, passage en édition, PATCH, retour en lecture).
+  let stored = {
+    id: "e2e-educator",
+    email: "coach@example.test",
+    displayName: "Coach E2E",
+    birthDate: null as string | null,
+    club: null as string | null,
+    country: null as string | null,
+    address: null as string | null,
+    phone: null as string | null,
+    diploma: null as string | null,
+    seasonFormat: null as string | null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  };
+  await page.route("**/api/profile", (route) => {
+    if (route.request().method() === "PATCH") {
+      stored = { ...stored, ...JSON.parse(route.request().postData() ?? "{}") };
+      return route.fulfill({ json: { profile: stored } });
+    }
+    return route.fulfill({ json: { profile: stored } });
+  });
+
+  await page.goto("/");
+  await page.getByRole("link", { name: "Ouvrir mon profil" }).click();
+  await expect(page).toHaveURL(/\/profil$/);
+  await expect(page.getByRole("heading", { name: "Coach E2E" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Modifier" }).click();
+  await page.getByLabel("Club").fill("FC Horizon");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+
+  await expect(page.getByText("Informations enregistrées.")).toBeVisible();
+  await expect(page.getByText("FC Horizon")).toBeVisible();
+});
