@@ -319,3 +319,15 @@ test("un visiteur non connecté découvre la vitrine sur la page d'accueil", asy
   await expect(page).toHaveURL(/\/tarifs$/);
   await expect(page.getByRole("heading", { name: "Tarifs" })).toBeVisible();
 });
+
+test("les fichiers SEO restent publics (pas de redirection vers /connexion)", async ({ page }) => {
+  await page.context().clearCookies();
+
+  const sitemap = await page.request.get("/sitemap.xml");
+  expect(sitemap.status()).toBe(200);
+  expect(await sitemap.text()).toContain("<urlset");
+
+  const robots = await page.request.get("/robots.txt");
+  expect(robots.status()).toBe(200);
+  expect(await robots.text()).toContain("Sitemap:");
+});
