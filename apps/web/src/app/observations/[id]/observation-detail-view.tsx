@@ -120,7 +120,7 @@ export function ObservationDetailView({ observationId }: { observationId: string
   return (
     <main className="observations-shell">
       <header className="page-header observations-header">
-        <Link className="onboarding-brand" href="/">
+        <Link className="onboarding-brand" href="/app">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
         <div>

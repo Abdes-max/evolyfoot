@@ -82,7 +82,7 @@ export function SeancesView() {
   return (
     <main className="seances-shell">
       <header className="page-header seances-header">
-        <Link className="onboarding-brand" href="/">
+        <Link className="onboarding-brand" href="/app">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
         <div>

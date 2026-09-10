@@ -253,7 +253,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   return (
     <main className="player-shell">
       <header className="page-header player-header">
-        <Link className="onboarding-brand" href="/">
+        <Link className="onboarding-brand" href="/app">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
         <div>

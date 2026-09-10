@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isMarketingPath } from "./marketing-routes";
 
 // Duplique volontairement le nom du cookie plutôt que d'importer SESSION_COOKIE_NAME depuis
 // ./server/auth : ce fichier-là importe @evolyfoot/database au niveau module (pour les classes
@@ -11,15 +12,15 @@ import type { NextRequest } from "next/server";
 // pour garder ce garde-fou rapide et sans dépendance lourde.
 const SESSION_COOKIE_NAME = "evolyfoot_session";
 
-// Seules ces deux pages restent accessibles sans session : il faut bien pouvoir atteindre le
-// formulaire de connexion pour en obtenir une. Tout le reste de l'application web est
-// désormais protégé au même niveau que le mobile (AuthGate dans apps/mobile/app/_layout.tsx) --
-// plus de contenu de démonstration pour un visiteur anonyme.
-const PUBLIC_PATHS = ["/connexion", "/inscription"];
+// Pages accessibles sans session : le site vitrine (voir marketing-routes.ts) et les deux
+// formulaires d'authentification (il faut bien pouvoir atteindre /connexion pour obtenir une
+// session). Tout le reste de l'application web (le tableau de bord vit sur /app) est protégé au
+// même niveau que le mobile (AuthGate dans apps/mobile/app/_layout.tsx).
+const AUTH_PATHS = ["/connexion", "/inscription"];
 
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
-  if (PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+  if (isMarketingPath(pathname) || AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
     return NextResponse.next();
   }
 

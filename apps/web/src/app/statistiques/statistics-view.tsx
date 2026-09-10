@@ -97,7 +97,7 @@ export function StatisticsView() {
   return (
     <main className="statistics-shell">
       <header className="page-header statistics-header">
-        <Link className="onboarding-brand" href="/">
+        <Link className="onboarding-brand" href="/app">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
         <div>
@@ -172,7 +172,7 @@ export function StatisticsView() {
             </p>
           </div>
 
-          <Link className="back-link" href="/">
+          <Link className="back-link" href="/app">
             Retour au tableau de bord
           </Link>
         </section>

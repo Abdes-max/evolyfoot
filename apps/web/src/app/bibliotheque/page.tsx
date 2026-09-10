@@ -8,7 +8,7 @@ export default function BibliothequePage() {
       <SidebarNav />
       <main className="bibliotheque-shell">
         <header className="page-header bibliotheque-header">
-          <Link className="onboarding-brand" href="/">
+          <Link className="onboarding-brand" href="/app">
             <span className="brand-mark">E</span> EvolyFoot
           </Link>
           <div>

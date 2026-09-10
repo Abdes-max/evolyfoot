@@ -80,7 +80,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
   return (
     <main className="session-shell">
       <header className="session-header">
-        <Link className="onboarding-brand" href="/">
+        <Link className="onboarding-brand" href="/app">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
         {state.status === "ready" ? (

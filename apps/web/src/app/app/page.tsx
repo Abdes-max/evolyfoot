@@ -1,7 +1,7 @@
 import { demoFocus, nextSession } from "@evolyfoot/domain";
 import Link from "next/link";
-import { SidebarNav } from "./sidebar-nav";
-import { WeeklyCalendar } from "./weekly-calendar";
+import { SidebarNav } from "../sidebar-nav";
+import { WeeklyCalendar } from "../weekly-calendar";
 
 const priorities = [
   { label: "Se rendre disponible", score: 78, tone: "strong" },
