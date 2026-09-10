@@ -1,4 +1,13 @@
-import type { DiagnosticScores, ObservationDraft, PlayerReference, TeamProfile, TrainingSession } from "@evolyfoot/domain";
+import type {
+  DiagnosticScores,
+  MatchLineupAssignment,
+  MatchStatus,
+  MatchVenue,
+  ObservationDraft,
+  PlayerReference,
+  TeamProfile,
+  TrainingSession,
+} from "@evolyfoot/domain";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "./api";
 
@@ -8,7 +17,21 @@ export interface Educator {
   displayName: string;
 }
 
+export interface MobileMatch {
+  id: string;
+  opponent: string;
+  dateLabel: string;
+  venue: MatchVenue;
+  gameFormat: number;
+  formationId: string;
+  status: MatchStatus;
+  lineup: MatchLineupAssignment[];
+  captainPlayerId: string | null;
+}
+
 export type AuthResult = { ok: true } | { ok: false; error: string };
+export type MatchResult = { ok: true; match: MobileMatch } | { ok: false; error: string };
+export type MatchListResult = { ok: true; matches: MobileMatch[] } | { ok: false; error: string };
 
 export interface AuthContextValue {
   educator: Educator | null;
@@ -21,10 +44,16 @@ export interface AuthContextValue {
   saveTeam(profile: TeamProfile): Promise<AuthResult>;
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
   saveTrainingSession(session: TrainingSession): Promise<AuthResult>;
-  saveObservation(draft: ObservationDraft): Promise<AuthResult>;
+  saveObservation(draft: ObservationDraft, matchId?: string): Promise<AuthResult>;
   addPlayer(name: string): Promise<AuthResult>;
   renamePlayer(id: string, name: string): Promise<AuthResult>;
   removePlayer(id: string): Promise<AuthResult>;
+  listMatches(): Promise<MatchListResult>;
+  getMatch(id: string): Promise<MatchResult>;
+  createMatch(input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string }): Promise<MatchResult>;
+  updateMatchLineup(id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null): Promise<MatchResult>;
+  changeMatchFormation(id: string, formationId: string): Promise<MatchResult>;
+  markMatchPlayed(id: string): Promise<MatchResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -192,14 +221,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const saveObservation = useCallback(
-    async (draft: ObservationDraft): Promise<AuthResult> => {
+    async (draft: ObservationDraft, matchId?: string): Promise<AuthResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour enregistrer cette observation." };
       }
       const response = await apiFetch("/api/observations", {
         method: "POST",
         sessionToken,
-        body: JSON.stringify(draft),
+        body: JSON.stringify(matchId ? { ...draft, matchId } : draft),
       });
       if (!response.ok) {
         return { ok: false, error: await readErrorMessage(response) };
@@ -256,6 +285,101 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [sessionToken],
   );
 
+  const listMatches = useCallback(async (): Promise<MatchListResult> => {
+    if (!sessionToken) {
+      return { ok: false, error: "Connecte-toi pour voir tes matchs." };
+    }
+    const response = await apiFetch("/api/matches", { sessionToken });
+    if (!response.ok) {
+      return { ok: false, error: await readErrorMessage(response) };
+    }
+    const body = await response.json();
+    return { ok: true, matches: body.matches ?? [] };
+  }, [sessionToken]);
+
+  const getMatch = useCallback(
+    async (id: string): Promise<MatchResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour voir ce match." };
+      }
+      const response = await apiFetch(`/api/matches/${id}`, { sessionToken });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      return { ok: true, match: body.match };
+    },
+    [sessionToken],
+  );
+
+  const createMatch = useCallback(
+    async (input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string }): Promise<MatchResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour préparer un match." };
+      }
+      const response = await apiFetch("/api/matches", { method: "POST", sessionToken, body: JSON.stringify(input) });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      return { ok: true, match: body.match };
+    },
+    [sessionToken],
+  );
+
+  const updateMatchLineup = useCallback(
+    async (id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null): Promise<MatchResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour modifier la composition." };
+      }
+      const response = await apiFetch(`/api/matches/${id}`, {
+        method: "PUT",
+        sessionToken,
+        body: JSON.stringify({ lineup, captainPlayerId }),
+      });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      return { ok: true, match: body.match };
+    },
+    [sessionToken],
+  );
+
+  const changeMatchFormation = useCallback(
+    async (id: string, formationId: string): Promise<MatchResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour changer de formation." };
+      }
+      const response = await apiFetch(`/api/matches/${id}/formation`, {
+        method: "PUT",
+        sessionToken,
+        body: JSON.stringify({ formationId }),
+      });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      return { ok: true, match: body.match };
+    },
+    [sessionToken],
+  );
+
+  const markMatchPlayed = useCallback(
+    async (id: string): Promise<MatchResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour marquer ce match comme joué." };
+      }
+      const response = await apiFetch(`/api/matches/${id}/played`, { method: "POST", sessionToken });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      return { ok: true, match: body.match };
+    },
+    [sessionToken],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       educator,
@@ -272,6 +396,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       addPlayer,
       renamePlayer,
       removePlayer,
+      listMatches,
+      getMatch,
+      createMatch,
+      updateMatchLineup,
+      changeMatchFormation,
+      markMatchPlayed,
     }),
     [
       educator,
@@ -288,6 +418,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       addPlayer,
       renamePlayer,
       removePlayer,
+      listMatches,
+      getMatch,
+      createMatch,
+      updateMatchLineup,
+      changeMatchFormation,
+      markMatchPlayed,
     ],
   );
 

@@ -124,11 +124,11 @@ export function DiagnosticForm() {
           <p>Ces priorités serviront à construire le premier cycle de quatre semaines.</p>
           {saveState === "auth-required" && (
             <p className="field-error">
-              Connecte-toi pour sauvegarder ce diagnostic. <Link href="/connexion">Se connecter →</Link>
+              Connecte-toi pour sauvegarder ce diagnostic. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
             </p>
           )}
           {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
-          <Link href="/plan">Construire mon cycle →</Link>
+          <Link className="small-primary" href="/plan">Construire mon cycle →</Link>
         </section>
       )}
     </section>

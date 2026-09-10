@@ -1,7 +1,13 @@
-import { EducatorNotFoundError } from "@evolyfoot/database";
+import { EducatorNotFoundError, ObservationNotFoundError } from "@evolyfoot/database";
 import { diagnosticCriteria, type ObservationDraft, type ObservationReport } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
-import { createSaveObservationHandler, type ObservationGateway } from "./observation";
+import {
+  createGetObservationHandler,
+  createListObservationsHandler,
+  createSaveObservationHandler,
+  type ObservationGateway,
+  type ObservationRecord,
+} from "./observation";
 
 const educator = { id: "educator-1", email: "coach@example.test", displayName: "Coach" };
 
@@ -32,6 +38,12 @@ function jsonRequest(body: unknown): Request {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+const record: ObservationRecord = { ...report, createdAt: "2026-08-29T12:00:00.000Z" };
+
+function getRequest(): Request {
+  return new Request("https://evolyfoot.test/api/observations");
 }
 
 const authenticated = async () => educator;
@@ -112,5 +124,63 @@ describe("createSaveObservationHandler", () => {
 
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ report });
+  });
+});
+
+describe("createListObservationsHandler", () => {
+  it("requires an authenticated session", async () => {
+    const handler = createListObservationsHandler(anonymous, { list: async () => { throw new Error("not called"); } }, () => undefined);
+
+    const response = await handler(getRequest());
+
+    expect(response.status).toBe(401);
+  });
+
+  it("never trusts an educatorId supplied elsewhere -- only the resolved session identifies whose observations to list", async () => {
+    const receivedIds: string[] = [];
+    const gateway: Pick<ObservationGateway, "list"> = {
+      list: async (educatorId) => {
+        receivedIds.push(educatorId);
+        return [record];
+      },
+    };
+    const handler = createListObservationsHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(getRequest());
+
+    expect(receivedIds).toEqual([educator.id]);
+    expect(await response.json()).toEqual({ observations: [record] });
+  });
+});
+
+describe("createGetObservationHandler", () => {
+  it("requires an authenticated session", async () => {
+    const handler = createGetObservationHandler(anonymous, { get: async () => { throw new Error("not called"); } }, () => undefined);
+
+    const response = await handler(getRequest(), record.id);
+
+    expect(response.status).toBe(401);
+  });
+
+  it("returns the observation on success", async () => {
+    const handler = createGetObservationHandler(authenticated, { get: async () => record }, () => undefined);
+
+    const response = await handler(getRequest(), record.id);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ observation: record });
+  });
+
+  it("maps an unknown or foreign observation to a 404", async () => {
+    const gateway: Pick<ObservationGateway, "get"> = {
+      get: async () => {
+        throw new ObservationNotFoundError();
+      },
+    };
+    const handler = createGetObservationHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(getRequest(), "missing");
+
+    expect(response.status).toBe(404);
   });
 });

@@ -71,9 +71,9 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <Link href="/observation?type=match" asChild>
+        <Link href="/match" asChild>
           <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
-            <Text style={styles.observationText}>Observer un match</Text>
+            <Text style={styles.observationText}>Préparer un match</Text>
             <Text style={styles.observationText}>→</Text>
           </TouchableOpacity>
         </Link>

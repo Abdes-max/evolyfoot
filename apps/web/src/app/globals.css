@@ -18,6 +18,11 @@ button { cursor:pointer; }
    respectives) réserve donc lui-même l'espace via `padding-left`, remis à 0 sous 950px où le
    sidebar devient une barre d'onglets fixée en bas plutôt qu'une colonne à gauche. */
 .shell { min-height:100vh; padding-left:264px; }
+/* Doit être définie ici, avant la règle mobile ci-dessous (ligne ~136) qui la remet à 0 : sinon,
+   à spécificité égale, une règle non conditionnelle plus tardive dans le fichier l'emporterait à
+   toutes les largeurs d'écran -- c'est exactement le bug qui rendait /plan non responsive sur
+   mobile (le contenu restait poussé de 264px, débordant hors de l'écran) avant ce correctif. */
+.plan-shell{min-height:100vh;background:var(--paper);padding-left:264px}
 
 .sidebar { position:fixed; left:0; top:0; z-index:20; width:264px; height:100vh; padding:32px 24px 24px; background:var(--surface); border-right:1px solid var(--line); display:flex; flex-direction:column; }
 
@@ -76,14 +81,22 @@ nav { display:flex; flex-direction:column; gap:4px; }
 .progress-track span { display:block;height:100%;background:var(--accent);border-radius:99px; }
 .progress-row strong { font-size:12.5px; }
 .focus-footer { display:flex;justify-content:space-between;margin-top:14px;color:var(--muted);font-size:11px; }
-.focus-footer a { color:var(--accent-dark);text-decoration:none;font-weight:800; }
+/* Repère visuel, pas un lien à part : la carte entière (.focus-card) est désormais le seul
+   élément cliquable -- voir le commentaire sur .card-link plus bas. Une flèche accent au lieu
+   d'un texte souligné garde l'idée "il y a une suite" sans donner l'impression d'un second
+   élément interactif imbriqué dans un lien (invalide en HTML, mauvais pour l'accessibilité). */
+.focus-footer .card-cta { color:var(--accent-dark);font-weight:800; }
 .date-chip { padding:7px 10px;background:var(--surface-2);border:1px solid var(--line);border-radius:99px;color:var(--muted);font-size:10.5px;font-weight:750; }
 .session-meta { display:flex;gap:18px;margin:23px 0;color:var(--muted);font-size:11px;font-weight:700; }
 .primary-button { width:100%;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);padding:14px 16px;min-height:44px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800; }
 
 .section-head { display:flex;justify-content:space-between;align-items:flex-end;margin:38px 0 18px; }
 .section-head h2 { margin:7px 0 0;font-size:21px;letter-spacing:-.5px; }
-.text-button { border:0;background:none;color:var(--accent-dark);font-size:11.5px;font-weight:800; }
+/* Bouton fantôme compact plutôt qu'un texte souligné : espaces resserrés (barre latérale,
+   fil d'ariane...) où un bouton pleine largeur ne rentrerait pas, mais toujours cliquable
+   d'aspect (bordure, fond, coins arrondis) -- jamais un simple texte coloré. */
+.text-button { display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:32px;padding:0 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--accent-dark);font-size:10.5px;font-weight:800;text-decoration:none; }
+.text-button:hover { border-color:var(--accent-dark); }
 
 .priority-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:16px; }
 .priority-card { position:relative;display:flex;gap:15px;min-height:142px;padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:16px; }
@@ -102,7 +115,10 @@ nav { display:flex; flex-direction:column; gap:4px; }
 .insight-card h3,.week-card h3 { margin:6px 0 7px;font-size:15px; }
 .insight-card p { margin:0;color:var(--muted);font-size:11.5px;line-height:1.6; }
 .actions { display:flex;gap:10px;margin-top:16px; }
-.small-primary,.small-ghost { min-height:40px;border-radius:8px;padding:9px 13px;font-size:11px;font-weight:800; }
+/* display/text-decoration ici pour que ces classes fonctionnent aussi bien sur un <Link>/<a> que
+   sur un <button> -- plusieurs CTA de cette application sont des liens de navigation qui doivent
+   quand même avoir une vraie apparence de bouton, jamais un texte souligné. */
+.small-primary,.small-ghost { display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;border-radius:8px;padding:9px 13px;font-size:11px;font-weight:800;text-decoration:none; }
 .small-primary { border:0;background:var(--accent);color:var(--accent-ink); }
 .small-ghost { border:1px solid var(--line);background:transparent;color:var(--muted); }
 .week-card { padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:18px; }
@@ -123,7 +139,11 @@ nav { display:flex; flex-direction:column; gap:4px; }
    (session-builder.css) -- réécrite ici plutôt qu'importée pour ne pas dépendre de l'ordre de
    chargement des feuilles de style entre pages. */
 @media (max-width:950px) { .shell,.plan-shell{padding-left:0}
-.sidebar{left:0;right:0;bottom:0;top:auto;height:auto;z-index:30;padding:6px 8px calc(6px + env(safe-area-inset-bottom));flex-direction:row;align-items:stretch;border-right:0;border-top:1px solid var(--line)}
+/* width:auto -- sans lui, le width:264px de la version desktop (colonne latérale) persiste tel
+   quel : `left`/`right` sont alors ignorés (une largeur explicite l'emporte toujours sur eux), et
+   la barre du bas reste coincée à 264px de large collée à gauche au lieu de courir sur toute la
+   largeur de l'écran. */
+.sidebar{left:0;right:0;width:auto;bottom:0;top:auto;height:auto;z-index:30;padding:6px 8px calc(6px + env(safe-area-inset-bottom));flex-direction:row;align-items:stretch;border-right:0;border-top:1px solid var(--line)}
 .brand,.season-card,.coach{display:none}
 nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 .nav-item{flex:1;flex-direction:column;gap:3px;min-height:52px;padding:8px 4px;justify-content:center;text-align:center;border-radius:12px}
@@ -197,7 +217,27 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 .success-message span{margin-top:3px;font-size:9px}
 .continue-button,.primary-button{text-decoration:none}
 .continue-button{width:100%;display:flex;justify-content:space-between;border:0;border-radius:11px;padding:15px 17px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:800}
-.back-link{display:block;text-align:center;margin-top:15px;color:var(--muted);font-size:9px;text-decoration:none}
+/* Bouton secondaire (bordure, pas de fond) plutôt qu'un texte souligné en petit -- même largeur
+   que .continue-button quand les deux se suivent, pour lire comme une paire action principale /
+   action secondaire plutôt que comme un bouton suivi d'un lien perdu dans le texte. */
+.back-link{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:44px;margin-top:12px;padding:0 16px;border:1px solid var(--line);border-radius:11px;background:transparent;color:var(--muted);font-size:11px;font-weight:800;text-decoration:none}
+.back-link:hover{border-color:var(--accent-dark);color:var(--ink)}
+
+/* Carte entière cliquable (article/li enveloppé dans un <Link>) pour toute carte qui n'a qu'une
+   seule action possible -- pas de bouton/lien imbriqué en plus à l'intérieur, qui casserait le
+   HTML (deux éléments interactifs empilés) et rendrait la vraie cible tactile plus petite que la
+   carte elle-même. `.card-cta` est le repère visuel (texte accent, pas interactif) qui montre où
+   ça mène ; toute la carte répond au survol et au clic. */
+.card-link{display:block;text-decoration:none;color:inherit;cursor:pointer;transition:border-color .15s,transform .1s}
+.card-link:hover{border-color:var(--accent-dark)}
+.card-link:active{transform:scale(.99)}
+.card-cta{display:inline-flex;align-items:center;gap:4px;font-weight:800}
+
+/* Repère visuel compact, utilisé au fil d'une phrase (message d'erreur, état vide...) où un
+   bouton pleine largeur casserait la mise en page -- toujours un fond/une bordure, jamais un
+   simple texte souligné, mais reste "en ligne" dans le texte qui l'entoure. */
+.inline-cta{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border:1px solid var(--line);border-radius:99px;background:var(--surface-2);color:var(--accent-dark);font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap}
+.inline-cta:hover{border-color:var(--accent-dark)}
 @media(max-width:800px){.onboarding-shell{grid-template-columns:1fr}
 .onboarding-intro{padding:28px}
 .onboarding-intro ol{display:none}
@@ -205,7 +245,10 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 }
 @media(max-width:560px){.form-row{grid-template-columns:1fr}
 }
-.success-message a{margin-top:8px;color:var(--good);font-weight:800}
+/* Bouton (pas un texte souligné) pour la seule action possible après un succès -- teinté dans
+   la même couleur "succès" que le bandeau plutôt que le bleu accent habituel, pour ne pas jurer
+   dans ce contexte. */
+.success-message a{display:inline-flex;align-items:center;gap:6px;margin-top:8px;min-height:36px;padding:0 14px;border:1px solid var(--good);border-radius:8px;color:var(--good);font-weight:800;text-decoration:none;width:fit-content}
 .diagnostic-shell{min-height:100vh;background:var(--paper)}
 .diagnostic-header{padding:35px max(25px,calc((100vw - 1000px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:flex;justify-content:space-between;gap:50px}
 .diagnostic-header>div{max-width:600px}
@@ -233,10 +276,38 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 }
 
 .diagnostic-result>a{color:var(--accent-dark);font-size:10px;font-weight:800}
-.plan-shell{min-height:100vh;background:var(--paper);padding-left:264px}
-.plan-header{padding:34px max(25px,calc((100vw - 1050px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:180px 1fr auto;gap:30px;align-items:center}
-.plan-header h1{margin:10px 0 8px;font-size:34px}
-.plan-header p{margin:0;color:var(--muted);font-size:11px}
+
+/* En-tête partagé par toutes les pages principales de la navigation (Plan, Séances, Mon équipe,
+   Matchs) : logo à gauche, titre + description au centre, repère optionnel à droite -- hauteur
+   fixe (`height`, pas `min-height` : le contenu ne doit jamais la faire varier d'une page à
+   l'autre) pour que la transition entre pages ne fasse pas "sauter" la mise en page. Chaque page
+   ajoute sa propre classe (`.plan-header`, `.bibliotheque-header`...) juste pour la largeur de
+   contenu en dessous, à laquelle son padding horizontal s'aligne. */
+/* 100% (pas 100vw) : le calcul doit se baser sur la largeur du conteneur local, déjà amputée des
+   264px réservés au sidebar fixe (voir <x>-shell ci-dessus) -- avec 100vw, qui ignore cette
+   réservation, la zone réellement disponible pour le titre se retrouvait ~264px plus étroite que
+   prévu, ce qui tronquait le titre bien plus tôt que nécessaire une fois celui-ci limité à une
+   seule ligne (voir .page-header h1 ci-dessous). Même calcul que .plan-content etc. en dessous. */
+.page-header{height:150px;padding:0 max(25px,calc((100% - 1050px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:180px 1fr auto;gap:30px;align-items:center;overflow:hidden}
+/* min-width:0 annule le min-width:auto par défaut des enfants de grille (qui les empêcherait de
+   rétrécir sous la largeur de leur contenu) -- sans lui, ni le titre sur une ligne ni la
+   description sur deux lignes ci-dessous ne pourraient réellement se limiter. */
+.page-header > div{min-width:0}
+/* Titre toujours sur une seule ligne : un adversaire de match ou un titre d'observation trop long
+   est tronqué avec une ellipse plutôt que de passer à la ligne et casser la hauteur fixe --
+   `title` sur chaque <h1> (voir plan-view.tsx etc.) restitue le texte complet au survol. */
+.page-header h1{margin:10px 0 8px;font-size:32px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Description limitée à deux lignes pour la même raison, via le "line-clamp" multi-ligne plutôt
+   qu'un simple overflow:hidden qui couperait une deuxième ligne à mi-hauteur. */
+.page-header p{margin:0;color:var(--muted);font-size:11px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* Sous 760px, une hauteur fixe ne laisse plus la place à un titre qui passe sur deux lignes --
+   repli sur une colonne, hauteur libre. */
+@media(max-width:760px){.page-header{height:auto;grid-template-columns:1fr;gap:8px;padding-top:26px;padding-bottom:26px;overflow:visible}
+.page-header h1{font-size:26px}}
+/* padding-left/right seulement (jamais le raccourci `padding`) : sous 760px, .page-header applique
+   son propre padding-top/bottom (26px) -- un raccourci ici les remettrait à 0 en cascadant après
+   lui (roster.css etc. sont chargés après globals.css), écrasant l'espacement vertical mobile. */
+.plan-header{padding-left:max(25px,calc((100% - 1050px)/2));padding-right:max(25px,calc((100% - 1050px)/2))}
 .plan-duration{background:var(--accent);color:var(--accent-ink);padding:9px 12px;border-radius:99px;font-size:9px;font-weight:800}
 .plan-content{width:min(1000px,calc(100% - 40px));margin:30px auto 60px}
 .plan-summary{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px;margin-bottom:22px}
@@ -251,14 +322,15 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 .development-week p{font-size:9px;color:var(--muted);margin:0}
 .theme-chip{padding:7px 9px;background:var(--surface-2);border:1px solid var(--line);border-radius:99px;font-size:8px;font-weight:750}
 .plan-actions{width:min(420px,100%);margin:24px auto}
-@media(max-width:700px){.plan-header{grid-template-columns:1fr}
-.plan-summary{grid-template-columns:1fr}
+@media(max-width:700px){.plan-summary{grid-template-columns:1fr}
 .development-week{grid-template-columns:50px 1fr}
 .theme-chip{grid-column:2}
 .plan-duration{justify-self:start}
 }
 
-.match-observation-link { display:block; margin-top:15px; color:var(--accent-dark); font-size:11px; font-weight:800; text-decoration:none; }
+/* .week-card entière est désormais le lien (voir .card-link) ; ce repère reste juste pour son
+   emplacement en bas de carte. */
+.match-observation-link { display:block; margin-top:15px; }
 
 .session-shell{min-height:100vh;background:var(--paper)}
 .session-header{padding:38px max(25px,calc((100vw - 920px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink)}

@@ -106,7 +106,7 @@ export function SessionBuilder({ authenticated, onChange, session }: SessionBuil
               <div className="session-block-body">
                 <div className="session-block-diagram">
                   <TacticalDiagramView diagram={block.activity.diagram} />
-                  <Link href={`/bibliotheque/${block.activity.id}`}>Voir le détail →</Link>
+                  <Link className="inline-cta" href={`/bibliotheque/${block.activity.id}`}>Voir le détail →</Link>
                 </div>
                 <div className="session-block-text">
                   <p>{block.activity.objective}</p>
@@ -135,7 +135,7 @@ export function SessionBuilder({ authenticated, onChange, session }: SessionBuil
         <button className="continue-button" disabled={!isValid || saveState === "pending"} onClick={validateSession} type="button">Valider cette séance <span aria-hidden="true">→</span></button>
         <p aria-live="polite" className="session-validation-status" role="status">{validationStatus}</p>
         {saveState === "auth-required" && (
-          <p className="field-error">Connecte-toi pour enregistrer cette séance. <Link href="/connexion">Se connecter →</Link></p>
+          <p className="field-error">Connecte-toi pour enregistrer cette séance. <Link className="inline-cta" href="/connexion">Se connecter →</Link></p>
         )}
         {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
         {validationStatus && <Link className="observation-session-link" href="/observation?type=training">Observer cette séance →</Link>}

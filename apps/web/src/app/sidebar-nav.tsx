@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarIcon, EyeIcon, HomeIcon, TargetIcon, UsersIcon } from "./icons";
+import { BallIcon, CalendarIcon, EyeIcon, HomeIcon, TargetIcon, UsersIcon } from "./icons";
 import { SidebarIdentity } from "./sidebar-identity";
 
 // Auparavant définie une seule fois, en dur, dans page.tsx (l'accueil) : chaque autre page
@@ -13,7 +13,8 @@ const navItems: ReadonlyArray<{ href: string; label: string; icon: typeof HomeIc
   { href: "/", label: "Vue d'ensemble", icon: HomeIcon },
   { href: "/plan", label: "Plan de progression", icon: TargetIcon },
   { href: "/bibliotheque", label: "Séances", icon: CalendarIcon },
-  { href: "/#observations", label: "Observations", icon: EyeIcon },
+  { href: "/match", label: "Matchs", icon: BallIcon },
+  { href: "/observations", label: "Observations", icon: EyeIcon },
   { href: "/equipe", label: "Mon équipe", icon: UsersIcon },
 ];
 
@@ -31,9 +32,7 @@ export function SidebarNav() {
       </div>
       <nav aria-label="Navigation principale">
         {navItems.map(({ href, label, icon: Icon }) => {
-          // "/#observations" cible une section de l'accueil, pas une page dédiée (aucun
-          // historique des observations n'existe encore) : jamais "active" au sens navigation.
-          const isActive = href !== "/#observations" && (href === "/" ? pathname === "/" : pathname.startsWith(href));
+          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link className={isActive ? "nav-item active" : "nav-item"} href={href} key={href}>
               <Icon /> <span className="nav-label">{label}</span>

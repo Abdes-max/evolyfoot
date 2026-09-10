@@ -1,9 +1,19 @@
-import { EducatorNotFoundError } from "@evolyfoot/database";
+import { EducatorNotFoundError, ObservationNotFoundError } from "@evolyfoot/database";
 import { diagnosticCriteria, type ObservationDraft, type ObservationReport } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
+// Étend ObservationReport (le résultat d'une sauvegarde) avec ce qui n'existe qu'une fois
+// l'observation persistée : identifiant réel, éventuel match d'origine, horodatage -- nécessaire
+// pour lister et afficher le détail d'observations passées (voir /observations).
+export interface ObservationRecord extends ObservationReport {
+  matchId?: string;
+  createdAt: string;
+}
+
 export interface ObservationGateway {
-  save(educatorId: string, draft: ObservationDraft): Promise<ObservationReport>;
+  save(educatorId: string, draft: ObservationDraft, matchId?: string): Promise<ObservationReport>;
+  list(educatorId: string): Promise<ObservationRecord[]>;
+  get(educatorId: string, observationId: string): Promise<ObservationRecord>;
 }
 
 const observationLevels = ["reinforce", "progress", "achieved"] as const;
@@ -87,9 +97,15 @@ export function createSaveObservationHandler(
     if (!isObservationDraftShaped(body)) {
       return Response.json({ error: "L’observation est incomplète." }, { status: 400 });
     }
+    // Rattache l'observation au match préparé qu'elle concerne, quand elle en vient -- optionnel,
+    // une observation de séance n'a pas de matchId. L'appartenance réelle du match à cet
+    // éducateur (pas juste son existence) est vérifiée par la passerelle elle-même ci-dessous,
+    // avant d'accepter cet identifiant -- la contrainte de clé étrangère en base garantit
+    // seulement qu'un match avec cet id existe, jamais qu'il appartient à qui l'invoque.
+    const matchId = typeof body.matchId === "string" ? body.matchId : undefined;
 
     try {
-      const report = await observation.save(educator.id, body);
+      const report = await observation.save(educator.id, body, matchId);
       return Response.json({ report }, { status: 201 });
     } catch (error) {
       if (error instanceof EducatorNotFoundError) {
@@ -105,22 +121,112 @@ export function createSaveObservationHandler(
   };
 }
 
+export function createListObservationsHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  observation: Pick<ObservationGateway, "list">,
+  log: (error: unknown) => void,
+): (request: Request) => Promise<Response> {
+  return async (request) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    try {
+      return Response.json({ observations: await observation.list(educator.id) });
+    } catch (error) {
+      if (error instanceof Error) {
+        return Response.json({ error: error.message }, { status: 400 });
+      }
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  };
+}
+
+export function createGetObservationHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  observation: Pick<ObservationGateway, "get">,
+  log: (error: unknown) => void,
+): (request: Request, observationId: string) => Promise<Response> {
+  return async (request, observationId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    try {
+      return Response.json({ observation: await observation.get(educator.id, observationId) });
+    } catch (error) {
+      if (error instanceof ObservationNotFoundError) {
+        return Response.json({ error: error.message }, { status: 404 });
+      }
+      if (error instanceof Error) {
+        return Response.json({ error: error.message }, { status: 400 });
+      }
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  };
+}
+
 export async function createObservationGateway(): Promise<{
   gateway: ObservationGateway;
   disconnect: () => Promise<void>;
 }> {
-  const { createDatabaseClient, ObservationService, PrismaEducatorRepository, PrismaObservationRepository } =
-    await import("@evolyfoot/database");
+  const {
+    createDatabaseClient,
+    MatchNotFoundError,
+    MatchService,
+    ObservationService,
+    PrismaEducatorRepository,
+    PrismaMatchRepository,
+    PrismaObservationRepository,
+  } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const service = new ObservationService(
-    new PrismaEducatorRepository(database.prisma),
-    new PrismaObservationRepository(database.prisma),
-  );
+  const educatorRepository = new PrismaEducatorRepository(database.prisma);
+  const service = new ObservationService(educatorRepository, new PrismaObservationRepository(database.prisma));
+  const matchService = new MatchService(educatorRepository, new PrismaMatchRepository(database.prisma));
+
+  function toRecord(observation: Awaited<ReturnType<typeof service.get>>): ObservationRecord {
+    return {
+      id: observation.id,
+      eventType: observation.eventType,
+      title: observation.title,
+      dateLabel: observation.dateLabel,
+      players: observation.players,
+      ratings: observation.ratings,
+      signals: observation.signals,
+      ...(observation.note ? { note: observation.note } : {}),
+      summary: observation.summary,
+      ...(observation.matchId ? { matchId: observation.matchId } : {}),
+      createdAt: observation.createdAt.toISOString(),
+    };
+  }
 
   return {
     gateway: {
-      async save(educatorId, draft) {
-        const observation = await service.save(educatorId, draft);
+      async list(educatorId) {
+        const observations = await service.list(educatorId);
+        return observations.map(toRecord);
+      },
+      async get(educatorId, observationId) {
+        return toRecord(await service.get(educatorId, observationId));
+      },
+      async save(educatorId, draft, matchId) {
+        if (matchId) {
+          // Vérifie l'appartenance réelle avant d'accepter cet identifiant : `MatchService.get`
+          // lève `MatchNotFoundError` aussi bien pour un match inexistant que pour un match
+          // appartenant à un autre éducateur (voir match-service.ts) -- jamais distinguer les
+          // deux côté réponse HTTP, ce serait révéler l'existence d'un match d'autrui.
+          try {
+            await matchService.get(educatorId, matchId);
+          } catch (error) {
+            if (error instanceof MatchNotFoundError) {
+              throw new Error("Match introuvable.");
+            }
+            throw error;
+          }
+        }
+        const observation = await service.save(educatorId, draft, matchId);
         return {
           id: observation.id,
           eventType: observation.eventType,

@@ -1,6 +1,6 @@
 import { completeObservation } from "@evolyfoot/domain";
 import type { ObservationDraft } from "@evolyfoot/domain";
-import { EducatorNotFoundError, ValidationError } from "./errors";
+import { EducatorNotFoundError, ObservationNotFoundError, ValidationError } from "./errors";
 import type { EducatorRepository, ObservationRepository, PersistedObservation } from "./repositories";
 
 export class ObservationService {
@@ -9,7 +9,19 @@ export class ObservationService {
     private readonly observationRepository: ObservationRepository,
   ) {}
 
-  async save(educatorId: string, draft: ObservationDraft): Promise<PersistedObservation> {
+  async list(educatorId: string): Promise<PersistedObservation[]> {
+    return this.observationRepository.listByEducator(educatorId);
+  }
+
+  async get(educatorId: string, observationId: string): Promise<PersistedObservation> {
+    const observation = await this.observationRepository.findById(observationId, educatorId);
+    if (!observation) {
+      throw new ObservationNotFoundError();
+    }
+    return observation;
+  }
+
+  async save(educatorId: string, draft: ObservationDraft, matchId?: string): Promise<PersistedObservation> {
     // Recalcule le rapport (synthèse comprise) côté serveur à partir du brouillon plutôt que
     // de faire confiance à une synthèse déjà calculée côté client.
     let report;
@@ -23,6 +35,6 @@ export class ObservationService {
       throw new EducatorNotFoundError();
     }
 
-    return this.observationRepository.create(educatorId, report);
+    return this.observationRepository.create(educatorId, report, matchId);
   }
 }

@@ -24,7 +24,6 @@
 .observation-levels button{padding:9px 7px}
 .observation-aside{padding:18px}
 .player-signals-empty{margin:0 0 9px;padding:13px 15px;border-radius:10px;background:var(--info-bg);color:var(--ink);font-size:11px}
-.player-signals-empty a{color:var(--accent-dark);font-weight:800;text-decoration:none}
 .player-signals{display:grid;gap:9px}
 .player-signals article{padding:12px;border-radius:10px;background:var(--surface-2)}
 .player-signals strong{display:block;margin-bottom:8px;font-size:11px}

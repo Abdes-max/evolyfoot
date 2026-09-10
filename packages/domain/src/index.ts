@@ -104,3 +104,26 @@ export type {
   PlayerSignal,
   PlayerSignalKind,
 } from "./observation";
+export {
+  assignPlayerToSlot,
+  canFinalizeMatchPlan,
+  changeFormation,
+  clearSlot,
+  createMatchPlan,
+  defaultFormationId,
+  formationSlots,
+  isLineupComplete,
+  listFormations,
+  setCaptain,
+  validateMatchPlan,
+} from "./match";
+export type {
+  Formation,
+  LineupRole,
+  MatchLineupAssignment,
+  MatchLineupSlot,
+  MatchPlan,
+  MatchPlanErrors,
+  MatchStatus,
+  MatchVenue,
+} from "./match";

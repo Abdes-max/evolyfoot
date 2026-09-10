@@ -44,14 +44,14 @@ export function PlanView() {
     <>
       <SidebarNav />
       <main className="plan-shell">
-      <header className="plan-header">
+      <header className="page-header plan-header">
         <Link className="onboarding-brand" href="/">
           <span className="brand-mark">E</span> EvolyFoot
         </Link>
         <div>
           <span className="eyebrow light">ÉTAPE 3 SUR 3</span>
-          <h1>Ton premier cycle est prêt.</h1>
-          <p>{plan.explanation}</p>
+          <h1 title="Ton premier cycle est prêt.">Ton premier cycle est prêt.</h1>
+          <p title={plan.explanation}>{plan.explanation}</p>
         </div>
         <span className="plan-duration">4 semaines · 8 séances</span>
       </header>
