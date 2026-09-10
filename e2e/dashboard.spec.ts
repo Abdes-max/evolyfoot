@@ -236,3 +236,32 @@ test("l’éducateur ouvre son profil, complète une information et la voit enre
   await expect(page.getByText("Informations enregistrées.")).toBeVisible();
   await expect(page.getByText("FC Horizon")).toBeVisible();
 });
+
+test("l’éducateur ouvre la fiche d’un joueur et enregistre une évaluation datée", async ({ page }) => {
+  // Persistance réelle couverte par les tests d'intégration ; on vérifie ici le câblage client :
+  // liste effectif → fiche joueur → ajout d'une évaluation qui apparaît dans l'historique.
+  await page.route("**/api/team", (route) =>
+    route.fulfill({ json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: ["Mardi"] } } }),
+  );
+  await page.route("**/api/roster", (route) =>
+    route.fulfill({ json: { players: [{ id: "player-1", name: "Kylian", photo: null, birthDate: null, phone: null, email: null }] } }),
+  );
+  const evaluations: Array<Record<string, unknown>> = [];
+  await page.route("**/api/player-evaluations**", (route) => {
+    if (route.request().method() === "POST") {
+      const created = { id: `eval-${evaluations.length + 1}`, ...JSON.parse(route.request().postData() ?? "{}"), createdAt: "2026-09-10T10:00:00.000Z" };
+      evaluations.unshift(created);
+      return route.fulfill({ status: 201, json: { evaluation: created } });
+    }
+    return route.fulfill({ json: { evaluations } });
+  });
+
+  await page.goto("/equipe");
+  await page.getByRole("link", { name: "Kylian" }).click();
+  await expect(page).toHaveURL(/\/equipe\/player-1$/);
+  await expect(page.getByRole("heading", { name: "Kylian" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Enregistrer cette évaluation" }).click();
+  await expect(page.locator(".player-count")).toHaveText("1/10");
+  await expect(page.getByRole("button", { name: /retirer l’évaluation/i })).toBeVisible();
+});

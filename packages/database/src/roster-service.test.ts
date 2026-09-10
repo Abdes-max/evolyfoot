@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { RosterService } from "./roster-service";
 import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "./errors";
-import type { EducatorRecord, EducatorRepository, PersistedPlayer, PlayerRepository } from "./repositories";
+import type {
+  EducatorRecord,
+  EducatorRepository,
+  PersistedPlayer,
+  PlayerDetailsPatch,
+  PlayerRepository,
+} from "./repositories";
 
 class InMemoryEducatorRepository implements EducatorRepository {
   constructor(private readonly ids: readonly string[]) {}
@@ -42,6 +48,10 @@ class InMemoryPlayerRepository implements PlayerRepository {
       id: `player-${this.sequence}`,
       educatorId,
       name,
+      photo: null,
+      birthDate: null,
+      phone: null,
+      email: null,
       createdAt: new Date("2026-08-29T12:00:00.000Z"),
       updatedAt: new Date("2026-08-29T12:00:00.000Z"),
     };
@@ -50,11 +60,15 @@ class InMemoryPlayerRepository implements PlayerRepository {
   }
 
   async rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer> {
+    return this.update(id, educatorId, { name });
+  }
+
+  async update(id: string, educatorId: string, patch: PlayerDetailsPatch): Promise<PersistedPlayer> {
     const existing = this.players.get(id);
     if (!existing || existing.educatorId !== educatorId) {
       throw new PlayerNotFoundError();
     }
-    const updated: PersistedPlayer = { ...existing, name, updatedAt: new Date("2026-08-29T13:00:00.000Z") };
+    const updated: PersistedPlayer = { ...existing, ...patch, updatedAt: new Date("2026-08-29T13:00:00.000Z") };
     this.players.set(id, updated);
     return updated;
   }

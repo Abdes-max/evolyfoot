@@ -132,6 +132,7 @@ export {
   isPlayerEvaluationAspect,
   playerEvaluationAspectLabels,
   playerEvaluationAspects,
+  playerEvaluationMaxPerSeason,
   playerEvaluationMaxScore,
   playerEvaluationMinScore,
   validatePlayerEvaluationScores,

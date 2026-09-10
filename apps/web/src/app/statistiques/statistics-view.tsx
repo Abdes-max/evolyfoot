@@ -1,16 +1,8 @@
 "use client";
 
-import {
-  playerEvaluationAspectLabels,
-  playerEvaluationAspects,
-  playerEvaluationMaxScore,
-  playerEvaluationMinScore,
-  type PlayerEvaluationAspect,
-  type PlayerEvaluationScores,
-} from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
-import { BarChart, DonutChart, RadarChart } from "../charts";
+import { BarChart, DonutChart } from "../charts";
 
 interface TeamStats {
   trainingCount: number;
@@ -29,23 +21,6 @@ interface Tournament {
   result: string | null;
 }
 
-interface RosterPlayer {
-  id: string;
-  name: string;
-}
-
-interface PlayerEvaluation {
-  playerId: string;
-  scores: PlayerEvaluationScores;
-}
-
-const radarAxes = playerEvaluationAspects.map((aspect) => ({ key: aspect, label: playerEvaluationAspectLabels[aspect] }));
-
-function midpointScores(): PlayerEvaluationScores {
-  const midpoint = Math.round((playerEvaluationMinScore + playerEvaluationMaxScore) / 2);
-  return Object.fromEntries(playerEvaluationAspects.map((aspect) => [aspect, midpoint])) as PlayerEvaluationScores;
-}
-
 async function readErrorMessage(response: Response): Promise<string> {
   const body = await response.json().catch(() => ({}));
   return typeof body.error === "string" ? body.error : "Une erreur est survenue.";
@@ -55,18 +30,12 @@ export function StatisticsView() {
   const [authenticated, setAuthenticated] = useState<boolean | undefined>(undefined);
   const [stats, setStats] = useState<TeamStats | null>(null);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [players, setPlayers] = useState<RosterPlayer[]>([]);
-  const [evaluations, setEvaluations] = useState<Record<string, PlayerEvaluationScores>>({});
-  const [selectedPlayerId, setSelectedPlayerId] = useState("");
 
   const [tournamentName, setTournamentName] = useState("");
   const [tournamentDate, setTournamentDate] = useState("");
   const [tournamentResult, setTournamentResult] = useState("");
   const [tournamentError, setTournamentError] = useState("");
   const [addingTournament, setAddingTournament] = useState(false);
-
-  const [savingEvaluation, setSavingEvaluation] = useState(false);
-  const [evaluationSaved, setEvaluationSaved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,32 +50,18 @@ export function StatisticsView() {
         }
         setAuthenticated(true);
 
-        const [statsResponse, tournamentsResponse, rosterResponse, evaluationsResponse] = await Promise.all([
+        const [statsResponse, tournamentsResponse] = await Promise.all([
           fetch("/api/stats"),
           fetch("/api/tournaments"),
-          fetch("/api/roster"),
-          fetch("/api/player-evaluations"),
         ]);
         const statsBody = await statsResponse.json().catch(() => ({ stats: null }));
         const tournamentsBody = await tournamentsResponse.json().catch(() => ({ tournaments: [] }));
-        const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
-        const evaluationsBody = await evaluationsResponse.json().catch(() => ({ evaluations: [] }));
         if (cancelled) {
           return;
         }
 
         setStats(statsBody.stats ?? null);
         setTournaments(tournamentsBody.tournaments ?? []);
-        const roster: RosterPlayer[] = rosterBody.players ?? [];
-        setPlayers(roster);
-        const byPlayer: Record<string, PlayerEvaluationScores> = {};
-        for (const evaluation of (evaluationsBody.evaluations ?? []) as PlayerEvaluation[]) {
-          byPlayer[evaluation.playerId] = evaluation.scores;
-        }
-        setEvaluations(byPlayer);
-        if (roster.length > 0) {
-          setSelectedPlayerId(roster[0]!.id);
-        }
       } catch {
         if (!cancelled) {
           setAuthenticated(false);
@@ -155,38 +110,6 @@ export function StatisticsView() {
     }
   }
 
-  function updateScore(aspect: PlayerEvaluationAspect, value: number) {
-    if (!selectedPlayerId) {
-      return;
-    }
-    setEvaluationSaved(false);
-    setEvaluations((current) => ({
-      ...current,
-      [selectedPlayerId]: { ...(current[selectedPlayerId] ?? midpointScores()), [aspect]: value },
-    }));
-  }
-
-  async function saveEvaluation() {
-    if (!selectedPlayerId) {
-      return;
-    }
-    setSavingEvaluation(true);
-    setEvaluationSaved(false);
-    try {
-      const scores = evaluations[selectedPlayerId] ?? midpointScores();
-      const response = await fetch(`/api/player-evaluations/${selectedPlayerId}`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ scores }),
-      });
-      if (response.ok) {
-        setEvaluationSaved(true);
-      }
-    } finally {
-      setSavingEvaluation(false);
-    }
-  }
-
   if (authenticated === false) {
     return (
       <main className="statistics-shell">
@@ -198,8 +121,6 @@ export function StatisticsView() {
       </main>
     );
   }
-
-  const selectedScores = selectedPlayerId ? (evaluations[selectedPlayerId] ?? midpointScores()) : midpointScores();
 
   return (
     <main className="statistics-shell">
@@ -293,53 +214,9 @@ export function StatisticsView() {
             )}
           </div>
 
-          <div className="statistics-block">
-            <h2>Évaluation d’un joueur</h2>
-            {players.length === 0 ? (
-              <p className="statistics-empty">
-                Ajoute des joueurs à ton effectif pour pouvoir les évaluer. <Link className="inline-cta" href="/equipe">Gérer mon équipe →</Link>
-              </p>
-            ) : (
-              <div className="statistics-evaluation">
-                <div className="statistics-evaluation-form">
-                  <label htmlFor="statistics-player-select">Joueur</label>
-                  <select
-                    id="statistics-player-select"
-                    onChange={(event) => {
-                      setSelectedPlayerId(event.target.value);
-                      setEvaluationSaved(false);
-                    }}
-                    value={selectedPlayerId}
-                  >
-                    {players.map((player) => (
-                      <option key={player.id} value={player.id}>
-                        {player.name}
-                      </option>
-                    ))}
-                  </select>
-                  {playerEvaluationAspects.map((aspect) => (
-                    <div className="statistics-evaluation-row" key={aspect}>
-                      <span>{playerEvaluationAspectLabels[aspect]}</span>
-                      <input
-                        aria-label={playerEvaluationAspectLabels[aspect]}
-                        max={playerEvaluationMaxScore}
-                        min={playerEvaluationMinScore}
-                        onChange={(event) => updateScore(aspect, Number(event.target.value))}
-                        type="range"
-                        value={selectedScores[aspect]}
-                      />
-                      <strong>{selectedScores[aspect]}</strong>
-                    </div>
-                  ))}
-                  <button disabled={savingEvaluation} onClick={saveEvaluation} type="button">
-                    {savingEvaluation ? "Enregistrement…" : "Enregistrer l’évaluation"}
-                  </button>
-                  {evaluationSaved && <p className="statistics-saved" role="status">Évaluation enregistrée.</p>}
-                </div>
-                <RadarChart axes={radarAxes} max={playerEvaluationMaxScore} min={playerEvaluationMinScore} scores={selectedScores} />
-              </div>
-            )}
-          </div>
+          <p className="statistics-hint">
+            L’évaluation individuelle des joueurs (toile d’araignée) est sur chaque <Link className="inline-cta" href="/equipe">fiche joueur</Link>.
+          </p>
 
           <Link className="back-link" href="/">
             Retour au tableau de bord

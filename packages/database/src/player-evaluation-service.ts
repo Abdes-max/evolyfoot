@@ -1,4 +1,4 @@
-import { validatePlayerEvaluationScores } from "@evolyfoot/domain";
+import { playerEvaluationMaxPerSeason, validatePlayerEvaluationScores } from "@evolyfoot/domain";
 import type { PlayerEvaluationScores } from "@evolyfoot/domain";
 import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "./errors";
 import type {
@@ -19,7 +19,16 @@ export class PlayerEvaluationService {
     return this.playerEvaluationRepository.listByEducator(educatorId);
   }
 
-  async save(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation> {
+  async listByPlayer(educatorId: string, playerId: string): Promise<PersistedPlayerEvaluation[]> {
+    if (!(await this.playerRepository.findById(playerId, educatorId))) {
+      throw new PlayerNotFoundError();
+    }
+    return this.playerEvaluationRepository.listByPlayer(playerId, educatorId);
+  }
+
+  // Ajoute une évaluation datée. Historique borné (voir playerEvaluationMaxPerSeason) : au-delà,
+  // il faut d'abord en retirer une -- plutôt qu'écraser silencieusement la plus ancienne.
+  async add(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation> {
     const error = validatePlayerEvaluationScores(scores);
     if (error) {
       throw new ValidationError(error);
@@ -27,12 +36,20 @@ export class PlayerEvaluationService {
     if (!(await this.educatorRepository.existsById(educatorId))) {
       throw new EducatorNotFoundError();
     }
-    // Vérifie l'appartenance réelle du joueur avant d'écrire -- jamais faire confiance à un
-    // `playerId` fourni par le client sans vérifier qu'il appartient bien à cet éducateur (même
-    // principe que RosterService.rename/remove, PlayerRepository.findById ajouté pour ça).
+    // Jamais faire confiance à un `playerId` client sans vérifier l'appartenance réelle.
     if (!(await this.playerRepository.findById(playerId, educatorId))) {
       throw new PlayerNotFoundError();
     }
-    return this.playerEvaluationRepository.upsert(educatorId, playerId, scores);
+    const existing = await this.playerEvaluationRepository.countByPlayer(playerId, educatorId);
+    if (existing >= playerEvaluationMaxPerSeason) {
+      throw new ValidationError(
+        `Ce joueur a déjà ${playerEvaluationMaxPerSeason} évaluations. Retires-en une pour en ajouter une nouvelle.`,
+      );
+    }
+    return this.playerEvaluationRepository.create(educatorId, playerId, scores);
+  }
+
+  async remove(educatorId: string, evaluationId: string): Promise<void> {
+    await this.playerEvaluationRepository.remove(evaluationId, educatorId);
   }
 }

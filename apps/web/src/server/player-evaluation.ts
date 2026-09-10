@@ -1,17 +1,20 @@
-import { EducatorNotFoundError, PlayerNotFoundError } from "@evolyfoot/database";
+import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "@evolyfoot/database";
 import { playerEvaluationAspects } from "@evolyfoot/domain";
 import type { PlayerEvaluationScores } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface PlayerEvaluationSummary {
+  id: string;
   playerId: string;
   scores: PlayerEvaluationScores;
-  updatedAt: string;
+  createdAt: string;
 }
 
 export interface PlayerEvaluationGateway {
   list(educatorId: string): Promise<PlayerEvaluationSummary[]>;
-  save(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PlayerEvaluationSummary>;
+  listByPlayer(educatorId: string, playerId: string): Promise<PlayerEvaluationSummary[]>;
+  add(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PlayerEvaluationSummary>;
+  remove(educatorId: string, evaluationId: string): Promise<void>;
 }
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
@@ -31,9 +34,23 @@ function isScoresShaped(value: unknown): value is PlayerEvaluationScores {
   return playerEvaluationAspects.every((aspect) => typeof record[aspect] === "number");
 }
 
+function errorResponse(error: unknown, log: (error: unknown) => void): Response {
+  if (error instanceof EducatorNotFoundError) {
+    return Response.json({ error: error.message }, { status: 401 });
+  }
+  if (error instanceof PlayerNotFoundError) {
+    return Response.json({ error: error.message }, { status: 404 });
+  }
+  if (error instanceof ValidationError || error instanceof Error) {
+    return Response.json({ error: error.message }, { status: 400 });
+  }
+  log(error);
+  return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+}
+
 export function createListPlayerEvaluationsHandler(
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
-  evaluations: Pick<PlayerEvaluationGateway, "list">,
+  evaluations: Pick<PlayerEvaluationGateway, "list" | "listByPlayer">,
   log: (error: unknown) => void,
 ): (request: Request) => Promise<Response> {
   return async (request) => {
@@ -41,45 +58,58 @@ export function createListPlayerEvaluationsHandler(
     if (!educator) {
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
+    const playerId = new URL(request.url).searchParams.get("playerId");
     try {
-      return Response.json({ evaluations: await evaluations.list(educator.id) });
+      const list = playerId
+        ? await evaluations.listByPlayer(educator.id, playerId)
+        : await evaluations.list(educator.id);
+      return Response.json({ evaluations: list });
     } catch (error) {
-      log(error);
-      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+      return errorResponse(error, log);
     }
   };
 }
 
-export function createSavePlayerEvaluationHandler(
+export function createAddPlayerEvaluationHandler(
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
-  evaluations: Pick<PlayerEvaluationGateway, "save">,
+  evaluations: Pick<PlayerEvaluationGateway, "add">,
   log: (error: unknown) => void,
-): (request: Request, playerId: string) => Promise<Response> {
-  return async (request, playerId) => {
+): (request: Request) => Promise<Response> {
+  return async (request) => {
     const educator = await resolveEducator(request);
     if (!educator) {
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
 
     const body = await readJsonBody(request);
-    if (!isScoresShaped(body?.scores)) {
+    const playerId = typeof body?.playerId === "string" ? body.playerId : null;
+    if (!playerId || !isScoresShaped(body?.scores)) {
       return Response.json({ error: "L’évaluation est incomplète." }, { status: 400 });
     }
 
     try {
-      return Response.json({ evaluation: await evaluations.save(educator.id, playerId, body.scores) });
+      return Response.json({ evaluation: await evaluations.add(educator.id, playerId, body.scores) }, { status: 201 });
     } catch (error) {
-      if (error instanceof EducatorNotFoundError) {
-        return Response.json({ error: error.message }, { status: 401 });
-      }
-      if (error instanceof PlayerNotFoundError) {
-        return Response.json({ error: error.message }, { status: 404 });
-      }
-      if (error instanceof Error) {
-        return Response.json({ error: error.message }, { status: 400 });
-      }
-      log(error);
-      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+      return errorResponse(error, log);
+    }
+  };
+}
+
+export function createRemovePlayerEvaluationHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  evaluations: Pick<PlayerEvaluationGateway, "remove">,
+  log: (error: unknown) => void,
+): (request: Request, evaluationId: string) => Promise<Response> {
+  return async (request, evaluationId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    try {
+      await evaluations.remove(educator.id, evaluationId);
+      return Response.json({ status: "ok" });
+    } catch (error) {
+      return errorResponse(error, log);
     }
   };
 }
@@ -102,22 +132,28 @@ export async function createPlayerEvaluationGateway(): Promise<{
     new PrismaPlayerEvaluationRepository(database.prisma),
   );
 
-  function toSummary(evaluation: Awaited<ReturnType<typeof service.save>>): PlayerEvaluationSummary {
+  function toSummary(evaluation: Awaited<ReturnType<typeof service.add>>): PlayerEvaluationSummary {
     return {
+      id: evaluation.id,
       playerId: evaluation.playerId,
       scores: evaluation.scores,
-      updatedAt: evaluation.updatedAt.toISOString(),
+      createdAt: evaluation.createdAt.toISOString(),
     };
   }
 
   return {
     gateway: {
       async list(educatorId) {
-        const evaluations = await service.list(educatorId);
-        return evaluations.map(toSummary);
+        return (await service.list(educatorId)).map(toSummary);
       },
-      async save(educatorId, playerId, scores) {
-        return toSummary(await service.save(educatorId, playerId, scores));
+      async listByPlayer(educatorId, playerId) {
+        return (await service.listByPlayer(educatorId, playerId)).map(toSummary);
+      },
+      async add(educatorId, playerId, scores) {
+        return toSummary(await service.add(educatorId, playerId, scores));
+      },
+      remove(educatorId, evaluationId) {
+        return service.remove(educatorId, evaluationId);
       },
     },
     disconnect: database.disconnect,

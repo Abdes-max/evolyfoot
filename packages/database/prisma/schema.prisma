@@ -193,7 +193,16 @@ model Player {
   educatorId String                  @db.Uuid @map("educator_id")
   educator   Educator                @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   name       String
-  evaluation PlayerEvaluationRecord?
+  // Fiche joueur : tous optionnels. `photo` stocke une image (data URL) redimensionnée côté
+  // client -- pas de stockage d'objets ni de CDN pour l'instant. `birthDate` en texte ISO
+  // (`YYYY-MM-DD`), même choix que pour la fiche éducateur.
+  photo      String?
+  birthDate  String?                 @map("birth_date")
+  phone      String?
+  email      String?
+  // Historique borné d'évaluations datées (voir playerEvaluationMaxPerSeason côté domaine),
+  // plus « une seule par joueur » : d'où la relation 1-N ci-dessous au lieu d'un `?`.
+  evaluations PlayerEvaluationRecord[]
   createdAt  DateTime                @default(now()) @map("created_at")
   updatedAt  DateTime                @updatedAt @map("updated_at")
 
@@ -257,16 +266,19 @@ model TournamentRecord {
 // pas juste indexé. `onDelete: Cascade` sur `player` (contrairement à ObservationRecord.players,
 // qui duplique id+nom sans clé étrangère) : une évaluation n'a de sens que pour un joueur présent
 // dans l'effectif courant, ce n'est pas une photo figée d'un instant passé.
+// Évaluation d'un joueur à un instant donné (note 0-10 par aspect, voir player-evaluation côté
+// domaine). Plusieurs par joueur désormais -- un historique daté et borné (voir
+// playerEvaluationMaxPerSeason), plus le patron « un enregistrement remplacé en place ».
 model PlayerEvaluationRecord {
   id         String   @id @default(uuid()) @db.Uuid
   educatorId String   @db.Uuid @map("educator_id")
   educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  playerId   String   @unique @db.Uuid @map("player_id")
+  playerId   String   @db.Uuid @map("player_id")
   player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
   scores     Json
   createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@index([educatorId])
+  @@index([playerId])
   @@map("player_evaluations")
 }

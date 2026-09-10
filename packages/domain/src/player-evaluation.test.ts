@@ -10,18 +10,19 @@ describe("player evaluation", () => {
     expect(playerEvaluationAspects).toHaveLength(7);
   });
 
-  it("accepte des scores dans la plage 1-5", () => {
+  it("accepte des scores dans la plage 0-10", () => {
     const scores = createEmptyPlayerEvaluationScores();
     expect(validatePlayerEvaluationScores(scores)).toBeNull();
+    expect(validatePlayerEvaluationScores({ ...scores, technique: 0, tir: 10 })).toBeNull();
   });
 
   it("rejette un score hors plage", () => {
-    const scores = { ...createEmptyPlayerEvaluationScores(), technique: 6 };
-    expect(validatePlayerEvaluationScores(scores)).toMatch(/1 à 5/);
+    const scores = { ...createEmptyPlayerEvaluationScores(), technique: 11 };
+    expect(validatePlayerEvaluationScores(scores)).toMatch(/0 à 10/);
   });
 
   it("rejette un score non entier", () => {
     const scores = { ...createEmptyPlayerEvaluationScores(), technique: 2.5 };
-    expect(validatePlayerEvaluationScores(scores)).toMatch(/1 à 5/);
+    expect(validatePlayerEvaluationScores(scores)).toMatch(/0 à 10/);
   });
 });
