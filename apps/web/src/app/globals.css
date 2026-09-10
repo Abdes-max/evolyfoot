@@ -139,7 +139,11 @@ nav { display:flex; flex-direction:column; gap:4px; }
    (session-builder.css) -- réécrite ici plutôt qu'importée pour ne pas dépendre de l'ordre de
    chargement des feuilles de style entre pages. */
 @media (max-width:950px) { .shell,.plan-shell{padding-left:0}
-.sidebar{left:0;right:0;bottom:0;top:auto;height:auto;z-index:30;padding:6px 8px calc(6px + env(safe-area-inset-bottom));flex-direction:row;align-items:stretch;border-right:0;border-top:1px solid var(--line)}
+/* width:auto -- sans lui, le width:264px de la version desktop (colonne latérale) persiste tel
+   quel : `left`/`right` sont alors ignorés (une largeur explicite l'emporte toujours sur eux), et
+   la barre du bas reste coincée à 264px de large collée à gauche au lieu de courir sur toute la
+   largeur de l'écran. */
+.sidebar{left:0;right:0;width:auto;bottom:0;top:auto;height:auto;z-index:30;padding:6px 8px calc(6px + env(safe-area-inset-bottom));flex-direction:row;align-items:stretch;border-right:0;border-top:1px solid var(--line)}
 .brand,.season-card,.coach{display:none}
 nav{flex-direction:row;justify-content:space-around;gap:2px;width:100%}
 .nav-item{flex:1;flex-direction:column;gap:3px;min-height:52px;padding:8px 4px;justify-content:center;text-align:center;border-radius:12px}
