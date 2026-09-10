@@ -7,6 +7,12 @@ import { SidebarNav } from "../sidebar-nav";
 interface RosterPlayer {
   id: string;
   name: string;
+  photo?: string | null;
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts.slice(0, 2).map((part) => part[0]!.toUpperCase()).join("") || "?";
 }
 
 interface TeamSummary {
@@ -214,7 +220,17 @@ export function RosterView() {
                   </>
                 ) : (
                   <>
-                    <strong>{player.name}</strong>
+                    <Link className="roster-row-name" href={`/equipe/${player.id}`}>
+                      <span aria-hidden="true" className="roster-avatar">
+                        {player.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img alt="" src={player.photo} />
+                        ) : (
+                          initials(player.name)
+                        )}
+                      </span>
+                      <strong>{player.name}</strong>
+                    </Link>
                     <div className="roster-row-actions">
                       <button aria-label={`Renommer ${player.name}`} onClick={() => startEditing(player)} type="button">
                         Renommer

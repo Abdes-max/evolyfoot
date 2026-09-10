@@ -103,7 +103,8 @@ export function RadarChart({
   const size = 260;
   const center = size / 2;
   const radius = 88;
-  const ringCount = max - min;
+  // Au plus 5 anneaux, quelle que soit l'amplitude (0-10 tracerait 10 anneaux, illisible).
+  const ringCount = Math.min(Math.max(max - min, 1), 5);
   const angleStep = (2 * Math.PI) / axes.length;
 
   function pointAt(index: number, ratio: number): { x: number; y: number } {

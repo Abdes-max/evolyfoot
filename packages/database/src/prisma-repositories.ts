@@ -48,6 +48,7 @@ import type {
   PersistedTournament,
   PersistedTrainingSession,
   PersistedTrainingSessionBlock,
+  PlayerDetailsPatch,
   PlayerEvaluationRepository,
   PlayerRepository,
   SessionRecord,
@@ -403,7 +404,11 @@ export class PrismaPlayerRepository implements PlayerRepository {
   // jamais un `findUnique` puis un `update` séparés, qui laisserait une fenêtre entre la
   // vérification et l'écriture.
   async rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer> {
-    const { count } = await this.prisma.player.updateMany({ where: { id, educatorId }, data: { name } });
+    return this.update(id, educatorId, { name });
+  }
+
+  async update(id: string, educatorId: string, patch: PlayerDetailsPatch): Promise<PersistedPlayer> {
+    const { count } = await this.prisma.player.updateMany({ where: { id, educatorId }, data: patch });
     if (count === 0) {
       throw new PlayerNotFoundError();
     }
@@ -533,24 +538,29 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
   constructor(private readonly prisma: PrismaClient) {}
 
   async listByEducator(educatorId: string): Promise<PersistedPlayerEvaluation[]> {
-    const records = await this.prisma.playerEvaluationRecord.findMany({ where: { educatorId } });
+    const records = await this.prisma.playerEvaluationRecord.findMany({
+      where: { educatorId },
+      orderBy: { createdAt: "desc" },
+    });
     return records.map(toPersistedPlayerEvaluation);
   }
 
-  async findByPlayerId(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation | null> {
-    const record = await this.prisma.playerEvaluationRecord.findFirst({ where: { playerId, educatorId } });
-    return record === null ? null : toPersistedPlayerEvaluation(record);
+  async listByPlayer(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation[]> {
+    const records = await this.prisma.playerEvaluationRecord.findMany({
+      where: { playerId, educatorId },
+      orderBy: { createdAt: "desc" },
+    });
+    return records.map(toPersistedPlayerEvaluation);
   }
 
-  // `upsert` sur `playerId` (unique en base, voir schema.prisma) plutôt que create-puis-update :
-  // une seule évaluation par joueur, mise à jour en place -- même principe que
-  // PrismaDiagnosticRepository.upsertForEducator.
-  async upsert(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation> {
+  async countByPlayer(playerId: string, educatorId: string): Promise<number> {
+    return this.prisma.playerEvaluationRecord.count({ where: { playerId, educatorId } });
+  }
+
+  async create(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation> {
     try {
-      const record = await this.prisma.playerEvaluationRecord.upsert({
-        where: { playerId },
-        create: { educatorId, playerId, scores: scores as unknown as Prisma.InputJsonValue },
-        update: { scores: scores as unknown as Prisma.InputJsonValue },
+      const record = await this.prisma.playerEvaluationRecord.create({
+        data: { educatorId, playerId, scores: scores as unknown as Prisma.InputJsonValue },
       });
       return toPersistedPlayerEvaluation(record);
     } catch (error) {
@@ -559,5 +569,9 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
       }
       throw error;
     }
+  }
+
+  async remove(id: string, educatorId: string): Promise<void> {
+    await this.prisma.playerEvaluationRecord.deleteMany({ where: { id, educatorId } });
   }
 }

@@ -35,24 +35,43 @@ describe("PostgreSQL player evaluation persistence", () => {
   afterEach(removeTestEducators);
   afterAll(() => database.disconnect());
 
-  it("creates then updates a single evaluation in place for the same player", async () => {
-    const educator = await createEducator("upsert");
+  it("keeps a dated history of several evaluations per player, newest first", async () => {
+    const educator = await createEducator("history");
     const player = await playerRepository.create(educator.id, "Kylian");
 
-    await service.save(educator.id, player.id, { ...createEmptyPlayerEvaluationScores(), technique: 4 });
-    const updated = await service.save(educator.id, player.id, { ...createEmptyPlayerEvaluationScores(), technique: 5 });
+    await service.add(educator.id, player.id, { ...createEmptyPlayerEvaluationScores(), technique: 4 });
+    await service.add(educator.id, player.id, { ...createEmptyPlayerEvaluationScores(), technique: 8 });
 
-    expect(updated.scores.technique).toBe(5);
-    const all = await service.list(educator.id);
-    expect(all).toHaveLength(1);
+    const history = await service.listByPlayer(educator.id, player.id);
+    expect(history).toHaveLength(2);
+    expect(history[0]!.scores.technique).toBe(8);
+    expect(history[0]!.createdAt.getTime()).toBeGreaterThanOrEqual(history[1]!.createdAt.getTime());
   });
 
-  it("rejects a score outside the 1-5 range", async () => {
+  it("caps the history at ten evaluations per player", async () => {
+    const educator = await createEducator("cap");
+    const player = await playerRepository.create(educator.id, "Kylian");
+
+    for (let index = 0; index < 10; index += 1) {
+      await service.add(educator.id, player.id, createEmptyPlayerEvaluationScores());
+    }
+    await expect(service.add(educator.id, player.id, createEmptyPlayerEvaluationScores())).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+
+    const [oldest] = (await service.listByPlayer(educator.id, player.id)).slice(-1);
+    await service.remove(educator.id, oldest!.id);
+    await expect(service.add(educator.id, player.id, createEmptyPlayerEvaluationScores())).resolves.toMatchObject({
+      playerId: player.id,
+    });
+  });
+
+  it("rejects a score outside the 0-10 range", async () => {
     const educator = await createEducator("invalid");
     const player = await playerRepository.create(educator.id, "Kylian");
 
     await expect(
-      service.save(educator.id, player.id, { ...createEmptyPlayerEvaluationScores(), technique: 9 }),
+      service.add(educator.id, player.id, { ...createEmptyPlayerEvaluationScores(), technique: 11 }),
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
@@ -62,14 +81,14 @@ describe("PostgreSQL player evaluation persistence", () => {
     const player = await playerRepository.create(owner.id, "Kylian");
 
     await expect(
-      service.save(stranger.id, player.id, createEmptyPlayerEvaluationScores()),
+      service.add(stranger.id, player.id, createEmptyPlayerEvaluationScores()),
     ).rejects.toBeInstanceOf(PlayerNotFoundError);
   });
 
-  it("cascades a test player deletion to its evaluation", async () => {
+  it("cascades a test player deletion to its evaluations", async () => {
     const educator = await createEducator("cascade");
     const player = await playerRepository.create(educator.id, "Kylian");
-    await service.save(educator.id, player.id, createEmptyPlayerEvaluationScores());
+    await service.add(educator.id, player.id, createEmptyPlayerEvaluationScores());
 
     await playerRepository.remove(player.id, educator.id);
 

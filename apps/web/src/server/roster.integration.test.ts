@@ -4,12 +4,13 @@ import {
   createAddPlayerHandler,
   createListRosterHandler,
   createRemovePlayerHandler,
-  createRenamePlayerHandler,
+  createUpdatePlayerHandler,
   type RosterGateway,
+  type RosterPlayer,
 } from "./roster";
 
 const educator = { id: "educator-1", email: "coach@example.test", displayName: "Coach" };
-const player = { id: "player-1", name: "Kylian" };
+const player: RosterPlayer = { id: "player-1", name: "Kylian", photo: null, birthDate: null, phone: null, email: null };
 
 function jsonRequest(method: string, body?: unknown): Request {
   return new Request("https://evolyfoot.test/api/roster", {
@@ -111,9 +112,9 @@ describe("createAddPlayerHandler", () => {
   });
 });
 
-describe("createRenamePlayerHandler", () => {
+describe("createUpdatePlayerHandler", () => {
   it("requires an authenticated session", async () => {
-    const handler = createRenamePlayerHandler(anonymous, { rename: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createUpdatePlayerHandler(anonymous, { update: async () => { throw new Error("not called"); } }, () => undefined);
 
     const response = await handler(jsonRequest("PATCH", { name: "Mbappé" }), player.id);
 
@@ -121,26 +122,42 @@ describe("createRenamePlayerHandler", () => {
   });
 
   it("maps a player belonging to another educator to a 404", async () => {
-    const gateway: Pick<RosterGateway, "rename"> = {
-      rename: async () => {
+    const gateway: Pick<RosterGateway, "update"> = {
+      update: async () => {
         throw new PlayerNotFoundError();
       },
     };
-    const handler = createRenamePlayerHandler(authenticated, gateway, () => undefined);
+    const handler = createUpdatePlayerHandler(authenticated, gateway, () => undefined);
 
     const response = await handler(jsonRequest("PATCH", { name: "Mbappé" }), player.id);
 
     expect(response.status).toBe(404);
   });
 
-  it("renames and returns the player on success", async () => {
-    const renamed = { id: player.id, name: "Mbappé" };
-    const handler = createRenamePlayerHandler(authenticated, { rename: async () => renamed }, () => undefined);
+  it("forwards only known fields and rejects an empty patch", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<RosterGateway, "update"> = {
+      update: async (_id, _playerId, input) => {
+        received.push(input);
+        return player;
+      },
+    };
+    const handler = createUpdatePlayerHandler(authenticated, gateway, () => undefined);
+
+    await handler(jsonRequest("PATCH", { name: "Mbappé", phone: "0102", nope: "x", email: null }), player.id);
+    expect(received).toEqual([{ name: "Mbappé", phone: "0102", email: null }]);
+
+    expect((await handler(jsonRequest("PATCH", { nope: "x" }), player.id)).status).toBe(400);
+  });
+
+  it("updates and returns the player on success", async () => {
+    const updated: RosterPlayer = { ...player, name: "Mbappé" };
+    const handler = createUpdatePlayerHandler(authenticated, { update: async () => updated }, () => undefined);
 
     const response = await handler(jsonRequest("PATCH", { name: "Mbappé" }), player.id);
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ player: renamed });
+    expect(await response.json()).toEqual({ player: updated });
   });
 });
 

@@ -1,5 +1,5 @@
 import { createAuthGateway, readSessionToken, type PublicEducator } from "@/server/auth";
-import { createRemovePlayerHandler, createRenamePlayerHandler, createRosterGateway } from "@/server/roster";
+import { createRemovePlayerHandler, createRosterGateway, createUpdatePlayerHandler } from "@/server/roster";
 
 async function resolveEducator(request: Request): Promise<PublicEducator | null> {
   const token = readSessionToken(request);
@@ -23,7 +23,7 @@ export async function PATCH(request: Request, { params }: RouteParams): Promise<
   const { id } = await params;
   const { gateway, disconnect } = await createRosterGateway();
   try {
-    return await createRenamePlayerHandler(resolveEducator, gateway, console.error)(request, id);
+    return await createUpdatePlayerHandler(resolveEducator, gateway, console.error)(request, id);
   } finally {
     await disconnect();
   }

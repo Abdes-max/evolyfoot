@@ -26,8 +26,12 @@ export const playerEvaluationAspectLabels: Readonly<Record<PlayerEvaluationAspec
 
 export type PlayerEvaluationScores = Readonly<Record<PlayerEvaluationAspect, number>>;
 
-export const playerEvaluationMinScore = 1;
-export const playerEvaluationMaxScore = 5;
+export const playerEvaluationMinScore = 0;
+export const playerEvaluationMaxScore = 10;
+
+// Une évaluation est une photo à un instant donné ; on en garde un historique borné par saison
+// pour suivre la progression sans laisser la liste enfler indéfiniment.
+export const playerEvaluationMaxPerSeason = 10;
 
 export function isPlayerEvaluationAspect(value: string): value is PlayerEvaluationAspect {
   return (playerEvaluationAspects as readonly string[]).includes(value);

@@ -199,15 +199,30 @@ export interface PersistedPlayer {
   id: string;
   educatorId: string;
   name: string;
+  // Fiche joueur, tous optionnels. `photo` = data URL redimensionnée côté client.
+  photo: string | null;
+  birthDate: string | null;
+  phone: string | null;
+  email: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Patch partiel de la fiche : clé absente ⇒ non touchée, `null` ⇒ efface.
+export type PlayerDetailsPatch = Partial<{
+  name: string;
+  photo: string | null;
+  birthDate: string | null;
+  phone: string | null;
+  email: string | null;
+}>;
 
 export interface PlayerRepository {
   listByEducator(educatorId: string): Promise<PersistedPlayer[]>;
   findById(id: string, educatorId: string): Promise<PersistedPlayer | null>;
   create(educatorId: string, name: string): Promise<PersistedPlayer>;
   rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer>;
+  update(id: string, educatorId: string, patch: PlayerDetailsPatch): Promise<PersistedPlayer>;
   remove(id: string, educatorId: string): Promise<void>;
 }
 
@@ -285,11 +300,13 @@ export interface PersistedPlayerEvaluation {
   educatorId: string;
   playerId: string;
   scores: PlayerEvaluationScores;
-  updatedAt: Date;
+  createdAt: Date;
 }
 
 export interface PlayerEvaluationRepository {
   listByEducator(educatorId: string): Promise<PersistedPlayerEvaluation[]>;
-  findByPlayerId(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation | null>;
-  upsert(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation>;
+  listByPlayer(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation[]>;
+  countByPlayer(playerId: string, educatorId: string): Promise<number>;
+  create(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation>;
+  remove(id: string, educatorId: string): Promise<void>;
 }

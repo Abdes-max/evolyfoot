@@ -38,6 +38,7 @@ export { TrainingSessionService, trainingCycleWeekCount } from "./training-sessi
 export type { AuthenticatedSession } from "./auth-service";
 export type { EducatorProfileInput, SeasonFormat } from "./educator-profile-service";
 export type { FunnelStep, MvpMetrics, WeeklyActivityPoint } from "./metrics-service";
+export type { PlayerDetailsInput } from "./roster-service";
 export type { TeamStats } from "./stats-service";
 export type { TrainingSessionInput } from "./training-session-service";
 export type {
@@ -59,6 +60,7 @@ export type {
   PersistedTournament,
   PersistedTrainingSession,
   PersistedTrainingSessionBlock,
+  PlayerDetailsPatch,
   PlayerEvaluationRepository,
   PlayerRepository,
   SessionRecord,

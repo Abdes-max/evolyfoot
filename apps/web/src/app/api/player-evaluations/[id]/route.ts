@@ -1,5 +1,5 @@
 import { createAuthGateway, readSessionToken, type PublicEducator } from "@/server/auth";
-import { createPlayerEvaluationGateway, createSavePlayerEvaluationHandler } from "@/server/player-evaluation";
+import { createPlayerEvaluationGateway, createRemovePlayerEvaluationHandler } from "@/server/player-evaluation";
 
 async function resolveEducator(request: Request): Promise<PublicEducator | null> {
   const token = readSessionToken(request);
@@ -16,14 +16,14 @@ async function resolveEducator(request: Request): Promise<PublicEducator | null>
 }
 
 interface RouteParams {
-  params: Promise<{ playerId: string }>;
+  params: Promise<{ id: string }>;
 }
 
-export async function PUT(request: Request, { params }: RouteParams): Promise<Response> {
-  const { playerId } = await params;
+export async function DELETE(request: Request, { params }: RouteParams): Promise<Response> {
+  const { id } = await params;
   const { gateway, disconnect } = await createPlayerEvaluationGateway();
   try {
-    return await createSavePlayerEvaluationHandler(resolveEducator, gateway, console.error)(request, playerId);
+    return await createRemovePlayerEvaluationHandler(resolveEducator, gateway, console.error)(request, id);
   } finally {
     await disconnect();
   }
