@@ -15,7 +15,9 @@ import {
   toPersistedMatch,
   toPersistedObservation,
   toPersistedPlayer,
+  toPersistedPlayerEvaluation,
   toPersistedTeamProfile,
+  toPersistedTournament,
   toPersistedTrainingSession,
   toPrismaAgeGroup,
   toPrismaDevelopmentTheme,
@@ -37,16 +39,32 @@ import type {
   PersistedMatch,
   PersistedObservation,
   PersistedPlayer,
+  PersistedPlayerEvaluation,
   PersistedTeamProfile,
+  PersistedTournament,
   PersistedTrainingSession,
   PersistedTrainingSessionBlock,
+  PlayerEvaluationRepository,
   PlayerRepository,
   SessionRecord,
   SessionRepository,
   TeamRepository,
+  TournamentRepository,
   TrainingSessionRepository,
 } from "./repositories";
-import type { AgeGroup, DevelopmentTheme, DiagnosticScores, GameFormat, MatchLineupAssignment, MatchStatus, MatchVenue, ObservationReport, TeamProfile } from "@evolyfoot/domain";
+import type {
+  AgeGroup,
+  AttendanceEntry,
+  DevelopmentTheme,
+  DiagnosticScores,
+  GameFormat,
+  MatchLineupAssignment,
+  MatchStatus,
+  MatchVenue,
+  ObservationReport,
+  PlayerEvaluationScores,
+  TeamProfile,
+} from "@evolyfoot/domain";
 
 function translateEducatorWriteError(error: unknown): never {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -240,6 +258,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
       theme: DevelopmentTheme;
       intention: string;
       blocks: PersistedTrainingSessionBlock[];
+      attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedTrainingSession> {
     try {
@@ -252,12 +271,18 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
           theme: toPrismaDevelopmentTheme(input.theme),
           intention: input.intention,
           blocks: input.blocks as unknown as Prisma.InputJsonValue,
+          attendance: input.attendance ? (input.attendance as unknown as Prisma.InputJsonValue) : undefined,
         },
       });
       return toPersistedTrainingSession(record);
     } catch (error) {
       return translateHistoryCreateError(error);
     }
+  }
+
+  async listByEducator(educatorId: string): Promise<PersistedTrainingSession[]> {
+    const records = await this.prisma.trainingSessionRecord.findMany({ where: { educatorId }, orderBy: { createdAt: "desc" } });
+    return records.map(toPersistedTrainingSession);
   }
 }
 
@@ -310,6 +335,11 @@ export class PrismaPlayerRepository implements PlayerRepository {
   async listByEducator(educatorId: string): Promise<PersistedPlayer[]> {
     const players = await this.prisma.player.findMany({ where: { educatorId }, orderBy: { createdAt: "asc" } });
     return players.map(toPersistedPlayer);
+  }
+
+  async findById(id: string, educatorId: string): Promise<PersistedPlayer | null> {
+    const player = await this.prisma.player.findFirst({ where: { id, educatorId } });
+    return player === null ? null : toPersistedPlayer(player);
   }
 
   async create(educatorId: string, name: string): Promise<PersistedPlayer> {
@@ -397,6 +427,7 @@ export class PrismaMatchRepository implements MatchRepository {
       status?: MatchStatus;
       lineup?: readonly MatchLineupAssignment[];
       captainPlayerId?: string | null;
+      attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedMatch> {
     const { count } = await this.prisma.matchRecord.updateMany({
@@ -409,6 +440,7 @@ export class PrismaMatchRepository implements MatchRepository {
         ...(input.status !== undefined ? { status: toPrismaMatchStatus(input.status) } : {}),
         ...(input.lineup !== undefined ? { lineup: input.lineup as unknown as Prisma.InputJsonValue } : {}),
         ...(input.captainPlayerId !== undefined ? { captainPlayerId: input.captainPlayerId } : {}),
+        ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
       },
     });
     if (count === 0) {
@@ -422,6 +454,63 @@ export class PrismaMatchRepository implements MatchRepository {
     const { count } = await this.prisma.matchRecord.deleteMany({ where: { id, educatorId } });
     if (count === 0) {
       throw new MatchNotFoundError();
+    }
+  }
+}
+
+export class PrismaTournamentRepository implements TournamentRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async listByEducator(educatorId: string): Promise<PersistedTournament[]> {
+    const records = await this.prisma.tournamentRecord.findMany({ where: { educatorId }, orderBy: { createdAt: "desc" } });
+    return records.map(toPersistedTournament);
+  }
+
+  async create(educatorId: string, input: { name: string; dateLabel: string; result?: string }): Promise<PersistedTournament> {
+    const record = await this.prisma.tournamentRecord.create({
+      data: { educatorId, name: input.name, dateLabel: input.dateLabel, result: input.result ?? null },
+    });
+    return toPersistedTournament(record);
+  }
+
+  // Pas de garde-fou "0 ligne supprimée" ici (contrairement à PrismaMatchRepository.remove) :
+  // supprimer un tournoi déjà supprimé ou inexistant, ou d'un autre éducateur, ne fait
+  // simplement rien plutôt que d'échouer -- une fiche simple sans conséquence en cascade sur
+  // d'autres données, contrairement à un match (composition, observations liées).
+  async remove(id: string, educatorId: string): Promise<void> {
+    await this.prisma.tournamentRecord.deleteMany({ where: { id, educatorId } });
+  }
+}
+
+export class PrismaPlayerEvaluationRepository implements PlayerEvaluationRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async listByEducator(educatorId: string): Promise<PersistedPlayerEvaluation[]> {
+    const records = await this.prisma.playerEvaluationRecord.findMany({ where: { educatorId } });
+    return records.map(toPersistedPlayerEvaluation);
+  }
+
+  async findByPlayerId(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation | null> {
+    const record = await this.prisma.playerEvaluationRecord.findFirst({ where: { playerId, educatorId } });
+    return record === null ? null : toPersistedPlayerEvaluation(record);
+  }
+
+  // `upsert` sur `playerId` (unique en base, voir schema.prisma) plutôt que create-puis-update :
+  // une seule évaluation par joueur, mise à jour en place -- même principe que
+  // PrismaDiagnosticRepository.upsertForEducator.
+  async upsert(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation> {
+    try {
+      const record = await this.prisma.playerEvaluationRecord.upsert({
+        where: { playerId },
+        create: { educatorId, playerId, scores: scores as unknown as Prisma.InputJsonValue },
+        update: { scores: scores as unknown as Prisma.InputJsonValue },
+      });
+      return toPersistedPlayerEvaluation(record);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+        throw new PlayerNotFoundError();
+      }
+      throw error;
     }
   }
 }

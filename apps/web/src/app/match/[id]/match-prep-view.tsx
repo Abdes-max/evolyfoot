@@ -1,7 +1,7 @@
 "use client";
 
 import { assignPlayerToSlot, canFinalizeMatchPlan, clearSlot, formationSlots, listFormations } from "@evolyfoot/domain";
-import type { GameFormat, MatchLineupAssignment, MatchPlan, MatchStatus, MatchVenue } from "@evolyfoot/domain";
+import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -39,6 +39,10 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   const [loadError, setLoadError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [finalizing, setFinalizing] = useState(false);
+  // Même principe que session-builder.tsx : un ensemble d'absents plutôt qu'une carte complète
+  // pré-remplie pour tout l'effectif, pour ne pas avoir à la recopier depuis `roster` via un
+  // useEffect à chaque chargement.
+  const [absentPlayerIds, setAbsentPlayerIds] = useState<ReadonlySet<string>>(new Set());
   // Un clic sur un poste directement sur le terrain (MatchPitch) ouvre le sélecteur natif
   // correspondant plutôt que dupliquer la logique d'affectation dans un second composant --
   // `showPicker()` (Chrome/Edge) ouvre le menu déroulant sans clic réel dessus ; `focus()` reste
@@ -175,11 +179,33 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     }
   }
 
+  function toggleAttendance(playerId: string) {
+    setAbsentPlayerIds((current) => {
+      const next = new Set(current);
+      if (next.has(playerId)) {
+        next.delete(playerId);
+      } else {
+        next.add(playerId);
+      }
+      return next;
+    });
+  }
+
   async function finalize() {
     setFinalizing(true);
     setSaveError("");
     try {
-      const response = await fetch(`/api/matches/${matchId}/played`, { method: "POST" });
+      const attendance: AttendanceEntry[] = roster.map((player) => ({
+        playerId: player.id,
+        playerName: player.name,
+        present: !absentPlayerIds.has(player.id),
+      }));
+      const response = await fetch(`/api/matches/${matchId}/played`, {
+        method: "POST",
+        ...(attendance.length > 0
+          ? { headers: { "content-type": "application/json" }, body: JSON.stringify({ attendance }) }
+          : {}),
+      });
       if (!response.ok) {
         setSaveError(await readErrorMessage(response));
         return;
@@ -307,6 +333,26 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               ))}
             </select>
           </label>
+
+          {!readOnly && roster.length > 0 && (
+            <section aria-labelledby="match-attendance-title" className="match-attendance">
+              <h2 id="match-attendance-title">Présence</h2>
+              <p>Décoche les joueurs absents.</p>
+              <ul className="match-attendance-list">
+                {roster.map((player) => {
+                  const present = !absentPlayerIds.has(player.id);
+                  return (
+                    <li key={player.id}>
+                      <label className={present ? "" : "absent"}>
+                        <input checked={present} onChange={() => toggleAttendance(player.id)} type="checkbox" />
+                        {player.name}
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
 
           {saveError && (
             <p className="field-error" role="alert">

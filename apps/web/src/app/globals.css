@@ -52,11 +52,15 @@ nav { display:flex; flex-direction:column; gap:4px; }
 .coach div span { color:var(--muted); font-size:11px; }
 .coach button { min-height:44px;margin-left:auto;border:0;background:none;color:var(--muted);font-size:11px;font-weight:800; }
 
-.content { max-width:1280px; width:100%; margin:0 auto; padding:44px 52px 56px; }
+/* Padding et marges resserrés sur toute cette page (accueil) volontairement, plus que sur les
+   autres pages principales : c'est la seule pensée pour tenir sur un seul écran sans défiler --
+   un tableau de bord qu'il faut faire défiler pour voir "l'essentiel de la semaine" perd son
+   intérêt. */
+.content { max-width:1280px; width:100%; margin:0 auto; padding:26px 40px 30px; }
 
-.topbar { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px; }
-.topbar h1 { margin:7px 0 5px;font-size:32px;letter-spacing:-1.1px; }
-.topbar p { margin:0;color:var(--muted);font-size:14px; }
+.topbar { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px; }
+.topbar h1 { margin:5px 0 3px;font-size:26px;letter-spacing:-1px; }
+.topbar p { margin:0;color:var(--muted);font-size:13px; }
 .date { color:var(--accent);font-size:10.5px;font-weight:800;letter-spacing:1.3px; }
 .bell { min-height:44px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:0 14px;color:var(--ink);font-size:11px;font-weight:800; }
 
@@ -68,29 +72,29 @@ nav { display:flex; flex-direction:column; gap:4px; }
 .week-day.match .dmark { background:var(--info-bg); color:var(--info); border:1px solid var(--info); }
 .week-day.today { border-color:var(--accent); }
 
-.hero-grid { display:grid;grid-template-columns:1.2fr 1fr;gap:20px; }
-.focus-card,.session-card { min-height:280px;border-radius:23px;padding:28px 30px; }
+.hero-grid { display:grid;grid-template-columns:1.2fr 1fr;gap:14px; }
+.focus-card,.session-card { min-height:190px;border-radius:20px;padding:19px 22px; }
 .focus-card { background:linear-gradient(155deg, #123349, #0c1a26); border:1px solid #1c4a63; color:var(--ink); box-shadow:0 18px 40px rgba(0,0,0,.35); }
 .session-card { background:var(--surface);border:1px solid var(--line); }
 .card-top { display:flex;justify-content:space-between;align-items:center; }
 .trend { color:var(--accent-ink);background:var(--accent);border-radius:99px;padding:7px 11px;font-size:10.5px;font-weight:800; }
-.focus-card h2,.session-card h2 { max-width:470px;margin:28px 0 10px;font-size:26px;line-height:1.18;letter-spacing:-.8px; }
-.focus-card p,.session-card p { max-width:520px;margin:0;font-size:13.5px;line-height:1.6;color:var(--muted); }
-.progress-row { display:flex;align-items:center;gap:13px;margin-top:28px; }
+.focus-card h2,.session-card h2 { max-width:470px;margin:14px 0 7px;font-size:21px;line-height:1.18;letter-spacing:-.6px; }
+.focus-card p,.session-card p { max-width:520px;margin:0;font-size:12.5px;line-height:1.5;color:var(--muted); }
+.progress-row { display:flex;align-items:center;gap:13px;margin-top:16px; }
 .progress-track { height:6px;flex:1;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden; }
 .progress-track span { display:block;height:100%;background:var(--accent);border-radius:99px; }
 .progress-row strong { font-size:12.5px; }
-.focus-footer { display:flex;justify-content:space-between;margin-top:14px;color:var(--muted);font-size:11px; }
+.focus-footer { display:flex;justify-content:space-between;margin-top:12px;color:var(--muted);font-size:11px; }
 /* Repère visuel, pas un lien à part : la carte entière (.focus-card) est désormais le seul
    élément cliquable -- voir le commentaire sur .card-link plus bas. Une flèche accent au lieu
    d'un texte souligné garde l'idée "il y a une suite" sans donner l'impression d'un second
    élément interactif imbriqué dans un lien (invalide en HTML, mauvais pour l'accessibilité). */
 .focus-footer .card-cta { color:var(--accent-dark);font-weight:800; }
 .date-chip { padding:7px 10px;background:var(--surface-2);border:1px solid var(--line);border-radius:99px;color:var(--muted);font-size:10.5px;font-weight:750; }
-.session-meta { display:flex;gap:18px;margin:23px 0;color:var(--muted);font-size:11px;font-weight:700; }
-.primary-button { width:100%;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);padding:14px 16px;min-height:44px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800; }
+.session-meta { display:flex;gap:18px;margin:14px 0;color:var(--muted);font-size:11px;font-weight:700; }
+.primary-button { width:100%;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);padding:12px 16px;min-height:40px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800; }
 
-.section-head { display:flex;justify-content:space-between;align-items:flex-end;margin:38px 0 18px; }
+.section-head { display:flex;justify-content:space-between;align-items:flex-end;margin:22px 0 12px; }
 .section-head h2 { margin:7px 0 0;font-size:21px;letter-spacing:-.5px; }
 /* Bouton fantôme compact plutôt qu'un texte souligné : espaces resserrés (barre latérale,
    fil d'ariane...) où un bouton pleine largeur ne rentrerait pas, mais toujours cliquable
@@ -98,34 +102,34 @@ nav { display:flex; flex-direction:column; gap:4px; }
 .text-button { display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:32px;padding:0 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--accent-dark);font-size:10.5px;font-weight:800;text-decoration:none; }
 .text-button:hover { border-color:var(--accent-dark); }
 
-.priority-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:16px; }
-.priority-card { position:relative;display:flex;gap:15px;min-height:142px;padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:16px; }
-.score { flex:0 0 50px;height:50px;border-radius:50%;display:flex;align-items:baseline;justify-content:center;padding-top:14px; }
-.score strong { font-size:16px; }
-.score span { font-size:8.5px;opacity:.75; }
+.priority-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:12px; }
+.priority-card { position:relative;display:flex;gap:13px;min-height:100px;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px; }
+.score { flex:0 0 42px;height:42px;border-radius:50%;display:flex;align-items:baseline;justify-content:center;padding-top:12px; }
+.score strong { font-size:14px; }
+.score span { font-size:8px;opacity:.75; }
 .score.strong{background:var(--good-bg);color:var(--good)}
 .score.developing{background:var(--info-bg);color:var(--info)}
 .score.priority{background:var(--warn-bg);color:var(--warn)}
-.priority-card h3 { margin:3px 0 7px;font-size:13.5px; }
-.priority-card p { margin:0;color:var(--muted);font-size:11px;line-height:1.5; }
-.priority-card button { min-height:44px;min-width:44px;position:absolute;right:6px;bottom:0;border:0;background:none;color:var(--muted);font-size:10.5px;font-weight:800; }
+.priority-card h3 { margin:2px 0 5px;font-size:12.5px; }
+.priority-card p { margin:0;color:var(--muted);font-size:10.5px;line-height:1.45; }
+.priority-card button { min-height:44px;min-width:44px;position:absolute;right:2px;bottom:0;border:0;background:none;color:var(--muted);font-size:10.5px;font-weight:800; }
 
-.bottom-grid { display:grid;grid-template-columns:1.4fr .8fr;gap:18px;margin-top:32px; }
-.insight-card { display:flex;gap:16px;padding:26px;background:linear-gradient(155deg,#141f2c,#0f1620);border:1px solid var(--line);border-radius:18px; }
-.insight-card h3,.week-card h3 { margin:6px 0 7px;font-size:15px; }
-.insight-card p { margin:0;color:var(--muted);font-size:11.5px;line-height:1.6; }
-.actions { display:flex;gap:10px;margin-top:16px; }
+.bottom-grid { display:grid;grid-template-columns:1.4fr .8fr;gap:14px;margin-top:18px; }
+.insight-card { display:flex;gap:14px;padding:18px;background:linear-gradient(155deg,#141f2c,#0f1620);border:1px solid var(--line);border-radius:16px; }
+.insight-card h3,.week-card h3 { margin:5px 0 6px;font-size:14px; }
+.insight-card p { margin:0;color:var(--muted);font-size:11px;line-height:1.5; }
+.actions { display:flex;gap:10px;margin-top:12px; }
 /* display/text-decoration ici pour que ces classes fonctionnent aussi bien sur un <Link>/<a> que
    sur un <button> -- plusieurs CTA de cette application sont des liens de navigation qui doivent
    quand même avoir une vraie apparence de bouton, jamais un texte souligné. */
-.small-primary,.small-ghost { display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;border-radius:8px;padding:9px 13px;font-size:11px;font-weight:800;text-decoration:none; }
+.small-primary,.small-ghost { display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:800;text-decoration:none; }
 .small-primary { border:0;background:var(--accent);color:var(--accent-ink); }
 .small-ghost { border:1px solid var(--line);background:transparent;color:var(--muted); }
-.week-card { padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:18px; }
-.week-card h3 { margin-top:5px; }
+.week-card { padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:16px; }
+.week-card h3 { margin-top:3px; }
 
-.week-calendar{display:flex;flex-direction:column;gap:16px}
-.week-calendar h3{text-transform:uppercase;letter-spacing:.5px;font-size:13px}
+.week-calendar{display:flex;flex-direction:column;gap:11px}
+.week-calendar h3{text-transform:uppercase;letter-spacing:.5px;font-size:12px}
 .week-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
 .week-calendar-day{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0}
 .week-calendar-day-label{font-size:9px;font-weight:800;letter-spacing:.4px;color:var(--accent-dark)}
@@ -139,8 +143,8 @@ a.week-calendar-badge:hover,a.week-calendar-badge:focus-visible{transform:scale(
 .week-calendar-badge.training{background:var(--accent);color:var(--accent-ink)}
 .week-calendar-badge.match{background:var(--good);color:#06210f}
 .week-calendar-badge.other{background:var(--info);color:#0b1330}
-.week-calendar-legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.week-calendar-legend li{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:11px}
+.week-calendar-legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.week-calendar-legend li{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:10.5px}
 .week-calendar-legend .week-calendar-badge{width:20px;height:20px}
 .week-calendar-legend .week-calendar-badge svg{width:11px;height:11px}
 .week-calendar-footer{align-self:flex-start;margin-top:-4px}

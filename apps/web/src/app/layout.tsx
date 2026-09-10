@@ -8,6 +8,8 @@ import "./roster.css";
 import "./metrics.css";
 import "./match.css";
 import "./observations.css";
+import "./charts.css";
+import "./statistics.css";
 import { AuthGate } from "./auth-gate";
 
 export const metadata: Metadata = {

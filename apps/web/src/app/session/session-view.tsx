@@ -22,11 +22,17 @@ function buildInitialSession(scores: DiagnosticScores, ageGroup: AgeGroup, playe
   return generateTrainingSession(plan.weeks[0], ageGroup, playerCount);
 }
 
+interface RosterPlayer {
+  id: string;
+  name: string;
+}
+
 export function SessionView() {
   const [session, setSession] = useState<TrainingSession>(() =>
     buildInitialSession(demoScores, demoTeam.ageGroup, demoTeam.playerCount),
   );
   const [authenticated, setAuthenticated] = useState(false);
+  const [roster, setRoster] = useState<RosterPlayer[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,9 +50,14 @@ export function SessionView() {
           return;
         }
 
-        const [teamResponse, diagnosticResponse] = await Promise.all([fetch("/api/team"), fetch("/api/diagnostic")]);
+        const [teamResponse, diagnosticResponse, rosterResponse] = await Promise.all([
+          fetch("/api/team"),
+          fetch("/api/diagnostic"),
+          fetch("/api/roster"),
+        ]);
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
+        const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
         if (cancelled) {
           return;
         }
@@ -55,6 +66,7 @@ export function SessionView() {
         const playerCount: number = teamBody.profile?.playerCount ?? demoTeam.playerCount;
         const scores: DiagnosticScores = diagnosticBody.scores ?? demoScores;
         setSession(buildInitialSession(scores, ageGroup, playerCount));
+        setRoster(rosterBody.players ?? []);
       } catch {
         // Reste sur la séance de démonstration.
       }
@@ -75,7 +87,7 @@ export function SessionView() {
         <h1>Prépare ta première séance.</h1>
         <p>{session.intention}</p>
       </header>
-      <SessionBuilder authenticated={authenticated} onChange={setSession} session={session} />
+      <SessionBuilder authenticated={authenticated} onChange={setSession} roster={roster} session={session} />
     </main>
   );
 }

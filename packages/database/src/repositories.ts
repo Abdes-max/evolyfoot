@@ -1,5 +1,6 @@
 import type {
   AgeGroup,
+  AttendanceEntry,
   DevelopmentTheme,
   DiagnosticScores,
   GameFormat,
@@ -10,6 +11,7 @@ import type {
   ObservationReport,
   ObservationReportRating,
   ObservationReportSummary,
+  PlayerEvaluationScores,
   PlayerReference,
   PlayerSignal,
   TeamProfile,
@@ -91,6 +93,10 @@ export interface PersistedTrainingSession {
   theme: DevelopmentTheme;
   intention: string;
   blocks: PersistedTrainingSessionBlock[];
+  // `undefined` pour une séance validée avant l'introduction du suivi de présence, distingué
+  // d'un tableau vide (présence saisie mais personne de présent) -- voir summarizeAttendance
+  // côté domaine et /statistiques, qui doivent pouvoir faire la différence.
+  attendance?: readonly AttendanceEntry[];
   createdAt: Date;
 }
 
@@ -104,8 +110,10 @@ export interface TrainingSessionRepository {
       theme: DevelopmentTheme;
       intention: string;
       blocks: PersistedTrainingSessionBlock[];
+      attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedTrainingSession>;
+  listByEducator(educatorId: string): Promise<PersistedTrainingSession[]>;
 }
 
 // Historique des observations validées. `players`/`signals` sont stockés tels quels (JSON), sans
@@ -148,6 +156,7 @@ export interface PersistedPlayer {
 
 export interface PlayerRepository {
   listByEducator(educatorId: string): Promise<PersistedPlayer[]>;
+  findById(id: string, educatorId: string): Promise<PersistedPlayer | null>;
   create(educatorId: string, name: string): Promise<PersistedPlayer>;
   rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer>;
   remove(id: string, educatorId: string): Promise<void>;
@@ -172,6 +181,10 @@ export interface PersistedMatch {
   status: MatchStatus;
   lineup: readonly MatchLineupAssignment[];
   captainPlayerId: string | null;
+  // Distincte de `lineup` (qui est *prévu* à quel poste) : un joueur prévu peut ne pas s'être
+  // présenté, et inversement. Même convention `undefined`/tableau vide que
+  // PersistedTrainingSession.attendance ci-dessus.
+  attendance?: readonly AttendanceEntry[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -194,7 +207,40 @@ export interface MatchRepository {
       status?: MatchStatus;
       lineup?: readonly MatchLineupAssignment[];
       captainPlayerId?: string | null;
+      attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedMatch>;
   remove(id: string, educatorId: string): Promise<void>;
+}
+
+// Fiche simple comptée à part des matchs dans /statistiques -- voir TournamentInput côté domaine.
+export interface PersistedTournament {
+  id: string;
+  educatorId: string;
+  name: string;
+  dateLabel: string;
+  result: string | null;
+  createdAt: Date;
+}
+
+export interface TournamentRepository {
+  listByEducator(educatorId: string): Promise<PersistedTournament[]>;
+  create(educatorId: string, input: { name: string; dateLabel: string; result?: string }): Promise<PersistedTournament>;
+  remove(id: string, educatorId: string): Promise<void>;
+}
+
+// Évaluation courante d'un joueur sur les 7 aspects de la toile d'araignée -- un seul
+// enregistrement par joueur, mis à jour en place (même principe que Diagnostic).
+export interface PersistedPlayerEvaluation {
+  id: string;
+  educatorId: string;
+  playerId: string;
+  scores: PlayerEvaluationScores;
+  updatedAt: Date;
+}
+
+export interface PlayerEvaluationRepository {
+  listByEducator(educatorId: string): Promise<PersistedPlayerEvaluation[]>;
+  findByPlayerId(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation | null>;
+  upsert(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation>;
 }

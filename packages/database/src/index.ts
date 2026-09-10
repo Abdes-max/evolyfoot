@@ -16,9 +16,11 @@ export {
   PrismaEducatorRepository,
   PrismaMatchRepository,
   PrismaObservationRepository,
+  PrismaPlayerEvaluationRepository,
   PrismaPlayerRepository,
   PrismaSessionRepository,
   PrismaTeamRepository,
+  PrismaTournamentRepository,
   PrismaTrainingSessionRepository,
 } from "./prisma-repositories";
 export { AuthService } from "./auth-service";
@@ -26,11 +28,15 @@ export { DiagnosticService } from "./diagnostic-service";
 export { MatchService } from "./match-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";
+export { PlayerEvaluationService } from "./player-evaluation-service";
 export { RosterService } from "./roster-service";
+export { StatsService } from "./stats-service";
 export { TeamProfileService } from "./team-profile-service";
+export { TournamentService } from "./tournament-service";
 export { TrainingSessionService } from "./training-session-service";
 export type { AuthenticatedSession } from "./auth-service";
 export type { FunnelStep, MvpMetrics, WeeklyActivityPoint } from "./metrics-service";
+export type { TeamStats } from "./stats-service";
 export type { TrainingSessionInput } from "./training-session-service";
 export type {
   DiagnosticRepository,
@@ -43,12 +49,16 @@ export type {
   PersistedMatch,
   PersistedObservation,
   PersistedPlayer,
+  PersistedPlayerEvaluation,
   PersistedTeamProfile,
+  PersistedTournament,
   PersistedTrainingSession,
   PersistedTrainingSessionBlock,
+  PlayerEvaluationRepository,
   PlayerRepository,
   SessionRecord,
   SessionRepository,
   TeamRepository,
+  TournamentRepository,
   TrainingSessionRepository,
 } from "./repositories";

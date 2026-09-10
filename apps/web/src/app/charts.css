@@ -1,0 +1,32 @@
+.bar-chart { display: flex; align-items: flex-end; gap: 18px; height: 160px; padding-top: 8px; }
+.bar-chart-column { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; height: 100%; }
+.bar-chart-value { font-size: 13px; font-weight: 800; color: var(--ink); }
+.bar-chart-track { flex: 1; width: 28px; display: flex; align-items: flex-end; background: var(--surface-2); border-radius: 8px; overflow: hidden; }
+.bar-chart-fill { width: 100%; background: linear-gradient(180deg, var(--accent-dark), var(--accent)); border-radius: 8px 8px 0 0; }
+.bar-chart-label { font-size: 10.5px; font-weight: 700; color: var(--muted); text-align: center; }
+
+.donut-chart { position: relative; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.donut-chart svg { flex-shrink: 0; }
+.donut-chart-track { stroke: var(--surface-2); }
+.donut-chart-segment { transition: stroke-dasharray .2s; }
+.donut-chart-segment.good { stroke: var(--good); }
+.donut-chart-segment.warn { stroke: var(--warn); }
+.donut-chart-segment.info { stroke: var(--info); }
+.donut-chart-segment.accent { stroke: var(--accent); }
+.donut-chart-center { position: absolute; top: 75px; left: 75px; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; text-align: center; }
+.donut-chart-center strong { font-size: 20px; color: var(--ink); }
+.donut-chart-center span { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+.donut-chart-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.donut-chart-legend li { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
+.donut-chart-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.donut-chart-dot.good { background: var(--good); }
+.donut-chart-dot.warn { background: var(--warn); }
+.donut-chart-dot.info { background: var(--info); }
+.donut-chart-dot.accent { background: var(--accent); }
+
+.radar-chart { display: flex; justify-content: center; }
+.radar-chart-ring { fill: none; stroke: var(--line); stroke-width: 1; }
+.radar-chart-axis { stroke: var(--line); stroke-width: 1; }
+.radar-chart-data { stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; }
+.radar-chart-point { fill: var(--accent); }
+.radar-chart-label { fill: var(--muted); font-size: 9.5px; font-weight: 800; text-transform: uppercase; }
