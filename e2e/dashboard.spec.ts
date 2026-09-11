@@ -340,6 +340,98 @@ test("l’éducateur enregistre un tournoi et un plateau depuis Matchs & compét
   await expect(plateauForm.getByText("Plateau de rentrée")).toBeVisible();
 });
 
+test("l’éducateur envoie la convocation depuis la fiche d’un match déjà composé", async ({ page }) => {
+  await page.route("**/api/roster", (route) =>
+    route.fulfill({
+      json: {
+        players: [
+          { id: "player-1", name: "Kylian", photo: null, birthDate: null, phone: null, email: null },
+          { id: "player-2", name: "Nael", photo: null, birthDate: null, phone: null, email: null },
+        ],
+      },
+    }),
+  );
+  await page.route("**/api/matches/match-1", (route) =>
+    route.fulfill({
+      json: {
+        match: {
+          id: "match-1",
+          opponent: "US Vallée",
+          dateLabel: "Samedi 19 septembre",
+          meetingTime: "14:30",
+          location: "Stade Marius Requier",
+          description: null,
+          venue: "home",
+          gameFormat: 8,
+          formationId: "3-3-1",
+          status: "scheduled",
+          lineup: [
+            { slotId: "gk", playerId: "player-1", playerName: "Kylian" },
+            { slotId: "d1", playerId: "player-2", playerName: "Nael" },
+          ],
+          captainPlayerId: null,
+          substitutePlayerIds: [],
+        },
+      },
+    }),
+  );
+  let convokeRequests = 0;
+  await page.route("**/api/matches/match-1/convoke", (route) => {
+    convokeRequests += 1;
+    return route.fulfill({ json: { sentCount: 2 } });
+  });
+
+  await page.goto("/match/match-1");
+  await expect(page.getByRole("heading", { name: "US Vallée" })).toBeVisible();
+  await page.getByRole("button", { name: "Envoyer la convocation" }).click();
+  await expect(page.getByText("Convocation envoyée à 2 joueurs.")).toBeVisible();
+  expect(convokeRequests).toBe(1);
+});
+
+test("l’éducateur envoie la convocation depuis la fiche d’une séance, à tout l’effectif", async ({ page }) => {
+  await page.route("**/api/roster", (route) =>
+    route.fulfill({
+      json: {
+        players: [
+          { id: "player-1", name: "Kylian", photo: null, birthDate: null, phone: null, email: null },
+          { id: "player-2", name: "Nael", photo: null, birthDate: null, phone: null, email: null },
+        ],
+      },
+    }),
+  );
+  await page.route("**/api/sessions/session-1", (route) =>
+    route.fulfill({
+      json: {
+        session: {
+          id: "session-1",
+          title: "Séance du mardi",
+          theme: "Récupérer rapidement",
+          intention: "x",
+          ageGroup: "U12",
+          playerCount: 14,
+          weekNumber: 1,
+          slot: 0,
+          blocks: [{ id: "b1", activityId: "welcome-recuperer", durationMinutes: 75 }],
+          meetingAt: null,
+          location: null,
+          description: null,
+        },
+      },
+    }),
+  );
+  let convokeRequests = 0;
+  await page.route("**/api/sessions/session-1/convoke", (route) => {
+    convokeRequests += 1;
+    return route.fulfill({ json: { sentCount: 2 } });
+  });
+
+  await page.goto("/session/session-1");
+  await expect(page.getByRole("heading", { name: "Ajuste ta séance." })).toBeVisible();
+  await page.getByRole("button", { name: "Envoyer la convocation" }).click();
+  await expect(page.getByText("Convocation envoyée à 2 joueurs.")).toBeVisible();
+  expect(convokeRequests).toBe(1);
+});
+
 test("un visiteur non connecté découvre la vitrine sur la page d'accueil", async ({ page }) => {
   // La page d'accueil est publique : pas de cookie de session, pas de redirection vers /connexion.
   await page.context().clearCookies();
