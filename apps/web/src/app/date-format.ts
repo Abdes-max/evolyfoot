@@ -54,7 +54,7 @@ export function sortChronologically<T>(items: readonly T[], getDate: (item: T) =
 
 // Lundi 00h00 de la semaine de `date`, convention française (contrairement à Date.getDay() qui
 // place dimanche en 0).
-function startOfWeek(date: Date): Date {
+export function startOfWeek(date: Date): Date {
   const start = new Date(date);
   const day = start.getDay();
   start.setDate(start.getDate() + (day === 0 ? -6 : 1 - day));
@@ -95,4 +95,21 @@ export function weekGroupLabel(date: Date, today: Date = new Date()): string {
 // à éviter).
 export function weekGroupKey(date: Date): string {
   return startOfWeek(date).toISOString();
+}
+
+// Ancre chaque semaine du cycle de progression (S1-S4) sur une vraie semaine calendaire : la
+// semaine "active" du cycle (voir currentCycleWeek dans session/cycle.ts) correspond toujours à la
+// semaine réelle en cours, les autres semaines du cycle se décalent d'autant. Pas de date de début
+// de cycle stockée en base -- ce repère glissant reste correct même si le coach prend du retard ou
+// de l'avance sur son cycle.
+export function cycleWeekStartDate(weekNumber: number, activeWeek: number, today: Date = new Date()): Date {
+  const start = startOfWeek(today);
+  start.setDate(start.getDate() + (weekNumber - activeWeek) * 7);
+  return start;
+}
+
+// "Cette semaine" / "Semaine prochaine" / "21-27 septembre"... pour une semaine du cycle de
+// progression (/plan, /seances), même formatage que le bloc convocations.
+export function cycleWeekDateRangeLabel(weekNumber: number, activeWeek: number, today: Date = new Date()): string {
+  return weekGroupLabel(cycleWeekStartDate(weekNumber, activeWeek, today), today);
 }

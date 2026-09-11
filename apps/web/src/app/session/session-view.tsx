@@ -23,10 +23,11 @@ function buildSessionForWeek(
   ageGroup: AgeGroup,
   playerCount: number,
   weekNumber: number,
+  slot: number,
 ): TrainingSession {
   const plan = buildDevelopmentPlan(summarizeDiagnostic(scores));
   const week = plan.weeks[weekNumber - 1] ?? plan.weeks[0]!;
-  return generateTrainingSession(week, ageGroup, playerCount);
+  return generateTrainingSession(week, ageGroup, playerCount, slot);
 }
 
 interface RosterPlayer {
@@ -41,7 +42,7 @@ interface SessionViewProps {
 
 export function SessionView({ weekNumber, slot }: SessionViewProps) {
   const [session, setSession] = useState<TrainingSession>(() =>
-    buildSessionForWeek(demoScores, demoTeam.ageGroup, demoTeam.playerCount, weekNumber),
+    buildSessionForWeek(demoScores, demoTeam.ageGroup, demoTeam.playerCount, weekNumber, slot),
   );
   const [authenticated, setAuthenticated] = useState(false);
   const [roster, setRoster] = useState<RosterPlayer[]>([]);
@@ -77,7 +78,7 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
         const ageGroup: AgeGroup = teamBody.profile?.ageGroup ?? demoTeam.ageGroup;
         const playerCount: number = teamBody.profile?.playerCount ?? demoTeam.playerCount;
         const scores: DiagnosticScores = diagnosticBody.scores ?? demoScores;
-        setSession(buildSessionForWeek(scores, ageGroup, playerCount, weekNumber));
+        setSession(buildSessionForWeek(scores, ageGroup, playerCount, weekNumber, slot));
         setRoster(rosterBody.players ?? []);
       } catch {
         // Reste sur la séance de démonstration.
@@ -87,7 +88,7 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [weekNumber]);
+  }, [weekNumber, slot]);
 
   return (
     <main className="session-shell">

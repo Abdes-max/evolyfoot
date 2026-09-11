@@ -115,6 +115,7 @@ export {
   formationSlots,
   isLineupComplete,
   listFormations,
+  maxSubstitutes,
   removeSubstitute,
   setCaptain,
   validateMatchPlan,

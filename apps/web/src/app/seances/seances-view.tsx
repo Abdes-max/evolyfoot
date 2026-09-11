@@ -3,6 +3,7 @@
 import { buildDevelopmentPlan, summarizeDiagnostic, type DiagnosticScores } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { cycleWeekDateRangeLabel } from "../date-format";
 import { currentCycleWeek, trainingCycleWeekCount } from "../session/cycle";
 
 interface SavedSession {
@@ -124,7 +125,7 @@ export function SeancesView() {
                   <div>
                     <h2>{week.intention}</h2>
                     <p>
-                      {week.phase} · {week.theme}
+                      {cycleWeekDateRangeLabel(weekNumber, activeWeek)} · {week.phase} · {week.theme}
                     </p>
                   </div>
                 </div>
