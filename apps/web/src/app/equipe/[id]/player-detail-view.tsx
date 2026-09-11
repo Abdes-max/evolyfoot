@@ -16,6 +16,8 @@ import { MessagingThread } from "../../messaging-thread";
 
 interface Player {
   id: string;
+  firstName: string;
+  lastName: string;
   name: string;
   photo: string | null;
   birthDate: string | null;
@@ -83,7 +85,7 @@ function resizeToDataUrl(file: File): Promise<string> {
   });
 }
 
-type DetailForm = { name: string; birthDate: string; phone: string; email: string };
+type DetailForm = { firstName: string; lastName: string; birthDate: string; phone: string; email: string };
 
 export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [status, setStatus] = useState<"loading" | "ready" | "not-found" | "unauthenticated">("loading");
@@ -91,7 +93,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<DetailForm>({ name: "", birthDate: "", phone: "", email: "" });
+  const [form, setForm] = useState<DetailForm>({ firstName: "", lastName: "", birthDate: "", phone: "", email: "" });
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -163,7 +165,8 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
       return;
     }
     setForm({
-      name: player.name,
+      firstName: player.firstName,
+      lastName: player.lastName,
       birthDate: player.birthDate ?? "",
       phone: player.phone ?? "",
       email: player.email ?? "",
@@ -189,14 +192,15 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
 
   async function saveDetails(event: FormEvent) {
     event.preventDefault();
-    if (!form.name.trim()) {
-      setDetailsError("Le prénom ne peut pas être vide.");
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      setDetailsError("Le prénom et le nom ne peuvent pas être vides.");
       return;
     }
     setSavingDetails(true);
     setDetailsError("");
     const ok = await patchPlayer({
-      name: form.name,
+      firstName: form.firstName,
+      lastName: form.lastName,
       birthDate: form.birthDate || null,
       phone: form.phone || null,
       email: form.email || null,
@@ -421,7 +425,11 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                   <form className="player-form" onSubmit={saveDetails}>
                     <label>
                       <span>Prénom</span>
-                      <input onChange={(event) => setForm({ ...form, name: event.target.value })} value={form.name} />
+                      <input onChange={(event) => setForm({ ...form, firstName: event.target.value })} value={form.firstName} />
+                    </label>
+                    <label>
+                      <span>Nom</span>
+                      <input onChange={(event) => setForm({ ...form, lastName: event.target.value })} value={form.lastName} />
                     </label>
                     <label>
                       <span>Date de naissance</span>

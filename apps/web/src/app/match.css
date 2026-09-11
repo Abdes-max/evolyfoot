@@ -72,6 +72,11 @@
 .match-pitch-token-remove:hover { background: var(--warn); }
 .match-pitch-captain { position: relative; z-index: 2; color: var(--accent-ink); background: var(--warn); border-radius: 50%; width: 15px; height: 15px; flex-shrink: 0; font-size: 10px; font-weight: 900; display: grid; place-items: center; pointer-events: none; }
 
+/* Format de jeu du match, modifiable tant qu'il n'est pas joué (match-prep-view.tsx) -- change
+   aussi la liste des formations disponibles juste en dessous (.match-formation-picker). */
+.match-game-format-picker { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.match-game-format-picker span { font-size: 11px; color: var(--muted); font-weight: 700; }
+.match-game-format-picker select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; color: var(--ink); font-size: 12.5px; }
 .match-formation-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .match-formation-picker button { min-height: 36px; padding: 0 13px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 11.5px; font-weight: 800; }
 .match-formation-picker button.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }

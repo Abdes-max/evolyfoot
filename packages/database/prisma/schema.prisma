@@ -225,7 +225,13 @@ model Player {
   id         String                  @id @default(uuid()) @db.Uuid
   educatorId String                  @db.Uuid @map("educator_id")
   educator   Educator                @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  name       String
+  // Prénom et nom séparés (plutôt qu'un `name` unique) : la fiche joueur les distingue désormais
+  // (formulaire d'ajout/de fiche détail) ; `lastName` garde un défaut "" pour les joueurs créés
+  // avant l'introduction du champ (voir la migration de rétro-compatibilité). Tous les autres
+  // usages (composition de match, présence, messagerie...) continuent de ne voir qu'un nom
+  // complet, calculé par le mapper (voir toPersistedPlayer côté base).
+  firstName  String                  @map("first_name")
+  lastName   String                  @default("") @map("last_name")
   // Fiche joueur : tous optionnels. `photo` stocke une image (data URL) redimensionnée côté
   // client -- pas de stockage d'objets ni de CDN pour l'instant. `birthDate` en texte ISO
   // (`YYYY-MM-DD`), même choix que pour la fiche éducateur.

@@ -274,6 +274,12 @@ export interface ObservationRepository {
 export interface PersistedPlayer {
   id: string;
   educatorId: string;
+  firstName: string;
+  lastName: string;
+  // Nom complet dérivé (`${firstName} ${lastName}`.trim(), voir toPersistedPlayer côté mapper) --
+  // tous les consommateurs qui n'ont besoin que d'une chaîne d'affichage unique (composition de
+  // match, présence, messagerie, tableau de bord...) continuent de ne lire que ce champ, sans
+  // connaître la distinction prénom/nom.
   name: string;
   // Fiche joueur, tous optionnels. `photo` = data URL redimensionnée côté client.
   photo: string | null;
@@ -284,9 +290,11 @@ export interface PersistedPlayer {
   updatedAt: Date;
 }
 
-// Patch partiel de la fiche : clé absente ⇒ non touchée, `null` ⇒ efface.
+// Patch partiel de la fiche : clé absente ⇒ non touchée, `null` ⇒ efface (`firstName`/`lastName`
+// ne s'effacent jamais, voir RosterService qui rejette une chaîne vide pour ces deux champs).
 export type PlayerDetailsPatch = Partial<{
-  name: string;
+  firstName: string;
+  lastName: string;
   photo: string | null;
   birthDate: string | null;
   phone: string | null;
@@ -299,8 +307,12 @@ export interface PlayerRepository {
   // Sans filtre d'appartenance -- réservé au tableau de bord joueur, qui a déjà résolu le joueur
   // via `Educator.linkedPlayerId` (relation de confiance).
   findAnyById(id: string): Promise<PersistedPlayer | null>;
-  create(educatorId: string, name: string): Promise<PersistedPlayer>;
-  rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer>;
+  // `lastName` optionnel (replié sur "" par l'implémentation) : uniquement pour ne pas casser les
+  // très nombreux appels directs au repository dans les fixtures de test, qui n'ont besoin que
+  // d'un nom d'affichage quelconque -- RosterService.add (le vrai point d'entrée applicatif) exige
+  // les deux côté validation, voir son commentaire.
+  create(educatorId: string, firstName: string, lastName?: string): Promise<PersistedPlayer>;
+  rename(id: string, educatorId: string, firstName: string, lastName?: string): Promise<PersistedPlayer>;
   update(id: string, educatorId: string, patch: PlayerDetailsPatch): Promise<PersistedPlayer>;
   remove(id: string, educatorId: string): Promise<void>;
 }
@@ -373,6 +385,7 @@ export interface MatchRepository {
       dateLabel?: string;
       date?: Date | null;
       venue?: MatchVenue;
+      gameFormat?: GameFormat;
       formationId?: string;
       status?: MatchStatus;
       lineup?: readonly MatchLineupAssignment[];

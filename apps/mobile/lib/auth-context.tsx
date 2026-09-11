@@ -30,6 +30,14 @@ export interface MobileMatch {
   substitutePlayerIds: string[];
 }
 
+// `PlayerReference` (domaine) reste { id, name } -- générique, utilisé aussi pour les signaux
+// d'observation. L'effectif a besoin en plus du prénom/nom séparés pour l'écran équipe.tsx (voir
+// PersistedPlayer côté base).
+export interface RosterPlayer extends PlayerReference {
+  readonly firstName: string;
+  readonly lastName: string;
+}
+
 export type AuthResult = { ok: true } | { ok: false; error: string };
 export type MatchResult = { ok: true; match: MobileMatch } | { ok: false; error: string };
 export type MatchListResult = { ok: true; matches: MobileMatch[] } | { ok: false; error: string };
@@ -38,7 +46,7 @@ export interface AuthContextValue {
   educator: Educator | null;
   team: TeamProfile | null;
   diagnosticScores: DiagnosticScores | null;
-  roster: readonly PlayerReference[];
+  roster: readonly RosterPlayer[];
   login(email: string, password: string): Promise<AuthResult>;
   register(email: string, password: string, displayName: string): Promise<AuthResult>;
   logout(): Promise<void>;
@@ -46,8 +54,8 @@ export interface AuthContextValue {
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
   saveTrainingSession(session: TrainingSession): Promise<AuthResult>;
   saveObservation(draft: ObservationDraft, matchId?: string): Promise<AuthResult>;
-  addPlayer(name: string): Promise<AuthResult>;
-  renamePlayer(id: string, name: string): Promise<AuthResult>;
+  addPlayer(firstName: string, lastName: string): Promise<AuthResult>;
+  renamePlayer(id: string, firstName: string, lastName: string): Promise<AuthResult>;
   removePlayer(id: string): Promise<AuthResult>;
   listMatches(): Promise<MatchListResult>;
   getMatch(id: string): Promise<MatchResult>;
@@ -70,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [educator, setEducator] = useState<Educator | null>(null);
   const [team, setTeam] = useState<TeamProfile | null>(null);
   const [diagnosticScores, setDiagnosticScores] = useState<DiagnosticScores | null>(null);
-  const [roster, setRoster] = useState<readonly PlayerReference[]>([]);
+  const [roster, setRoster] = useState<readonly RosterPlayer[]>([]);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   const fetchTeam = useCallback(async (token: string) => {
@@ -240,11 +248,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const addPlayer = useCallback(
-    async (name: string): Promise<AuthResult> => {
+    async (firstName: string, lastName: string): Promise<AuthResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour ajouter un joueur." };
       }
-      const response = await apiFetch("/api/roster", { method: "POST", sessionToken, body: JSON.stringify({ name }) });
+      const response = await apiFetch("/api/roster", { method: "POST", sessionToken, body: JSON.stringify({ firstName, lastName }) });
       if (!response.ok) {
         return { ok: false, error: await readErrorMessage(response) };
       }
@@ -256,11 +264,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const renamePlayer = useCallback(
-    async (id: string, name: string): Promise<AuthResult> => {
+    async (id: string, firstName: string, lastName: string): Promise<AuthResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour renommer un joueur." };
       }
-      const response = await apiFetch(`/api/roster/${id}`, { method: "PATCH", sessionToken, body: JSON.stringify({ name }) });
+      const response = await apiFetch(`/api/roster/${id}`, {
+        method: "PATCH",
+        sessionToken,
+        body: JSON.stringify({ firstName, lastName }),
+      });
       if (!response.ok) {
         return { ok: false, error: await readErrorMessage(response) };
       }

@@ -45,6 +45,19 @@ describe("PostgreSQL roster persistence", () => {
     expect(roster.map((player) => player.name)).toEqual(["Kylian", "Ousmane"]);
   });
 
+  it("stocke prénom et nom séparément, dérivant le nom complet", async () => {
+    const educator = await createEducator("first-last-name");
+
+    const player = await service.add(educator.id, "Mehdi", "Ben Ali");
+
+    expect(player.firstName).toBe("Mehdi");
+    expect(player.lastName).toBe("Ben Ali");
+    expect(player.name).toBe("Mehdi Ben Ali");
+
+    const updated = await service.updateDetails(educator.id, player.id, { lastName: "El Amrani" });
+    expect(updated.name).toBe("Mehdi El Amrani");
+  });
+
   it("renames a player belonging to the requesting educator", async () => {
     const educator = await createEducator("rename");
     const player = await service.add(educator.id, "Kylian");
