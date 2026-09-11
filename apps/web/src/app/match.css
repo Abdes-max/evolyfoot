@@ -58,9 +58,16 @@
    tap de l'ouvrir) -- étiré sur tout le poste, sous la croix "retirer" (voir z-index ci-dessous)
    qui doit rester cliquable par-dessus. */
 .match-pitch-token-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; cursor: pointer; z-index: 1; }
-/* Poste occupé : plus un rond mais une pastille (le prénom entier ne tient pas dans 44px). */
-.match-pitch-token.filled { background: var(--accent); border-color: var(--accent-dark); border-width: 2px; border-style: solid; border-radius: 99px; min-width: 44px; height: 32px; padding: 0 4px 0 12px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.match-pitch-token-name { position: relative; color: var(--accent-ink); font-size: 12px; font-weight: 800; pointer-events: none; }
+/* Poste occupé : plus un rond mais une pastille (le prénom entier ne tient pas dans 44px). `width:
+   auto` est indispensable ici -- sans lui, le `width: 44px` fixe hérité de .match-pitch-token
+   l'emporte sur `min-width` (les deux valent 44px, donc `min-width` ne peut jamais l'agrandir) et
+   le prénom se retrouve tronqué au milieu, sans "…" ni retour à la ligne : un bug visuel discret
+   (un prénom un peu court comme "Eden" a l'air correct) mais réel dès qu'il dépasse ~5 lettres. */
+.match-pitch-token.filled { background: var(--accent); border-color: var(--accent-dark); border-width: 2px; border-style: solid; border-radius: 99px; width: auto; min-width: 44px; max-width: 120px; height: 32px; padding: 0 4px 0 12px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+/* `min-width: 0` autorise ce flex-item texte à rétrécir en dessous de son contenu naturel --
+   sans lui, un prénom qui dépasse `max-width` ci-dessus ferait déborder toute la pastille plutôt
+   que de se tronquer proprement ici avec "…". */
+.match-pitch-token-name { position: relative; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--accent-ink); font-size: 12px; font-weight: 800; pointer-events: none; }
 .match-pitch-token-remove { position: relative; z-index: 2; width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; border: 0; background: rgba(6, 35, 48, .28); color: var(--accent-ink); font-size: 13px; line-height: 1; display: grid; place-items: center; padding: 0; cursor: pointer; }
 .match-pitch-token-remove:hover { background: var(--warn); }
 .match-pitch-captain { position: relative; z-index: 2; color: var(--accent-ink); background: var(--warn); border-radius: 50%; width: 15px; height: 15px; flex-shrink: 0; font-size: 10px; font-weight: 900; display: grid; place-items: center; pointer-events: none; }
