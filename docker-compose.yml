@@ -59,6 +59,17 @@ services:
       # apps/web/src/server/metrics.ts). Vide par défaut -- la route répond alors 403 pour tout
       # le monde plutôt que d'exposer des données agrégées sans configuration explicite.
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      # Relais SMTP pour l'e-mail transactionnel (confirmation d'inscription, voir
+      # apps/web/src/server/mailer.ts) -- Brevo en pratique sur ce VPS. Non définies dans ce
+      # fichier : ${VAR:-} lit celles déjà présentes dans le .env de l'hôte (voir docs/delivery.md)
+      # sans jamais les committer ici. Absentes ou vides, l'appli retombe sur les valeurs par
+      # défaut de mailer.ts (Mailhog local) -- l'envoi échoue alors silencieusement (juste
+      # journalisé), sans casser l'inscription elle-même.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
     depends_on:
       migrate:
         condition: service_completed_successfully

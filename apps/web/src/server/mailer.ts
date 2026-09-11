@@ -12,14 +12,18 @@ let transporter: Transporter | null = null;
 
 function getTransporter(): Transporter {
   if (!transporter) {
-    const port = Number(process.env.SMTP_PORT ?? 1025);
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASSWORD;
+    // `||` plutôt que `??` sur ces quatre lectures : une variable d'environnement présente mais
+    // vide (cas réel en déploiement Docker Compose -- une variable hôte non définie substituée à
+    // une chaîne vide reste tout de même déclarée dans le conteneur) doit retomber sur la valeur
+    // par défaut, pas être traitée comme "1025" via `Number("")` (= 0) ou un hôte vide.
+    const port = Number(process.env.SMTP_PORT || 1025);
+    const user = process.env.SMTP_USER || undefined;
+    const pass = process.env.SMTP_PASSWORD || undefined;
     transporter = nodemailer.createTransport({
       // "127.0.0.1" plutôt que "localhost" par défaut : sur certaines machines "localhost"
       // résout en IPv6, injoignable même quand la boucle IPv4 fonctionne (vu en pratique avec
       // Mailhog).
-      host: process.env.SMTP_HOST ?? "127.0.0.1",
+      host: process.env.SMTP_HOST || "127.0.0.1",
       port,
       // 465 = TLS implicite (SMTPS) ; les autres ports (587, 25, 1025) utilisent STARTTLS, que
       // nodemailer négocie seul quand `secure` est à false.
@@ -44,7 +48,7 @@ export interface MailInput {
 export async function sendMail(input: MailInput, log: (error: unknown) => void = console.error): Promise<void> {
   try {
     await getTransporter().sendMail({
-      from: process.env.SMTP_FROM ?? "EvolyFoot <no-reply@evolyfoot.com>",
+      from: process.env.SMTP_FROM || "EvolyFoot <no-reply@evolyfoot.com>",
       to: input.to,
       subject: input.subject,
       html: input.html,

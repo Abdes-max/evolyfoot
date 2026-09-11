@@ -105,6 +105,8 @@ docker exec evolyfoot-web wget -qO- http://127.0.0.1:3000/api/health/database   
 
 Piège rencontré et corrigé : la branche par défaut du dépôt GitHub était restée sur une ancienne branche de travail (`agent/initialize-platform`) plutôt que `master`, donc un `git clone` nu atterrissait sur cette branche obsolète — sans `Dockerfile` ni `.env.production.example`. Corrigé une fois pour toutes (Settings → General → Default branch → `master`) ; un `git clone` nu suffit désormais.
 
+**E-mail transactionnel (SMTP) — pas encore configuré.** `.env.production.example` ne portait pas encore les variables `SMTP_*` au moment de ce bootstrap : le `.env` du VPS ne les a donc probablement pas non plus, et `mailer.ts` retombe silencieusement sur ses valeurs par défaut (Mailhog local, injoignable en prod) — l'envoi échoue, juste journalisé, sans casser l'inscription. Pour l'activer : ajouter `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` (identifiants d'un relais comme Brevo — génération hors périmètre d'un agent) au `.env` du VPS, puis `docker compose up -d --build` (ou attendre le prochain merge sur `master`, qui le refait déjà).
+
 ### Secrets GitHub (déjà configurés)
 
 L'environnement `production` (Settings → Environments) porte ces secrets, déjà en place :
