@@ -2,15 +2,24 @@
 
 import { buildDevelopmentPlan, summarizeDiagnostic, type DiagnosticScores } from "@evolyfoot/domain";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { cycleWeekDateRangeLabel } from "../date-format";
 import { SidebarNav } from "../sidebar-nav";
+import { currentCycleWeek } from "../session/cycle";
 
 // Diagnostic de démonstration, utilisé tant qu'aucun diagnostic réel n'est disponible
 // (visiteur anonyme, ou éducateur connecté n'ayant pas encore fait le sien).
 const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
+const fallbackSlotsPerWeek = 2;
+
+interface SavedSession {
+  weekNumber: number;
+}
 
 export function PlanView() {
   const [scores, setScores] = useState<DiagnosticScores>(demoScores);
+  const [sessions, setSessions] = useState<readonly SavedSession[]>([]);
+  const [slotsPerWeek, setSlotsPerWeek] = useState(fallbackSlotsPerWeek);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,11 +32,23 @@ export function PlanView() {
           return;
         }
 
-        const diagnosticResponse = await fetch("/api/diagnostic");
+        const [diagnosticResponse, teamResponse, sessionsResponse] = await Promise.all([
+          fetch("/api/diagnostic"),
+          fetch("/api/team"),
+          fetch("/api/sessions"),
+        ]);
         const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
-        if (!cancelled && diagnosticBody.scores) {
+        const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
+        const sessionsBody = await sessionsResponse.json().catch(() => ({ sessions: [] }));
+        if (cancelled) {
+          return;
+        }
+        if (diagnosticBody.scores) {
           setScores(diagnosticBody.scores);
         }
+        const trainingDays: readonly string[] = teamBody.profile?.trainingDays ?? [];
+        setSlotsPerWeek(trainingDays.length > 0 ? trainingDays.length : fallbackSlotsPerWeek);
+        setSessions(sessionsBody.sessions ?? []);
       } catch {
         // Reste sur le diagnostic de démonstration.
       }
@@ -39,6 +60,7 @@ export function PlanView() {
   }, []);
 
   const plan = buildDevelopmentPlan(summarizeDiagnostic(scores));
+  const activeWeek = useMemo(() => currentCycleWeek(sessions, slotsPerWeek), [sessions, slotsPerWeek]);
 
   return (
     <>
@@ -72,7 +94,9 @@ export function PlanView() {
             <article className="development-week" key={week.week}>
               <span className="week-number">S{week.week}</span>
               <div>
-                <span className="phase">{week.phase}</span>
+                <span className="phase">
+                  {cycleWeekDateRangeLabel(week.week, activeWeek)} · {week.phase}
+                </span>
                 <h2>{week.intention}</h2>
                 <p>{week.observable}</p>
               </div>

@@ -46,23 +46,24 @@
 .match-pitch-turf { fill: #0f2a1c; stroke: rgba(255,255,255,.14); stroke-width: 1.5; }
 .match-pitch-line { stroke: rgba(255,255,255,.16); stroke-width: 1.5; }
 /* Superposé au SVG (mêmes proportions que son viewBox 300x460, voir match-pitch.tsx) plutôt que
-   dessiné dedans : chaque poste est un vrai <button> HTML, seul moyen d'obtenir focus clavier et
-   activation Entrée/Espace sans réimplémenter la sémantique d'un bouton dans du SVG. */
+   dessiné dedans. Chaque poste est un <div> décoratif contenant un <select> natif étiré sur toute
+   sa surface (voir .match-pitch-token-select) : c'est le <select> qui reçoit le tap, jamais un
+   bouton qui tenterait d'en ouvrir un autre par showPicker()/focus() -- seul un geste utilisateur
+   direct sur l'élément de formulaire garantit l'ouverture du sélecteur sur tous les navigateurs. */
 .match-pitch-tokens { position: absolute; inset: 16px; }
 /* Poste vide : rond, comme avant -- juste la lettre du rôle, aucun nom à montrer. */
 .match-pitch-token { position: absolute; transform: translate(-50%, -50%); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; border-width: 2px; border-style: solid; padding: 0; }
-.match-pitch-token.empty { background: var(--surface-2); border-color: var(--line); color: var(--ink); cursor: pointer; }
-.match-pitch-token:disabled { cursor: default; }
-.match-pitch-token:not(:disabled):hover { filter: brightness(1.12); }
-/* Poste occupé : plus un seul <button> rond mais une pastille (le prénom entier ne tient pas
-   dans 44px) contenant deux vrais boutons côte à côte -- un <button> ne peut pas en contenir un
-   autre (voir match-pitch.tsx). */
+.match-pitch-token.empty { background: var(--surface-2); border-color: var(--line); color: var(--ink); }
+/* <select> invisible mais bien rendu (jamais display:none/visibility:hidden, qui empêcherait le
+   tap de l'ouvrir) -- étiré sur tout le poste, sous la croix "retirer" (voir z-index ci-dessous)
+   qui doit rester cliquable par-dessus. */
+.match-pitch-token-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; cursor: pointer; z-index: 1; }
+/* Poste occupé : plus un rond mais une pastille (le prénom entier ne tient pas dans 44px). */
 .match-pitch-token.filled { background: var(--accent); border-color: var(--accent-dark); border-width: 2px; border-style: solid; border-radius: 99px; min-width: 44px; height: 32px; padding: 0 4px 0 12px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.match-pitch-token-name { border: 0; background: transparent; color: var(--accent-ink); font-size: 12px; font-weight: 800; padding: 0; cursor: pointer; }
-.match-pitch-token-name:disabled { cursor: default; }
-.match-pitch-token-remove { width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; border: 0; background: rgba(6, 35, 48, .28); color: var(--accent-ink); font-size: 13px; line-height: 1; display: grid; place-items: center; padding: 0; cursor: pointer; }
+.match-pitch-token-name { position: relative; color: var(--accent-ink); font-size: 12px; font-weight: 800; pointer-events: none; }
+.match-pitch-token-remove { position: relative; z-index: 2; width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; border: 0; background: rgba(6, 35, 48, .28); color: var(--accent-ink); font-size: 13px; line-height: 1; display: grid; place-items: center; padding: 0; cursor: pointer; }
 .match-pitch-token-remove:hover { background: var(--warn); }
-.match-pitch-captain { position: relative; color: var(--accent-ink); background: var(--warn); border-radius: 50%; width: 15px; height: 15px; flex-shrink: 0; font-size: 10px; font-weight: 900; display: grid; place-items: center; }
+.match-pitch-captain { position: relative; z-index: 2; color: var(--accent-ink); background: var(--warn); border-radius: 50%; width: 15px; height: 15px; flex-shrink: 0; font-size: 10px; font-weight: 900; display: grid; place-items: center; pointer-events: none; }
 
 .match-formation-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .match-formation-picker button { min-height: 36px; padding: 0 13px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 11.5px; font-weight: 800; }
@@ -77,9 +78,10 @@
 .match-bench { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
 .match-bench h2 { margin: 0 0 10px; font-size: 14px; }
 .match-bench-tokens { display: flex; flex-wrap: wrap; gap: 10px; }
-/* .match-pitch-token réutilisé tel quel (mêmes classes filled/empty) -- seule la position change,
-   statique ici plutôt qu'absolue sur le terrain. */
-.match-bench-tokens .match-pitch-token { position: static; transform: none; }
+/* .match-pitch-token réutilisé tel quel (mêmes classes filled/empty) -- seule la position change :
+   relative ici (pour rester le point d'ancrage du <select> superposé, voir
+   .match-pitch-token-select) plutôt qu'absolue sur le terrain. */
+.match-bench-tokens .match-pitch-token { position: relative; transform: none; }
 
 .match-details-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .match-details-form label { display: flex; flex-direction: column; gap: 5px; }

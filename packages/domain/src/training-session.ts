@@ -197,15 +197,28 @@ const cloneActivity = (activity: TrainingActivity): TrainingActivity => ({
   },
 });
 
-export function generateTrainingSession(week: DevelopmentWeek, ageGroup: AgeGroup, playerCount: number): TrainingSession {
-  const id = `session-week-${week.week}-${ageGroup}-${playerCount}`;
+// `slot` distingue les séances d'une même semaine (mardi, mercredi, vendredi...) : sans lui, le
+// titre ne dépendait que de la semaine du cycle et toutes les séances d'une même semaine
+// affichaient donc le même « Séance N » -- facultatif pour ne pas casser les appelants qui
+// n'ont pas cette notion (app mobile, génération de démonstration).
+export function generateTrainingSession(
+  week: DevelopmentWeek,
+  ageGroup: AgeGroup,
+  playerCount: number,
+  slot?: number,
+): TrainingSession {
+  const id =
+    slot === undefined
+      ? `session-week-${week.week}-${ageGroup}-${playerCount}`
+      : `session-week-${week.week}-slot-${slot}-${ageGroup}-${playerCount}`;
+  const title = slot === undefined ? `Séance ${week.week} · ${week.phase}` : `Séance ${slot + 1} · ${week.phase}`;
   const kinds: TrainingBlockKind[] = ["welcome", "activation", "main", "game"];
   const blocks = kinds.map((kind, index) => {
     const activity = catalogue.find((candidate) => candidate.kind === kind && candidate.compatibleThemes.includes(week.theme));
     if (!activity) throw new Error(`Aucune activité compatible pour le bloc ${kind} et le thème ${week.theme}.`);
     return { id: `${id}-block-${kind}`, activity: cloneActivity(activity), durationMinutes: blockDurations[index] };
   });
-  return { id, title: `Séance ${week.week} · ${week.phase}`, ageGroup, playerCount, theme: week.theme, intention: week.intention, blocks };
+  return { id, title, ageGroup, playerCount, theme: week.theme, intention: week.intention, blocks };
 }
 
 export function getSessionDuration(session: TrainingSession): number { return session.blocks.reduce((total, block) => total + block.durationMinutes, 0); }

@@ -166,6 +166,25 @@ export function defaultFormationId(gameFormat: GameFormat): string {
   return formationDefinitionsByGameFormat[gameFormat][0]!.id;
 }
 
+// Nombre de remplaçants autorisés sur la feuille de match, par format de jeu -- les valeurs pour
+// le foot à 11 (5), à 8 (4) et à 5 (3) suivent la règle fédérale (FFF) habituelle en U10-U13 ;
+// les autres formats proposés par l'app (4, 6, 7, 9, 10) suivent la même progression, à mi-chemin
+// entre leurs voisins.
+const maxSubstitutesByGameFormat: Record<GameFormat, number> = {
+  4: 2,
+  5: 3,
+  6: 3,
+  7: 3,
+  8: 4,
+  9: 4,
+  10: 5,
+  11: 5,
+};
+
+export function maxSubstitutes(gameFormat: GameFormat): number {
+  return maxSubstitutesByGameFormat[gameFormat];
+}
+
 export function createMatchPlan(
   opponent: string,
   dateLabel: string,
@@ -204,9 +223,14 @@ export function assignPlayerToSlot(plan: MatchPlan, slotId: string, player: { id
 }
 
 // Place un joueur sur le banc -- le retire d'abord de son poste s'il en occupait un (un joueur ne
-// peut être à la fois titulaire et remplaçant), sans effet s'il y est déjà.
+// peut être à la fois titulaire et remplaçant), sans effet s'il y est déjà, et sans effet non plus
+// une fois le nombre maximal de remplaçants atteint pour ce format de jeu (voir maxSubstitutes) --
+// à l'appelant de prévenir l'utilisateur le cas échéant (voir match-prep-view.tsx).
 export function addSubstitute(plan: MatchPlan, player: { id: string; name: string }): MatchPlan {
   if (plan.substitutePlayerIds.includes(player.id)) {
+    return plan;
+  }
+  if (plan.substitutePlayerIds.length >= maxSubstitutes(plan.gameFormat)) {
     return plan;
   }
   const lineup = plan.lineup.filter((assignment) => assignment.playerId !== player.id);
