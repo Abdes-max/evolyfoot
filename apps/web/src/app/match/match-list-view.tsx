@@ -248,6 +248,7 @@ export function MatchListView() {
           )}
 
           <CompetitionsPanel
+            detailBasePath="/match/tournois"
             endpoint="/api/tournaments"
             itemKey="tournament"
             listKey="tournaments"
@@ -255,6 +256,7 @@ export function MatchListView() {
             title="Tournois"
           />
           <CompetitionsPanel
+            detailBasePath="/match/plateaux"
             endpoint="/api/plateaux"
             itemKey="plateau"
             listKey="plateaux"

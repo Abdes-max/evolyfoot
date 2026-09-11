@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createDatabaseClient } from "./client";
-import { ValidationError } from "./errors";
+import { TournamentNotFoundError, ValidationError } from "./errors";
 import { PrismaEducatorRepository, PrismaTournamentRepository } from "./prisma-repositories";
 import { TournamentService } from "./tournament-service";
 
@@ -70,5 +70,45 @@ describe("PostgreSQL tournament persistence", () => {
     await database.prisma.educator.delete({ where: { id: educator.id } });
 
     await expect(database.prisma.tournamentRecord.count({ where: { educatorId: educator.id } })).resolves.toBe(0);
+  });
+
+  it("fetches a tournament by id, scoped to its educator", async () => {
+    const owner = await createEducator("find-by-id");
+    const stranger = await createEducator("find-by-id-stranger");
+    const tournament = await service.create(owner.id, { name: "Tournoi", dateLabel: "12 avril 2026" });
+
+    await expect(service.getById(owner.id, tournament.id)).resolves.toMatchObject({ id: tournament.id });
+    await expect(service.getById(stranger.id, tournament.id)).resolves.toBeNull();
+  });
+
+  it("modifie date/lieu/description/bilan indépendamment du nom et de la date d’affichage", async () => {
+    const educator = await createEducator("details-update");
+    const tournament = await service.create(educator.id, { name: "Tournoi", dateLabel: "12 avril 2026" });
+    const date = new Date("2026-04-12T00:00:00.000Z");
+
+    const updated = await service.updateDetails(educator.id, tournament.id, {
+      date,
+      location: "Stade Marius Requier",
+      description: "Tournoi U12 sur herbe",
+      result: "Vainqueur",
+    });
+    expect(updated.date).toEqual(date);
+    expect(updated.location).toBe("Stade Marius Requier");
+    expect(updated.description).toBe("Tournoi U12 sur herbe");
+    expect(updated.result).toBe("Vainqueur");
+    expect(updated.name).toBe("Tournoi");
+  });
+
+  it("rejette la modification des détails d’un tournoi introuvable ou appartenant à un autre éducateur", async () => {
+    const owner = await createEducator("details-owner");
+    const stranger = await createEducator("details-stranger");
+    const tournament = await service.create(owner.id, { name: "Tournoi", dateLabel: "12 avril 2026" });
+
+    await expect(
+      service.updateDetails(stranger.id, tournament.id, { location: "Ailleurs" }),
+    ).rejects.toBeInstanceOf(TournamentNotFoundError);
+    await expect(
+      service.updateDetails(owner.id, "00000000-0000-0000-0000-000000000000", { location: "Ailleurs" }),
+    ).rejects.toBeInstanceOf(TournamentNotFoundError);
   });
 });

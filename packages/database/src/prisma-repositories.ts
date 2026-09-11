@@ -5,9 +5,11 @@ import {
   DuplicateEducatorEmailError,
   EducatorNotFoundError,
   MatchNotFoundError,
+  PlateauNotFoundError,
   PlayerEvaluationNotFoundError,
   PlayerNotFoundError,
   TeamNotFoundError,
+  TournamentNotFoundError,
   TrainingSessionNotFoundError,
 } from "./errors";
 import {
@@ -693,10 +695,38 @@ export class PrismaTournamentRepository implements TournamentRepository {
     return records.map(toPersistedTournament);
   }
 
+  async findById(id: string, educatorId: string): Promise<PersistedTournament | null> {
+    const record = await this.prisma.tournamentRecord.findFirst({ where: { id, educatorId } });
+    return record === null ? null : toPersistedTournament(record);
+  }
+
   async create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedTournament> {
     const record = await this.prisma.tournamentRecord.create({
       data: { educatorId, name: input.name, dateLabel: input.dateLabel, date: input.date ?? null, result: input.result ?? null },
     });
+    return toPersistedTournament(record);
+  }
+
+  // Même principe que PrismaMatchRepository.update : `updateMany` vérifie l'appartenance à
+  // `educatorId` dans la même requête que l'écriture.
+  async update(
+    id: string,
+    educatorId: string,
+    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null },
+  ): Promise<PersistedTournament> {
+    const { count } = await this.prisma.tournamentRecord.updateMany({
+      where: { id, educatorId },
+      data: {
+        ...(input.date !== undefined ? { date: input.date } : {}),
+        ...(input.location !== undefined ? { location: input.location } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.result !== undefined ? { result: input.result } : {}),
+      },
+    });
+    if (count === 0) {
+      throw new TournamentNotFoundError();
+    }
+    const record = await this.prisma.tournamentRecord.findUniqueOrThrow({ where: { id } });
     return toPersistedTournament(record);
   }
 
@@ -717,10 +747,36 @@ export class PrismaPlateauRepository implements PlateauRepository {
     return records.map(toPersistedPlateau);
   }
 
+  async findById(id: string, educatorId: string): Promise<PersistedPlateau | null> {
+    const record = await this.prisma.plateauRecord.findFirst({ where: { id, educatorId } });
+    return record === null ? null : toPersistedPlateau(record);
+  }
+
   async create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedPlateau> {
     const record = await this.prisma.plateauRecord.create({
       data: { educatorId, name: input.name, dateLabel: input.dateLabel, date: input.date ?? null, result: input.result ?? null },
     });
+    return toPersistedPlateau(record);
+  }
+
+  async update(
+    id: string,
+    educatorId: string,
+    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null },
+  ): Promise<PersistedPlateau> {
+    const { count } = await this.prisma.plateauRecord.updateMany({
+      where: { id, educatorId },
+      data: {
+        ...(input.date !== undefined ? { date: input.date } : {}),
+        ...(input.location !== undefined ? { location: input.location } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.result !== undefined ? { result: input.result } : {}),
+      },
+    });
+    if (count === 0) {
+      throw new PlateauNotFoundError();
+    }
+    const record = await this.prisma.plateauRecord.findUniqueOrThrow({ where: { id } });
     return toPersistedPlateau(record);
   }
 

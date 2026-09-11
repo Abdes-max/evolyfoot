@@ -1,9 +1,12 @@
-import { EducatorNotFoundError } from "@evolyfoot/database";
+import { EducatorNotFoundError, PlateauNotFoundError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
 import {
   createCreatePlateauHandler,
+  createGetPlateauHandler,
   createListPlateauxHandler,
   createRemovePlateauHandler,
+  createUpdatePlateauDetailsHandler,
+  type PlateauGateway,
   type PlateauSummary,
 } from "./plateau";
 
@@ -15,6 +18,8 @@ const summary: PlateauSummary = {
   name: "Plateau de rentrée",
   dateLabel: "14 septembre 2026",
   date: null,
+  location: null,
+  description: null,
   result: null,
   createdAt: "2026-09-10T00:00:00.000Z",
 };
@@ -63,5 +68,64 @@ describe("plateau handlers", () => {
   it("remove requires authentication and returns ok", async () => {
     expect((await createRemovePlateauHandler(anonymous, { remove: async () => undefined }, () => undefined)(request("DELETE"), "p1")).status).toBe(401);
     expect((await createRemovePlateauHandler(authenticated, { remove: async () => undefined }, () => undefined)(request("DELETE"), "p1")).status).toBe(200);
+  });
+});
+
+describe("createGetPlateauHandler", () => {
+  it("returns 404 when the plateau does not belong to the requesting educator", async () => {
+    const gateway: Pick<PlateauGateway, "get"> = {
+      get: async () => {
+        throw new PlateauNotFoundError();
+      },
+    };
+    const handler = createGetPlateauHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(new Request("https://evolyfoot.test/api/plateaux/p1"), "p1");
+
+    expect(response.status).toBe(404);
+  });
+});
+
+describe("createUpdatePlateauDetailsHandler", () => {
+  it("requires authentication", async () => {
+    const handler = createUpdatePlateauDetailsHandler(anonymous, { updateDetails: async () => { throw new Error("not called"); } }, () => undefined);
+    expect((await handler(request("PATCH", { location: "Stade X" }), "p1")).status).toBe(401);
+  });
+
+  it("forwards only the provided fields, leaving the rest untouched", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<PlateauGateway, "updateDetails"> = {
+      updateDetails: async (educatorId, plateauId, input) => {
+        received.push({ educatorId, plateauId, input });
+        return summary;
+      },
+    };
+    const handler = createUpdatePlateauDetailsHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(request("PATCH", { location: "Stade Marius Requier" }), "p1");
+
+    expect(response.status).toBe(200);
+    expect(received).toEqual([
+      {
+        educatorId: educator.id,
+        plateauId: "p1",
+        input: { date: undefined, location: "Stade Marius Requier", description: undefined, result: undefined },
+      },
+    ]);
+  });
+
+  it("accepts null to clear a field", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<PlateauGateway, "updateDetails"> = {
+      updateDetails: async (educatorId, plateauId, input) => {
+        received.push(input);
+        return summary;
+      },
+    };
+    const handler = createUpdatePlateauDetailsHandler(authenticated, gateway, () => undefined);
+
+    await handler(request("PATCH", { location: null }), "p1");
+
+    expect(received).toEqual([{ date: undefined, location: null, description: undefined, result: undefined }]);
   });
 });

@@ -341,6 +341,48 @@ test("l’éducateur enregistre un tournoi et un plateau depuis Matchs & compét
   await expect(plateauForm.getByText("Plateau de rentrée")).toBeVisible();
 });
 
+test("l’éducateur ouvre la fiche d’un tournoi depuis sa carte et modifie ses détails", async ({ page }) => {
+  await page.route("**/api/team", (route) => route.fulfill({ json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14 } } }));
+  await page.route("**/api/matches", (route) => route.fulfill({ json: { matches: [] } }));
+  await page.route("**/api/plateaux", (route) => route.fulfill({ json: { plateaux: [] } }));
+  const tournament = {
+    id: "tournament-1",
+    name: "Tournoi de printemps",
+    dateLabel: "12 avril 2026",
+    date: "2026-04-12T00:00:00.000Z",
+    location: null,
+    description: null,
+    result: null,
+  };
+  await page.route("**/api/tournaments", (route) => {
+    if (route.request().method() === "POST") {
+      return route.fulfill({ status: 201, json: { tournament } });
+    }
+    return route.fulfill({ json: { tournaments: [tournament] } });
+  });
+  await page.route("**/api/tournaments/tournament-1", (route) => route.fulfill({ json: { tournament } }));
+  let patchBody: Record<string, unknown> | null = null;
+  await page.route("**/api/tournaments/tournament-1/details", (route) => {
+    patchBody = JSON.parse(route.request().postData() ?? "{}");
+    return route.fulfill({ json: { tournament: { ...tournament, ...patchBody } } });
+  });
+
+  await page.goto("/match");
+  await page.getByRole("link", { name: "Tournoi de printemps — Voir le détail" }).click();
+
+  await expect(page).toHaveURL(/\/match\/tournois\/tournament-1$/);
+  await expect(page.getByRole("heading", { name: "Tournoi de printemps" })).toBeVisible();
+
+  await page.getByLabel("Lieu").fill("Stade Marius Requier");
+  await page.getByLabel("Description").fill("Tournoi U12 sur herbe");
+  await page.getByRole("button", { name: "Enregistrer les détails" }).click();
+
+  await expect.poll(() => patchBody).toMatchObject({ location: "Stade Marius Requier", description: "Tournoi U12 sur herbe" });
+
+  await page.getByRole("link", { name: "Retour aux matchs" }).click();
+  await expect(page).toHaveURL(/\/match$/);
+});
+
 test("l’éducateur envoie la convocation depuis la fiche d’un match déjà composé", async ({ page }) => {
   await page.route("**/api/roster", (route) =>
     route.fulfill({

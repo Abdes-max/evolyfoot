@@ -397,13 +397,26 @@ export interface PersistedTournament {
   // Vraie date calendaire (voir le commentaire dans schema.prisma) -- `null` pour une fiche créée
   // avant l'introduction de ce champ, seul `dateLabel` reste fiable pour elle.
   date: Date | null;
+  location: string | null;
+  description: string | null;
   result: string | null;
   createdAt: Date;
 }
 
 export interface TournamentRepository {
   listByEducator(educatorId: string): Promise<PersistedTournament[]>;
-  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedTournament>;
+  findById(id: string, educatorId: string): Promise<PersistedTournament | null>;
+  create(
+    educatorId: string,
+    input: { name: string; dateLabel: string; date?: Date | null; result?: string },
+  ): Promise<PersistedTournament>;
+  // Lieu, description et bilan -- modifiables indépendamment depuis la fiche détail, même
+  // principe que TrainingSessionRepository.update.
+  update(
+    id: string,
+    educatorId: string,
+    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null },
+  ): Promise<PersistedTournament>;
   remove(id: string, educatorId: string): Promise<void>;
 }
 
@@ -414,13 +427,24 @@ export interface PersistedPlateau {
   name: string;
   dateLabel: string;
   date: Date | null;
+  location: string | null;
+  description: string | null;
   result: string | null;
   createdAt: Date;
 }
 
 export interface PlateauRepository {
   listByEducator(educatorId: string): Promise<PersistedPlateau[]>;
-  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedPlateau>;
+  findById(id: string, educatorId: string): Promise<PersistedPlateau | null>;
+  create(
+    educatorId: string,
+    input: { name: string; dateLabel: string; date?: Date | null; result?: string },
+  ): Promise<PersistedPlateau>;
+  update(
+    id: string,
+    educatorId: string,
+    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null },
+  ): Promise<PersistedPlateau>;
   remove(id: string, educatorId: string): Promise<void>;
 }
 
