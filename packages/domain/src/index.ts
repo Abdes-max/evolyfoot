@@ -153,3 +153,5 @@ export {
   summarizeAttendance,
 } from "./attendance";
 export type { AttendanceEntry, AttendanceStatus, AttendanceSummary } from "./attendance";
+export { messageMaxLength, validateMessageText } from "./message";
+export type { Message, MessageAuthorRole } from "./message";

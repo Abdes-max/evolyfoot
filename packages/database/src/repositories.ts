@@ -7,6 +7,7 @@ import type {
   MatchLineupAssignment,
   MatchStatus,
   MatchVenue,
+  MessageAuthorRole,
   ObservationEventType,
   ObservationReport,
   ObservationReportRating,
@@ -428,4 +429,28 @@ export interface PlayerEvaluationRepository {
     input: { scores?: PlayerEvaluationScores; createdAt?: Date },
   ): Promise<PersistedPlayerEvaluation>;
   remove(id: string, educatorId: string): Promise<void>;
+}
+
+// Message du fil de discussion coach <-> joueur/tuteur (voir Message côté domaine et le
+// commentaire dans schema.prisma). `educatorId` + `playerId` identifient le fil, même principe
+// que PlayerInviteRecord.
+export interface PersistedMessage {
+  id: string;
+  educatorId: string;
+  playerId: string;
+  authorRole: MessageAuthorRole;
+  authorName: string;
+  text: string;
+  createdAt: Date;
+}
+
+export interface MessageRepository {
+  listByPlayer(educatorId: string, playerId: string): Promise<PersistedMessage[]>;
+  create(input: {
+    educatorId: string;
+    playerId: string;
+    authorRole: MessageAuthorRole;
+    authorName: string;
+    text: string;
+  }): Promise<PersistedMessage>;
 }

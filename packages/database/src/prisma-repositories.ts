@@ -16,6 +16,7 @@ import {
   toEducatorRecord,
   toPersistedDiagnostic,
   toPersistedMatch,
+  toPersistedMessage,
   toPersistedObservation,
   toPersistedPlayer,
   toPersistedPlayerEvaluation,
@@ -27,6 +28,7 @@ import {
   toPrismaDevelopmentTheme,
   toPrismaMatchStatus,
   toPrismaMatchVenue,
+  toPrismaMessageAuthorRole,
   toPrismaObservationEventType,
   toPrismaTrainingDay,
   toPlayerInviteRecord,
@@ -46,9 +48,11 @@ import type {
   EmailVerificationRecord,
   EmailVerificationRepository,
   MatchRepository,
+  MessageRepository,
   ObservationRepository,
   PersistedDiagnostic,
   PersistedMatch,
+  PersistedMessage,
   PersistedObservation,
   PersistedPlateau,
   PersistedPlayer,
@@ -78,6 +82,7 @@ import type {
   MatchLineupAssignment,
   MatchStatus,
   MatchVenue,
+  MessageAuthorRole as DomainMessageAuthorRole,
   ObservationReport,
   PlayerEvaluationScores,
   TeamProfile,
@@ -271,6 +276,37 @@ export class PrismaPlayerInviteRepository implements PlayerInviteRepository {
 
   async markConsumed(id: string): Promise<void> {
     await this.prisma.playerInvite.update({ where: { id }, data: { consumedAt: new Date() } });
+  }
+}
+
+export class PrismaMessageRepository implements MessageRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async listByPlayer(educatorId: string, playerId: string): Promise<PersistedMessage[]> {
+    const records = await this.prisma.messageRecord.findMany({
+      where: { educatorId, playerId },
+      orderBy: { createdAt: "asc" },
+    });
+    return records.map(toPersistedMessage);
+  }
+
+  async create(input: {
+    educatorId: string;
+    playerId: string;
+    authorRole: DomainMessageAuthorRole;
+    authorName: string;
+    text: string;
+  }): Promise<PersistedMessage> {
+    const record = await this.prisma.messageRecord.create({
+      data: {
+        educatorId: input.educatorId,
+        playerId: input.playerId,
+        authorRole: toPrismaMessageAuthorRole(input.authorRole),
+        authorName: input.authorName,
+        text: input.text,
+      },
+    });
+    return toPersistedMessage(record);
   }
 }
 
