@@ -4,8 +4,17 @@
 .player-space-header { display: flex; align-items: center; justify-content: space-between; padding: 16px clamp(16px, 5vw, 40px); border-bottom: 1px solid var(--line); background: var(--surface); }
 .player-space-logout { min-height: 38px; border: 1px solid var(--line); border-radius: 9px; padding: 0 14px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 800; }
 
-.player-space-content { width: min(920px, calc(100% - 40px)); margin: 30px auto 60px; display: grid; gap: 16px; }
+/* margin-bottom couvre la barre de navigation fixe (voir .player-tab-bar ci-dessous) : sans lui,
+   le bas du dernier bloc de contenu se retrouve caché derrière la barre plutôt que scrollable
+   jusqu'à être visible au-dessus. */
+.player-space-content { width: min(920px, calc(100% - 40px)); margin: 30px auto calc(76px + env(safe-area-inset-bottom)); display: grid; gap: 16px; }
 .player-space-note, .player-space-empty { margin: 0; color: var(--muted); font-size: 12.5px; }
+
+/* Barre de navigation fixe de l'espace joueur/tuteur (voir player-tab-bar.tsx) -- même principe
+   que .sidebar en mode barre du bas côté coach (globals.css, sous 950px). */
+.player-tab-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); }
+.player-tab { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 52px; border-radius: 12px; text-decoration: none; color: var(--muted); font-size: 12px; font-weight: 700; }
+.player-tab.active { color: var(--accent); background: var(--accent-soft, rgba(62, 198, 245, .12)); }
 
 .player-space-hero { display: flex; align-items: center; gap: 16px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(150deg, var(--accent-dark), var(--accent)); color: var(--accent-ink); }
 .player-space-avatar { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: rgba(255, 255, 255, .16); border: 2px solid rgba(255, 255, 255, .4); font-size: 20px; font-weight: 800; }
@@ -26,13 +35,15 @@
 .player-space-days { margin: 0; font-size: 13px; }
 
 .player-space-matches { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
-/* Toute la carte est cliquable (mène au détail du match, voir /joueur/matches/:id) : le style
-   visuel est posé sur le lien plutôt que le <li>. */
+.player-space-matches strong { font-size: 13px; }
+.player-space-matches span { color: var(--muted); font-size: 11px; }
+/* Ligne non cliquable (compétition), posée directement sur le <li>. */
+.player-space-card { display: grid; gap: 3px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+/* Ligne cliquable (convocation -> /joueur/matches/:id) : toute la carte est cliquable, l'habillage
+   visuel est donc posé sur le lien lui-même plutôt que le <li>. */
 .player-space-match-link { display: grid; gap: 3px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); text-decoration: none; color: inherit; transition: border-color .12s; }
 .player-space-match-link:hover, .player-space-match-link:focus-visible { border-color: var(--accent); }
 .player-space-match-link.convoked { border-color: var(--accent-dark); }
-.player-space-matches strong { font-size: 13px; }
-.player-space-matches span { color: var(--muted); font-size: 11px; }
 .player-space-tag { font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
 .player-space-match-link.convoked .player-space-tag { color: var(--good); }
 

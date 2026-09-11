@@ -526,28 +526,36 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
 
   await expect(page).toHaveURL(/\/joueur$/);
   await expect(page.getByRole("heading", { name: "Kylian" })).toBeVisible();
+
+  // Barre de navigation fixe à 3 onglets (Mon enfant / Calendrier / Messages).
+  const tabBar = page.locator(".player-tab-bar");
+  await expect(tabBar.getByRole("link", { name: "Mon enfant" })).toHaveClass(/active/);
+
+  // Onglet Calendrier : calendrier de la semaine, convocations et compétitions.
+  await tabBar.getByRole("link", { name: "Calendrier" }).click();
+  await expect(page).toHaveURL(/\/joueur\/calendrier$/);
+  await expect(page.getByRole("heading", { name: "Calendrier de la semaine" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Compétitions" })).toBeVisible();
+  await expect(page.getByText("Plateau de rentrée")).toBeVisible();
   await expect(page.getByText("US Vallée")).toBeVisible();
   await expect(page.getByText("Convoqué")).toBeVisible();
 
   // Réponse du joueur/tuteur à la convocation depuis "Mes convocations" : ouvre une vraie page
-  // (/joueur/matches/:id), pas un panneau superposé.
+  // (/joueur/matches/:id), pas un panneau superposé -- et sans barre de navigation (page de
+  // détail, comme match-prep-view.tsx côté coach).
   await page.locator(".player-space-matches").getByRole("link", { name: /US Vallée/ }).click();
   await expect(page).toHaveURL(/\/joueur\/matches\/m1$/);
   await expect(page.locator(".player-match-detail")).toContainText("US Vallée");
   await expect(page.locator(".player-match-detail")).toContainText("Stade Marius Requier, Aix-en-Provence");
   await expect(page.locator(".player-match-detail")).toContainText("14:30");
+  await expect(page.locator(".player-tab-bar")).toHaveCount(0);
   await page.getByRole("button", { name: "Malade" }).click();
   await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "sick" });
   await page.getByRole("link", { name: "← Retour" }).click();
   await expect(page).toHaveURL(/\/joueur$/);
 
-  // Calendrier de la semaine (lecture seule) et compétitions (plateaux/tournois).
-  await expect(page.getByRole("heading", { name: "Calendrier de la semaine" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Compétitions" })).toBeVisible();
-  await expect(page.getByText("Plateau de rentrée")).toBeVisible();
-  await expect(page.getByText("Plateau", { exact: true })).toBeVisible();
-
   // Cliquer sur l'événement du calendrier ouvre la même page de détail.
+  await tabBar.getByRole("link", { name: "Calendrier" }).click();
   await page.getByRole("link", { name: "Voir le détail du match contre US Vallée" }).click();
   await expect(page).toHaveURL(/\/joueur\/matches\/m1$/);
   await expect(page.locator(".player-match-detail")).toContainText("US Vallée");
@@ -555,8 +563,15 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "present" });
   await page.getByRole("link", { name: "← Retour" }).click();
 
-  // Comparer plusieurs évaluations sur le radar, en lecture seule (pas de bouton
-  // ajouter/modifier/retirer côté joueur/tuteur).
+  // Onglet Messages : placeholder honnête, pas encore de messagerie.
+  await page.locator(".player-tab-bar").getByRole("link", { name: "Messages" }).click();
+  await expect(page).toHaveURL(/\/joueur\/messages$/);
+  await expect(page.getByText(/messagerie avec l.éducateur arrive bientôt/i)).toBeVisible();
+
+  // Retour à l'onglet Mon enfant pour comparer plusieurs évaluations sur le radar, en lecture
+  // seule (pas de bouton ajouter/modifier/retirer côté joueur/tuteur).
+  await page.locator(".player-tab-bar").getByRole("link", { name: "Mon enfant" }).click();
+  await expect(page).toHaveURL(/\/joueur$/);
   await expect(page.getByRole("heading", { name: "Ma progression" })).toBeVisible();
   await expect(page.getByRole("button", { name: /modifier|retirer/i })).toHaveCount(0);
   await page.locator(".player-space-history .player-evaluation-compare input").last().check();

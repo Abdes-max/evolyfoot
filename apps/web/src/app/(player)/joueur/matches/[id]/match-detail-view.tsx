@@ -2,59 +2,21 @@
 
 import { attendanceStatusLabels, attendanceStatuses, type AttendanceStatus } from "@evolyfoot/domain";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-interface DashboardMatch {
-  id: string;
-  opponent: string;
-  dateLabel: string;
-  meetingTime: string | null;
-  location: string | null;
-  description: string | null;
-  venue: "home" | "away";
-  convoked: boolean;
-  myStatus: AttendanceStatus | null;
-}
-
-interface Dashboard {
-  team: { name: string; ageGroup: string } | null;
-  upcomingMatches: DashboardMatch[];
-}
+import { useState } from "react";
+import { usePlayerDashboard } from "../../use-player-dashboard";
 
 const venueLabel = { home: "Match à domicile", away: "Match à l’extérieur" } as const;
 
 export function MatchDetailView({ matchId }: { matchId: string }) {
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const { status, dashboard } = usePlayerDashboard();
   const [responding, setResponding] = useState(false);
+  // Réponse déjà envoyée pendant cette visite de page, en attendant qu'un rechargement la
+  // confirme -- le dashboard partagé (usePlayerDashboard) est en lecture seule, cette carte se
+  // contente donc de superposer la dernière réponse choisie par-dessus la valeur reçue du serveur.
+  const [myStatusOverride, setMyStatusOverride] = useState<AttendanceStatus | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const response = await fetch("/api/joueur");
-        const body = await response.json().catch(() => ({ dashboard: null }));
-        if (cancelled) {
-          return;
-        }
-        if (response.ok && body.dashboard) {
-          setDashboard(body.dashboard);
-          setStatus("ready");
-        } else {
-          setStatus("error");
-        }
-      } catch {
-        if (!cancelled) {
-          setStatus("error");
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const match = dashboard?.upcomingMatches.find((candidate) => candidate.id === matchId);
+  const found = dashboard?.upcomingMatches.find((candidate) => candidate.id === matchId);
+  const match = found && myStatusOverride ? { ...found, myStatus: myStatusOverride } : found;
 
   async function respond(nextStatus: AttendanceStatus) {
     if (!match) {
@@ -62,16 +24,7 @@ export function MatchDetailView({ matchId }: { matchId: string }) {
     }
     setResponding(true);
     // Optimiste -- même principe que le reste de l'espace joueur (player-dashboard-view.tsx).
-    setDashboard((current) =>
-      current
-        ? {
-            ...current,
-            upcomingMatches: current.upcomingMatches.map((candidate) =>
-              candidate.id === matchId ? { ...candidate, myStatus: nextStatus } : candidate,
-            ),
-          }
-        : current,
-    );
+    setMyStatusOverride(nextStatus);
     try {
       await fetch("/api/joueur/rsvp", {
         method: "POST",
