@@ -23,6 +23,7 @@ const match: MatchSummary = {
   status: "scheduled",
   lineup: [],
   captainPlayerId: null,
+  substitutePlayerIds: [],
 };
 
 function jsonRequest(method: string, body?: unknown): Request {
@@ -141,6 +142,36 @@ describe("createUpdateLineupHandler", () => {
 
     expect(response.status).toBe(200);
     expect(received).toEqual([{ educatorId: educator.id, matchId: "match-1", input: { lineup, captainPlayerId: "p1" } }]);
+  });
+
+  it("forwards substitutePlayerIds when provided", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<MatchGateway, "updateLineup"> = {
+      updateLineup: async (educatorId, matchId, input) => {
+        received.push(input);
+        return match;
+      },
+    };
+    const handler = createUpdateLineupHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(
+      jsonRequest("PUT", { lineup: [], captainPlayerId: null, substitutePlayerIds: ["p2", "p3"] }),
+      "match-1",
+    );
+
+    expect(response.status).toBe(200);
+    expect(received).toEqual([{ lineup: [], captainPlayerId: null, substitutePlayerIds: ["p2", "p3"] }]);
+  });
+
+  it("rejects a malformed substitutePlayerIds", async () => {
+    const handler = createUpdateLineupHandler(authenticated, { updateLineup: async () => { throw new Error("not called"); } }, () => undefined);
+
+    const response = await handler(
+      jsonRequest("PUT", { lineup: [], captainPlayerId: null, substitutePlayerIds: [42] }),
+      "match-1",
+    );
+
+    expect(response.status).toBe(400);
   });
 });
 

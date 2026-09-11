@@ -43,6 +43,10 @@ nav { display:flex; flex-direction:column; gap:4px; }
 .season-card strong { font-size:14px; }
 .season-card>span:last-child { color:var(--muted); font-size:12px; }
 
+.email-reminder { margin-top:10px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; background:color-mix(in srgb, var(--accent) 12%, var(--surface-2)); border:1px solid var(--accent); border-radius:12px; font-size:12px; color:var(--ink); }
+.email-reminder button { align-self:flex-start; border:none; background:none; padding:0; color:var(--accent); font-weight:700; font-size:12px; cursor:pointer; text-decoration:underline; }
+.email-reminder button:disabled { color:var(--muted); cursor:default; text-decoration:none; }
+
 .eyebrow { color:var(--muted); font-size:10.5px; letter-spacing:1.1px; font-weight:800; text-transform:uppercase; }
 .eyebrow.light { color:color-mix(in srgb, var(--ink) 78%, var(--accent)); }
 
@@ -136,11 +140,16 @@ nav { display:flex; flex-direction:column; gap:4px; }
 .week-calendar-day{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0}
 .week-calendar-day-label{font-size:9px;font-weight:800;letter-spacing:.4px;color:var(--accent-dark)}
 .week-calendar-cell{width:100%;aspect-ratio:1;border-radius:12px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;gap:2px}
+/* Jour courant : distingué du reste de la semaine (bordure + label plein), pour se répérer d'un
+   coup d'œil sans avoir à recompter les colonnes. */
+.week-calendar-day.today .week-calendar-day-label{color:var(--accent-ink);background:var(--accent);border-radius:6px;padding:1px 5px}
+.week-calendar-day.today .week-calendar-cell{border:2px solid var(--accent)}
 /* Les badges "séance"/"match" sont de vrais liens (voir weekly-calendar.tsx : ils ouvrent la
    séance ou la fiche du match concerné) -- text-decoration:none pour ne pas hériter du style de
    lien par défaut, et un léger agrandissement au survol pour signaler qu'ils sont cliquables. */
-.week-calendar-badge{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;text-decoration:none;transition:transform .12s}
-a.week-calendar-badge:hover,a.week-calendar-badge:focus-visible{transform:scale(1.1)}
+.week-calendar-badge{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;text-decoration:none;transition:transform .12s;border:none;padding:0;font:inherit}
+button.week-calendar-badge{cursor:pointer}
+a.week-calendar-badge:hover,a.week-calendar-badge:focus-visible,button.week-calendar-badge:hover,button.week-calendar-badge:focus-visible{transform:scale(1.1)}
 .week-calendar-badge svg{width:14px;height:14px}
 .week-calendar-badge.training{background:var(--accent);color:var(--accent-ink)}
 /* Jour d'entraînement dont la séance n'est pas encore générée : pastille creuse (contour, fond
@@ -171,7 +180,7 @@ a.week-calendar-badge:hover,a.week-calendar-badge:focus-visible{transform:scale(
    la barre du bas reste coincée à 264px de large collée à gauche au lieu de courir sur toute la
    largeur de l'écran. */
 .sidebar{left:0;right:0;width:auto;bottom:0;top:auto;height:auto;z-index:30;padding:6px 8px calc(6px + env(safe-area-inset-bottom));flex-direction:row;align-items:stretch;border-right:0;border-top:1px solid var(--line)}
-.brand,.season-card{display:none}
+.brand,.season-card,.email-reminder{display:none}
 nav{flex-direction:row;justify-content:space-around;gap:2px;flex:1}
 .nav-item{flex:1;flex-direction:column;gap:3px;min-height:52px;padding:8px 4px;justify-content:center;text-align:center;border-radius:12px}
 /* Sur mobile, la barre du bas n'a plus de bloc « éducateur » : on garde juste l'avatar comme

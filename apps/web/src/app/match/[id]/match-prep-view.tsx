@@ -1,6 +1,14 @@
 "use client";
 
-import { assignPlayerToSlot, canFinalizeMatchPlan, clearSlot, formationSlots, listFormations } from "@evolyfoot/domain";
+import {
+  addSubstitute,
+  assignPlayerToSlot,
+  canFinalizeMatchPlan,
+  clearSlot,
+  formationSlots,
+  listFormations,
+  removeSubstitute,
+} from "@evolyfoot/domain";
 import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,6 +25,8 @@ interface MatchRecord {
   status: MatchStatus;
   lineup: MatchLineupAssignment[];
   captainPlayerId: string | null;
+  substitutePlayerIds: string[];
+  attendance?: AttendanceEntry[];
 }
 
 interface RosterPlayer {
@@ -78,6 +88,13 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         }
         setMatch(matchBody.match);
         setRoster(rosterBody.players ?? []);
+        // Pré-coche les absents déjà connus -- notamment un joueur/tuteur qui a répondu à sa
+        // convocation avant même que le coach n'ouvre cette page (voir player-rsvp-service.ts) :
+        // sans ce pré-remplissage, valider écraserait sa réponse par "présent" par défaut.
+        const knownAbsentees: string[] = (matchBody.match?.attendance ?? [])
+          .filter((entry: AttendanceEntry) => !entry.present)
+          .map((entry: AttendanceEntry) => entry.playerId);
+        setAbsentPlayerIds(new Set(knownAbsentees));
       } catch {
         if (!cancelled) {
           setLoadError("Une erreur est survenue.");
@@ -90,7 +107,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     };
   }, [matchId]);
 
-  async function persistLineup(nextLineup: MatchLineupAssignment[], nextCaptainPlayerId: string | null) {
+  async function persistLineup(plan: MatchPlan) {
     if (!match) {
       return;
     }
@@ -98,12 +115,21 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     // Optimiste : la composition affichée change tout de suite, avant la confirmation serveur --
     // cohérent avec le reste de l'application (roster-view.tsx fait de même sur l'ajout d'un
     // joueur), l'échec reste rare et se rattrape par une nouvelle tentative.
-    setMatch({ ...match, lineup: nextLineup, captainPlayerId: nextCaptainPlayerId });
+    setMatch({
+      ...match,
+      lineup: [...plan.lineup],
+      captainPlayerId: plan.captainPlayerId,
+      substitutePlayerIds: [...plan.substitutePlayerIds],
+    });
     try {
       const response = await fetch(`/api/matches/${matchId}`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ lineup: nextLineup, captainPlayerId: nextCaptainPlayerId }),
+        body: JSON.stringify({
+          lineup: plan.lineup,
+          captainPlayerId: plan.captainPlayerId,
+          substitutePlayerIds: plan.substitutePlayerIds,
+        }),
       });
       if (!response.ok) {
         setSaveError(await readErrorMessage(response));
@@ -121,23 +147,39 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       return;
     }
     if (!playerId) {
-      const plan = clearSlot(toPlan(match), slotId);
-      persistLineup([...plan.lineup], plan.captainPlayerId);
+      persistLineup(clearSlot(toPlan(match), slotId));
       return;
     }
     const player = roster.find((candidate) => candidate.id === playerId);
     if (!player) {
       return;
     }
-    const plan = assignPlayerToSlot(toPlan(match), slotId, player);
-    persistLineup([...plan.lineup], plan.captainPlayerId);
+    persistLineup(assignPlayerToSlot(toPlan(match), slotId, player));
+  }
+
+  function addSubstitutePlayer(playerId: string) {
+    if (!match || !playerId) {
+      return;
+    }
+    const player = roster.find((candidate) => candidate.id === playerId);
+    if (!player) {
+      return;
+    }
+    persistLineup(addSubstitute(toPlan(match), player));
+  }
+
+  function removeSubstitutePlayer(playerId: string) {
+    if (!match) {
+      return;
+    }
+    persistLineup(removeSubstitute(toPlan(match), playerId));
   }
 
   function setCaptainPlayer(playerId: string) {
     if (!match) {
       return;
     }
-    persistLineup(match.lineup, playerId || null);
+    persistLineup({ ...toPlan(match), captainPlayerId: playerId || null });
   }
 
   function openSlotPicker(slotId: string) {
@@ -195,11 +237,18 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     setFinalizing(true);
     setSaveError("");
     try {
-      const attendance: AttendanceEntry[] = roster.map((player) => ({
-        playerId: player.id,
-        playerName: player.name,
-        present: !absentPlayerIds.has(player.id),
-      }));
+      const attendance: AttendanceEntry[] = roster.map((player) => {
+        const present = !absentPlayerIds.has(player.id);
+        // Le motif détaillé (malade, blessé…) éventuellement déjà donné par le joueur/tuteur est
+        // conservé tant que la case à cocher du coach correspond toujours à ce qu'il avait
+        // répondu -- décochée/cochée différemment, elle exprime une correction du coach, qui n'a
+        // que présent/absent à disposition ici.
+        const known = match?.attendance?.find((entry) => entry.playerId === player.id);
+        if (known && known.present === present) {
+          return known;
+        }
+        return { playerId: player.id, playerName: player.name, present };
+      });
       const response = await fetch(`/api/matches/${matchId}/played`, {
         method: "POST",
         ...(attendance.length > 0
@@ -289,17 +338,18 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             </div>
           )}
           <MatchPitch captainPlayerId={match.captainPlayerId} lineup={match.lineup} onSlotClick={readOnly ? undefined : openSlotPicker} slots={slots} />
-        </div>
+          {!readOnly && <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur.</p>}
 
-        <div className="match-slot-panel">
-          <h2>Composition</h2>
-          <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur, ou choisis-le directement ci-dessous.</p>
-          <div className="match-slot-list">
+          {/* Les <select> réels restent dans le DOM (masqués visuellement, pas retirés) : c'est
+              sur eux qu'openSlotPicker() appelle showPicker()/focus() quand on touche un poste sur
+              le terrain -- la seule affectation possible désormais, la liste à côté du terrain
+              n'ayant pas de sens (deux façons de faire la même chose). */}
+          <div className="visually-hidden">
             {slots.map((slot) => {
               const assignment = match.lineup.find((candidate) => candidate.slotId === slot.id);
               return (
-                <label className="match-slot-row" key={slot.id}>
-                  <span>{slot.roleLabel}</span>
+                <label key={slot.id}>
+                  {slot.roleLabel}
                   <select
                     disabled={readOnly}
                     onChange={(event) => assignSlot(slot.id, event.target.value)}
@@ -322,6 +372,52 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             })}
           </div>
 
+          <section aria-labelledby="match-bench-title" className="match-bench">
+            <h2 id="match-bench-title">Remplaçants</h2>
+            {match.substitutePlayerIds.length === 0 ? (
+              <p className="player-space-empty">Aucun remplaçant.</p>
+            ) : (
+              <ul className="match-bench-list">
+                {match.substitutePlayerIds.map((playerId) => {
+                  const player = roster.find((candidate) => candidate.id === playerId);
+                  return (
+                    <li key={playerId}>
+                      <span>{player?.name ?? "Joueur"}</span>
+                      {!readOnly && (
+                        <button aria-label={`Retirer ${player?.name ?? "ce joueur"} du banc`} onClick={() => removeSubstitutePlayer(playerId)} type="button">
+                          ×
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {!readOnly && (
+              <label className="match-bench-add">
+                <span>Ajouter un remplaçant</span>
+                <select
+                  onChange={(event) => {
+                    addSubstitutePlayer(event.target.value);
+                    event.target.value = "";
+                  }}
+                  value=""
+                >
+                  <option value="">— Choisir un joueur —</option>
+                  {roster
+                    .filter((player) => !assignedPlayerIds.has(player.id) && !match.substitutePlayerIds.includes(player.id))
+                    .map((player) => (
+                      <option key={player.id} value={player.id}>
+                        {player.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            )}
+          </section>
+        </div>
+
+        <div className="match-slot-panel">
           <label className="match-captain-row">
             <span>Capitaine</span>
             <select disabled={readOnly} onChange={(event) => setCaptainPlayer(event.target.value)} value={match.captainPlayerId ?? ""}>
@@ -390,5 +486,6 @@ function toPlan(match: MatchRecord): MatchPlan {
     status: match.status,
     lineup: match.lineup,
     captainPlayerId: match.captainPlayerId,
+    substitutePlayerIds: match.substitutePlayerIds,
   };
 }

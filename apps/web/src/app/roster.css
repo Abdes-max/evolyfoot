@@ -70,19 +70,37 @@
 .player-primary:disabled{opacity:.5;cursor:not-allowed}
 .player-ghost{min-height:42px;border:1px solid var(--line);border-radius:9px;padding:0 16px;background:transparent;color:var(--ink);font-size:11px;font-weight:800}
 .player-error{grid-column:1/-1;margin:6px 0 0;color:var(--warn);font-size:11px;font-weight:700}
-.player-evaluation{display:grid;grid-template-columns:1fr auto;gap:26px;align-items:start}
-.player-evaluation-form{display:flex;flex-direction:column;gap:10px;min-width:240px}
+.player-evaluation-radar{display:flex;flex-direction:column;align-items:center;gap:6px}
+.player-radar-caption{margin:0;color:var(--muted);font-size:10.5px;text-align:center}
+
+/* Graphe (gauche) et formulaire+historique (droite), chacun à moitié de la largeur du bloc. */
+.player-evaluation-layout{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+.player-evaluation-radar-big{justify-content:center}
+/* Formulaire puis historique, empilés dans la moitié droite. */
+.player-evaluation-columns{display:grid;gap:22px}
+.player-evaluation-columns h3{margin:0 0 12px;font-size:13px}
+.player-evaluation-form{display:flex;flex-direction:column;gap:10px}
+.player-evaluation-date{display:grid;grid-template-columns:90px 1fr;align-items:center;gap:10px}
+.player-evaluation-date span{font-size:11.5px;color:var(--muted);font-weight:700}
+.player-evaluation-date input{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:7px 10px;color:var(--ink);font-size:12px}
 .player-evaluation-row{display:grid;grid-template-columns:90px 1fr 24px;align-items:center;gap:10px}
 .player-evaluation-row span{font-size:11.5px;color:var(--muted);font-weight:700}
 .player-evaluation-row input[type="range"]{width:100%;accent-color:var(--accent)}
 .player-evaluation-row strong{font-size:12px;text-align:right}
-.player-evaluation-radar{display:flex;flex-direction:column;align-items:center;gap:6px}
-.player-radar-caption{margin:0;color:var(--muted);font-size:10.5px;text-align:center}
-.player-evaluation-history{list-style:none;margin:18px 0 0;padding:16px 0 0;border-top:1px solid var(--line);display:grid;gap:9px}
-.player-evaluation-history li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.player-evaluation-form-actions{display:flex;gap:8px}
+.player-evaluation-form-actions button[type="button"]{min-height:42px;border:1px solid var(--line);border-radius:9px;padding:0 16px;background:transparent;color:var(--muted);font-size:11px;font-weight:800}
+.player-evaluation-empty{margin:0;color:var(--muted);font-size:11.5px}
+.player-evaluation-history{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.player-evaluation-history li{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.player-evaluation-history li>div:not(.player-evaluation-compare){flex:1;min-width:0}
 .player-evaluation-history strong{display:block;font-size:12px}
 .player-evaluation-history span{color:var(--muted);font-size:10.5px}
+.player-evaluation-history-actions{display:flex;gap:6px;flex-shrink:0}
 .player-evaluation-history button{min-height:32px;border:1px solid var(--line);border-radius:7px;padding:6px 11px;background:var(--surface);color:var(--ink);font-size:9.5px;font-weight:800}
+/* Case à cocher "comparer sur le graphe" + pastille de couleur associée, voir colorForEvaluation
+   côté player-detail-view.tsx. */
+.player-evaluation-compare{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.player-evaluation-compare input{accent-color:var(--accent)}
 .player-invite-lead{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.5}
 .player-invite-result{display:flex;gap:8px;flex-wrap:wrap}
 .player-invite-result input{flex:1;min-width:200px;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:10px 12px;color:var(--ink);font-size:11.5px}
@@ -90,5 +108,5 @@
 @media(max-width:760px){
   .player-identity{grid-template-columns:1fr;justify-items:center}
   .player-grid,.player-form{grid-template-columns:1fr}
-  .player-evaluation{grid-template-columns:1fr;justify-items:center}
+  .player-evaluation-layout{grid-template-columns:1fr}
 }

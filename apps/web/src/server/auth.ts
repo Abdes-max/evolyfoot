@@ -13,6 +13,9 @@ export interface PublicEducator {
 export interface PublicAccount extends PublicEducator {
   role: AccountRole;
   linkedPlayerId: string | null;
+  // `false` tant que le lien de confirmation reçu à l'inscription n'a pas été cliqué. N'empêche
+  // jamais la connexion -- sert uniquement à afficher un rappel dans l'appli.
+  emailVerified: boolean;
 }
 
 export interface AuthenticatedSessionResult {
@@ -223,6 +226,7 @@ function toPublicAccount(account: {
   displayName: string;
   role?: "coach" | "player";
   linkedPlayerId?: string | null;
+  emailVerifiedAt?: Date | null;
 }): PublicAccount {
   return {
     id: account.id,
@@ -230,6 +234,7 @@ function toPublicAccount(account: {
     displayName: account.displayName,
     role: account.role === "player" ? "player" : "coach",
     linkedPlayerId: account.linkedPlayerId ?? null,
+    emailVerified: account.emailVerifiedAt != null,
   };
 }
 

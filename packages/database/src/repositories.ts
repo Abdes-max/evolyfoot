@@ -302,6 +302,9 @@ export interface PersistedMatch {
   status: MatchStatus;
   lineup: readonly MatchLineupAssignment[];
   captainPlayerId: string | null;
+  // Sur le banc, sans poste. Toujours un tableau concret : `undefined` en base (match préparé
+  // avant l'introduction du banc) résolu en `[]` par le mapper, comme `formationId`.
+  substitutePlayerIds: readonly string[];
   // Distincte de `lineup` (qui est *prévu* à quel poste) : un joueur prévu peut ne pas s'être
   // présenté, et inversement. Même convention `undefined`/tableau vide que
   // PersistedTrainingSession.attendance ci-dessus.
@@ -328,6 +331,7 @@ export interface MatchRepository {
       status?: MatchStatus;
       lineup?: readonly MatchLineupAssignment[];
       captainPlayerId?: string | null;
+      substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedMatch>;
@@ -381,5 +385,13 @@ export interface PlayerEvaluationRepository {
   listByPlayer(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation[]>;
   countByPlayer(playerId: string, educatorId: string): Promise<number>;
   create(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation>;
+  // `undefined` = champ non touché ; jamais retiré une fois posé, mêmes conventions que
+  // MatchRepository.update ci-dessus. `createdAt` sert de date d'évaluation modifiable (voir
+  // PlayerEvaluationService.update) -- pas une simple trace d'audit dans ce contexte.
+  update(
+    id: string,
+    educatorId: string,
+    input: { scores?: PlayerEvaluationScores; createdAt?: Date },
+  ): Promise<PersistedPlayerEvaluation>;
   remove(id: string, educatorId: string): Promise<void>;
 }

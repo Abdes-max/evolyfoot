@@ -248,7 +248,7 @@ describe("createLogoutHandler", () => {
 });
 
 describe("createSessionHandler", () => {
-  const coachAccount = { ...educator, role: "coach" as const, linkedPlayerId: null };
+  const coachAccount = { ...educator, role: "coach" as const, linkedPlayerId: null, emailVerified: true };
 
   it("returns a null educator when there is no session cookie", async () => {
     const handler = createSessionHandler({ getAccountForSession: async () => { throw new Error("not called"); } }, () => undefined);
@@ -270,7 +270,14 @@ describe("createSessionHandler", () => {
 
   it("hides a player account behind a null educator but reports role 'player'", async () => {
     const handler = createSessionHandler(
-      { getAccountForSession: async () => ({ ...educator, role: "player" as const, linkedPlayerId: "player-1" }) },
+      {
+        getAccountForSession: async () => ({
+          ...educator,
+          role: "player" as const,
+          linkedPlayerId: "player-1",
+          emailVerified: true,
+        }),
+      },
       () => undefined,
     );
 

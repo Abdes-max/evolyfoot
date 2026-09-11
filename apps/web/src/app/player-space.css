@@ -17,10 +17,12 @@
 .player-space-block h2 { margin: 0 0 14px; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; }
 .player-space-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
-.player-space-progress { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center; }
+/* Graphe (gauche) et historique comparable (droite), chacun à moitié de la largeur du bloc --
+   même principe que .player-evaluation-layout côté fiche joueur du coach, en lecture seule ici. */
+.player-space-progress { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
 .player-space-caption { margin: 0 0 10px; color: var(--muted); font-size: 11px; }
-.player-space-history { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.player-space-history li { font-size: 11.5px; color: var(--muted); }
+.player-space-history { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.player-space-history li { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
 .player-space-days { margin: 0; font-size: 13px; }
 
 .player-space-matches { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
@@ -30,6 +32,16 @@
 .player-space-matches span { color: var(--muted); font-size: 11px; }
 .player-space-tag { font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
 .player-space-matches li.convoked .player-space-tag { color: var(--good); }
+.player-space-rsvp { margin-top: 6px; display: flex; align-items: center; gap: 8px; }
+.player-space-rsvp span { flex-shrink: 0; font-size: 10.5px; font-weight: 700; text-transform: none; letter-spacing: 0; }
+.player-space-rsvp select { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 9px; color: var(--ink); font-size: 12px; }
+
+/* Détail d'un match ouvert depuis le calendrier (clic sur un badge, voir WeekCalendar). */
+.player-space-match-detail { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--accent-dark); border-radius: 12px; background: var(--surface-2); display: grid; gap: 6px; }
+.player-space-match-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.player-space-match-detail-head strong { font-size: 13px; }
+.player-space-match-detail-head button { width: 24px; height: 24px; border-radius: 50%; border: none; background: var(--surface); color: var(--muted); font-size: 14px; line-height: 1; cursor: pointer; }
+.player-space-match-detail > span { color: var(--muted); font-size: 11px; }
 
 @media (max-width: 720px) {
   .player-space-grid, .player-space-progress { grid-template-columns: 1fr; }

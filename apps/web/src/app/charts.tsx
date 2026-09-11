@@ -1,6 +1,5 @@
 "use client";
 
-import { useId } from "react";
 
 // Trois graphiques simples, en SVG/CSS pur (même approche que tactical-diagram.tsx) plutôt qu'une
 // bibliothèque externe : le besoin (compteurs, une proportion à deux valeurs, une évaluation sur
@@ -88,21 +87,37 @@ export interface RadarAxis {
   readonly label: string;
 }
 
+// Une évaluation superposée sur le radar, sa propre couleur -- voir player-detail-view.tsx, qui
+// permet de comparer plusieurs évaluations datées d'un même joueur sur un seul graphe.
+export interface RadarSeries {
+  readonly key: string;
+  readonly label: string;
+  readonly color: string;
+  readonly scores: Readonly<Record<string, number>>;
+}
+
 export function RadarChart({
   axes,
   scores,
+  series,
   min,
   max,
+  size = 260,
 }: {
   axes: readonly RadarAxis[];
-  scores: Readonly<Record<string, number>>;
+  // Une seule évaluation (usage historique, ex. tableau de bord joueur) -- ignoré si `series` est
+  // fourni.
+  scores?: Readonly<Record<string, number>>;
+  // Plusieurs évaluations superposées, chacune avec sa couleur -- voir RadarSeries ci-dessus.
+  series?: ReadonlyArray<RadarSeries>;
   min: number;
   max: number;
+  // Côté du SVG en pixels (carré). 260 par défaut ; un usage plus proéminent (comparaison
+  // d'évaluations) peut demander un graphe plus grand.
+  size?: number;
 }) {
-  const gradientId = useId();
-  const size = 260;
   const center = size / 2;
-  const radius = 88;
+  const radius = size * 0.34;
   // Au plus 5 anneaux, quelle que soit l'amplitude (0-10 tracerait 10 anneaux, illisible).
   const ringCount = Math.min(Math.max(max - min, 1), 5);
   const angleStep = (2 * Math.PI) / axes.length;
@@ -112,28 +127,27 @@ export function RadarChart({
     return { x: center + Math.cos(angle) * radius * ratio, y: center + Math.sin(angle) * radius * ratio };
   }
 
-  const dataPoints = axes.map((axis, index) => {
-    const score = scores[axis.key] ?? min;
-    const ratio = (score - min) / (max - min);
-    return pointAt(index, ratio);
-  });
-  const dataPath = dataPoints.map((point) => `${point.x},${point.y}`).join(" ");
+  const effectiveSeries: ReadonlyArray<RadarSeries> = series ?? (scores ? [{ key: "default", label: "", color: "var(--accent)", scores }] : []);
+
+  function seriesPoints(values: Readonly<Record<string, number>>) {
+    return axes.map((axis, index) => {
+      const score = values[axis.key] ?? min;
+      const ratio = (score - min) / (max - min);
+      return pointAt(index, ratio);
+    });
+  }
 
   return (
     <div className="radar-chart">
       <svg
-        aria-label={axes.map((axis) => `${axis.label} : ${scores[axis.key] ?? min}/${max}`).join(", ")}
+        aria-label={effectiveSeries
+          .map((entry) => `${entry.label ? `${entry.label} : ` : ""}${axes.map((axis) => `${axis.label} ${entry.scores[axis.key] ?? min}/${max}`).join(", ")}`)
+          .join(" · ")}
         height={size}
         role="img"
         viewBox={`0 0 ${size} ${size}`}
         width={size}
       >
-        <defs>
-          <radialGradient id={gradientId}>
-            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.15" />
-          </radialGradient>
-        </defs>
         {Array.from({ length: ringCount + 1 }, (_, ring) => ring / ringCount).map((ratio) => (
           <polygon
             className="radar-chart-ring"
@@ -145,10 +159,18 @@ export function RadarChart({
           const outer = pointAt(index, 1);
           return <line className="radar-chart-axis" key={axis.key} x1={center} x2={outer.x} y1={center} y2={outer.y} />;
         })}
-        <polygon className="radar-chart-data" fill={`url(#${gradientId})`} points={dataPath} />
-        {dataPoints.map((point, index) => (
-          <circle className="radar-chart-point" cx={point.x} cy={point.y} key={axes[index]!.key} r="3.5" />
-        ))}
+        {effectiveSeries.map((entry) => {
+          const dataPoints = seriesPoints(entry.scores);
+          const dataPath = dataPoints.map((point) => `${point.x},${point.y}`).join(" ");
+          return (
+            <g key={entry.key}>
+              <polygon className="radar-chart-data" fill={entry.color} fillOpacity="0.22" points={dataPath} stroke={entry.color} strokeWidth="2" />
+              {dataPoints.map((point, index) => (
+                <circle cx={point.x} cy={point.y} fill={entry.color} key={axes[index]!.key} r="3.5" />
+              ))}
+            </g>
+          );
+        })}
         {axes.map((axis, index) => {
           const labelPoint = pointAt(index, 1.24);
           return (
@@ -158,6 +180,16 @@ export function RadarChart({
           );
         })}
       </svg>
+      {series && series.length > 0 && (
+        <ul className="radar-chart-legend">
+          {series.map((entry) => (
+            <li key={entry.key}>
+              <span className="radar-chart-legend-dot" style={{ background: entry.color }} />
+              {entry.label}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

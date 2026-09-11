@@ -12,6 +12,7 @@ export interface MatchSummary {
   status: MatchStatus;
   lineup: readonly MatchLineupAssignment[];
   captainPlayerId: string | null;
+  substitutePlayerIds: readonly string[];
   attendance?: readonly AttendanceEntry[];
 }
 
@@ -25,7 +26,11 @@ export interface MatchGateway {
   updateLineup(
     educatorId: string,
     matchId: string,
-    input: { lineup: readonly MatchLineupAssignment[]; captainPlayerId: string | null },
+    input: {
+      lineup: readonly MatchLineupAssignment[];
+      captainPlayerId: string | null;
+      substitutePlayerIds?: readonly string[];
+    },
   ): Promise<MatchSummary>;
   changeFormation(educatorId: string, matchId: string, formationId: string): Promise<MatchSummary>;
   markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<MatchSummary>;
@@ -153,12 +158,22 @@ export function createUpdateLineupHandler(
     const body = await readJsonBody(request);
     const lineup = Array.isArray(body?.lineup) && body.lineup.every(isLineupAssignmentShaped) ? (body.lineup as MatchLineupAssignment[]) : null;
     const captainPlayerId = body?.captainPlayerId === null || typeof body?.captainPlayerId === "string" ? (body.captainPlayerId as string | null) : undefined;
-    if (lineup === null || captainPlayerId === undefined) {
+    // Optionnel côté requête (rétrocompatible avec un client qui n'envoie pas encore ce champ) :
+    // absent -> le service garde le banc déjà enregistré, voir MatchService.updateLineup.
+    const substitutePlayerIds =
+      body?.substitutePlayerIds === undefined
+        ? undefined
+        : Array.isArray(body.substitutePlayerIds) && body.substitutePlayerIds.every((id) => typeof id === "string")
+          ? (body.substitutePlayerIds as string[])
+          : null;
+    if (lineup === null || captainPlayerId === undefined || substitutePlayerIds === null) {
       return Response.json({ error: "Composition invalide." }, { status: 400 });
     }
 
     try {
-      return Response.json({ match: await matches.updateLineup(educator.id, matchId, { lineup, captainPlayerId }) });
+      return Response.json({
+        match: await matches.updateLineup(educator.id, matchId, { lineup, captainPlayerId, substitutePlayerIds }),
+      });
     } catch (error) {
       return errorResponse(error, log);
     }
@@ -253,6 +268,7 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       status: match.status,
       lineup: match.lineup,
       captainPlayerId: match.captainPlayerId,
+      substitutePlayerIds: match.substitutePlayerIds,
       ...(match.attendance ? { attendance: match.attendance } : {}),
     };
   }

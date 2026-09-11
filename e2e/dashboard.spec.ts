@@ -248,10 +248,18 @@ test("l’éducateur ouvre la fiche d’un joueur et enregistre une évaluation 
   );
   const evaluations: Array<Record<string, unknown>> = [];
   await page.route("**/api/player-evaluations**", (route) => {
-    if (route.request().method() === "POST") {
+    const method = route.request().method();
+    if (method === "POST") {
       const created = { id: `eval-${evaluations.length + 1}`, ...JSON.parse(route.request().postData() ?? "{}"), createdAt: "2026-09-10T10:00:00.000Z" };
       evaluations.unshift(created);
       return route.fulfill({ status: 201, json: { evaluation: created } });
+    }
+    if (method === "PATCH") {
+      const id = route.request().url().split("/").pop();
+      const { date, ...patch } = JSON.parse(route.request().postData() ?? "{}");
+      const index = evaluations.findIndex((evaluation) => evaluation.id === id);
+      evaluations[index] = { ...evaluations[index], ...patch, ...(date ? { createdAt: date } : {}) };
+      return route.fulfill({ json: { evaluation: evaluations[index] } });
     }
     return route.fulfill({ json: { evaluations } });
   });
@@ -264,6 +272,17 @@ test("l’éducateur ouvre la fiche d’un joueur et enregistre une évaluation 
   await page.getByRole("button", { name: "Enregistrer cette évaluation" }).click();
   await expect(page.locator(".player-count")).toHaveText("1/10");
   await expect(page.getByRole("button", { name: /retirer l’évaluation/i })).toBeVisible();
+
+  // Modifier une évaluation existante (date + note) plutôt que d'en recréer une.
+  await page.locator(".player-evaluation-history").getByRole("button", { name: "Modifier" }).click();
+  await expect(page.getByRole("button", { name: "Enregistrer les modifications" })).toBeVisible();
+  await page.getByLabel("Date").fill("2026-01-15");
+  await page.getByRole("button", { name: "Enregistrer les modifications" }).click();
+  await expect(page.locator(".player-evaluation-history").getByText("15 janvier 2026")).toBeVisible();
+
+  // Comparer plusieurs évaluations sur le graphe : la case cochée affiche la légende associée.
+  await page.locator(".player-evaluation-compare input").check();
+  await expect(page.locator(".radar-chart-legend")).toBeVisible();
 });
 
 test("l’éducateur enregistre un tournoi et un plateau depuis Matchs & compétitions", async ({ page }) => {
@@ -459,14 +478,34 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
         dashboard: {
           player: { id: "player-1", name: "Kylian", photo: null },
           team: { name: "FC Horizon", ageGroup: "U12", trainingDays: ["Mardi"] },
-          evaluations: [],
+          evaluations: [
+            {
+              id: "eval-2",
+              scores: { technique: 8, passe: 7, vitesse: 6, physique: 7, tactique: 6, mental: 8, tir: 7 },
+              createdAt: "2026-09-10T00:00:00.000Z",
+            },
+            {
+              id: "eval-1",
+              scores: { technique: 5, passe: 5, vitesse: 5, physique: 5, tactique: 5, mental: 5, tir: 5 },
+              createdAt: "2026-08-01T00:00:00.000Z",
+            },
+          ],
           trainingAttendance: { present: 0, absent: 0, total: 0, rate: 0 },
           matchAttendance: { present: 0, absent: 0, total: 0, rate: 0 },
-          upcomingMatches: [{ id: "m1", opponent: "US Vallée", dateLabel: "Samedi", venue: "home", convoked: true }],
+          upcomingMatches: [
+            { id: "m1", opponent: "US Vallée", dateLabel: "Samedi 19 septembre", venue: "home", convoked: true, myStatus: null },
+          ],
+          trainingSlots: [],
+          competitions: [{ id: "p1", type: "plateau", name: "Plateau de rentrée", dateLabel: "Dimanche 20 septembre" }],
         },
       },
     }),
   );
+  let rsvp: { matchId: string; status: string } | null = null;
+  await page.route("**/api/joueur/rsvp", (route) => {
+    rsvp = JSON.parse(route.request().postData() ?? "{}");
+    return route.fulfill({ json: { status: "ok" } });
+  });
 
   await page.goto("/rejoindre/tok-123");
   await expect(page.getByRole("heading", { name: /suis la progression de kylian/i })).toBeVisible();
@@ -479,4 +518,29 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect(page.getByRole("heading", { name: "Kylian" })).toBeVisible();
   await expect(page.getByText("US Vallée")).toBeVisible();
   await expect(page.getByText("Convoqué")).toBeVisible();
+
+  // Réponse du joueur/tuteur à la convocation.
+  await page.getByLabel("Ta réponse").selectOption("injured");
+  await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "injured" });
+
+  // Calendrier de la semaine (lecture seule) et compétitions (plateaux/tournois).
+  await expect(page.getByRole("heading", { name: "Calendrier de la semaine" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Compétitions" })).toBeVisible();
+  await expect(page.getByText("Plateau de rentrée")).toBeVisible();
+  await expect(page.getByText("Plateau", { exact: true })).toBeVisible();
+
+  // Cliquer sur l'événement du calendrier ouvre son détail, avec la réponse à la convocation.
+  await page.getByRole("button", { name: "Voir le détail du match contre US Vallée" }).click();
+  await expect(page.locator(".player-space-match-detail")).toContainText("US Vallée");
+  await page.locator(".player-space-match-detail").getByLabel("Ta réponse").selectOption("present");
+  await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "present" });
+  await page.getByRole("button", { name: "Fermer le détail du match" }).click();
+  await expect(page.locator(".player-space-match-detail")).toHaveCount(0);
+
+  // Comparer plusieurs évaluations sur le radar, en lecture seule (pas de bouton
+  // ajouter/modifier/retirer côté joueur/tuteur).
+  await expect(page.getByRole("heading", { name: "Ma progression" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /modifier|retirer/i })).toHaveCount(0);
+  await page.locator(".player-space-history .player-evaluation-compare input").last().check();
+  await expect(page.locator(".radar-chart-legend")).toBeVisible();
 });

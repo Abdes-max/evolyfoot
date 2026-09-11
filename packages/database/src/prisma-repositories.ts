@@ -5,6 +5,7 @@ import {
   DuplicateEducatorEmailError,
   EducatorNotFoundError,
   MatchNotFoundError,
+  PlayerEvaluationNotFoundError,
   PlayerNotFoundError,
   TeamNotFoundError,
 } from "./errors";
@@ -556,6 +557,7 @@ export class PrismaMatchRepository implements MatchRepository {
       status?: MatchStatus;
       lineup?: readonly MatchLineupAssignment[];
       captainPlayerId?: string | null;
+      substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedMatch> {
@@ -569,6 +571,9 @@ export class PrismaMatchRepository implements MatchRepository {
         ...(input.status !== undefined ? { status: toPrismaMatchStatus(input.status) } : {}),
         ...(input.lineup !== undefined ? { lineup: input.lineup as unknown as Prisma.InputJsonValue } : {}),
         ...(input.captainPlayerId !== undefined ? { captainPlayerId: input.captainPlayerId } : {}),
+        ...(input.substitutePlayerIds !== undefined
+          ? { substitutePlayerIds: input.substitutePlayerIds as unknown as Prisma.InputJsonValue }
+          : {}),
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
       },
     });
@@ -688,6 +693,25 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
       }
       throw error;
     }
+  }
+
+  async update(
+    id: string,
+    educatorId: string,
+    input: { scores?: PlayerEvaluationScores; createdAt?: Date },
+  ): Promise<PersistedPlayerEvaluation> {
+    const { count } = await this.prisma.playerEvaluationRecord.updateMany({
+      where: { id, educatorId },
+      data: {
+        ...(input.scores !== undefined ? { scores: input.scores as unknown as Prisma.InputJsonValue } : {}),
+        ...(input.createdAt !== undefined ? { createdAt: input.createdAt } : {}),
+      },
+    });
+    if (count === 0) {
+      throw new PlayerEvaluationNotFoundError();
+    }
+    const record = await this.prisma.playerEvaluationRecord.findUniqueOrThrow({ where: { id } });
+    return toPersistedPlayerEvaluation(record);
   }
 
   async remove(id: string, educatorId: string): Promise<void> {

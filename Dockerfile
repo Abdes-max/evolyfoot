@@ -14,7 +14,10 @@ WORKDIR /repo
 # qu'un COPY par package.json de workspace, au prix d'un cache Docker moins fin.
 FROM base AS deps
 COPY . .
-RUN pnpm install --frozen-lockfile
+# TEMPORAIRE (--no-frozen-lockfile au lieu de --frozen-lockfile) : voir le commentaire équivalent
+# dans .github/workflows/ci.yml -- pnpm-lock.yaml n'a pas pu être régénéré après l'ajout de
+# nodemailer. À revenir à --frozen-lockfile dès qu'un pnpm-lock.yaml à jour est committé.
+RUN pnpm install --no-frozen-lockfile
 
 # --- Build : génère le client Prisma puis la sortie autonome de Next.js. ---
 FROM deps AS builder

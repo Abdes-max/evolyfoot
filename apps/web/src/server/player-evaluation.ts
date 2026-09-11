@@ -1,4 +1,4 @@
-import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "@evolyfoot/database";
+import { EducatorNotFoundError, PlayerEvaluationNotFoundError, PlayerNotFoundError, ValidationError } from "@evolyfoot/database";
 import { playerEvaluationAspects } from "@evolyfoot/domain";
 import type { PlayerEvaluationScores } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
@@ -14,6 +14,11 @@ export interface PlayerEvaluationGateway {
   list(educatorId: string): Promise<PlayerEvaluationSummary[]>;
   listByPlayer(educatorId: string, playerId: string): Promise<PlayerEvaluationSummary[]>;
   add(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PlayerEvaluationSummary>;
+  update(
+    educatorId: string,
+    evaluationId: string,
+    input: { scores?: PlayerEvaluationScores; date?: string },
+  ): Promise<PlayerEvaluationSummary>;
   remove(educatorId: string, evaluationId: string): Promise<void>;
 }
 
@@ -38,7 +43,7 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   if (error instanceof EducatorNotFoundError) {
     return Response.json({ error: error.message }, { status: 401 });
   }
-  if (error instanceof PlayerNotFoundError) {
+  if (error instanceof PlayerNotFoundError || error instanceof PlayerEvaluationNotFoundError) {
     return Response.json({ error: error.message }, { status: 404 });
   }
   if (error instanceof ValidationError || error instanceof Error) {
@@ -89,6 +94,32 @@ export function createAddPlayerEvaluationHandler(
 
     try {
       return Response.json({ evaluation: await evaluations.add(educator.id, playerId, body.scores) }, { status: 201 });
+    } catch (error) {
+      return errorResponse(error, log);
+    }
+  };
+}
+
+export function createUpdatePlayerEvaluationHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  evaluations: Pick<PlayerEvaluationGateway, "update">,
+  log: (error: unknown) => void,
+): (request: Request, evaluationId: string) => Promise<Response> {
+  return async (request, evaluationId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+
+    const body = await readJsonBody(request);
+    const scores = body?.scores === undefined ? undefined : isScoresShaped(body.scores) ? body.scores : null;
+    const date = body?.date === undefined ? undefined : typeof body.date === "string" ? body.date : null;
+    if (scores === null || date === null || (scores === undefined && date === undefined)) {
+      return Response.json({ error: "Rien à modifier." }, { status: 400 });
+    }
+
+    try {
+      return Response.json({ evaluation: await evaluations.update(educator.id, evaluationId, { scores, date }) });
     } catch (error) {
       return errorResponse(error, log);
     }
@@ -151,6 +182,14 @@ export async function createPlayerEvaluationGateway(): Promise<{
       },
       async add(educatorId, playerId, scores) {
         return toSummary(await service.add(educatorId, playerId, scores));
+      },
+      async update(educatorId, evaluationId, input) {
+        return toSummary(
+          await service.update(educatorId, evaluationId, {
+            scores: input.scores,
+            date: input.date === undefined ? undefined : new Date(input.date),
+          }),
+        );
       },
       remove(educatorId, evaluationId) {
         return service.remove(educatorId, evaluationId);

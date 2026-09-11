@@ -15,9 +15,10 @@ export const MARKETING_PATHS = [
 ] as const;
 
 // Chemins publics à préfixe (pas une page vitrine listée ci-dessus, mais accessible sans
-// session) : la page d'acceptation d'invitation tuteur `/rejoindre/:token`, et l'image de
-// partage générée par Next pour la vitrine (`/opengraph-image`, suffixée d'un hash en prod).
-const PUBLIC_PREFIXES = ["/rejoindre/", "/opengraph-image"];
+// session) : la page d'acceptation d'invitation tuteur `/rejoindre/:token`, la confirmation
+// d'e-mail à l'inscription `/verifier-email/:token`, et l'image de partage générée par Next pour
+// la vitrine (`/opengraph-image`, suffixée d'un hash en prod).
+const PUBLIC_PREFIXES = ["/rejoindre/", "/verifier-email/", "/opengraph-image"];
 
 // `true` si le chemin est public : une page vitrine (correspondance exacte -- `/` ne doit surtout
 // pas se comporter comme un préfixe) ou un chemin sous un préfixe public.

@@ -1,15 +1,32 @@
 "use client";
 
 import {
+  attendanceStatusLabels,
+  attendanceStatuses,
   playerEvaluationAspectLabels,
   playerEvaluationAspects,
   playerEvaluationMaxScore,
   playerEvaluationMinScore,
+  type AttendanceStatus,
   type PlayerEvaluationScores,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DonutChart, RadarChart } from "../../charts";
+import { colorForEvaluation } from "../../evaluation-colors";
+import { BallIcon, TargetIcon } from "../../icons";
+import { currentCycleWeek } from "../../session/cycle";
+import { todayWeekDayFull } from "../../today";
+
+const weekDays: ReadonlyArray<{ short: string; full: string }> = [
+  { short: "LUN.", full: "Lundi" },
+  { short: "MAR.", full: "Mardi" },
+  { short: "MER.", full: "Mercredi" },
+  { short: "JEU.", full: "Jeudi" },
+  { short: "VEN.", full: "Vendredi" },
+  { short: "SAM.", full: "Samedi" },
+  { short: "DIM.", full: "Dimanche" },
+];
 
 interface Evaluation {
   id: string;
@@ -23,6 +40,14 @@ interface DashboardMatch {
   dateLabel: string;
   venue: "home" | "away";
   convoked: boolean;
+  myStatus: AttendanceStatus | null;
+}
+
+interface Competition {
+  id: string;
+  type: "plateau" | "tournoi";
+  name: string;
+  dateLabel: string;
 }
 
 interface Dashboard {
@@ -32,6 +57,8 @@ interface Dashboard {
   trainingAttendance: { present: number; absent: number; total: number; rate: number };
   matchAttendance: { present: number; absent: number; total: number; rate: number };
   upcomingMatches: DashboardMatch[];
+  trainingSlots: { weekNumber: number; slot: number }[];
+  competitions: Competition[];
 }
 
 const radarAxes = playerEvaluationAspects.map((aspect) => ({ key: aspect, label: playerEvaluationAspectLabels[aspect] }));
@@ -52,9 +79,93 @@ async function logout() {
   }
 }
 
+// Même grille que le calendrier du coach (apps/web/weekly-calendar.tsx), en lecture seule : pas
+// de lien vers une séance ou un match, le joueur/tuteur n'y a de toute façon pas accès -- juste de
+// quoi voir d'un coup d'œil ce qui se passe cette semaine.
+function WeekCalendar({ dashboard, onSelectMatch }: { dashboard: Dashboard; onSelectMatch: (matchId: string) => void }) {
+  const trainingDays = dashboard.team?.trainingDays ?? [];
+  const activeWeek = currentCycleWeek(dashboard.trainingSlots, Math.max(trainingDays.length, 1));
+
+  const trainingByDay = new Map<string, boolean>();
+  let slot = 0;
+  for (const day of weekDays) {
+    if (trainingDays.includes(day.full)) {
+      const generated = dashboard.trainingSlots.some((entry) => entry.weekNumber === activeWeek && entry.slot === slot);
+      trainingByDay.set(day.full, generated);
+      slot += 1;
+    }
+  }
+
+  // `dateLabel` est un texte libre ("Samedi 26 septembre · 14:00 · Domicile") : on repère juste le
+  // jour en tête, comme côté coach -- un calendrier indicatif, pas une source de vérité.
+  const matchByDay = new Map<string, DashboardMatch>();
+  for (const match of dashboard.upcomingMatches) {
+    const day = weekDays.find((candidate) => match.dateLabel.startsWith(candidate.full));
+    if (day && !matchByDay.has(day.full)) {
+      matchByDay.set(day.full, match);
+    }
+  }
+
+  return (
+    <div className="week-card week-calendar">
+      <div className="week-calendar-grid">
+        {weekDays.map((day) => {
+          const hasTraining = trainingByDay.has(day.full);
+          const match = matchByDay.get(day.full);
+          const isToday = day.full === todayWeekDayFull();
+          return (
+            <div className={isToday ? "week-calendar-day today" : "week-calendar-day"} key={day.full}>
+              <span className="week-calendar-day-label">{day.short}</span>
+              <div className="week-calendar-cell">
+                {hasTraining && (
+                  <span className="week-calendar-badge training" title="Séance d’entraînement">
+                    <TargetIcon />
+                  </span>
+                )}
+                {match && (
+                  <button
+                    aria-label={`Voir le détail du match contre ${match.opponent}`}
+                    className="week-calendar-badge match"
+                    onClick={() => onSelectMatch(match.id)}
+                    title={`Match contre ${match.opponent}`}
+                    type="button"
+                  >
+                    <BallIcon />
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <ul className="week-calendar-legend">
+        <li>
+          <span className="week-calendar-badge training">
+            <TargetIcon />
+          </span>
+          Séance d’entraînement
+        </li>
+        <li>
+          <span className="week-calendar-badge match">
+            <BallIcon />
+          </span>
+          Match / compétition
+        </li>
+      </ul>
+    </div>
+  );
+}
+
 export function PlayerSpaceView() {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  // Évaluations superposées sur le radar -- même mécanisme que côté coach (player-detail-view.tsx),
+  // en lecture seule ici : pas d'ajout/modification/retrait, juste comparer.
+  const [comparedEvaluationIds, setComparedEvaluationIds] = useState<ReadonlySet<string>>(new Set());
+  // Match ouvert depuis le calendrier (clic sur un badge) -- affiche son détail avec la réponse à
+  // la convocation, plutôt que de renvoyer vers une page /match/:id à laquelle le compte joueur
+  // n'a de toute façon pas accès.
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +178,7 @@ export function PlayerSpaceView() {
         }
         if (response.ok && body.dashboard) {
           setDashboard(body.dashboard);
+          setComparedEvaluationIds(body.dashboard.evaluations[0] ? new Set([body.dashboard.evaluations[0].id]) : new Set());
           setStatus("ready");
         } else {
           setStatus("error");
@@ -83,6 +195,43 @@ export function PlayerSpaceView() {
   }, []);
 
   const latest = dashboard?.evaluations[0];
+  const selectedMatch = dashboard?.upcomingMatches.find((match) => match.id === selectedMatchId) ?? null;
+
+  function toggleCompare(evaluationId: string) {
+    setComparedEvaluationIds((current) => {
+      const next = new Set(current);
+      if (next.has(evaluationId)) {
+        next.delete(evaluationId);
+      } else {
+        next.add(evaluationId);
+      }
+      return next;
+    });
+  }
+
+  async function respondToMatch(matchId: string, matchStatus: AttendanceStatus) {
+    if (!dashboard) {
+      return;
+    }
+    // Optimiste : cohérent avec le reste de l'appli (roster-view.tsx, match-prep-view.tsx…),
+    // l'échec reste rare et se rattrape par une nouvelle tentative.
+    setDashboard({
+      ...dashboard,
+      upcomingMatches: dashboard.upcomingMatches.map((match) =>
+        match.id === matchId ? { ...match, myStatus: matchStatus } : match,
+      ),
+    });
+    try {
+      await fetch("/api/joueur/rsvp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ matchId, status: matchStatus }),
+      });
+    } catch {
+      // Repli silencieux : le statut affiché reste celui choisi, une nouvelle tentative (ou un
+      // rechargement) le confirmera ou le corrigera.
+    }
+  }
 
   return (
     <div className="player-space">
@@ -128,17 +277,41 @@ export function PlayerSpaceView() {
                     axes={radarAxes}
                     max={playerEvaluationMaxScore}
                     min={playerEvaluationMinScore}
-                    scores={latest.scores}
+                    size={300}
+                    series={
+                      comparedEvaluationIds.size > 0
+                        ? dashboard.evaluations
+                            .filter((evaluation) => comparedEvaluationIds.has(evaluation.id))
+                            .map((evaluation) => ({
+                              key: evaluation.id,
+                              label: formatDate(evaluation.createdAt),
+                              color: colorForEvaluation(evaluation.id, dashboard.evaluations),
+                              scores: evaluation.scores,
+                            }))
+                        : undefined
+                    }
+                    scores={comparedEvaluationIds.size === 0 ? latest.scores : undefined}
                   />
                   <div>
-                    <p className="player-space-caption">Dernière évaluation · {formatDate(latest.createdAt)}</p>
+                    {comparedEvaluationIds.size === 0 && (
+                      <p className="player-space-caption">Dernière évaluation · {formatDate(latest.createdAt)}</p>
+                    )}
                     {dashboard.evaluations.length > 1 && (
                       <ul className="player-space-history">
-                        {dashboard.evaluations.slice(1).map((evaluation) => {
+                        {dashboard.evaluations.map((evaluation) => {
                           const total = playerEvaluationAspects.reduce((sum, aspect) => sum + evaluation.scores[aspect], 0);
                           const average = Math.round((total / playerEvaluationAspects.length) * 10) / 10;
+                          const compared = comparedEvaluationIds.has(evaluation.id);
                           return (
                             <li key={evaluation.id}>
+                              <label className="player-evaluation-compare">
+                                <input checked={compared} onChange={() => toggleCompare(evaluation.id)} type="checkbox" />
+                                <span
+                                  aria-hidden="true"
+                                  className="radar-chart-legend-dot"
+                                  style={{ background: compared ? colorForEvaluation(evaluation.id, dashboard.evaluations) : "transparent" }}
+                                />
+                              </label>
                               {formatDate(evaluation.createdAt)} · moyenne {average}/{playerEvaluationMaxScore}
                             </li>
                           );
@@ -187,10 +360,38 @@ export function PlayerSpaceView() {
 
             {dashboard.team && dashboard.team.trainingDays.length > 0 && (
               <section className="player-space-block">
-                <h2>Cette semaine</h2>
-                <p className="player-space-days">
-                  Entraînement : {dashboard.team.trainingDays.join(", ")}.
-                </p>
+                <h2>Calendrier de la semaine</h2>
+                <WeekCalendar dashboard={dashboard} onSelectMatch={setSelectedMatchId} />
+                {selectedMatch && (
+                  <div className="player-space-match-detail" role="region">
+                    <div className="player-space-match-detail-head">
+                      <strong>{selectedMatch.opponent}</strong>
+                      <button aria-label="Fermer le détail du match" onClick={() => setSelectedMatchId(null)} type="button">
+                        ×
+                      </button>
+                    </div>
+                    <span>
+                      {selectedMatch.dateLabel} · {venueLabel[selectedMatch.venue]}
+                    </span>
+                    <span className="player-space-tag">{selectedMatch.convoked ? "Convoqué" : "Pas encore dans le groupe"}</span>
+                    <label className="player-space-rsvp">
+                      <span>Ta réponse</span>
+                      <select
+                        onChange={(event) => respondToMatch(selectedMatch.id, event.target.value as AttendanceStatus)}
+                        value={selectedMatch.myStatus ?? ""}
+                      >
+                        <option disabled value="">
+                          — Répondre —
+                        </option>
+                        {attendanceStatuses.map((option) => (
+                          <option key={option} value={option}>
+                            {attendanceStatusLabels[option]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                )}
               </section>
             )}
 
@@ -207,6 +408,39 @@ export function PlayerSpaceView() {
                         {match.dateLabel} · {venueLabel[match.venue]}
                       </span>
                       <span className="player-space-tag">{match.convoked ? "Convoqué" : "Pas encore dans le groupe"}</span>
+                      <label className="player-space-rsvp">
+                        <span>Ta réponse</span>
+                        <select
+                          onChange={(event) => respondToMatch(match.id, event.target.value as AttendanceStatus)}
+                          value={match.myStatus ?? ""}
+                        >
+                          <option disabled value="">
+                            — Répondre —
+                          </option>
+                          {attendanceStatuses.map((option) => (
+                            <option key={option} value={option}>
+                              {attendanceStatusLabels[option]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="player-space-block">
+              <h2>Compétitions</h2>
+              {dashboard.competitions.length === 0 ? (
+                <p className="player-space-empty">Aucune compétition enregistrée.</p>
+              ) : (
+                <ul className="player-space-matches">
+                  {dashboard.competitions.map((competition) => (
+                    <li key={competition.id}>
+                      <strong>{competition.name}</strong>
+                      <span>{competition.dateLabel}</span>
+                      <span className="player-space-tag">{competition.type === "plateau" ? "Plateau" : "Tournoi"}</span>
                     </li>
                   ))}
                 </ul>

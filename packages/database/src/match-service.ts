@@ -41,7 +41,7 @@ function normalizeFormationId(gameFormat: GameFormat, formationId: string | unde
 // composition déjà validée telle quelle côté client.
 function toMatchPlan(
   match: PersistedMatch,
-  overrides: Partial<Pick<MatchPlan, "lineup" | "captainPlayerId" | "formationId">> = {},
+  overrides: Partial<Pick<MatchPlan, "lineup" | "captainPlayerId" | "formationId" | "substitutePlayerIds">> = {},
 ): MatchPlan {
   return {
     opponent: match.opponent,
@@ -52,7 +52,25 @@ function toMatchPlan(
     status: match.status,
     lineup: overrides.lineup ?? match.lineup,
     captainPlayerId: overrides.captainPlayerId !== undefined ? overrides.captainPlayerId : match.captainPlayerId,
+    substitutePlayerIds: overrides.substitutePlayerIds ?? match.substitutePlayerIds,
   };
+}
+
+function validateSubstitutesAgainstLineup(
+  lineup: readonly MatchLineupAssignment[],
+  substitutePlayerIds: readonly string[],
+): void {
+  const starterIds = new Set(lineup.map((assignment) => assignment.playerId));
+  const seen = new Set<string>();
+  for (const playerId of substitutePlayerIds) {
+    if (starterIds.has(playerId)) {
+      throw new ValidationError("Un joueur ne peut être à la fois titulaire et remplaçant.");
+    }
+    if (seen.has(playerId)) {
+      throw new ValidationError("Un même joueur ne peut être remplaçant qu’une fois.");
+    }
+    seen.add(playerId);
+  }
 }
 
 function validateLineupAgainstFormation(
@@ -117,14 +135,24 @@ export class MatchService {
   async updateLineup(
     educatorId: string,
     matchId: string,
-    input: { lineup: readonly MatchLineupAssignment[]; captainPlayerId: string | null },
+    input: {
+      lineup: readonly MatchLineupAssignment[];
+      captainPlayerId: string | null;
+      substitutePlayerIds?: readonly string[];
+    },
   ): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
     validateLineupAgainstFormation(match.gameFormat, match.formationId, input.lineup);
     if (input.captainPlayerId && !input.lineup.some((assignment) => assignment.playerId === input.captainPlayerId)) {
       throw new ValidationError("Le capitaine doit faire partie des titulaires.");
     }
-    return this.matchRepository.update(matchId, educatorId, { lineup: input.lineup, captainPlayerId: input.captainPlayerId });
+    const substitutePlayerIds = input.substitutePlayerIds ?? match.substitutePlayerIds;
+    validateSubstitutesAgainstLineup(input.lineup, substitutePlayerIds);
+    return this.matchRepository.update(matchId, educatorId, {
+      lineup: input.lineup,
+      captainPlayerId: input.captainPlayerId,
+      substitutePlayerIds,
+    });
   }
 
   // Change de formation : les postes diffèrent d'une formation à l'autre pour un même format de

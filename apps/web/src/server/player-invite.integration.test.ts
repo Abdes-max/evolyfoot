@@ -92,7 +92,14 @@ describe("createConsumeInviteHandler", () => {
     const handler = createConsumeInviteHandler(
       {
         consume: async () => ({
-          account: { id: "acc-1", email: "t@x.t", displayName: "Tuteur", role: "player", linkedPlayerId: "p1" },
+          account: {
+            id: "acc-1",
+            email: "t@x.t",
+            displayName: "Tuteur",
+            role: "player",
+            linkedPlayerId: "p1",
+            emailVerified: true,
+          },
           sessionToken: "sess-token",
           expiresAt: new Date("2026-10-10T00:00:00.000Z"),
         }),

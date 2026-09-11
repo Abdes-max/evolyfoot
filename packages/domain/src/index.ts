@@ -55,7 +55,7 @@ export { suggestAdjustment } from "./progression";
 export type { ObservationSummary } from "./progression";
 export { suggestAdjustmentFromObservation } from "./adjustment";
 export type { AdjustmentAction, AdjustmentSuggestion } from "./adjustment";
-export { ageGroups, createTeamProfile, gameFormats, validateTeamProfile } from "./team";
+export { ageGroups, createTeamProfile, gameFormats, sortTrainingDays, validateTeamProfile } from "./team";
 export type { GameFormat, TeamProfile, TeamProfileErrors, TrainingDay } from "./team";
 export { diagnosticCriteria, summarizeDiagnostic } from "./diagnostic";
 export type { DiagnosticCriterion, DiagnosticScores, DiagnosticSummary } from "./diagnostic";
@@ -105,6 +105,7 @@ export type {
   PlayerSignalKind,
 } from "./observation";
 export {
+  addSubstitute,
   assignPlayerToSlot,
   canFinalizeMatchPlan,
   changeFormation,
@@ -114,6 +115,7 @@ export {
   formationSlots,
   isLineupComplete,
   listFormations,
+  removeSubstitute,
   setCaptain,
   validateMatchPlan,
 } from "./match";
@@ -142,5 +144,12 @@ export { validateTournament } from "./tournament";
 export type { TournamentErrors, TournamentInput } from "./tournament";
 export { validatePlateau } from "./plateau";
 export type { PlateauErrors, PlateauInput } from "./plateau";
-export { summarizeAttendance } from "./attendance";
-export type { AttendanceEntry, AttendanceSummary } from "./attendance";
+export {
+  attendanceStatuses,
+  attendanceStatusCodes,
+  attendanceStatusLabels,
+  attendanceStatusOf,
+  createAttendanceEntry,
+  summarizeAttendance,
+} from "./attendance";
+export type { AttendanceEntry, AttendanceStatus, AttendanceSummary } from "./attendance";

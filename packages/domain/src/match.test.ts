@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  addSubstitute,
   assignPlayerToSlot,
   canFinalizeMatchPlan,
   changeFormation,
@@ -9,6 +10,7 @@ import {
   formationSlots,
   isLineupComplete,
   listFormations,
+  removeSubstitute,
   setCaptain,
   validateMatchPlan,
 } from "./match";
@@ -166,5 +168,42 @@ describe("isLineupComplete / validateMatchPlan / canFinalizeMatchPlan", () => {
     const errors = validateMatchPlan(plan);
     expect(errors.opponent).toBeDefined();
     expect(errors.dateLabel).toBeDefined();
+  });
+});
+
+describe("addSubstitute / removeSubstitute", () => {
+  const player = { id: "player-1", name: "Lina" };
+
+  it("place un joueur sur le banc", () => {
+    const plan = addSubstitute(createMatchPlan("US Vallée", "Samedi", "home", 4), player);
+    expect(plan.substitutePlayerIds).toEqual(["player-1"]);
+  });
+
+  it("ne duplique pas un joueur déjà sur le banc", () => {
+    let plan = addSubstitute(createMatchPlan("US Vallée", "Samedi", "home", 4), player);
+    plan = addSubstitute(plan, player);
+    expect(plan.substitutePlayerIds).toEqual(["player-1"]);
+  });
+
+  it("retire le joueur de son poste (et du capitanat) en le mettant sur le banc", () => {
+    let plan = assignPlayerToSlot(createMatchPlan("US Vallée", "Samedi", "home", 4), "goalkeeper-1", player);
+    plan = setCaptain(plan, "player-1");
+    plan = addSubstitute(plan, player);
+    expect(plan.lineup).toHaveLength(0);
+    expect(plan.captainPlayerId).toBeNull();
+    expect(plan.substitutePlayerIds).toEqual(["player-1"]);
+  });
+
+  it("retire un joueur du banc en l'affectant à un poste", () => {
+    let plan = addSubstitute(createMatchPlan("US Vallée", "Samedi", "home", 4), player);
+    plan = assignPlayerToSlot(plan, "goalkeeper-1", player);
+    expect(plan.substitutePlayerIds).toEqual([]);
+    expect(plan.lineup).toEqual([{ slotId: "goalkeeper-1", playerId: "player-1", playerName: "Lina" }]);
+  });
+
+  it("retire un joueur du banc", () => {
+    let plan = addSubstitute(createMatchPlan("US Vallée", "Samedi", "home", 4), player);
+    plan = removeSubstitute(plan, "player-1");
+    expect(plan.substitutePlayerIds).toEqual([]);
   });
 });

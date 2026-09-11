@@ -26,6 +26,13 @@ export class PlayerNotFoundError extends Error {
   }
 }
 
+export class PlayerEvaluationNotFoundError extends Error {
+  constructor() {
+    super("Évaluation introuvable.");
+    this.name = "PlayerEvaluationNotFoundError";
+  }
+}
+
 export class MatchNotFoundError extends Error {
   constructor() {
     super("Match introuvable.");

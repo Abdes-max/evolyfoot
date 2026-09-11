@@ -291,6 +291,9 @@ model MatchRecord {
   status          MatchStatus         @default(scheduled)
   lineup          Json                @default("[]")
   captainPlayerId String?             @map("captain_player_id")
+  // Sur le banc, sans poste -- tableau d'ids joueur (voir MatchPlan.substitutePlayerIds côté
+  // domaine). Nullable : un match préparé avant l'introduction du banc n'en a pas.
+  substitutePlayerIds Json?           @map("substitute_player_ids")
   // Présence à ce match -- distincte de `lineup` (qui joueur est *prévu* à quel poste) : un
   // joueur peut être prévu dans la composition et ne pas s'être présenté, ou inversement.
   // Nullable pour la même raison que TrainingSessionRecord.attendance ci-dessus.

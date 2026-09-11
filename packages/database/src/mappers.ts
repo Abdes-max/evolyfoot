@@ -1,4 +1,4 @@
-import { defaultFormationId } from "@evolyfoot/domain";
+import { defaultFormationId, sortTrainingDays } from "@evolyfoot/domain";
 import type {
   AgeGroup as DomainAgeGroup,
   AttendanceEntry,
@@ -368,6 +368,7 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     status: fromPrismaMatchStatus(record.status),
     lineup: record.lineup as unknown as readonly MatchLineupAssignment[],
     captainPlayerId: record.captainPlayerId,
+    substitutePlayerIds: (record.substitutePlayerIds as unknown as readonly string[] | null) ?? [],
     attendance: toAttendanceEntries(record.attendance),
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
@@ -418,7 +419,11 @@ export function toPersistedTeamProfile(team: Team): PersistedTeamProfile {
     gameFormat: team.gameFormat as GameFormat,
     playerCount: team.playerCount,
     sessionsPerWeek: team.sessionsPerWeek,
-    trainingDays: team.trainingDays.map(fromPrismaTrainingDay),
+    // Trié dans l'ordre canonique de la semaine (voir sortTrainingDays côté domaine) : l'ordre
+    // stocké en base est celui de la saisie, pas garanti chronologique (constaté : "Mercredi,
+    // Vendredi, Mardi" pour une équipe créée avant ce tri), alors que la page Séances et le
+    // calendrier hebdomadaire en dépendent pour numéroter les créneaux correctement.
+    trainingDays: sortTrainingDays(team.trainingDays.map(fromPrismaTrainingDay)),
   });
 
   return Object.freeze({
