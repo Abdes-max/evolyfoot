@@ -47,6 +47,8 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
   const [description, setDescription] = useState("");
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [sendingConvocation, setSendingConvocation] = useState(false);
+  const [convocationFeedback, setConvocationFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,6 +130,27 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
       setDetailsError("Une erreur est survenue.");
     } finally {
       setSavingDetails(false);
+    }
+  }
+
+  // Envoie un message de convocation (via la messagerie) à tout l'effectif -- une séance n'a pas
+  // de composition retenue, voir ConvocationService côté base.
+  async function sendConvocation() {
+    setSendingConvocation(true);
+    setConvocationFeedback(null);
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}/convoke`, { method: "POST" });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        setConvocationFeedback(typeof body.error === "string" ? body.error : "Une erreur est survenue.");
+        return;
+      }
+      const body = await response.json();
+      setConvocationFeedback(`Convocation envoyée à ${body.sentCount} joueur${body.sentCount > 1 ? "s" : ""}.`);
+    } catch {
+      setConvocationFeedback("Une erreur est survenue.");
+    } finally {
+      setSendingConvocation(false);
     }
   }
 
@@ -215,6 +238,14 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
               {savingDetails ? "Enregistrement…" : "Enregistrer les détails"}
             </button>
           </form>
+
+          <div className="match-convocation">
+            <button className="match-convocation-send" disabled={sendingConvocation} onClick={sendConvocation} type="button">
+              {sendingConvocation ? "Envoi…" : "Envoyer la convocation"}
+            </button>
+            <p className="match-slot-hint">Envoyée à tout l’effectif -- une séance n’a pas de composition retenue.</p>
+            {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
+          </div>
         </>
       )}
     </main>

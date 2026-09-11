@@ -31,6 +31,7 @@ export {
   PrismaTrainingSessionRepository,
 } from "./prisma-repositories";
 export { AuthService } from "./auth-service";
+export { ConvocationService } from "./convocation-service";
 export { DiagnosticService } from "./diagnostic-service";
 export { EducatorProfileService, seasonFormats } from "./educator-profile-service";
 export { MatchService } from "./match-service";

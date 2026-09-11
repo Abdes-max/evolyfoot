@@ -64,6 +64,8 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [savingDetails, setSavingDetails] = useState(false);
+  const [sendingConvocation, setSendingConvocation] = useState(false);
+  const [convocationFeedback, setConvocationFeedback] = useState<string | null>(null);
   // Un clic sur un poste directement sur le terrain (MatchPitch) ouvre le sélecteur natif
   // correspondant plutôt que dupliquer la logique d'affectation dans un second composant --
   // `showPicker()` (Chrome/Edge) ouvre le menu déroulant sans clic réel dessus ; `focus()` reste
@@ -255,6 +257,27 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       setSaveError("Une erreur est survenue.");
     } finally {
       setSavingDetails(false);
+    }
+  }
+
+  // Envoie un message de convocation (via la messagerie) à chaque joueur de la composition
+  // retenue -- voir ConvocationService côté base. Pas de blocage si déjà envoyée : renvoyer
+  // (composition modifiée, rappel...) est un geste volontaire du coach.
+  async function sendConvocation() {
+    setSendingConvocation(true);
+    setConvocationFeedback(null);
+    try {
+      const response = await fetch(`/api/matches/${matchId}/convoke`, { method: "POST" });
+      if (!response.ok) {
+        setConvocationFeedback(await readErrorMessage(response));
+        return;
+      }
+      const body = await response.json();
+      setConvocationFeedback(`Convocation envoyée à ${body.sentCount} joueur${body.sentCount > 1 ? "s" : ""}.`);
+    } catch {
+      setConvocationFeedback("Une erreur est survenue.");
+    } finally {
+      setSendingConvocation(false);
     }
   }
 
@@ -499,6 +522,16 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             </select>
           </label>
 
+          {!readOnly && (
+            <div className="match-convocation">
+              <button className="match-convocation-send" disabled={sendingConvocation || match.lineup.length === 0} onClick={sendConvocation} type="button">
+                {sendingConvocation ? "Envoi…" : "Envoyer la convocation"}
+              </button>
+              {match.lineup.length === 0 && <p className="match-slot-hint">Compose l’équipe pour pouvoir convoquer.</p>}
+              {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
+            </div>
+          )}
+
           {!readOnly && roster.length > 0 && (
             <section aria-labelledby="match-attendance-title" className="match-attendance">
               <h2 id="match-attendance-title">Présence</h2>
@@ -507,8 +540,8 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
                 {roster.map((player) => {
                   const present = !absentPlayerIds.has(player.id);
                   // Réponse déjà laissée par le joueur/tuteur à sa convocation (voir
-                  // match-detail-view.tsx côté joueur) -- motif et commentaire éventuel, tant que
-                  // la vraie messagerie coach ↔ joueur n'existe pas encore.
+                  // match-detail-view.tsx côté joueur) -- motif et commentaire éventuel, envoyé
+                  // par ailleurs au coach dans le fil de messagerie (voir MessagingThread).
                   const rsvp = match.attendance?.find((entry) => entry.playerId === player.id);
                   return (
                     <li key={player.id}>
