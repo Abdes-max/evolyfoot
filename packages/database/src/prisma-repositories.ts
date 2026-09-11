@@ -30,6 +30,7 @@ import {
   toPlayerInviteRecord,
   toSessionRecord,
 } from "./mappers";
+import { ContactMessageRecord, ContactMessageRepository } from "./contact-message-service";
 import { normalizeEducatorEmail } from "./email";
 import type {
   DiagnosticRepository,
@@ -604,6 +605,26 @@ export class PrismaPlateauRepository implements PlateauRepository {
   // autre éducateur ne fait rien plutôt que d'échouer.
   async remove(id: string, educatorId: string): Promise<void> {
     await this.prisma.plateauRecord.deleteMany({ where: { id, educatorId } });
+  }
+}
+
+export class PrismaContactMessageRepository implements ContactMessageRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(input: { name: string; email: string; message: string }): Promise<ContactMessageRecord> {
+    const record = await this.prisma.contactMessage.create({ data: input });
+    return { id: record.id, name: record.name, email: record.email, message: record.message, createdAt: record.createdAt };
+  }
+
+  async list(limit: number): Promise<ContactMessageRecord[]> {
+    const records = await this.prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" }, take: limit });
+    return records.map((record) => ({
+      id: record.id,
+      name: record.name,
+      email: record.email,
+      message: record.message,
+      createdAt: record.createdAt,
+    }));
   }
 }
 
