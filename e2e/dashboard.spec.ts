@@ -263,11 +263,34 @@ test("l’éducateur ouvre la fiche d’un joueur et enregistre une évaluation 
     }
     return route.fulfill({ json: { evaluations } });
   });
+  const threadMessages: Array<Record<string, unknown>> = [
+    { id: "msg-1", authorRole: "player", authorName: "Parent de Kylian", text: "On sera en retard de 10 minutes.", createdAt: "2026-09-09T17:00:00.000Z" },
+  ];
+  await page.route("**/api/roster/player-1/messages", (route) => {
+    if (route.request().method() === "POST") {
+      const created = {
+        id: "msg-2",
+        authorRole: "coach",
+        authorName: "Coach E2E",
+        text: JSON.parse(route.request().postData() ?? "{}").text,
+        createdAt: "2026-09-09T17:05:00.000Z",
+      };
+      threadMessages.push(created);
+      return route.fulfill({ status: 201, json: { message: created } });
+    }
+    return route.fulfill({ json: { messages: threadMessages } });
+  });
 
   await page.goto("/equipe");
   await page.getByRole("link", { name: "Kylian" }).click();
   await expect(page).toHaveURL(/\/equipe\/player-1$/);
   await expect(page.getByRole("heading", { name: "Kylian" })).toBeVisible();
+
+  // Messagerie avec le joueur/tuteur, sur la fiche joueur.
+  await expect(page.getByText("On sera en retard de 10 minutes.")).toBeVisible();
+  await page.locator(".messaging-form textarea").fill("Pas de souci, à tout à l'heure !");
+  await page.getByRole("button", { name: "Envoyer" }).click();
+  await expect(page.getByText("Pas de souci, à tout à l'heure !")).toBeVisible();
 
   await page.getByRole("button", { name: "Enregistrer cette évaluation" }).click();
   await expect(page.locator(".player-count")).toHaveText("1/10");
@@ -603,10 +626,25 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "present", comment: null });
   await page.getByRole("link", { name: "← Retour" }).click();
 
-  // Onglet Messages : placeholder honnête, pas encore de messagerie.
+  // Onglet Messages : fil de discussion avec le coach.
+  const threadMessages = [
+    { id: "msg-1", authorRole: "coach", authorName: "Coach E2E", text: "Bienvenue dans l'équipe !", createdAt: "2026-09-10T18:00:00.000Z" },
+  ];
+  await page.route("**/api/joueur/messages", (route) => {
+    if (route.request().method() === "POST") {
+      const body = JSON.parse(route.request().postData() ?? "{}");
+      const created = { id: "msg-2", authorRole: "player", authorName: "Parent de Kylian", text: body.text, createdAt: "2026-09-10T18:05:00.000Z" };
+      threadMessages.push(created);
+      return route.fulfill({ status: 201, json: { message: created } });
+    }
+    return route.fulfill({ json: { messages: threadMessages } });
+  });
   await page.locator(".player-tab-bar").getByRole("link", { name: "Messages" }).click();
   await expect(page).toHaveURL(/\/joueur\/messages$/);
-  await expect(page.getByText(/messagerie avec l.éducateur arrive bientôt/i)).toBeVisible();
+  await expect(page.getByText("Bienvenue dans l'équipe !")).toBeVisible();
+  await page.locator(".messaging-form textarea").fill("Merci, on est impatients !");
+  await page.getByRole("button", { name: "Envoyer" }).click();
+  await expect(page.getByText("Merci, on est impatients !")).toBeVisible();
 
   // Retour à l'onglet Mon enfant pour comparer plusieurs évaluations sur le radar, en lecture
   // seule (pas de bouton ajouter/modifier/retirer côté joueur/tuteur).

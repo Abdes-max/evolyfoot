@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { RadarChart } from "../../charts";
 import { colorForEvaluation } from "../../evaluation-colors";
+import { MessagingThread } from "../../messaging-thread";
 
 interface Player {
   id: string;
@@ -609,6 +610,14 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                 </div>
                 </div>
               </div>
+            </div>
+
+            <div className="player-block">
+              <div className="player-block-head">
+                <h2>Messages</h2>
+              </div>
+              <p className="player-invite-lead">Discussion avec {player.name} ou son tuteur.</p>
+              <MessagingThread fetchUrl={`/api/roster/${playerId}/messages`} sendUrl={`/api/roster/${playerId}/messages`} viewerRole="coach" />
             </div>
 
             <div className="player-block">

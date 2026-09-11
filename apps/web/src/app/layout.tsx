@@ -13,6 +13,7 @@ import "./statistics.css";
 import "./seances.css";
 import "./profil.css";
 import "./player-space.css";
+import "./messaging.css";
 // Chargé en dernier : n'ajoute qu'un `background-image` discret par-dessus le fond déjà posé
 // par chaque page (voir page-backgrounds.css).
 import "./page-backgrounds.css";

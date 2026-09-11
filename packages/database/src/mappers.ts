@@ -7,6 +7,7 @@ import type {
   MatchLineupAssignment,
   MatchStatus as DomainMatchStatus,
   MatchVenue as DomainMatchVenue,
+  MessageAuthorRole as DomainMessageAuthorRole,
   ObservationEventType as DomainObservationEventType,
   ObservationReportRating,
   ObservationReportSummary,
@@ -21,6 +22,7 @@ import {
   DevelopmentTheme as PrismaDevelopmentTheme,
   MatchStatus as PrismaMatchStatus,
   MatchVenue as PrismaMatchVenue,
+  MessageAuthorRole as PrismaMessageAuthorRole,
   ObservationEventType as PrismaObservationEventType,
   TrainingDay as PrismaTrainingDay,
 } from "./generated/prisma/client";
@@ -29,6 +31,7 @@ import type {
   Educator,
   EmailVerification as PrismaEmailVerification,
   MatchRecord as PrismaMatchRecord,
+  MessageRecord as PrismaMessageRecord,
   ObservationRecord as PrismaObservationRecord,
   PlateauRecord as PrismaPlateauRecord,
   Player as PrismaPlayer,
@@ -47,6 +50,7 @@ import type {
   PlayerInviteRecord,
   PersistedDiagnostic,
   PersistedMatch,
+  PersistedMessage,
   PersistedObservation,
   PersistedPlateau,
   PersistedPlayer,
@@ -183,6 +187,40 @@ export function fromPrismaObservationEventType(eventType: PrismaObservationEvent
     default:
       return exhaustive(eventType);
   }
+}
+
+export function toPrismaMessageAuthorRole(role: DomainMessageAuthorRole): PrismaMessageAuthorRole {
+  switch (role) {
+    case "coach":
+      return PrismaMessageAuthorRole.coach;
+    case "player":
+      return PrismaMessageAuthorRole.player;
+    default:
+      return exhaustive(role);
+  }
+}
+
+export function fromPrismaMessageAuthorRole(role: PrismaMessageAuthorRole): DomainMessageAuthorRole {
+  switch (role) {
+    case PrismaMessageAuthorRole.coach:
+      return "coach";
+    case PrismaMessageAuthorRole.player:
+      return "player";
+    default:
+      return exhaustive(role);
+  }
+}
+
+export function toPersistedMessage(record: PrismaMessageRecord): PersistedMessage {
+  return Object.freeze({
+    id: record.id,
+    educatorId: record.educatorId,
+    playerId: record.playerId,
+    authorRole: fromPrismaMessageAuthorRole(record.authorRole),
+    authorName: record.authorName,
+    text: record.text,
+    createdAt: record.createdAt,
+  });
 }
 
 export function toPrismaMatchVenue(venue: DomainMatchVenue): PrismaMatchVenue {

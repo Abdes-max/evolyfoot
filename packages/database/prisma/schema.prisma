@@ -44,6 +44,11 @@ enum MatchStatus {
   played
 }
 
+enum MessageAuthorRole {
+  coach
+  player
+}
+
 // Compte de l'application. Historiquement « éducateur » (le seul rôle) ; désormais discriminé
 // par `role` : un compte `coach` a une équipe, un plan, un effectif... ; un compte `player`
 // (tuteur/joueur) n'a que `linkedPlayerId` -- le joueur de l'effectif d'un coach qu'il suit --
@@ -88,6 +93,7 @@ model Educator {
   tournaments       TournamentRecord[]
   plateaux          PlateauRecord[]
   playerEvaluations PlayerEvaluationRecord[]
+  messages          MessageRecord[]
   createdAt         DateTime                 @default(now()) @map("created_at")
   updatedAt         DateTime                 @updatedAt @map("updated_at")
 
@@ -234,6 +240,7 @@ model Player {
   // Educator.linkedPlayerId).
   followers   Educator[]              @relation("PlayerFollowers")
   invites     PlayerInvite[]
+  messages    MessageRecord[]
   createdAt  DateTime                @default(now()) @map("created_at")
   updatedAt  DateTime                @updatedAt @map("updated_at")
 
@@ -258,6 +265,26 @@ model PlayerInvite {
   @@index([educatorId])
   @@index([playerId])
   @@map("player_invites")
+}
+
+// Fil de discussion coach <-> joueur/tuteur -- un seul fil par joueur (voir le commentaire dans
+// message.ts côté domaine), pas de conversations multiples ni de groupe. `authorRole` distingue
+// qui a écrit (le compte "player" n'a pas d'accès direct à `Educator`, donc pas de FK vers un
+// auteur -- même principe que AttendanceEntry, qui duplique playerName plutôt que de référencer
+// un compte). `educatorId` + `playerId` identifient le fil, comme PlayerInvite ci-dessus.
+model MessageRecord {
+  id         String            @id @default(uuid()) @db.Uuid
+  educatorId String            @db.Uuid @map("educator_id")
+  educator   Educator          @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  playerId   String            @db.Uuid @map("player_id")
+  player     Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  authorRole MessageAuthorRole @map("author_role")
+  authorName String            @map("author_name")
+  text       String
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  @@index([educatorId, playerId, createdAt])
+  @@map("messages")
 }
 
 // Lien de confirmation envoyé par e-mail à l'inscription. Même forme que PlayerInvite (token à

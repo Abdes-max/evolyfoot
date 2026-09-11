@@ -17,6 +17,7 @@ export {
   PrismaDiagnosticRepository,
   PrismaEducatorRepository,
   PrismaMatchRepository,
+  PrismaMessageRepository,
   PrismaObservationRepository,
   PrismaContactMessageRepository,
   PrismaEmailVerificationRepository,
@@ -33,6 +34,7 @@ export { AuthService } from "./auth-service";
 export { DiagnosticService } from "./diagnostic-service";
 export { EducatorProfileService, seasonFormats } from "./educator-profile-service";
 export { MatchService } from "./match-service";
+export { MessagingService } from "./messaging-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";
 export { ContactMessageService } from "./contact-message-service";
@@ -60,6 +62,7 @@ export type {
   PlayerDashboard,
   PlayerDashboardCompetition,
   PlayerDashboardMatch,
+  PlayerDashboardTrainingSession,
   PlayerDashboardTrainingSlot,
 } from "./player-dashboard-service";
 export type { CreatedInvite, InvitePreview } from "./player-invite-service";
@@ -78,9 +81,11 @@ export type {
   EmailVerificationRecord,
   EmailVerificationRepository,
   MatchRepository,
+  MessageRepository,
   ObservationRepository,
   PersistedDiagnostic,
   PersistedMatch,
+  PersistedMessage,
   PersistedObservation,
   PersistedPlateau,
   PersistedPlayer,

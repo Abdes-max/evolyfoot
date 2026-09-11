@@ -1,0 +1,17 @@
+/* Fil de discussion coach <-> joueur/tuteur (messaging-thread.tsx), réutilisé côté fiche joueur
+   du coach (/equipe/:id) et onglet Messages du joueur/tuteur (/joueur/messages). */
+.messaging-thread { display: grid; gap: 12px; }
+.messaging-note, .messaging-empty { margin: 0; color: var(--muted); font-size: 12.5px; }
+
+.messaging-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 360px; overflow-y: auto; }
+.messaging-bubble { display: grid; gap: 3px; width: fit-content; max-width: 80%; padding: 9px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+.messaging-bubble.mine { justify-self: end; background: var(--accent-soft, rgba(62, 198, 245, .14)); border-color: var(--accent); }
+.messaging-bubble p { margin: 0; font-size: 13px; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+.messaging-author { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+
+.messaging-form { display: grid; gap: 8px; }
+.messaging-form textarea { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; color: var(--ink); font-size: 13px; font-family: inherit; resize: vertical; }
+.messaging-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.messaging-form-actions button { min-height: 38px; padding: 0 16px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 12px; font-weight: 700; }
+.messaging-form-actions button[type="submit"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.messaging-form-actions button:disabled { opacity: .55; }
