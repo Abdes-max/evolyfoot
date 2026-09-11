@@ -294,6 +294,11 @@ export interface PersistedMatch {
   educatorId: string;
   opponent: string;
   dateLabel: string;
+  // Rendez-vous et lieu précis, distincts de `dateLabel` -- voir le commentaire sur le modèle
+  // Prisma. `null` si le coach ne les a pas renseignés.
+  meetingTime: string | null;
+  location: string | null;
+  description: string | null;
   venue: MatchVenue;
   gameFormat: GameFormat;
   // Toujours une valeur concrète : résolue par le mapper (voir toPersistedMatch) sur la
@@ -318,7 +323,16 @@ export interface MatchRepository {
   findById(id: string, educatorId: string): Promise<PersistedMatch | null>;
   create(
     educatorId: string,
-    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: GameFormat; formationId: string },
+    input: {
+      opponent: string;
+      dateLabel: string;
+      venue: MatchVenue;
+      gameFormat: GameFormat;
+      formationId: string;
+      meetingTime?: string | null;
+      location?: string | null;
+      description?: string | null;
+    },
   ): Promise<PersistedMatch>;
   update(
     id: string,
@@ -333,6 +347,9 @@ export interface MatchRepository {
       captainPlayerId?: string | null;
       substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
+      meetingTime?: string | null;
+      location?: string | null;
+      description?: string | null;
     },
   ): Promise<PersistedMatch>;
   remove(id: string, educatorId: string): Promise<void>;

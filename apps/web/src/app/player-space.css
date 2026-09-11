@@ -26,22 +26,30 @@
 .player-space-days { margin: 0; font-size: 13px; }
 
 .player-space-matches { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
-.player-space-matches li { display: grid; gap: 3px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
-.player-space-matches li.convoked { border-color: var(--accent-dark); }
+/* Toute la carte est cliquable (mène au détail du match, voir /joueur/matches/:id) : le style
+   visuel est posé sur le lien plutôt que le <li>. */
+.player-space-match-link { display: grid; gap: 3px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); text-decoration: none; color: inherit; transition: border-color .12s; }
+.player-space-match-link:hover, .player-space-match-link:focus-visible { border-color: var(--accent); }
+.player-space-match-link.convoked { border-color: var(--accent-dark); }
 .player-space-matches strong { font-size: 13px; }
 .player-space-matches span { color: var(--muted); font-size: 11px; }
 .player-space-tag { font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
-.player-space-matches li.convoked .player-space-tag { color: var(--good); }
-.player-space-rsvp { margin-top: 6px; display: flex; align-items: center; gap: 8px; }
-.player-space-rsvp span { flex-shrink: 0; font-size: 10.5px; font-weight: 700; text-transform: none; letter-spacing: 0; }
-.player-space-rsvp select { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 9px; color: var(--ink); font-size: 12px; }
+.player-space-match-link.convoked .player-space-tag { color: var(--good); }
 
-/* Détail d'un match ouvert depuis le calendrier (clic sur un badge, voir WeekCalendar). */
-.player-space-match-detail { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--accent-dark); border-radius: 12px; background: var(--surface-2); display: grid; gap: 6px; }
-.player-space-match-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.player-space-match-detail-head strong { font-size: 13px; }
-.player-space-match-detail-head button { width: 24px; height: 24px; border-radius: 50%; border: none; background: var(--surface); color: var(--muted); font-size: 14px; line-height: 1; cursor: pointer; }
-.player-space-match-detail > span { color: var(--muted); font-size: 11px; }
+/* Page de détail d'un match (/joueur/matches/:id, match-detail-view.tsx) -- ouverte depuis le
+   calendrier ou "Mes convocations", jamais en panneau superposé. */
+.player-match-detail { display: grid; gap: 14px; max-width: 420px; }
+.player-match-detail-teams { display: grid; gap: 4px; }
+.player-match-detail-teams strong { font-size: 18px; }
+.player-match-detail-venue { margin: 0; color: var(--muted); font-size: 13px; }
+.player-match-detail-facts { display: grid; gap: 10px; margin: 0; }
+.player-match-detail-facts dt { font-size: 10.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.player-match-detail-facts dd { margin: 2px 0 0; font-size: 14px; }
+.player-match-detail-description { margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: 13px; line-height: 1.5; }
+.player-match-detail-rsvp p { margin: 0 0 8px; font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.player-match-detail-rsvp-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.player-match-detail-rsvp-options .choice { min-height: 40px; padding: 0 16px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 12.5px; font-weight: 700; }
+.player-match-detail-rsvp-options .choice.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
 
 @media (max-width: 720px) {
   .player-space-grid, .player-space-progress { grid-template-columns: 1fr; }

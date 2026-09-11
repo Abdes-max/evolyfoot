@@ -75,6 +75,12 @@
 .match-bench-add span { color: var(--muted); font-size: 11.5px; font-weight: 700; flex-shrink: 0; }
 .match-bench-add select { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface-2); border-radius: 8px; padding: 8px 10px; color: var(--ink); font-size: 12px; }
 
+.match-details-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.match-details-form label { display: flex; flex-direction: column; gap: 5px; }
+.match-details-form label span { font-size: 11px; color: var(--muted); font-weight: 700; }
+.match-details-form input, .match-details-form textarea { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; color: var(--ink); font-size: 12px; font-family: inherit; }
+.match-details-form textarea { min-height: 60px; resize: vertical; }
+.match-details-save { align-self: flex-start; min-height: 38px; padding: 0 16px; border: 1px solid var(--accent); border-radius: 9px; background: var(--accent-soft, transparent); color: var(--accent); font-size: 11.5px; font-weight: 800; }
 .match-captain-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--info-bg); margin-bottom: 18px; }
 .match-captain-row span { color: var(--ink); font-size: 11.5px; font-weight: 800; }
 .match-captain-row select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; color: var(--ink); font-size: 12px; }

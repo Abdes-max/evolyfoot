@@ -281,6 +281,14 @@ model MatchRecord {
   educator        Educator            @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   opponent        String
   dateLabel       String              @map("date_label")
+  // Rendez-vous (avant le coup d'envoi -- échauffement...) et adresse précise, distincts de
+  // `dateLabel` (l'heure/le jour du match lui-même, en texte libre). Tous deux optionnels : un
+  // match créé avant leur introduction, ou dont le coach n'a pas encore précisé ces détails, n'en
+  // a pas -- la page de détail du joueur/tuteur (/joueur/matches/:id) les affiche seulement s'ils
+  // existent.
+  meetingTime     String?             @map("meeting_time")
+  location        String?
+  description     String?
   venue           MatchVenue
   gameFormat      Int                 @map("game_format")
   // Identifiant de la formation choisie (ex. "4-3-3", voir listFormations côté domaine) parmi

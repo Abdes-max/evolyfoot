@@ -358,6 +358,9 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     educatorId: record.educatorId,
     opponent: record.opponent,
     dateLabel: record.dateLabel,
+    meetingTime: record.meetingTime,
+    location: record.location,
+    description: record.description,
     venue: fromPrismaMatchVenue(record.venue),
     // Un entier borné en base, pas un enum Postgres, même principe que `Team.gameFormat` : la
     // validation du domaine garantit qu'une valeur 4-11 est seule persistée ici.

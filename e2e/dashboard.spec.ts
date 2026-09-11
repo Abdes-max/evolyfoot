@@ -493,7 +493,17 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
           trainingAttendance: { present: 0, absent: 0, total: 0, rate: 0 },
           matchAttendance: { present: 0, absent: 0, total: 0, rate: 0 },
           upcomingMatches: [
-            { id: "m1", opponent: "US Vallée", dateLabel: "Samedi 19 septembre", venue: "home", convoked: true, myStatus: null },
+            {
+              id: "m1",
+              opponent: "US Vallée",
+              dateLabel: "Samedi 19 septembre",
+              meetingTime: "14:30",
+              location: "Stade Marius Requier, Aix-en-Provence",
+              description: "Brassage journée 1 (triangulaire)",
+              venue: "home",
+              convoked: true,
+              myStatus: null,
+            },
           ],
           trainingSlots: [],
           competitions: [{ id: "p1", type: "plateau", name: "Plateau de rentrée", dateLabel: "Dimanche 20 septembre" }],
@@ -519,9 +529,17 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect(page.getByText("US Vallée")).toBeVisible();
   await expect(page.getByText("Convoqué")).toBeVisible();
 
-  // Réponse du joueur/tuteur à la convocation.
-  await page.getByLabel("Ta réponse").selectOption("injured");
-  await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "injured" });
+  // Réponse du joueur/tuteur à la convocation depuis "Mes convocations" : ouvre une vraie page
+  // (/joueur/matches/:id), pas un panneau superposé.
+  await page.locator(".player-space-matches").getByRole("link", { name: /US Vallée/ }).click();
+  await expect(page).toHaveURL(/\/joueur\/matches\/m1$/);
+  await expect(page.locator(".player-match-detail")).toContainText("US Vallée");
+  await expect(page.locator(".player-match-detail")).toContainText("Stade Marius Requier, Aix-en-Provence");
+  await expect(page.locator(".player-match-detail")).toContainText("14:30");
+  await page.getByRole("button", { name: "Malade" }).click();
+  await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "sick" });
+  await page.getByRole("link", { name: "← Retour" }).click();
+  await expect(page).toHaveURL(/\/joueur$/);
 
   // Calendrier de la semaine (lecture seule) et compétitions (plateaux/tournois).
   await expect(page.getByRole("heading", { name: "Calendrier de la semaine" })).toBeVisible();
@@ -529,13 +547,13 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect(page.getByText("Plateau de rentrée")).toBeVisible();
   await expect(page.getByText("Plateau", { exact: true })).toBeVisible();
 
-  // Cliquer sur l'événement du calendrier ouvre son détail, avec la réponse à la convocation.
-  await page.getByRole("button", { name: "Voir le détail du match contre US Vallée" }).click();
-  await expect(page.locator(".player-space-match-detail")).toContainText("US Vallée");
-  await page.locator(".player-space-match-detail").getByLabel("Ta réponse").selectOption("present");
+  // Cliquer sur l'événement du calendrier ouvre la même page de détail.
+  await page.getByRole("link", { name: "Voir le détail du match contre US Vallée" }).click();
+  await expect(page).toHaveURL(/\/joueur\/matches\/m1$/);
+  await expect(page.locator(".player-match-detail")).toContainText("US Vallée");
+  await page.getByRole("button", { name: "Présent" }).click();
   await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "present" });
-  await page.getByRole("button", { name: "Fermer le détail du match" }).click();
-  await expect(page.locator(".player-space-match-detail")).toHaveCount(0);
+  await page.getByRole("link", { name: "← Retour" }).click();
 
   // Comparer plusieurs évaluations sur le radar, en lecture seule (pas de bouton
   // ajouter/modifier/retirer côté joueur/tuteur).

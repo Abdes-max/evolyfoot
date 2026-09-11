@@ -22,6 +22,9 @@ export interface PlayerDashboardMatch {
   id: string;
   opponent: string;
   dateLabel: string;
+  meetingTime: string | null;
+  location: string | null;
+  description: string | null;
   venue: "home" | "away";
   convoked: boolean;
   // Réponse déjà enregistrée par le joueur/tuteur à sa convocation (voir PlayerRsvpService),
@@ -107,6 +110,9 @@ export class PlayerDashboardService {
           id: match.id,
           opponent: match.opponent,
           dateLabel: match.dateLabel,
+          meetingTime: match.meetingTime,
+          location: match.location,
+          description: match.description,
           venue: match.venue,
           convoked: match.lineup.some((assignment) => assignment.playerId === playerId),
           myStatus: myEntry ? attendanceStatusOf(myEntry) : null,

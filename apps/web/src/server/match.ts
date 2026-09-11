@@ -6,6 +6,9 @@ export interface MatchSummary {
   id: string;
   opponent: string;
   dateLabel: string;
+  meetingTime: string | null;
+  location: string | null;
+  description: string | null;
   venue: MatchVenue;
   gameFormat: number;
   formationId: string;
@@ -21,7 +24,16 @@ export interface MatchGateway {
   get(educatorId: string, matchId: string): Promise<MatchSummary>;
   create(
     educatorId: string,
-    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string },
+    input: {
+      opponent: string;
+      dateLabel: string;
+      venue: MatchVenue;
+      gameFormat: number;
+      formationId?: string;
+      meetingTime?: string;
+      location?: string;
+      description?: string;
+    },
   ): Promise<MatchSummary>;
   updateLineup(
     educatorId: string,
@@ -31,6 +43,11 @@ export interface MatchGateway {
       captainPlayerId: string | null;
       substitutePlayerIds?: readonly string[];
     },
+  ): Promise<MatchSummary>;
+  updateDetails(
+    educatorId: string,
+    matchId: string,
+    input: { meetingTime?: string | null; location?: string | null; description?: string | null },
   ): Promise<MatchSummary>;
   changeFormation(educatorId: string, matchId: string, formationId: string): Promise<MatchSummary>;
   markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<MatchSummary>;
@@ -113,12 +130,24 @@ export function createCreateMatchHandler(
     const venue = body?.venue === "home" || body?.venue === "away" ? body.venue : null;
     const gameFormat = typeof body?.gameFormat === "number" ? body.gameFormat : null;
     const formationId = typeof body?.formationId === "string" ? body.formationId : undefined;
+    const meetingTime = typeof body?.meetingTime === "string" ? body.meetingTime : undefined;
+    const location = typeof body?.location === "string" ? body.location : undefined;
+    const description = typeof body?.description === "string" ? body.description : undefined;
     if (opponent === null || dateLabel === null || venue === null || gameFormat === null) {
       return Response.json({ error: "Adversaire, date, lieu et format de jeu sont requis." }, { status: 400 });
     }
 
     try {
-      const match = await matches.create(educator.id, { opponent, dateLabel, venue, gameFormat, formationId });
+      const match = await matches.create(educator.id, {
+        opponent,
+        dateLabel,
+        venue,
+        gameFormat,
+        formationId,
+        meetingTime,
+        location,
+        description,
+      });
       return Response.json({ match }, { status: 201 });
     } catch (error) {
       return errorResponse(error, log);
@@ -174,6 +203,35 @@ export function createUpdateLineupHandler(
       return Response.json({
         match: await matches.updateLineup(educator.id, matchId, { lineup, captainPlayerId, substitutePlayerIds }),
       });
+    } catch (error) {
+      return errorResponse(error, log);
+    }
+  };
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+// Rendez-vous, lieu et description : modifiables indépendamment de la composition, voir
+// MatchService.updateDetails côté base. Chaque champ absent du corps de la requête est laissé
+// intact (`undefined`), une valeur `null` explicite l'efface.
+export function createUpdateMatchDetailsHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  matches: Pick<MatchGateway, "updateDetails">,
+  log: (error: unknown) => void,
+): (request: Request, matchId: string) => Promise<Response> {
+  return async (request, matchId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const body = await readJsonBody(request);
+    const meetingTime = body?.meetingTime === undefined ? undefined : isNullableString(body.meetingTime) ? body.meetingTime : null;
+    const location = body?.location === undefined ? undefined : isNullableString(body.location) ? body.location : null;
+    const description = body?.description === undefined ? undefined : isNullableString(body.description) ? body.description : null;
+    try {
+      return Response.json({ match: await matches.updateDetails(educator.id, matchId, { meetingTime, location, description }) });
     } catch (error) {
       return errorResponse(error, log);
     }
@@ -262,6 +320,9 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       id: match.id,
       opponent: match.opponent,
       dateLabel: match.dateLabel,
+      meetingTime: match.meetingTime,
+      location: match.location,
+      description: match.description,
       venue: match.venue,
       gameFormat: match.gameFormat,
       formationId: match.formationId,
@@ -287,6 +348,9 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       },
       async updateLineup(educatorId, matchId, input) {
         return toSummary(await service.updateLineup(educatorId, matchId, input));
+      },
+      async updateDetails(educatorId, matchId, input) {
+        return toSummary(await service.updateDetails(educatorId, matchId, input));
       },
       async changeFormation(educatorId, matchId, formationId) {
         return toSummary(await service.changeFormation(educatorId, matchId, formationId));

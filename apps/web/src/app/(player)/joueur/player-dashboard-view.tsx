@@ -2,7 +2,6 @@
 
 import {
   attendanceStatusLabels,
-  attendanceStatuses,
   playerEvaluationAspectLabels,
   playerEvaluationAspects,
   playerEvaluationMaxScore,
@@ -82,7 +81,7 @@ async function logout() {
 // Même grille que le calendrier du coach (apps/web/weekly-calendar.tsx), en lecture seule : pas
 // de lien vers une séance ou un match, le joueur/tuteur n'y a de toute façon pas accès -- juste de
 // quoi voir d'un coup d'œil ce qui se passe cette semaine.
-function WeekCalendar({ dashboard, onSelectMatch }: { dashboard: Dashboard; onSelectMatch: (matchId: string) => void }) {
+function WeekCalendar({ dashboard }: { dashboard: Dashboard }) {
   const trainingDays = dashboard.team?.trainingDays ?? [];
   const activeWeek = currentCycleWeek(dashboard.trainingSlots, Math.max(trainingDays.length, 1));
 
@@ -123,15 +122,14 @@ function WeekCalendar({ dashboard, onSelectMatch }: { dashboard: Dashboard; onSe
                   </span>
                 )}
                 {match && (
-                  <button
+                  <Link
                     aria-label={`Voir le détail du match contre ${match.opponent}`}
                     className="week-calendar-badge match"
-                    onClick={() => onSelectMatch(match.id)}
+                    href={`/joueur/matches/${match.id}`}
                     title={`Match contre ${match.opponent}`}
-                    type="button"
                   >
                     <BallIcon />
-                  </button>
+                  </Link>
                 )}
               </div>
             </div>
@@ -162,10 +160,6 @@ export function PlayerSpaceView() {
   // Évaluations superposées sur le radar -- même mécanisme que côté coach (player-detail-view.tsx),
   // en lecture seule ici : pas d'ajout/modification/retrait, juste comparer.
   const [comparedEvaluationIds, setComparedEvaluationIds] = useState<ReadonlySet<string>>(new Set());
-  // Match ouvert depuis le calendrier (clic sur un badge) -- affiche son détail avec la réponse à
-  // la convocation, plutôt que de renvoyer vers une page /match/:id à laquelle le compte joueur
-  // n'a de toute façon pas accès.
-  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -195,7 +189,6 @@ export function PlayerSpaceView() {
   }, []);
 
   const latest = dashboard?.evaluations[0];
-  const selectedMatch = dashboard?.upcomingMatches.find((match) => match.id === selectedMatchId) ?? null;
 
   function toggleCompare(evaluationId: string) {
     setComparedEvaluationIds((current) => {
@@ -207,30 +200,6 @@ export function PlayerSpaceView() {
       }
       return next;
     });
-  }
-
-  async function respondToMatch(matchId: string, matchStatus: AttendanceStatus) {
-    if (!dashboard) {
-      return;
-    }
-    // Optimiste : cohérent avec le reste de l'appli (roster-view.tsx, match-prep-view.tsx…),
-    // l'échec reste rare et se rattrape par une nouvelle tentative.
-    setDashboard({
-      ...dashboard,
-      upcomingMatches: dashboard.upcomingMatches.map((match) =>
-        match.id === matchId ? { ...match, myStatus: matchStatus } : match,
-      ),
-    });
-    try {
-      await fetch("/api/joueur/rsvp", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ matchId, status: matchStatus }),
-      });
-    } catch {
-      // Repli silencieux : le statut affiché reste celui choisi, une nouvelle tentative (ou un
-      // rechargement) le confirmera ou le corrigera.
-    }
   }
 
   return (
@@ -361,37 +330,7 @@ export function PlayerSpaceView() {
             {dashboard.team && dashboard.team.trainingDays.length > 0 && (
               <section className="player-space-block">
                 <h2>Calendrier de la semaine</h2>
-                <WeekCalendar dashboard={dashboard} onSelectMatch={setSelectedMatchId} />
-                {selectedMatch && (
-                  <div className="player-space-match-detail" role="region">
-                    <div className="player-space-match-detail-head">
-                      <strong>{selectedMatch.opponent}</strong>
-                      <button aria-label="Fermer le détail du match" onClick={() => setSelectedMatchId(null)} type="button">
-                        ×
-                      </button>
-                    </div>
-                    <span>
-                      {selectedMatch.dateLabel} · {venueLabel[selectedMatch.venue]}
-                    </span>
-                    <span className="player-space-tag">{selectedMatch.convoked ? "Convoqué" : "Pas encore dans le groupe"}</span>
-                    <label className="player-space-rsvp">
-                      <span>Ta réponse</span>
-                      <select
-                        onChange={(event) => respondToMatch(selectedMatch.id, event.target.value as AttendanceStatus)}
-                        value={selectedMatch.myStatus ?? ""}
-                      >
-                        <option disabled value="">
-                          — Répondre —
-                        </option>
-                        {attendanceStatuses.map((option) => (
-                          <option key={option} value={option}>
-                            {attendanceStatusLabels[option]}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                )}
+                <WeekCalendar dashboard={dashboard} />
               </section>
             )}
 
@@ -402,28 +341,20 @@ export function PlayerSpaceView() {
               ) : (
                 <ul className="player-space-matches">
                   {dashboard.upcomingMatches.map((match) => (
-                    <li className={match.convoked ? "convoked" : ""} key={match.id}>
-                      <strong>{match.opponent}</strong>
-                      <span>
-                        {match.dateLabel} · {venueLabel[match.venue]}
-                      </span>
-                      <span className="player-space-tag">{match.convoked ? "Convoqué" : "Pas encore dans le groupe"}</span>
-                      <label className="player-space-rsvp">
-                        <span>Ta réponse</span>
-                        <select
-                          onChange={(event) => respondToMatch(match.id, event.target.value as AttendanceStatus)}
-                          value={match.myStatus ?? ""}
-                        >
-                          <option disabled value="">
-                            — Répondre —
-                          </option>
-                          {attendanceStatuses.map((option) => (
-                            <option key={option} value={option}>
-                              {attendanceStatusLabels[option]}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                    <li key={match.id}>
+                      <Link className={match.convoked ? "player-space-match-link convoked" : "player-space-match-link"} href={`/joueur/matches/${match.id}`}>
+                        <strong>{match.opponent}</strong>
+                        <span>
+                          {match.dateLabel} · {venueLabel[match.venue]}
+                        </span>
+                        <span className="player-space-tag">
+                          {match.myStatus
+                            ? `Réponse : ${attendanceStatusLabels[match.myStatus]}`
+                            : match.convoked
+                              ? "Convoqué"
+                              : "Pas encore dans le groupe"}
+                        </span>
+                      </Link>
                     </li>
                   ))}
                 </ul>

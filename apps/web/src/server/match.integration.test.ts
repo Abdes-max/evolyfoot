@@ -8,6 +8,7 @@ import {
   createMarkPlayedHandler,
   createRemoveMatchHandler,
   createUpdateLineupHandler,
+  createUpdateMatchDetailsHandler,
   type MatchGateway,
   type MatchSummary,
 } from "./match";
@@ -17,6 +18,9 @@ const match: MatchSummary = {
   id: "match-1",
   opponent: "US Vallée",
   dateLabel: "Samedi",
+  meetingTime: null,
+  location: null,
+  description: null,
   venue: "home",
   gameFormat: 8,
   formationId: "3-3-1",
@@ -172,6 +176,46 @@ describe("createUpdateLineupHandler", () => {
     );
 
     expect(response.status).toBe(400);
+  });
+});
+
+describe("createUpdateMatchDetailsHandler", () => {
+  it("requires authentication", async () => {
+    const handler = createUpdateMatchDetailsHandler(anonymous, { updateDetails: async () => { throw new Error("not called"); } }, () => undefined);
+    expect((await handler(jsonRequest("PATCH", { location: "Stade X" }), "match-1")).status).toBe(401);
+  });
+
+  it("forwards only the provided fields, leaving the rest untouched", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<MatchGateway, "updateDetails"> = {
+      updateDetails: async (educatorId, matchId, input) => {
+        received.push({ educatorId, matchId, input });
+        return match;
+      },
+    };
+    const handler = createUpdateMatchDetailsHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(jsonRequest("PATCH", { location: "Stade Marius Requier" }), "match-1");
+
+    expect(response.status).toBe(200);
+    expect(received).toEqual([
+      { educatorId: educator.id, matchId: "match-1", input: { meetingTime: undefined, location: "Stade Marius Requier", description: undefined } },
+    ]);
+  });
+
+  it("accepts null to clear a field", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<MatchGateway, "updateDetails"> = {
+      updateDetails: async (educatorId, matchId, input) => {
+        received.push(input);
+        return match;
+      },
+    };
+    const handler = createUpdateMatchDetailsHandler(authenticated, gateway, () => undefined);
+
+    await handler(jsonRequest("PATCH", { location: null }), "match-1");
+
+    expect(received).toEqual([{ meetingTime: undefined, location: null, description: undefined }]);
   });
 });
 

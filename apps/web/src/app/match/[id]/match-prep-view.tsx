@@ -12,13 +12,16 @@ import {
 import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { MatchPitch } from "../match-pitch";
 
 interface MatchRecord {
   id: string;
   opponent: string;
   dateLabel: string;
+  meetingTime: string | null;
+  location: string | null;
+  description: string | null;
   venue: MatchVenue;
   gameFormat: number;
   formationId: string;
@@ -53,6 +56,13 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   // pré-remplie pour tout l'effectif, pour ne pas avoir à la recopier depuis `roster` via un
   // useEffect à chaque chargement.
   const [absentPlayerIds, setAbsentPlayerIds] = useState<ReadonlySet<string>>(new Set());
+  // Rendez-vous, lieu et description -- affichés sur la page de détail du joueur/tuteur
+  // (/joueur/matches/:id). Champs texte libres, initialisés au chargement du match (voir
+  // l'effet ci-dessous) puis enregistrés indépendamment de la composition.
+  const [meetingTime, setMeetingTime] = useState("");
+  const [location, setLocation] = useState("");
+  const [description, setDescription] = useState("");
+  const [savingDetails, setSavingDetails] = useState(false);
   // Un clic sur un poste directement sur le terrain (MatchPitch) ouvre le sélecteur natif
   // correspondant plutôt que dupliquer la logique d'affectation dans un second composant --
   // `showPicker()` (Chrome/Edge) ouvre le menu déroulant sans clic réel dessus ; `focus()` reste
@@ -88,6 +98,9 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         }
         setMatch(matchBody.match);
         setRoster(rosterBody.players ?? []);
+        setMeetingTime(matchBody.match?.meetingTime ?? "");
+        setLocation(matchBody.match?.location ?? "");
+        setDescription(matchBody.match?.description ?? "");
         // Pré-coche les absents déjà connus -- notamment un joueur/tuteur qui a répondu à sa
         // convocation avant même que le coach n'ouvre cette page (voir player-rsvp-service.ts) :
         // sans ce pré-remplissage, valider écraserait sa réponse par "présent" par défaut.
@@ -218,6 +231,29 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       setMatch(body.match);
     } catch {
       setSaveError("Une erreur est survenue.");
+    }
+  }
+
+  async function saveDetails(event: FormEvent) {
+    event.preventDefault();
+    setSavingDetails(true);
+    setSaveError("");
+    try {
+      const response = await fetch(`/api/matches/${matchId}/details`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ meetingTime, location, description }),
+      });
+      if (!response.ok) {
+        setSaveError(await readErrorMessage(response));
+        return;
+      }
+      const body = await response.json();
+      setMatch(body.match);
+    } catch {
+      setSaveError("Une erreur est survenue.");
+    } finally {
+      setSavingDetails(false);
     }
   }
 
@@ -418,6 +454,38 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         </div>
 
         <div className="match-slot-panel">
+          <form className="match-details-form" onSubmit={saveDetails}>
+            <h2>Détails</h2>
+            <p className="match-slot-hint">Affichés sur la fiche que voit le joueur/tuteur.</p>
+            <label>
+              <span>Rendez-vous</span>
+              <input
+                disabled={readOnly}
+                onChange={(event) => setMeetingTime(event.target.value)}
+                placeholder="Ex. 14:30"
+                value={meetingTime}
+              />
+            </label>
+            <label>
+              <span>Lieu</span>
+              <input
+                disabled={readOnly}
+                onChange={(event) => setLocation(event.target.value)}
+                placeholder="Ex. Stade Marius Requier, Aix-en-Provence"
+                value={location}
+              />
+            </label>
+            <label>
+              <span>Description</span>
+              <textarea disabled={readOnly} onChange={(event) => setDescription(event.target.value)} value={description} />
+            </label>
+            {!readOnly && (
+              <button className="match-details-save" disabled={savingDetails} type="submit">
+                {savingDetails ? "Enregistrement…" : "Enregistrer les détails"}
+              </button>
+            )}
+          </form>
+
           <label className="match-captain-row">
             <span>Capitaine</span>
             <select disabled={readOnly} onChange={(event) => setCaptainPlayer(event.target.value)} value={match.captainPlayerId ?? ""}>

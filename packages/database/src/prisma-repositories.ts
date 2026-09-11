@@ -524,7 +524,16 @@ export class PrismaMatchRepository implements MatchRepository {
 
   async create(
     educatorId: string,
-    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: GameFormat; formationId: string },
+    input: {
+      opponent: string;
+      dateLabel: string;
+      venue: MatchVenue;
+      gameFormat: GameFormat;
+      formationId: string;
+      meetingTime?: string | null;
+      location?: string | null;
+      description?: string | null;
+    },
   ): Promise<PersistedMatch> {
     try {
       const match = await this.prisma.matchRecord.create({
@@ -535,6 +544,9 @@ export class PrismaMatchRepository implements MatchRepository {
           venue: toPrismaMatchVenue(input.venue),
           gameFormat: input.gameFormat,
           formationId: input.formationId,
+          meetingTime: input.meetingTime,
+          location: input.location,
+          description: input.description,
         },
       });
       return toPersistedMatch(match);
@@ -559,12 +571,18 @@ export class PrismaMatchRepository implements MatchRepository {
       captainPlayerId?: string | null;
       substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
+      meetingTime?: string | null;
+      location?: string | null;
+      description?: string | null;
     },
   ): Promise<PersistedMatch> {
     const { count } = await this.prisma.matchRecord.updateMany({
       where: { id, educatorId },
       data: {
         ...(input.opponent !== undefined ? { opponent: input.opponent } : {}),
+        ...(input.meetingTime !== undefined ? { meetingTime: input.meetingTime } : {}),
+        ...(input.location !== undefined ? { location: input.location } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.dateLabel !== undefined ? { dateLabel: input.dateLabel } : {}),
         ...(input.venue !== undefined ? { venue: toPrismaMatchVenue(input.venue) } : {}),
         ...(input.formationId !== undefined ? { formationId: input.formationId } : {}),

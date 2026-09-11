@@ -11,6 +11,16 @@ function normalizeOpponent(opponent: string): string {
   return trimmed;
 }
 
+// Champ libre facultatif (rendez-vous, lieu, description) : une chaîne vide, absente ou déjà
+// nulle devient `null` (le champ n'est pas renseigné), jamais une chaîne vide stockée telle quelle.
+function normalizeOptionalText(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
 function normalizeDateLabel(dateLabel: string): string {
   const trimmed = dateLabel.trim();
   if (!trimmed) {
@@ -116,7 +126,16 @@ export class MatchService {
 
   async create(
     educatorId: string,
-    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string },
+    input: {
+      opponent: string;
+      dateLabel: string;
+      venue: MatchVenue;
+      gameFormat: number;
+      formationId?: string;
+      meetingTime?: string;
+      location?: string;
+      description?: string;
+    },
   ): Promise<PersistedMatch> {
     const opponent = normalizeOpponent(input.opponent);
     const dateLabel = normalizeDateLabel(input.dateLabel);
@@ -125,7 +144,32 @@ export class MatchService {
     if (!(await this.educatorRepository.existsById(educatorId))) {
       throw new EducatorNotFoundError();
     }
-    return this.matchRepository.create(educatorId, { opponent, dateLabel, venue: input.venue, gameFormat, formationId });
+    return this.matchRepository.create(educatorId, {
+      opponent,
+      dateLabel,
+      venue: input.venue,
+      gameFormat,
+      formationId,
+      meetingTime: normalizeOptionalText(input.meetingTime),
+      location: normalizeOptionalText(input.location),
+      description: normalizeOptionalText(input.description),
+    });
+  }
+
+  // Rendez-vous, lieu précis et description -- modifiables indépendamment de la composition,
+  // avant comme après que le match soit joué (une adresse ou une note reste correcte a
+  // posteriori, contrairement à la composition qui décrit une prévision).
+  async updateDetails(
+    educatorId: string,
+    matchId: string,
+    input: { meetingTime?: string | null; location?: string | null; description?: string | null },
+  ): Promise<PersistedMatch> {
+    await this.get(educatorId, matchId);
+    return this.matchRepository.update(matchId, educatorId, {
+      ...(input.meetingTime !== undefined ? { meetingTime: normalizeOptionalText(input.meetingTime) } : {}),
+      ...(input.location !== undefined ? { location: normalizeOptionalText(input.location) } : {}),
+      ...(input.description !== undefined ? { description: normalizeOptionalText(input.description) } : {}),
+    });
   }
 
   // Composition et capitaine modifiables librement tant que le match n'est pas marqué joué --
