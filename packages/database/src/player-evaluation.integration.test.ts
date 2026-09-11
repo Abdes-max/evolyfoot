@@ -1,7 +1,7 @@
 import { createEmptyPlayerEvaluationScores } from "@evolyfoot/domain";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createDatabaseClient } from "./client";
-import { PlayerNotFoundError, ValidationError } from "./errors";
+import { PlayerEvaluationNotFoundError, PlayerNotFoundError, ValidationError } from "./errors";
 import { PrismaEducatorRepository, PrismaPlayerEvaluationRepository, PrismaPlayerRepository } from "./prisma-repositories";
 import { PlayerEvaluationService } from "./player-evaluation-service";
 
@@ -93,5 +93,41 @@ describe("PostgreSQL player evaluation persistence", () => {
     await playerRepository.remove(player.id, educator.id);
 
     await expect(database.prisma.playerEvaluationRecord.count({ where: { playerId: player.id } })).resolves.toBe(0);
+  });
+
+  it("updates the score and/or date of an existing evaluation", async () => {
+    const educator = await createEducator("update");
+    const player = await playerRepository.create(educator.id, "Kylian");
+    const created = await service.add(educator.id, player.id, { ...createEmptyPlayerEvaluationScores(), technique: 4 });
+
+    const scoreOnly = await service.update(educator.id, created.id, { scores: { ...created.scores, technique: 9 } });
+    expect(scoreOnly.scores.technique).toBe(9);
+    expect(scoreOnly.createdAt.getTime()).toBe(created.createdAt.getTime());
+
+    const newDate = new Date("2026-01-15T00:00:00.000Z");
+    const dateOnly = await service.update(educator.id, created.id, { date: newDate });
+    expect(dateOnly.createdAt.getTime()).toBe(newDate.getTime());
+    expect(dateOnly.scores.technique).toBe(9);
+  });
+
+  it("rejects updating with an out-of-range score", async () => {
+    const educator = await createEducator("update-invalid");
+    const player = await playerRepository.create(educator.id, "Kylian");
+    const created = await service.add(educator.id, player.id, createEmptyPlayerEvaluationScores());
+
+    await expect(
+      service.update(educator.id, created.id, { scores: { ...created.scores, technique: 42 } }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("rejects updating an evaluation belonging to another educator", async () => {
+    const owner = await createEducator("update-owner");
+    const stranger = await createEducator("update-stranger");
+    const player = await playerRepository.create(owner.id, "Kylian");
+    const created = await service.add(owner.id, player.id, createEmptyPlayerEvaluationScores());
+
+    await expect(
+      service.update(stranger.id, created.id, { scores: created.scores }),
+    ).rejects.toBeInstanceOf(PlayerEvaluationNotFoundError);
   });
 });

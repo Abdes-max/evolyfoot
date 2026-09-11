@@ -4,6 +4,7 @@ import type { TrainingDay } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { currentCycleWeek } from "./session/cycle";
+import { todayWeekDayFull } from "./today";
 import { BallIcon, DotsGridIcon, TargetIcon } from "./icons";
 
 const weekDays: ReadonlyArray<{ short: string; full: TrainingDay | "Samedi" | "Dimanche" }> = [
@@ -119,8 +120,9 @@ export function WeeklyCalendar() {
         {weekDays.map((day) => {
           const training = trainingByDay.get(day.full);
           const match = matchByDay.get(day.full);
+          const isToday = day.full === todayWeekDayFull();
           return (
-            <div className="week-calendar-day" key={day.full}>
+            <div className={isToday ? "week-calendar-day today" : "week-calendar-day"} key={day.full}>
               <span className="week-calendar-day-label">{day.short}</span>
               <div className="week-calendar-cell">
                 {training &&

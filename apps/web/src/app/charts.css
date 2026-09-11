@@ -24,9 +24,18 @@
 .donut-chart-dot.info { background: var(--info); }
 .donut-chart-dot.accent { background: var(--accent); }
 
-.radar-chart { display: flex; justify-content: center; }
+.radar-chart { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+/* Le SVG a une taille en pixels fixe (voir `size` dans charts.tsx), mais son conteneur peut être
+   plus étroit -- notamment la moitié de page dédiée au graphe dans player-detail-view.tsx sur un
+   petit écran. Sans ça le SVG déborderait plutôt que de rétrécir. */
+.radar-chart svg { max-width: 100%; height: auto; }
 .radar-chart-ring { fill: none; stroke: var(--line); stroke-width: 1; }
 .radar-chart-axis { stroke: var(--line); stroke-width: 1; }
-.radar-chart-data { stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; }
-.radar-chart-point { fill: var(--accent); }
+/* stroke-width/stroke-linejoin seulement ici : la couleur (stroke/fill) de chaque évaluation est
+   posée en attribut SVG directement dans charts.tsx (une par évaluation superposée) -- une valeur
+   fixe ici l'écraserait, une règle CSS l'emportant toujours sur un attribut de présentation. */
+.radar-chart-data { stroke-width: 1.5; stroke-linejoin: round; }
 .radar-chart-label { fill: var(--muted); font-size: 9.5px; font-weight: 800; text-transform: uppercase; }
+.radar-chart-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 16px; }
+.radar-chart-legend li { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--muted); }
+.radar-chart-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }

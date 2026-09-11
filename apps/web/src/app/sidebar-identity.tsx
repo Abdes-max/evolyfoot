@@ -7,6 +7,7 @@ interface Educator {
   id: string;
   email: string;
   displayName: string;
+  emailVerified?: boolean;
 }
 
 interface TeamProfile {
@@ -33,6 +34,7 @@ export function SidebarIdentity() {
   // `Team.playerCount` -- un chiffre saisi une fois à l'onboarding, avant que l'effectif nominatif
   // n'existe (voir roadmap.md, phase 2), qui se désynchronise dès qu'un joueur est ajouté/retiré.
   const [playerCount, setPlayerCount] = useState<number | null>(null);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +68,15 @@ export function SidebarIdentity() {
       cancelled = true;
     };
   }, []);
+
+  async function resendVerification() {
+    setResendState("sending");
+    try {
+      await fetch("/api/auth/resend-verification", { method: "POST" });
+    } finally {
+      setResendState("sent");
+    }
+  }
 
   async function logout() {
     try {
@@ -142,6 +153,18 @@ export function SidebarIdentity() {
           Déconnexion
         </button>
       </div>
+      {educator.emailVerified === false && (
+        <div className="email-reminder">
+          <span>Confirme ton adresse e-mail : un lien t’a été envoyé à l’inscription.</span>
+          {resendState === "sent" ? (
+            <span>Nouveau lien envoyé.</span>
+          ) : (
+            <button disabled={resendState === "sending"} onClick={resendVerification} type="button">
+              {resendState === "sending" ? "Envoi…" : "Renvoyer le lien"}
+            </button>
+          )}
+        </div>
+      )}
     </>
   );
 }

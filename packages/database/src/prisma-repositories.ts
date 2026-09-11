@@ -5,6 +5,7 @@ import {
   DuplicateEducatorEmailError,
   EducatorNotFoundError,
   MatchNotFoundError,
+  PlayerEvaluationNotFoundError,
   PlayerNotFoundError,
   TeamNotFoundError,
 } from "./errors";
@@ -28,6 +29,7 @@ import {
   toPrismaObservationEventType,
   toPrismaTrainingDay,
   toPlayerInviteRecord,
+  toEmailVerificationRecord,
   toSessionRecord,
 } from "./mappers";
 import { ContactMessageRecord, ContactMessageRepository } from "./contact-message-service";
@@ -40,6 +42,8 @@ import type {
   EducatorProfileRepository,
   EducatorRecord,
   EducatorRepository,
+  EmailVerificationRecord,
+  EmailVerificationRepository,
   MatchRepository,
   ObservationRepository,
   PersistedDiagnostic,
@@ -191,6 +195,28 @@ export class PrismaEducatorRepository implements EducatorRepository, EducatorPro
 
   async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
     await this.prisma.educator.update({ where: { id }, data: { passwordHash } });
+  }
+
+  async markEmailVerified(id: string): Promise<void> {
+    await this.prisma.educator.update({ where: { id }, data: { emailVerifiedAt: new Date() } });
+  }
+}
+
+export class PrismaEmailVerificationRepository implements EmailVerificationRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<EmailVerificationRecord> {
+    const verification = await this.prisma.emailVerification.create({ data: input });
+    return toEmailVerificationRecord(verification);
+  }
+
+  async findByTokenHash(tokenHash: string): Promise<EmailVerificationRecord | null> {
+    const verification = await this.prisma.emailVerification.findUnique({ where: { tokenHash } });
+    return verification === null ? null : toEmailVerificationRecord(verification);
+  }
+
+  async markConsumed(id: string): Promise<void> {
+    await this.prisma.emailVerification.update({ where: { id }, data: { consumedAt: new Date() } });
   }
 }
 
@@ -498,7 +524,16 @@ export class PrismaMatchRepository implements MatchRepository {
 
   async create(
     educatorId: string,
-    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: GameFormat; formationId: string },
+    input: {
+      opponent: string;
+      dateLabel: string;
+      venue: MatchVenue;
+      gameFormat: GameFormat;
+      formationId: string;
+      meetingTime?: string | null;
+      location?: string | null;
+      description?: string | null;
+    },
   ): Promise<PersistedMatch> {
     try {
       const match = await this.prisma.matchRecord.create({
@@ -509,6 +544,9 @@ export class PrismaMatchRepository implements MatchRepository {
           venue: toPrismaMatchVenue(input.venue),
           gameFormat: input.gameFormat,
           formationId: input.formationId,
+          meetingTime: input.meetingTime,
+          location: input.location,
+          description: input.description,
         },
       });
       return toPersistedMatch(match);
@@ -531,19 +569,29 @@ export class PrismaMatchRepository implements MatchRepository {
       status?: MatchStatus;
       lineup?: readonly MatchLineupAssignment[];
       captainPlayerId?: string | null;
+      substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
+      meetingTime?: string | null;
+      location?: string | null;
+      description?: string | null;
     },
   ): Promise<PersistedMatch> {
     const { count } = await this.prisma.matchRecord.updateMany({
       where: { id, educatorId },
       data: {
         ...(input.opponent !== undefined ? { opponent: input.opponent } : {}),
+        ...(input.meetingTime !== undefined ? { meetingTime: input.meetingTime } : {}),
+        ...(input.location !== undefined ? { location: input.location } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.dateLabel !== undefined ? { dateLabel: input.dateLabel } : {}),
         ...(input.venue !== undefined ? { venue: toPrismaMatchVenue(input.venue) } : {}),
         ...(input.formationId !== undefined ? { formationId: input.formationId } : {}),
         ...(input.status !== undefined ? { status: toPrismaMatchStatus(input.status) } : {}),
         ...(input.lineup !== undefined ? { lineup: input.lineup as unknown as Prisma.InputJsonValue } : {}),
         ...(input.captainPlayerId !== undefined ? { captainPlayerId: input.captainPlayerId } : {}),
+        ...(input.substitutePlayerIds !== undefined
+          ? { substitutePlayerIds: input.substitutePlayerIds as unknown as Prisma.InputJsonValue }
+          : {}),
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
       },
     });
@@ -663,6 +711,25 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
       }
       throw error;
     }
+  }
+
+  async update(
+    id: string,
+    educatorId: string,
+    input: { scores?: PlayerEvaluationScores; createdAt?: Date },
+  ): Promise<PersistedPlayerEvaluation> {
+    const { count } = await this.prisma.playerEvaluationRecord.updateMany({
+      where: { id, educatorId },
+      data: {
+        ...(input.scores !== undefined ? { scores: input.scores as unknown as Prisma.InputJsonValue } : {}),
+        ...(input.createdAt !== undefined ? { createdAt: input.createdAt } : {}),
+      },
+    });
+    if (count === 0) {
+      throw new PlayerEvaluationNotFoundError();
+    }
+    const record = await this.prisma.playerEvaluationRecord.findUniqueOrThrow({ where: { id } });
+    return toPersistedPlayerEvaluation(record);
   }
 
   async remove(id: string, educatorId: string): Promise<void> {

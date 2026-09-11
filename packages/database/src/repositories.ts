@@ -27,6 +27,10 @@ export interface EducatorRecord {
   // tuteur/joueur, `linkedPlayerId` renseigné, ne voit que le suivi de ce joueur.
   role?: AccountRole;
   linkedPlayerId?: string | null;
+  // Rempli une fois le lien de confirmation (envoyé à l'inscription) cliqué. Optionnel comme
+  // `role`/`linkedPlayerId` : absent = compte créé avant cette fonctionnalité, traité comme non
+  // confirmé côté affichage sans casser les faux de test existants.
+  emailVerifiedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,6 +55,22 @@ export interface PlayerInviteRepository {
   create(input: { educatorId: string; playerId: string; tokenHash: string; expiresAt: Date }): Promise<PlayerInviteRecord>;
   findByTokenHash(tokenHash: string): Promise<PlayerInviteRecord | null>;
   findActiveForPlayer(playerId: string): Promise<PlayerInviteRecord | null>;
+  markConsumed(id: string): Promise<void>;
+}
+
+// Lien de confirmation envoyé par e-mail à l'inscription. Même forme que PlayerInviteRecord.
+export interface EmailVerificationRecord {
+  id: string;
+  educatorId: string;
+  tokenHash: string;
+  expiresAt: Date;
+  consumedAt: Date | null;
+  createdAt: Date;
+}
+
+export interface EmailVerificationRepository {
+  create(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<EmailVerificationRecord>;
+  findByTokenHash(tokenHash: string): Promise<EmailVerificationRecord | null>;
   markConsumed(id: string): Promise<void>;
 }
 
@@ -104,6 +124,7 @@ export interface EducatorRepository {
   findByEmail(email: string): Promise<EducatorAuthRecord | null>;
   // Compte "player" lié à ce joueur, s'il existe (0..1 via l'unique sur linked_player_id).
   findByLinkedPlayerId(playerId: string): Promise<EducatorRecord | null>;
+  markEmailVerified(id: string): Promise<void>;
 }
 
 // Lecture/écriture de la fiche profil et du mot de passe -- interface distincte d'EducatorRepository
@@ -273,6 +294,11 @@ export interface PersistedMatch {
   educatorId: string;
   opponent: string;
   dateLabel: string;
+  // Rendez-vous et lieu précis, distincts de `dateLabel` -- voir le commentaire sur le modèle
+  // Prisma. `null` si le coach ne les a pas renseignés.
+  meetingTime: string | null;
+  location: string | null;
+  description: string | null;
   venue: MatchVenue;
   gameFormat: GameFormat;
   // Toujours une valeur concrète : résolue par le mapper (voir toPersistedMatch) sur la
@@ -281,6 +307,9 @@ export interface PersistedMatch {
   status: MatchStatus;
   lineup: readonly MatchLineupAssignment[];
   captainPlayerId: string | null;
+  // Sur le banc, sans poste. Toujours un tableau concret : `undefined` en base (match préparé
+  // avant l'introduction du banc) résolu en `[]` par le mapper, comme `formationId`.
+  substitutePlayerIds: readonly string[];
   // Distincte de `lineup` (qui est *prévu* à quel poste) : un joueur prévu peut ne pas s'être
   // présenté, et inversement. Même convention `undefined`/tableau vide que
   // PersistedTrainingSession.attendance ci-dessus.
@@ -294,7 +323,16 @@ export interface MatchRepository {
   findById(id: string, educatorId: string): Promise<PersistedMatch | null>;
   create(
     educatorId: string,
-    input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: GameFormat; formationId: string },
+    input: {
+      opponent: string;
+      dateLabel: string;
+      venue: MatchVenue;
+      gameFormat: GameFormat;
+      formationId: string;
+      meetingTime?: string | null;
+      location?: string | null;
+      description?: string | null;
+    },
   ): Promise<PersistedMatch>;
   update(
     id: string,
@@ -307,7 +345,11 @@ export interface MatchRepository {
       status?: MatchStatus;
       lineup?: readonly MatchLineupAssignment[];
       captainPlayerId?: string | null;
+      substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
+      meetingTime?: string | null;
+      location?: string | null;
+      description?: string | null;
     },
   ): Promise<PersistedMatch>;
   remove(id: string, educatorId: string): Promise<void>;
@@ -360,5 +402,13 @@ export interface PlayerEvaluationRepository {
   listByPlayer(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation[]>;
   countByPlayer(playerId: string, educatorId: string): Promise<number>;
   create(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation>;
+  // `undefined` = champ non touché ; jamais retiré une fois posé, mêmes conventions que
+  // MatchRepository.update ci-dessus. `createdAt` sert de date d'évaluation modifiable (voir
+  // PlayerEvaluationService.update) -- pas une simple trace d'audit dans ce contexte.
+  update(
+    id: string,
+    educatorId: string,
+    input: { scores?: PlayerEvaluationScores; createdAt?: Date },
+  ): Promise<PersistedPlayerEvaluation>;
   remove(id: string, educatorId: string): Promise<void>;
 }

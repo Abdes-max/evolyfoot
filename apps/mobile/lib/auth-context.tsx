@@ -27,6 +27,7 @@ export interface MobileMatch {
   status: MatchStatus;
   lineup: MatchLineupAssignment[];
   captainPlayerId: string | null;
+  substitutePlayerIds: string[];
 }
 
 export type AuthResult = { ok: true } | { ok: false; error: string };

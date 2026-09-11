@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { RadarChart } from "../../charts";
+import { colorForEvaluation } from "../../evaluation-colors";
 
 interface Player {
   id: string;
@@ -96,8 +97,15 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [photoBusy, setPhotoBusy] = useState(false);
 
   const [newScores, setNewScores] = useState<PlayerEvaluationScores>(midpointScores);
+  const [newDate, setNewDate] = useState(() => new Date().toISOString().slice(0, 10));
+  // Non-vide = le formulaire modifie cette évaluation existante plutôt que d'en créer une
+  // nouvelle (PATCH au lieu de POST, voir saveEvaluation).
+  const [editingEvaluationId, setEditingEvaluationId] = useState<string | null>(null);
   const [addingEvaluation, setAddingEvaluation] = useState(false);
   const [evaluationError, setEvaluationError] = useState("");
+  // Évaluations superposées sur le radar (voir RadarChart.series) -- la plus récente y est déjà
+  // par défaut, comparer les autres est un choix explicite plutôt qu'un graphe surchargé d'emblée.
+  const [comparedEvaluationIds, setComparedEvaluationIds] = useState<ReadonlySet<string>>(new Set());
 
   const [inviteUrl, setInviteUrl] = useState("");
   const [inviteError, setInviteError] = useState("");
@@ -133,7 +141,9 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
           return;
         }
         setPlayer(found);
-        setEvaluations(evaluationsResponse.ok ? (evaluationsBody.evaluations ?? []) : []);
+        const loadedEvaluations: Evaluation[] = evaluationsResponse.ok ? (evaluationsBody.evaluations ?? []) : [];
+        setEvaluations(loadedEvaluations);
+        setComparedEvaluationIds(loadedEvaluations[0] ? new Set([loadedEvaluations[0].id]) : new Set());
         setStatus("ready");
       } catch {
         if (!cancelled) {
@@ -220,23 +230,61 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
     setPhotoBusy(false);
   }
 
-  async function addEvaluation(event: FormEvent) {
+  function startEditingEvaluation(evaluation: Evaluation) {
+    setEditingEvaluationId(evaluation.id);
+    setNewScores(evaluation.scores);
+    setNewDate(evaluation.createdAt.slice(0, 10));
+    setEvaluationError("");
+  }
+
+  function cancelEditingEvaluation() {
+    setEditingEvaluationId(null);
+    setNewScores(midpointScores());
+    setNewDate(new Date().toISOString().slice(0, 10));
+    setEvaluationError("");
+  }
+
+  function toggleCompare(evaluationId: string) {
+    setComparedEvaluationIds((current) => {
+      const next = new Set(current);
+      if (next.has(evaluationId)) {
+        next.delete(evaluationId);
+      } else {
+        next.add(evaluationId);
+      }
+      return next;
+    });
+  }
+
+  async function saveEvaluation(event: FormEvent) {
     event.preventDefault();
     setAddingEvaluation(true);
     setEvaluationError("");
     try {
-      const response = await fetch("/api/player-evaluations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ playerId, scores: newScores }),
-      });
+      const editingId = editingEvaluationId;
+      const response = editingId
+        ? await fetch(`/api/player-evaluations/${editingId}`, {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ scores: newScores, date: new Date(newDate).toISOString() }),
+          })
+        : await fetch("/api/player-evaluations", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ playerId, scores: newScores, date: new Date(newDate).toISOString() }),
+          });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         setEvaluationError(typeof body.error === "string" ? body.error : "L’enregistrement a échoué.");
         return;
       }
-      setEvaluations((current) => [body.evaluation, ...current]);
-      setNewScores(midpointScores());
+      setEvaluations((current) => {
+        const next = editingId ? current.filter((evaluation) => evaluation.id !== editingId) : current;
+        // Toujours re-triée par date décroissante : modifier la date d'une évaluation peut
+        // changer sa place dans l'historique, pas seulement sa note.
+        return [...next, body.evaluation].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      });
+      cancelEditingEvaluation();
     } catch {
       setEvaluationError("L’enregistrement a échoué, réessaie.");
     } finally {
@@ -281,6 +329,17 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
 
   async function removeEvaluation(evaluationId: string) {
     setEvaluations((current) => current.filter((evaluation) => evaluation.id !== evaluationId));
+    setComparedEvaluationIds((current) => {
+      if (!current.has(evaluationId)) {
+        return current;
+      }
+      const next = new Set(current);
+      next.delete(evaluationId);
+      return next;
+    });
+    if (editingEvaluationId === evaluationId) {
+      cancelEditingEvaluation();
+    }
     try {
       await fetch(`/api/player-evaluations/${evaluationId}`, { method: "DELETE" });
     } catch {
@@ -436,70 +495,120 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                 </span>
               </div>
 
-              <div className="player-evaluation">
-                <form className="player-evaluation-form" onSubmit={addEvaluation}>
-                  {playerEvaluationAspects.map((aspect) => (
-                    <div className="player-evaluation-row" key={aspect}>
-                      <span>{playerEvaluationAspectLabels[aspect]}</span>
-                      <input
-                        aria-label={playerEvaluationAspectLabels[aspect]}
-                        max={playerEvaluationMaxScore}
-                        min={playerEvaluationMinScore}
-                        onChange={(event) =>
-                          setNewScores((current) => ({ ...current, [aspect]: Number(event.target.value) }))
-                        }
-                        type="range"
-                        value={newScores[aspect]}
-                      />
-                      <strong>{newScores[aspect]}</strong>
-                    </div>
-                  ))}
-                  {evaluationError && (
-                    <p className="player-error" role="alert">
-                      {evaluationError}
-                    </p>
-                  )}
-                  <button className="player-primary" disabled={addingEvaluation} type="submit">
-                    {addingEvaluation ? "Enregistrement…" : "Enregistrer cette évaluation"}
-                  </button>
-                </form>
-
-                <div className="player-evaluation-radar">
+              <div className="player-evaluation-layout">
+                <div className="player-evaluation-radar player-evaluation-radar-big">
                   <RadarChart
                     axes={radarAxes}
                     max={playerEvaluationMaxScore}
                     min={playerEvaluationMinScore}
-                    scores={latest ? latest.scores : newScores}
+                    size={340}
+                    series={
+                      comparedEvaluationIds.size > 0
+                        ? evaluations
+                            .filter((evaluation) => comparedEvaluationIds.has(evaluation.id))
+                            .map((evaluation) => ({
+                              key: evaluation.id,
+                              label: formatDate(evaluation.createdAt),
+                              color: colorForEvaluation(evaluation.id, evaluations),
+                              scores: evaluation.scores,
+                            }))
+                        : undefined
+                    }
+                    scores={comparedEvaluationIds.size === 0 ? (latest ? latest.scores : newScores) : undefined}
                   />
-                  <p className="player-radar-caption">
-                    {latest ? `Dernière évaluation · ${formatDate(latest.createdAt)}` : "Aperçu de la note en cours de saisie"}
-                  </p>
+                  {comparedEvaluationIds.size === 0 && (
+                    <p className="player-radar-caption">
+                      {latest ? `Dernière évaluation · ${formatDate(latest.createdAt)}` : "Aperçu de la note en cours de saisie"}
+                    </p>
+                  )}
+                </div>
+
+                <div className="player-evaluation-columns">
+                <div>
+                  <h3>{editingEvaluationId ? "Modifier l’évaluation" : "Nouvelle évaluation"}</h3>
+                  <form className="player-evaluation-form" onSubmit={saveEvaluation}>
+                    <label className="player-evaluation-date">
+                      <span>Date</span>
+                      <input onChange={(event) => setNewDate(event.target.value)} required type="date" value={newDate} />
+                    </label>
+                    {playerEvaluationAspects.map((aspect) => (
+                      <div className="player-evaluation-row" key={aspect}>
+                        <span>{playerEvaluationAspectLabels[aspect]}</span>
+                        <input
+                          aria-label={playerEvaluationAspectLabels[aspect]}
+                          max={playerEvaluationMaxScore}
+                          min={playerEvaluationMinScore}
+                          onChange={(event) =>
+                            setNewScores((current) => ({ ...current, [aspect]: Number(event.target.value) }))
+                          }
+                          type="range"
+                          value={newScores[aspect]}
+                        />
+                        <strong>{newScores[aspect]}</strong>
+                      </div>
+                    ))}
+                    {evaluationError && (
+                      <p className="player-error" role="alert">
+                        {evaluationError}
+                      </p>
+                    )}
+                    <div className="player-evaluation-form-actions">
+                      <button className="player-primary" disabled={addingEvaluation} type="submit">
+                        {addingEvaluation ? "Enregistrement…" : editingEvaluationId ? "Enregistrer les modifications" : "Enregistrer cette évaluation"}
+                      </button>
+                      {editingEvaluationId && (
+                        <button onClick={cancelEditingEvaluation} type="button">
+                          Annuler
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+
+                <div>
+                  <h3>Historique</h3>
+                  {evaluations.length === 0 ? (
+                    <p className="player-evaluation-empty">Aucune évaluation pour l’instant.</p>
+                  ) : (
+                    <ul className="player-evaluation-history">
+                      {evaluations.map((evaluation) => {
+                        const total = playerEvaluationAspects.reduce((sum, aspect) => sum + evaluation.scores[aspect], 0);
+                        const average = Math.round((total / playerEvaluationAspects.length) * 10) / 10;
+                        const compared = comparedEvaluationIds.has(evaluation.id);
+                        return (
+                          <li key={evaluation.id}>
+                            <label className="player-evaluation-compare">
+                              <input checked={compared} onChange={() => toggleCompare(evaluation.id)} type="checkbox" />
+                              <span
+                                aria-hidden="true"
+                                className="radar-chart-legend-dot"
+                                style={{ background: compared ? colorForEvaluation(evaluation.id, evaluations) : "transparent" }}
+                              />
+                            </label>
+                            <div>
+                              <strong>{formatDate(evaluation.createdAt)}</strong>
+                              <span>Moyenne {average}/{playerEvaluationMaxScore}</span>
+                            </div>
+                            <div className="player-evaluation-history-actions">
+                              <button onClick={() => startEditingEvaluation(evaluation)} type="button">
+                                Modifier
+                              </button>
+                              <button
+                                aria-label={`Retirer l’évaluation du ${formatDate(evaluation.createdAt)}`}
+                                onClick={() => removeEvaluation(evaluation.id)}
+                                type="button"
+                              >
+                                Retirer
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
                 </div>
               </div>
-
-              {evaluations.length > 0 && (
-                <ul className="player-evaluation-history">
-                  {evaluations.map((evaluation) => {
-                    const total = playerEvaluationAspects.reduce((sum, aspect) => sum + evaluation.scores[aspect], 0);
-                    const average = Math.round((total / playerEvaluationAspects.length) * 10) / 10;
-                    return (
-                      <li key={evaluation.id}>
-                        <div>
-                          <strong>{formatDate(evaluation.createdAt)}</strong>
-                          <span>Moyenne {average}/{playerEvaluationMaxScore}</span>
-                        </div>
-                        <button
-                          aria-label={`Retirer l’évaluation du ${formatDate(evaluation.createdAt)}`}
-                          onClick={() => removeEvaluation(evaluation.id)}
-                          type="button"
-                        >
-                          Retirer
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
             </div>
 
             <div className="player-block">

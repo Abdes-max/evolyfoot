@@ -1,10 +1,11 @@
-import { PlayerNotFoundError, ValidationError } from "@evolyfoot/database";
+import { PlayerEvaluationNotFoundError, PlayerNotFoundError, ValidationError } from "@evolyfoot/database";
 import { createEmptyPlayerEvaluationScores } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
 import {
   createAddPlayerEvaluationHandler,
   createListPlayerEvaluationsHandler,
   createRemovePlayerEvaluationHandler,
+  createUpdatePlayerEvaluationHandler,
   type PlayerEvaluationGateway,
   type PlayerEvaluationSummary,
 } from "./player-evaluation";
@@ -103,6 +104,47 @@ describe("createAddPlayerEvaluationHandler", () => {
       () => undefined,
     );
     expect((await missing(request("POST", "https://evolyfoot.test/api/player-evaluations", { playerId: "p1", scores }))).status).toBe(404);
+  });
+});
+
+describe("createUpdatePlayerEvaluationHandler", () => {
+  it("requires authentication", async () => {
+    const handler = createUpdatePlayerEvaluationHandler(anonymous, { update: async () => { throw new Error("not called"); } }, () => undefined);
+    expect((await handler(request("PATCH", "https://evolyfoot.test/api/player-evaluations/eval-1", { scores }), "eval-1")).status).toBe(401);
+  });
+
+  it("rejects a body with neither scores nor date", async () => {
+    const handler = createUpdatePlayerEvaluationHandler(authenticated, { update: async () => { throw new Error("not called"); } }, () => undefined);
+    expect((await handler(request("PATCH", "https://evolyfoot.test/api/player-evaluations/eval-1", {}), "eval-1")).status).toBe(400);
+  });
+
+  it("forwards a scores-only or date-only update to the gateway", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<PlayerEvaluationGateway, "update"> = {
+      update: async (educatorId, evaluationId, input) => {
+        received.push({ educatorId, evaluationId, input });
+        return summary;
+      },
+    };
+    const handler = createUpdatePlayerEvaluationHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(
+      request("PATCH", "https://evolyfoot.test/api/player-evaluations/eval-1", { date: "2026-01-15T00:00:00.000Z" }),
+      "eval-1",
+    );
+    expect(response.status).toBe(200);
+    expect(received).toEqual([
+      { educatorId: educator.id, evaluationId: "eval-1", input: { scores: undefined, date: "2026-01-15T00:00:00.000Z" } },
+    ]);
+  });
+
+  it("maps an unknown evaluation to a 404", async () => {
+    const handler = createUpdatePlayerEvaluationHandler(
+      authenticated,
+      { update: async () => { throw new PlayerEvaluationNotFoundError(); } },
+      () => undefined,
+    );
+    expect((await handler(request("PATCH", "https://evolyfoot.test/api/player-evaluations/eval-1", { scores }), "eval-1")).status).toBe(404);
   });
 });
 

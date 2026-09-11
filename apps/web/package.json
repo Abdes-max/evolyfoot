@@ -17,12 +17,14 @@
     "@evolyfoot/database": "workspace:*",
     "@evolyfoot/domain": "workspace:*",
     "next": "16.3.1",
+    "nodemailer": "9.0.3",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "latest",
+    "@types/nodemailer": "8.0.1",
     "@vitejs/plugin-react": "6.0.4",
     "@evolyfoot/typescript-config": "workspace:*",
     "@types/node": "latest",

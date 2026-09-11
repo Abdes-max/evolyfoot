@@ -30,6 +30,7 @@ function toMatchPlan(match: MobileMatch): MatchPlan {
     status: match.status,
     lineup: match.lineup,
     captainPlayerId: match.captainPlayerId,
+    substitutePlayerIds: match.substitutePlayerIds,
   };
 }
 

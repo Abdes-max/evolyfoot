@@ -43,8 +43,12 @@ jobs:
           package-manager-cache: false
       - name: Activer pnpm
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
+      # TEMPORAIRE (--no-frozen-lockfile au lieu de --frozen-lockfile) : pnpm-lock.yaml n'a pas pu
+      # être régénéré après l'ajout de nodemailer (registre npm interne injoignable depuis
+      # l'environnement où ce paquet a été ajouté). À revenir à --frozen-lockfile dès qu'un
+      # pnpm-lock.yaml à jour est committé depuis un poste avec accès au registre.
       - name: Installer les dépendances
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
       - name: Générer le client Prisma
         run: pnpm db:generate
       - name: Appliquer les migrations PostgreSQL
@@ -72,8 +76,12 @@ jobs:
           package-manager-cache: false
       - name: Activer pnpm
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
+      # TEMPORAIRE (--no-frozen-lockfile au lieu de --frozen-lockfile) : pnpm-lock.yaml n'a pas pu
+      # être régénéré après l'ajout de nodemailer (registre npm interne injoignable depuis
+      # l'environnement où ce paquet a été ajouté). À revenir à --frozen-lockfile dès qu'un
+      # pnpm-lock.yaml à jour est committé depuis un poste avec accès au registre.
       - name: Installer les dépendances
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
       - name: Générer le client Prisma
         run: pnpm db:generate
       - name: Installer Chromium

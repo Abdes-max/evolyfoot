@@ -1,4 +1,4 @@
-import { defaultFormationId } from "@evolyfoot/domain";
+import { defaultFormationId, sortTrainingDays } from "@evolyfoot/domain";
 import type {
   AgeGroup as DomainAgeGroup,
   AttendanceEntry,
@@ -27,6 +27,7 @@ import {
 import type {
   Diagnostic,
   Educator,
+  EmailVerification as PrismaEmailVerification,
   MatchRecord as PrismaMatchRecord,
   ObservationRecord as PrismaObservationRecord,
   PlateauRecord as PrismaPlateauRecord,
@@ -42,6 +43,7 @@ import type {
   EducatorAuthRecord,
   EducatorProfile,
   EducatorRecord,
+  EmailVerificationRecord,
   PlayerInviteRecord,
   PersistedDiagnostic,
   PersistedMatch,
@@ -236,6 +238,7 @@ export function toEducatorRecord(educator: Educator): EducatorRecord {
     // valeur inattendue, jamais "player" par erreur.
     role: educator.role === "player" ? "player" : "coach",
     linkedPlayerId: educator.linkedPlayerId,
+    emailVerifiedAt: educator.emailVerifiedAt,
     createdAt: educator.createdAt,
     updatedAt: educator.updatedAt,
   });
@@ -250,6 +253,17 @@ export function toPlayerInviteRecord(invite: PrismaPlayerInvite): PlayerInviteRe
     expiresAt: invite.expiresAt,
     consumedAt: invite.consumedAt,
     createdAt: invite.createdAt,
+  });
+}
+
+export function toEmailVerificationRecord(verification: PrismaEmailVerification): EmailVerificationRecord {
+  return Object.freeze({
+    id: verification.id,
+    educatorId: verification.educatorId,
+    tokenHash: verification.tokenHash,
+    expiresAt: verification.expiresAt,
+    consumedAt: verification.consumedAt,
+    createdAt: verification.createdAt,
   });
 }
 
@@ -344,6 +358,9 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     educatorId: record.educatorId,
     opponent: record.opponent,
     dateLabel: record.dateLabel,
+    meetingTime: record.meetingTime,
+    location: record.location,
+    description: record.description,
     venue: fromPrismaMatchVenue(record.venue),
     // Un entier borné en base, pas un enum Postgres, même principe que `Team.gameFormat` : la
     // validation du domaine garantit qu'une valeur 4-11 est seule persistée ici.
@@ -354,6 +371,7 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     status: fromPrismaMatchStatus(record.status),
     lineup: record.lineup as unknown as readonly MatchLineupAssignment[],
     captainPlayerId: record.captainPlayerId,
+    substitutePlayerIds: (record.substitutePlayerIds as unknown as readonly string[] | null) ?? [],
     attendance: toAttendanceEntries(record.attendance),
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
@@ -404,7 +422,11 @@ export function toPersistedTeamProfile(team: Team): PersistedTeamProfile {
     gameFormat: team.gameFormat as GameFormat,
     playerCount: team.playerCount,
     sessionsPerWeek: team.sessionsPerWeek,
-    trainingDays: team.trainingDays.map(fromPrismaTrainingDay),
+    // Trié dans l'ordre canonique de la semaine (voir sortTrainingDays côté domaine) : l'ordre
+    // stocké en base est celui de la saisie, pas garanti chronologique (constaté : "Mercredi,
+    // Vendredi, Mardi" pour une équipe créée avant ce tri), alors que la page Séances et le
+    // calendrier hebdomadaire en dépendent pour numéroter les créneaux correctement.
+    trainingDays: sortTrainingDays(team.trainingDays.map(fromPrismaTrainingDay)),
   });
 
   return Object.freeze({

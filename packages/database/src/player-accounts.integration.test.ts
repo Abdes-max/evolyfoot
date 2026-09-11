@@ -10,11 +10,13 @@ import { hashPassword } from "./password";
 import {
   PrismaEducatorRepository,
   PrismaMatchRepository,
+  PrismaPlateauRepository,
   PrismaPlayerEvaluationRepository,
   PrismaPlayerInviteRepository,
   PrismaPlayerRepository,
   PrismaSessionRepository,
   PrismaTeamRepository,
+  PrismaTournamentRepository,
   PrismaTrainingSessionRepository,
 } from "./prisma-repositories";
 
@@ -33,6 +35,8 @@ const teamRepository = new PrismaTeamRepository(database.prisma);
 const trainingSessionRepository = new PrismaTrainingSessionRepository(database.prisma);
 const matchRepository = new PrismaMatchRepository(database.prisma);
 const playerEvaluationRepository = new PrismaPlayerEvaluationRepository(database.prisma);
+const plateauRepository = new PrismaPlateauRepository(database.prisma);
+const tournamentRepository = new PrismaTournamentRepository(database.prisma);
 
 const authService = new AuthService(educatorRepository, sessionRepository);
 const inviteService = new PlayerInviteService(
@@ -49,6 +53,8 @@ const dashboardService = new PlayerDashboardService(
   trainingSessionRepository,
   matchRepository,
   playerEvaluationRepository,
+  plateauRepository,
+  tournamentRepository,
 );
 const evaluationService = new PlayerEvaluationService(educatorRepository, playerRepository, playerEvaluationRepository);
 
@@ -133,10 +139,16 @@ describe("PostgreSQL player accounts", () => {
     });
     const account = await authService.getPlayerAccountForSession(session.sessionToken);
 
+    await plateauRepository.create(coach.id, { name: "Plateau de rentrée", dateLabel: "14 septembre 2026" });
+    await tournamentRepository.create(coach.id, { name: "Tournoi U12", dateLabel: "21 septembre 2026" });
+
     const dashboard = await dashboardService.get(account!.id);
     expect(dashboard.player).toMatchObject({ id: player.id, name: "Ada" });
     expect(dashboard.evaluations).toHaveLength(1);
     expect(dashboard.evaluations[0]!.scores.technique).toBe(8);
+    expect(dashboard.competitions).toHaveLength(2);
+    expect(dashboard.competitions.map((competition) => competition.type).sort()).toEqual(["plateau", "tournoi"]);
+    expect(dashboard.competitions.find((competition) => competition.type === "plateau")?.name).toBe("Plateau de rentrée");
 
     // Un compte coach n'a pas de tableau de bord joueur.
     await expect(dashboardService.get(coach.id)).rejects.toBeTruthy();

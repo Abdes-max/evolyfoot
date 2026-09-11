@@ -1,6 +1,17 @@
 import type { AgeGroup } from "./index";
 export const ageGroups: readonly AgeGroup[] = ["U10", "U11", "U12", "U13"];
 export type TrainingDay = "Lundi" | "Mardi" | "Mercredi" | "Jeudi" | "Vendredi";
+// Ordre canonique de la semaine (lundi en premier) -- l'ordre dans lequel les jours ont été
+// cliqués à la création/modification de l'équipe n'est pas garanti être celui-là (ex. "Mercredi,
+// Vendredi, Mardi"), alors que tout ce qui affiche ou numérote ces jours (page Séances,
+// calendrier hebdomadaire, génération des séances par créneau) suppose un ordre chronologique.
+// Voir sortTrainingDays, appliqué à l'écriture (createTeamProfile) et à la lecture
+// (toPersistedTeamProfile côté base) pour couvrir aussi les équipes déjà enregistrées.
+const trainingDayOrder: readonly TrainingDay[] = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
+
+export function sortTrainingDays(days: readonly TrainingDay[]): TrainingDay[] {
+  return [...days].sort((a, b) => trainingDayOrder.indexOf(a) - trainingDayOrder.indexOf(b));
+}
 export type GameFormat = 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 export const gameFormats: readonly GameFormat[] = [4, 5, 6, 7, 8, 9, 10, 11];
 export interface TeamProfile {
@@ -25,5 +36,5 @@ export function validateTeamProfile(profile: TeamProfile): TeamProfileErrors {
 }
 export function createTeamProfile(profile: TeamProfile): TeamProfile {
   if (Object.keys(validateTeamProfile(profile)).length) throw new Error("Le profil d’équipe est incomplet.");
-  return { ...profile, name: profile.name.trim(), trainingDays: [...profile.trainingDays] };
+  return { ...profile, name: profile.name.trim(), trainingDays: sortTrainingDays(profile.trainingDays) };
 }

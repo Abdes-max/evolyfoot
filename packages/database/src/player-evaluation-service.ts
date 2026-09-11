@@ -49,6 +49,28 @@ export class PlayerEvaluationService {
     return this.playerEvaluationRepository.create(educatorId, playerId, scores);
   }
 
+  // Modifie une évaluation existante -- note et/ou date. `date` reste optionnelle : une
+  // correction de note seule n'a pas besoin de retoucher la date, et inversement.
+  async update(
+    educatorId: string,
+    evaluationId: string,
+    input: { scores?: PlayerEvaluationScores; date?: Date },
+  ): Promise<PersistedPlayerEvaluation> {
+    if (input.scores !== undefined) {
+      const error = validatePlayerEvaluationScores(input.scores);
+      if (error) {
+        throw new ValidationError(error);
+      }
+    }
+    if (input.date !== undefined && Number.isNaN(input.date.getTime())) {
+      throw new ValidationError("Indique une date valide.");
+    }
+    return this.playerEvaluationRepository.update(evaluationId, educatorId, {
+      scores: input.scores,
+      createdAt: input.date,
+    });
+  }
+
   async remove(educatorId: string, evaluationId: string): Promise<void> {
     await this.playerEvaluationRepository.remove(evaluationId, educatorId);
   }

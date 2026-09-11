@@ -69,6 +69,7 @@ export class AuthService {
       displayName: record.displayName,
       role: record.role,
       linkedPlayerId: record.linkedPlayerId,
+      emailVerifiedAt: record.emailVerifiedAt,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     };

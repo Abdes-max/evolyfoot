@@ -58,6 +58,11 @@ model Educator {
   // "coach" | "player". `getEducatorForSession` ne résout que les comptes "coach", donc les
   // routes API éducateur rejettent automatiquement un jeton de compte joueur.
   role              String                   @default("coach")
+  // Rempli quand le lien reçu par e-mail à l'inscription a été cliqué. `null` = compte non
+  // encore confirmé (la session existe déjà -- on ne bloque pas la connexion, voir
+  // EmailVerificationService -- mais l'appli affiche un rappel tant que c'est vide).
+  emailVerifiedAt   DateTime?                @map("email_verified_at")
+  emailVerifications EmailVerification[]
   // Renseigné uniquement pour un compte "player" : le joueur suivi (dans l'effectif d'un coach).
   linkedPlayerId    String?                  @unique @db.Uuid @map("linked_player_id")
   linkedPlayer      Player?                  @relation("PlayerFollowers", fields: [linkedPlayerId], references: [id], onDelete: Cascade)
@@ -247,6 +252,22 @@ model PlayerInvite {
   @@map("player_invites")
 }
 
+// Lien de confirmation envoyé par e-mail à l'inscription. Même forme que PlayerInvite (token à
+// usage unique, expiration, consommation) : un éducateur peut en avoir plusieurs au fil du temps
+// (nouvelle demande après expiration), seule la plus récente non consommée est active.
+model EmailVerification {
+  id         String    @id @default(uuid()) @db.Uuid
+  educatorId String    @db.Uuid @map("educator_id")
+  educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([educatorId])
+  @@map("email_verifications")
+}
+
 // Préparation d'un match : composition positionnée sur le terrain (`lineup`, voir
 // MatchLineupAssignment côté domaine) et capitaine. CRUD complet comme `Player` (pas un
 // historique append-only comme TrainingSessionRecord/ObservationRecord) : la composition se
@@ -260,6 +281,14 @@ model MatchRecord {
   educator        Educator            @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   opponent        String
   dateLabel       String              @map("date_label")
+  // Rendez-vous (avant le coup d'envoi -- échauffement...) et adresse précise, distincts de
+  // `dateLabel` (l'heure/le jour du match lui-même, en texte libre). Tous deux optionnels : un
+  // match créé avant leur introduction, ou dont le coach n'a pas encore précisé ces détails, n'en
+  // a pas -- la page de détail du joueur/tuteur (/joueur/matches/:id) les affiche seulement s'ils
+  // existent.
+  meetingTime     String?             @map("meeting_time")
+  location        String?
+  description     String?
   venue           MatchVenue
   gameFormat      Int                 @map("game_format")
   // Identifiant de la formation choisie (ex. "4-3-3", voir listFormations côté domaine) parmi
@@ -270,6 +299,9 @@ model MatchRecord {
   status          MatchStatus         @default(scheduled)
   lineup          Json                @default("[]")
   captainPlayerId String?             @map("captain_player_id")
+  // Sur le banc, sans poste -- tableau d'ids joueur (voir MatchPlan.substitutePlayerIds côté
+  // domaine). Nullable : un match préparé avant l'introduction du banc n'en a pas.
+  substitutePlayerIds Json?           @map("substitute_player_ids")
   // Présence à ce match -- distincte de `lineup` (qui joueur est *prévu* à quel poste) : un
   // joueur peut être prévu dans la composition et ne pas s'être présenté, ou inversement.
   // Nullable pour la même raison que TrainingSessionRecord.attendance ci-dessus.

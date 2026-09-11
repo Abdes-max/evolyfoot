@@ -5,37 +5,14 @@ import {
   playerEvaluationAspects,
   playerEvaluationMaxScore,
   playerEvaluationMinScore,
-  type PlayerEvaluationScores,
 } from "@evolyfoot/domain";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DonutChart, RadarChart } from "../../charts";
-
-interface Evaluation {
-  id: string;
-  scores: PlayerEvaluationScores;
-  createdAt: string;
-}
-
-interface DashboardMatch {
-  id: string;
-  opponent: string;
-  dateLabel: string;
-  venue: "home" | "away";
-  convoked: boolean;
-}
-
-interface Dashboard {
-  player: { id: string; name: string; photo: string | null };
-  team: { name: string; ageGroup: string; trainingDays: string[] } | null;
-  evaluations: Evaluation[];
-  trainingAttendance: { present: number; absent: number; total: number; rate: number };
-  matchAttendance: { present: number; absent: number; total: number; rate: number };
-  upcomingMatches: DashboardMatch[];
-}
+import { colorForEvaluation } from "../../evaluation-colors";
+import { PlayerSpaceHeader } from "../player-space-header";
+import { usePlayerDashboard } from "./use-player-dashboard";
 
 const radarAxes = playerEvaluationAspects.map((aspect) => ({ key: aspect, label: playerEvaluationAspectLabels[aspect] }));
-const venueLabel = { home: "Domicile", away: "Extérieur" } as const;
 
 function formatDate(iso: string): string {
   const parsed = new Date(iso);
@@ -44,56 +21,42 @@ function formatDate(iso: string): string {
     : parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
-async function logout() {
-  try {
-    await fetch("/api/auth/logout", { method: "POST" });
-  } finally {
-    window.location.href = "/connexion";
-  }
-}
-
+// Onglet "Mon enfant" (voir player-tab-bar.tsx) : identité, évaluations et présence -- tout ce qui
+// décrit le joueur lui-même. Le calendrier et les convocations vivent sur l'onglet Calendrier
+// (/joueur/calendrier), pour ne pas surcharger cette page.
 export function PlayerSpaceView() {
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const { status, dashboard } = usePlayerDashboard();
+  // Évaluations superposées sur le radar -- même mécanisme que côté coach (player-detail-view.tsx),
+  // en lecture seule ici : pas d'ajout/modification/retrait, juste comparer.
+  const [comparedEvaluationIds, setComparedEvaluationIds] = useState<ReadonlySet<string>>(new Set());
+  const [seededCompare, setSeededCompare] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const response = await fetch("/api/joueur");
-        const body = await response.json().catch(() => ({ dashboard: null }));
-        if (cancelled) {
-          return;
-        }
-        if (response.ok && body.dashboard) {
-          setDashboard(body.dashboard);
-          setStatus("ready");
-        } else {
-          setStatus("error");
-        }
-      } catch {
-        if (!cancelled) {
-          setStatus("error");
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Par défaut, seule la dernière évaluation est comparée -- posé au premier rendu où le
+  // classement est connu plutôt qu'en useEffect (react-hooks/set-state-in-effect, voir
+  // auth-gate.tsx) : un simple indicateur `seededCompare` évite de réinitialiser la sélection à
+  // chaque re-rendu une fois que l'utilisateur a lui-même coché/décoché une case.
+  if (!seededCompare && dashboard?.evaluations[0]) {
+    setComparedEvaluationIds(new Set([dashboard.evaluations[0].id]));
+    setSeededCompare(true);
+  }
 
   const latest = dashboard?.evaluations[0];
 
+  function toggleCompare(evaluationId: string) {
+    setComparedEvaluationIds((current) => {
+      const next = new Set(current);
+      if (next.has(evaluationId)) {
+        next.delete(evaluationId);
+      } else {
+        next.add(evaluationId);
+      }
+      return next;
+    });
+  }
+
   return (
     <div className="player-space">
-      <header className="player-space-header">
-        <Link className="onboarding-brand" href="/joueur">
-          <span className="brand-mark">E</span> EvolyFoot
-        </Link>
-        <button className="player-space-logout" onClick={logout} type="button">
-          Se déconnecter
-        </button>
-      </header>
+      <PlayerSpaceHeader />
 
       <main className="player-space-content">
         {status === "loading" && <p className="player-space-note">Chargement…</p>}
@@ -128,17 +91,41 @@ export function PlayerSpaceView() {
                     axes={radarAxes}
                     max={playerEvaluationMaxScore}
                     min={playerEvaluationMinScore}
-                    scores={latest.scores}
+                    size={300}
+                    series={
+                      comparedEvaluationIds.size > 0
+                        ? dashboard.evaluations
+                            .filter((evaluation) => comparedEvaluationIds.has(evaluation.id))
+                            .map((evaluation) => ({
+                              key: evaluation.id,
+                              label: formatDate(evaluation.createdAt),
+                              color: colorForEvaluation(evaluation.id, dashboard.evaluations),
+                              scores: evaluation.scores,
+                            }))
+                        : undefined
+                    }
+                    scores={comparedEvaluationIds.size === 0 ? latest.scores : undefined}
                   />
                   <div>
-                    <p className="player-space-caption">Dernière évaluation · {formatDate(latest.createdAt)}</p>
+                    {comparedEvaluationIds.size === 0 && (
+                      <p className="player-space-caption">Dernière évaluation · {formatDate(latest.createdAt)}</p>
+                    )}
                     {dashboard.evaluations.length > 1 && (
                       <ul className="player-space-history">
-                        {dashboard.evaluations.slice(1).map((evaluation) => {
+                        {dashboard.evaluations.map((evaluation) => {
                           const total = playerEvaluationAspects.reduce((sum, aspect) => sum + evaluation.scores[aspect], 0);
                           const average = Math.round((total / playerEvaluationAspects.length) * 10) / 10;
+                          const compared = comparedEvaluationIds.has(evaluation.id);
                           return (
                             <li key={evaluation.id}>
+                              <label className="player-evaluation-compare">
+                                <input checked={compared} onChange={() => toggleCompare(evaluation.id)} type="checkbox" />
+                                <span
+                                  aria-hidden="true"
+                                  className="radar-chart-legend-dot"
+                                  style={{ background: compared ? colorForEvaluation(evaluation.id, dashboard.evaluations) : "transparent" }}
+                                />
+                              </label>
                               {formatDate(evaluation.createdAt)} · moyenne {average}/{playerEvaluationMaxScore}
                             </li>
                           );
@@ -184,34 +171,6 @@ export function PlayerSpaceView() {
                 )}
               </section>
             </div>
-
-            {dashboard.team && dashboard.team.trainingDays.length > 0 && (
-              <section className="player-space-block">
-                <h2>Cette semaine</h2>
-                <p className="player-space-days">
-                  Entraînement : {dashboard.team.trainingDays.join(", ")}.
-                </p>
-              </section>
-            )}
-
-            <section className="player-space-block">
-              <h2>Mes convocations</h2>
-              {dashboard.upcomingMatches.length === 0 ? (
-                <p className="player-space-empty">Aucun match à venir.</p>
-              ) : (
-                <ul className="player-space-matches">
-                  {dashboard.upcomingMatches.map((match) => (
-                    <li className={match.convoked ? "convoked" : ""} key={match.id}>
-                      <strong>{match.opponent}</strong>
-                      <span>
-                        {match.dateLabel} · {venueLabel[match.venue]}
-                      </span>
-                      <span className="player-space-tag">{match.convoked ? "Convoqué" : "Pas encore dans le groupe"}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
           </>
         )}
       </main>

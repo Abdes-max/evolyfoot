@@ -41,6 +41,9 @@ export interface MatchPlan {
   readonly status: MatchStatus;
   readonly lineup: ReadonlyArray<MatchLineupAssignment>;
   readonly captainPlayerId: string | null;
+  // Sur le banc, sans poste (pas de position sur le terrain) -- un joueur ne peut être à la fois
+  // titulaire et remplaçant, voir addSubstitute/assignPlayerToSlot.
+  readonly substitutePlayerIds: ReadonlyArray<string>;
 }
 
 const roleLabels: Record<LineupRole, string> = {
@@ -77,43 +80,52 @@ const formationDefinitionsByGameFormat: Record<GameFormat, ReadonlyArray<Formati
   4: [
     { id: "1-1-1", label: "1-1-1", rows: outfieldRows(1, 1, 1) },
     { id: "2-1-0", label: "2-1-0", rows: outfieldRows(2, 1, 0) },
+    { id: "2-0-1", label: "2-0-1", rows: outfieldRows(2, 0, 1) },
   ],
   5: [
     { id: "2-1-1", label: "2-1-1", rows: outfieldRows(2, 1, 1) },
     { id: "1-2-1", label: "1-2-1", rows: outfieldRows(1, 2, 1) },
     { id: "1-1-2", label: "1-1-2", rows: outfieldRows(1, 1, 2) },
+    { id: "2-0-2", label: "2-0-2", rows: outfieldRows(2, 0, 2) },
   ],
   6: [
     { id: "2-2-1", label: "2-2-1", rows: outfieldRows(2, 2, 1) },
     { id: "2-1-2", label: "2-1-2", rows: outfieldRows(2, 1, 2) },
     { id: "1-3-1", label: "1-3-1", rows: outfieldRows(1, 3, 1) },
+    { id: "3-1-1", label: "3-1-1", rows: outfieldRows(3, 1, 1) },
   ],
   7: [
     { id: "2-3-1", label: "2-3-1", rows: outfieldRows(2, 3, 1) },
     { id: "3-2-1", label: "3-2-1", rows: outfieldRows(3, 2, 1) },
     { id: "2-2-2", label: "2-2-2", rows: outfieldRows(2, 2, 2) },
+    { id: "3-1-2", label: "3-1-2", rows: outfieldRows(3, 1, 2) },
   ],
   8: [
     { id: "3-3-1", label: "3-3-1", rows: outfieldRows(3, 3, 1) },
     { id: "2-3-2", label: "2-3-2", rows: outfieldRows(2, 3, 2) },
     { id: "3-2-2", label: "3-2-2", rows: outfieldRows(3, 2, 2) },
     { id: "2-4-1", label: "2-4-1", rows: outfieldRows(2, 4, 1) },
+    { id: "4-2-1", label: "4-2-1", rows: outfieldRows(4, 2, 1) },
   ],
   9: [
     { id: "3-3-2", label: "3-3-2", rows: outfieldRows(3, 3, 2) },
     { id: "3-4-1", label: "3-4-1", rows: outfieldRows(3, 4, 1) },
     { id: "4-3-1", label: "4-3-1", rows: outfieldRows(4, 3, 1) },
+    { id: "2-4-2", label: "2-4-2", rows: outfieldRows(2, 4, 2) },
   ],
   10: [
     { id: "4-3-2", label: "4-3-2", rows: outfieldRows(4, 3, 2) },
     { id: "3-4-2", label: "3-4-2", rows: outfieldRows(3, 4, 2) },
     { id: "4-4-1", label: "4-4-1", rows: outfieldRows(4, 4, 1) },
+    { id: "3-3-3", label: "3-3-3", rows: outfieldRows(3, 3, 3) },
   ],
   11: [
     { id: "4-3-3", label: "4-3-3", rows: outfieldRows(4, 3, 3) },
     { id: "4-4-2", label: "4-4-2", rows: outfieldRows(4, 4, 2) },
     { id: "3-5-2", label: "3-5-2", rows: outfieldRows(3, 5, 2) },
     { id: "3-4-3", label: "3-4-3", rows: outfieldRows(3, 4, 3) },
+    { id: "4-5-1", label: "4-5-1", rows: outfieldRows(4, 5, 1) },
+    { id: "5-3-2", label: "5-3-2", rows: outfieldRows(5, 3, 2) },
   ],
 };
 
@@ -170,6 +182,7 @@ export function createMatchPlan(
     status: "scheduled",
     lineup: [],
     captainPlayerId: null,
+    substitutePlayerIds: [],
   };
 }
 
@@ -185,7 +198,24 @@ function withoutSlotAndPlayer(
 
 export function assignPlayerToSlot(plan: MatchPlan, slotId: string, player: { id: string; name: string }): MatchPlan {
   const lineup = [...withoutSlotAndPlayer(plan.lineup, slotId, player.id), { slotId, playerId: player.id, playerName: player.name }];
-  return { ...plan, lineup };
+  // Un joueur passe titulaire en quittant le banc, le cas échéant.
+  const substitutePlayerIds = plan.substitutePlayerIds.filter((id) => id !== player.id);
+  return { ...plan, lineup, substitutePlayerIds };
+}
+
+// Place un joueur sur le banc -- le retire d'abord de son poste s'il en occupait un (un joueur ne
+// peut être à la fois titulaire et remplaçant), sans effet s'il y est déjà.
+export function addSubstitute(plan: MatchPlan, player: { id: string; name: string }): MatchPlan {
+  if (plan.substitutePlayerIds.includes(player.id)) {
+    return plan;
+  }
+  const lineup = plan.lineup.filter((assignment) => assignment.playerId !== player.id);
+  const captainPlayerId = plan.captainPlayerId === player.id ? null : plan.captainPlayerId;
+  return { ...plan, lineup, captainPlayerId, substitutePlayerIds: [...plan.substitutePlayerIds, player.id] };
+}
+
+export function removeSubstitute(plan: MatchPlan, playerId: string): MatchPlan {
+  return { ...plan, substitutePlayerIds: plan.substitutePlayerIds.filter((id) => id !== playerId) };
 }
 
 export function clearSlot(plan: MatchPlan, slotId: string): MatchPlan {

@@ -1,6 +1,7 @@
 import { demoFocus, nextSession } from "@evolyfoot/domain";
 import Link from "next/link";
 import { SidebarNav } from "../sidebar-nav";
+import { TodayDate } from "../today-date";
 import { WeeklyCalendar } from "../weekly-calendar";
 
 const priorities = [
@@ -15,7 +16,7 @@ export default function Home() {
       <SidebarNav />
 
       <section className="content">
-        <header className="topbar"><div><span className="date">LUNDI 17 AOÛT</span><h1>Bonjour Abdes,</h1><p>Voici l&apos;essentiel pour faire progresser ton équipe cette semaine.</p></div><button className="bell" aria-label="Notifications">Notifications</button></header>
+        <header className="topbar"><div><TodayDate /><h1>Bonjour Abdes,</h1><p>Voici l&apos;essentiel pour faire progresser ton équipe cette semaine.</p></div><button className="bell" aria-label="Notifications">Notifications</button></header>
 
         <section className="hero-grid">
           {/* aria-label court plutôt que laisser le lecteur d'écran énoncer tout le contenu de la

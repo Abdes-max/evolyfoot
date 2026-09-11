@@ -178,4 +178,62 @@ describe("PostgreSQL match persistence", () => {
 
     await expect(database.prisma.matchRecord.count({ where: { educatorId: educator.id } })).resolves.toBe(0);
   });
+
+  it("crée un match sans rendez-vous/lieu/description par défaut, tous les trois optionnels à la création", async () => {
+    const educator = await createEducator("details-default");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+
+    expect(match.meetingTime).toBeNull();
+    expect(match.location).toBeNull();
+    expect(match.description).toBeNull();
+  });
+
+  it("accepte rendez-vous/lieu/description à la création", async () => {
+    const educator = await createEducator("details-create");
+    const match = await service.create(educator.id, {
+      opponent: "US Vallée",
+      dateLabel: "Samedi",
+      venue: "home",
+      gameFormat: 8,
+      meetingTime: "14:30",
+      location: "Stade Marius Requier, Aix-en-Provence",
+      description: "Brassage journée 1 (triangulaire)",
+    });
+
+    expect(match.meetingTime).toBe("14:30");
+    expect(match.location).toBe("Stade Marius Requier, Aix-en-Provence");
+    expect(match.description).toBe("Brassage journée 1 (triangulaire)");
+  });
+
+  it("modifie rendez-vous/lieu/description indépendamment de la composition, même une fois le match joué", async () => {
+    const educator = await createEducator("details-update");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+
+    const updated = await service.updateDetails(educator.id, match.id, { location: "Stade Marius Requier" });
+    expect(updated.location).toBe("Stade Marius Requier");
+    expect(updated.meetingTime).toBeNull();
+
+    await database.prisma.matchRecord.update({ where: { id: match.id }, data: { status: "played" } });
+    const afterPlayed = await service.updateDetails(educator.id, match.id, { meetingTime: "14:30" });
+    expect(afterPlayed.meetingTime).toBe("14:30");
+    expect(afterPlayed.location).toBe("Stade Marius Requier");
+  });
+
+  it("efface un champ de détail avec une chaîne vide ou null", async () => {
+    const educator = await createEducator("details-clear");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8, location: "Stade X" });
+
+    const cleared = await service.updateDetails(educator.id, match.id, { location: "  " });
+    expect(cleared.location).toBeNull();
+  });
+
+  it("rejette la modification des détails d’un match appartenant à un autre éducateur", async () => {
+    const owner = await createEducator("details-owner");
+    const stranger = await createEducator("details-stranger");
+    const match = await service.create(owner.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+
+    await expect(
+      service.updateDetails(stranger.id, match.id, { location: "Ailleurs" }),
+    ).rejects.toBeInstanceOf(MatchNotFoundError);
+  });
 });
