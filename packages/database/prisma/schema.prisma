@@ -362,15 +362,20 @@ model MatchRecord {
 // `date` : même principe que MatchRecord ci-dessus (jour calendaire, nullable pour les fiches
 // créées avant son introduction), pour trier/regrouper tournois et plateaux avec matchs et
 // séances.
+// `location`/`description` : mêmes champs libres que MatchRecord, modifiables indépendamment
+// depuis la fiche détail (voir MatchService.updateDetails) -- affiche tournois/plateaux sous la
+// même forme qu'un match (fiche cliquable, lieu, description).
 model TournamentRecord {
-  id         String    @id @default(uuid()) @db.Uuid
-  educatorId String    @db.Uuid @map("educator_id")
-  educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  name       String
-  dateLabel  String    @map("date_label")
-  date       DateTime?
-  result     String?
-  createdAt  DateTime  @default(now()) @map("created_at")
+  id          String    @id @default(uuid()) @db.Uuid
+  educatorId  String    @db.Uuid @map("educator_id")
+  educator    Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  name        String
+  dateLabel   String    @map("date_label")
+  date        DateTime?
+  location    String?
+  description String?
+  result      String?
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   @@index([educatorId])
   @@map("tournaments")
@@ -379,14 +384,16 @@ model TournamentRecord {
 // Fiche simple d'un plateau (rassemblement U6–U11) -- même forme que TournamentRecord, comptée à
 // part dans /statistiques.
 model PlateauRecord {
-  id         String    @id @default(uuid()) @db.Uuid
-  educatorId String    @db.Uuid @map("educator_id")
-  educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  name       String
-  dateLabel  String    @map("date_label")
-  date       DateTime?
-  result     String?
-  createdAt  DateTime  @default(now()) @map("created_at")
+  id          String    @id @default(uuid()) @db.Uuid
+  educatorId  String    @db.Uuid @map("educator_id")
+  educator    Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  name        String
+  dateLabel   String    @map("date_label")
+  date        DateTime?
+  location    String?
+  description String?
+  result      String?
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   @@index([educatorId])
   @@map("plateaux")

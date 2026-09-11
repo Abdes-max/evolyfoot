@@ -7,9 +7,11 @@ export {
   InvalidCredentialsError,
   MatchNotFoundError,
   ObservationNotFoundError,
+  PlateauNotFoundError,
   PlayerEvaluationNotFoundError,
   PlayerNotFoundError,
   TeamNotFoundError,
+  TournamentNotFoundError,
   TrainingSessionNotFoundError,
   ValidationError,
 } from "./errors";

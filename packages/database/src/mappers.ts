@@ -428,6 +428,8 @@ export function toPersistedTournament(record: PrismaTournamentRecord): Persisted
     name: record.name,
     dateLabel: record.dateLabel,
     date: record.date,
+    location: record.location,
+    description: record.description,
     result: record.result,
     createdAt: record.createdAt,
   });
@@ -440,6 +442,8 @@ export function toPersistedPlateau(record: PrismaPlateauRecord): PersistedPlatea
     name: record.name,
     dateLabel: record.dateLabel,
     date: record.date,
+    location: record.location,
+    description: record.description,
     result: record.result,
     createdAt: record.createdAt,
   });

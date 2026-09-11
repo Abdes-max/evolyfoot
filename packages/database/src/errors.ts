@@ -47,6 +47,20 @@ export class TrainingSessionNotFoundError extends Error {
   }
 }
 
+export class TournamentNotFoundError extends Error {
+  constructor() {
+    super("Tournoi introuvable.");
+    this.name = "TournamentNotFoundError";
+  }
+}
+
+export class PlateauNotFoundError extends Error {
+  constructor() {
+    super("Plateau introuvable.");
+    this.name = "PlateauNotFoundError";
+  }
+}
+
 export class ObservationNotFoundError extends Error {
   constructor() {
     super("Observation introuvable.");
