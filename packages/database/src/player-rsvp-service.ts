@@ -14,7 +14,7 @@ export class PlayerRsvpService {
     private readonly matchRepository: MatchRepository,
   ) {}
 
-  async respondToMatch(playerAccountId: string, matchId: string, status: AttendanceStatus): Promise<void> {
+  async respondToMatch(playerAccountId: string, matchId: string, status: AttendanceStatus, comment?: string | null): Promise<void> {
     const account = await this.educatorRepository.findById(playerAccountId);
     if (!account || account.role !== "player" || !account.linkedPlayerId) {
       throw new EducatorNotFoundError();
@@ -32,8 +32,10 @@ export class PlayerRsvpService {
       throw new ValidationError("Ce match a déjà eu lieu, la convocation n’est plus modifiable.");
     }
 
+    // Le motif détaillé n'a de sens que pour une absence -- un commentaire laissé puis un
+    // changement d'avis vers "Présent" ne doit pas laisser une justification obsolète affichée.
     const attendance = (match.attendance ?? []).filter((entry) => entry.playerId !== playerId);
-    attendance.push(createAttendanceEntry(playerId, owned.name, status));
+    attendance.push(createAttendanceEntry(playerId, owned.name, status, status === "present" ? null : comment));
     await this.matchRepository.update(matchId, owned.educatorId, { attendance });
   }
 }

@@ -4,7 +4,7 @@ import type { AttendanceStatus } from "@evolyfoot/domain";
 import type { PublicAccount } from "./auth";
 
 export interface PlayerRsvpGateway {
-  respondToMatch(playerAccountId: string, matchId: string, status: AttendanceStatus): Promise<void>;
+  respondToMatch(playerAccountId: string, matchId: string, status: AttendanceStatus, comment?: string | null): Promise<void>;
 }
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
@@ -35,11 +35,12 @@ export function createRespondToMatchHandler(
     const body = await readJsonBody(request);
     const matchId = typeof body?.matchId === "string" ? body.matchId : null;
     const status = isAttendanceStatus(body?.status) ? body.status : null;
+    const comment = typeof body?.comment === "string" && body.comment.trim() ? body.comment.trim().slice(0, 500) : null;
     if (!matchId || !status) {
       return Response.json({ error: "Match et statut sont requis." }, { status: 400 });
     }
     try {
-      await rsvp.respondToMatch(account.id, matchId, status);
+      await rsvp.respondToMatch(account.id, matchId, status, comment);
       return Response.json({ status: "ok" });
     } catch (error) {
       if (error instanceof EducatorNotFoundError) {
@@ -66,7 +67,7 @@ export async function createPlayerRsvpGateway(): Promise<{ gateway: PlayerRsvpGa
 
   return {
     gateway: {
-      respondToMatch: (playerAccountId, matchId, status) => service.respondToMatch(playerAccountId, matchId, status),
+      respondToMatch: (playerAccountId, matchId, status, comment) => service.respondToMatch(playerAccountId, matchId, status, comment),
     },
     disconnect: database.disconnect,
   };

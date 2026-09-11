@@ -511,7 +511,7 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
       },
     }),
   );
-  let rsvp: { matchId: string; status: string } | null = null;
+  let rsvp: { matchId: string; status: string; comment?: string | null } | null = null;
   await page.route("**/api/joueur/rsvp", (route) => {
     rsvp = JSON.parse(route.request().postData() ?? "{}");
     return route.fulfill({ json: { status: "ok" } });
@@ -538,7 +538,8 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect(page.getByRole("heading", { name: "Compétitions" })).toBeVisible();
   await expect(page.getByText("Plateau de rentrée")).toBeVisible();
   await expect(page.getByText("US Vallée")).toBeVisible();
-  await expect(page.getByText("Convoqué")).toBeVisible();
+  // Badge de réponse orange tant que le tuteur n'a pas répondu à la convocation.
+  await expect(page.getByText("En attente de réponse")).toBeVisible();
 
   // Réponse du joueur/tuteur à la convocation depuis "Mes convocations" : ouvre une vraie page
   // (/joueur/matches/:id), pas un panneau superposé -- et sans barre de navigation (page de
@@ -549,8 +550,13 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect(page.locator(".player-match-detail")).toContainText("Stade Marius Requier, Aix-en-Provence");
   await expect(page.locator(".player-match-detail")).toContainText("14:30");
   await expect(page.locator(".player-tab-bar")).toHaveCount(0);
-  await page.getByRole("button", { name: "Malade" }).click();
-  await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "sick" });
+  // Réponse binaire : "Absent" ouvre une popup pour préciser le motif et un commentaire à
+  // destination du coach.
+  await page.getByRole("button", { name: "Absent" }).click();
+  await page.getByLabel("Motif").selectOption("sick");
+  await page.getByLabel(/commentaire/i).fill("Fièvre depuis hier soir");
+  await page.getByRole("button", { name: "Confirmer" }).click();
+  await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "sick", comment: "Fièvre depuis hier soir" });
   await page.getByRole("link", { name: "← Retour" }).click();
   await expect(page).toHaveURL(/\/joueur$/);
 
@@ -560,7 +566,7 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect(page).toHaveURL(/\/joueur\/matches\/m1$/);
   await expect(page.locator(".player-match-detail")).toContainText("US Vallée");
   await page.getByRole("button", { name: "Présent" }).click();
-  await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "present" });
+  await expect.poll(() => rsvp).toEqual({ matchId: "m1", status: "present", comment: null });
   await page.getByRole("link", { name: "← Retour" }).click();
 
   // Onglet Messages : placeholder honnête, pas encore de messagerie.

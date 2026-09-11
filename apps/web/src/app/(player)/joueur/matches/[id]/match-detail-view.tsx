@@ -1,8 +1,11 @@
 "use client";
 
-import { attendanceStatusLabels, attendanceStatuses, type AttendanceStatus } from "@evolyfoot/domain";
+import type { AttendanceStatus } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useState } from "react";
+import { ClockIcon, NoteIcon, PinIcon } from "../../../event-icons";
+import { MapEmbed } from "../../../map-embed";
+import { RsvpControl } from "../../../rsvp-control";
 import { usePlayerDashboard } from "../../use-player-dashboard";
 
 const venueLabel = { home: "Match à domicile", away: "Match à l’extérieur" } as const;
@@ -18,7 +21,7 @@ export function MatchDetailView({ matchId }: { matchId: string }) {
   const found = dashboard?.upcomingMatches.find((candidate) => candidate.id === matchId);
   const match = found && myStatusOverride ? { ...found, myStatus: myStatusOverride } : found;
 
-  async function respond(nextStatus: AttendanceStatus) {
+  async function respond(nextStatus: AttendanceStatus, comment: string | null) {
     if (!match) {
       return;
     }
@@ -29,7 +32,7 @@ export function MatchDetailView({ matchId }: { matchId: string }) {
       await fetch("/api/joueur/rsvp", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ matchId, status: nextStatus }),
+        body: JSON.stringify({ matchId, status: nextStatus, comment }),
       });
     } catch {
       // Repli silencieux : une nouvelle tentative (ou un rechargement) confirmera ou corrigera.
@@ -65,37 +68,34 @@ export function MatchDetailView({ matchId }: { matchId: string }) {
 
             <dl className="player-match-detail-facts">
               <div>
-                <dt>Rendez-vous</dt>
+                <dt>
+                  <ClockIcon /> Rendez-vous
+                </dt>
                 <dd>{match.meetingTime ? `${match.dateLabel} · ${match.meetingTime}` : match.dateLabel}</dd>
               </div>
               {match.location && (
                 <div>
-                  <dt>Lieu</dt>
+                  <dt>
+                    <PinIcon /> Lieu
+                  </dt>
                   <dd>{match.location}</dd>
                 </div>
               )}
             </dl>
 
-            {match.description && <p className="player-match-detail-description">{match.description}</p>}
+            {match.location && <MapEmbed address={match.location} />}
+
+            {match.description && (
+              <p className="player-match-detail-description">
+                <NoteIcon /> {match.description}
+              </p>
+            )}
 
             <p className="player-space-tag">{match.convoked ? "Convoqué" : "Pas encore dans le groupe"}</p>
 
             <div className="player-match-detail-rsvp">
               <p>Ta réponse</p>
-              <div className="player-match-detail-rsvp-options">
-                {attendanceStatuses.map((option) => (
-                  <button
-                    aria-pressed={match.myStatus === option}
-                    className={match.myStatus === option ? "choice active" : "choice"}
-                    disabled={responding}
-                    key={option}
-                    onClick={() => respond(option)}
-                    type="button"
-                  >
-                    {attendanceStatusLabels[option]}
-                  </button>
-                ))}
-              </div>
+              <RsvpControl disabled={responding} onRespond={respond} status={match.myStatus} />
             </div>
           </section>
         )}

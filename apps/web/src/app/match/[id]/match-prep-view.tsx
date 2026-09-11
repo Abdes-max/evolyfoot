@@ -3,6 +3,7 @@
 import {
   addSubstitute,
   assignPlayerToSlot,
+  attendanceStatusLabels,
   canFinalizeMatchPlan,
   clearSlot,
   formationSlots,
@@ -505,12 +506,22 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               <ul className="match-attendance-list">
                 {roster.map((player) => {
                   const present = !absentPlayerIds.has(player.id);
+                  // Réponse déjà laissée par le joueur/tuteur à sa convocation (voir
+                  // match-detail-view.tsx côté joueur) -- motif et commentaire éventuel, tant que
+                  // la vraie messagerie coach ↔ joueur n'existe pas encore.
+                  const rsvp = match.attendance?.find((entry) => entry.playerId === player.id);
                   return (
                     <li key={player.id}>
                       <label className={present ? "" : "absent"}>
                         <input checked={present} onChange={() => toggleAttendance(player.id)} type="checkbox" />
                         {player.name}
                       </label>
+                      {rsvp?.status && rsvp.status !== "present" && (
+                        <p className="match-attendance-rsvp">
+                          {attendanceStatusLabels[rsvp.status]}
+                          {rsvp.comment && <> — « {rsvp.comment} »</>}
+                        </p>
+                      )}
                     </li>
                   );
                 })}
