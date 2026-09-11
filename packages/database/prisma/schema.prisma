@@ -316,6 +316,12 @@ model MatchRecord {
   educator        Educator            @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   opponent        String
   dateLabel       String              @map("date_label")
+  // Vraie date calendaire (jour, pas d'heure -- voir meetingTime pour le rendez-vous), dérivée du
+  // datepicker de création et utilisée pour trier/regrouper par semaine (voir
+  // PlayerDashboardService et les pages listes côté coach). Nullable : un match créé avant
+  // l'introduction de ce champ n'en a pas, seul `dateLabel` (texte libre saisi à l'époque) reste
+  // fiable pour lui.
+  date            DateTime?
   // Rendez-vous (avant le coup d'envoi -- échauffement...) et adresse précise, distincts de
   // `dateLabel` (l'heure/le jour du match lui-même, en texte libre). Tous deux optionnels : un
   // match créé avant leur introduction, ou dont le coach n'a pas encore précisé ces détails, n'en
@@ -351,14 +357,18 @@ model MatchRecord {
 
 // Fiche simple (nom, date, bilan) comptée à part des matchs dans /statistiques -- pas de
 // composition ni de matchs individuels rattachés, contrairement à MatchRecord.
+// `date` : même principe que MatchRecord ci-dessus (jour calendaire, nullable pour les fiches
+// créées avant son introduction), pour trier/regrouper tournois et plateaux avec matchs et
+// séances.
 model TournamentRecord {
-  id         String   @id @default(uuid()) @db.Uuid
-  educatorId String   @db.Uuid @map("educator_id")
-  educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  id         String    @id @default(uuid()) @db.Uuid
+  educatorId String    @db.Uuid @map("educator_id")
+  educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   name       String
-  dateLabel  String   @map("date_label")
+  dateLabel  String    @map("date_label")
+  date       DateTime?
   result     String?
-  createdAt  DateTime @default(now()) @map("created_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   @@index([educatorId])
   @@map("tournaments")
@@ -367,13 +377,14 @@ model TournamentRecord {
 // Fiche simple d'un plateau (rassemblement U6–U11) -- même forme que TournamentRecord, comptée à
 // part dans /statistiques.
 model PlateauRecord {
-  id         String   @id @default(uuid()) @db.Uuid
-  educatorId String   @db.Uuid @map("educator_id")
-  educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  id         String    @id @default(uuid()) @db.Uuid
+  educatorId String    @db.Uuid @map("educator_id")
+  educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   name       String
-  dateLabel  String   @map("date_label")
+  dateLabel  String    @map("date_label")
+  date       DateTime?
   result     String?
-  createdAt  DateTime @default(now()) @map("created_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   @@index([educatorId])
   @@map("plateaux")

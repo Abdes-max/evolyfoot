@@ -399,6 +399,7 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     educatorId: record.educatorId,
     opponent: record.opponent,
     dateLabel: record.dateLabel,
+    date: record.date,
     meetingTime: record.meetingTime,
     location: record.location,
     description: record.description,
@@ -425,6 +426,7 @@ export function toPersistedTournament(record: PrismaTournamentRecord): Persisted
     educatorId: record.educatorId,
     name: record.name,
     dateLabel: record.dateLabel,
+    date: record.date,
     result: record.result,
     createdAt: record.createdAt,
   });
@@ -436,6 +438,7 @@ export function toPersistedPlateau(record: PrismaPlateauRecord): PersistedPlatea
     educatorId: record.educatorId,
     name: record.name,
     dateLabel: record.dateLabel,
+    date: record.date,
     result: record.result,
     createdAt: record.createdAt,
   });

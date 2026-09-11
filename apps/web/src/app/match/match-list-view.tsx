@@ -5,12 +5,14 @@ import type { GameFormat, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { frenchDateLabel, parseDateInputValue, sortChronologically } from "../date-format";
 import { CompetitionsPanel } from "./competitions-panel";
 
 interface MatchSummary {
   id: string;
   opponent: string;
   dateLabel: string;
+  date: string | null;
   venue: MatchVenue;
   gameFormat: number;
   status: MatchStatus;
@@ -35,7 +37,9 @@ export function MatchListView() {
   const [matches, setMatches] = useState<MatchSummary[]>([]);
   const [creating, setCreating] = useState(false);
   const [opponent, setOpponent] = useState("");
-  const [dateLabel, setDateLabel] = useState("");
+  // "YYYY-MM-DD" (valeur brute d'un <input type="date">) -- dateLabel ("Samedi 12 septembre")
+  // est dérivé automatiquement à l'envoi, voir createMatch ci-dessous.
+  const [dateInput, setDateInput] = useState("");
   const [venue, setVenue] = useState<MatchVenue>("home");
   const [gameFormat, setGameFormat] = useState<GameFormat>(8);
   // `null` tant que le coach n'a pas explicitement choisi une formation : reprend la première du
@@ -91,10 +95,18 @@ export function MatchListView() {
     setSubmitting(true);
     setCreateError("");
     try {
+      const date = parseDateInputValue(dateInput);
       const response = await fetch("/api/matches", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ opponent, dateLabel, venue, gameFormat, formationId }),
+        body: JSON.stringify({
+          opponent,
+          dateLabel: date ? frenchDateLabel(date) : dateInput,
+          date: date ? date.toISOString() : null,
+          venue,
+          gameFormat,
+          formationId,
+        }),
       });
       if (!response.ok) {
         setCreateError(await readErrorMessage(response));
@@ -112,9 +124,6 @@ export function MatchListView() {
   return (
     <main className="match-shell">
       <header className="page-header match-header">
-        <Link className="onboarding-brand" href="/app">
-          <span className="brand-mark">E</span> EvolyFoot
-        </Link>
         <div>
           <span className="eyebrow light">MATCHS &amp; COMPÉTITIONS</span>
           <h1 title="Prépare tes matchs, note tes compétitions.">Prépare tes matchs, note tes compétitions.</h1>
@@ -147,7 +156,7 @@ export function MatchListView() {
                 </label>
                 <label>
                   Date
-                  <input onChange={(event) => setDateLabel(event.target.value)} placeholder="Ex. Samedi 12 septembre · 10:30" value={dateLabel} />
+                  <input onChange={(event) => setDateInput(event.target.value)} required type="date" value={dateInput} />
                 </label>
               </div>
               <div className="form-row">
@@ -210,7 +219,7 @@ export function MatchListView() {
             <p className="match-empty">Aucun match préparé pour l’instant.</p>
           ) : (
             <ul className="match-list" aria-label="Matchs">
-              {matches.map((match) => (
+              {sortChronologically(matches, (match) => (match.date ? new Date(match.date) : null)).map((match) => (
                 <li key={match.id}>
                   <Link
                     aria-label={`${match.opponent} — ${match.status === "played" ? "Voir la composition" : "Préparer la composition"}`}

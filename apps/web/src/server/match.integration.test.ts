@@ -18,6 +18,7 @@ const match: MatchSummary = {
   id: "match-1",
   opponent: "US Vallée",
   dateLabel: "Samedi",
+  date: null,
   meetingTime: null,
   location: null,
   description: null,

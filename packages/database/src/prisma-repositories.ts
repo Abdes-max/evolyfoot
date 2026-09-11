@@ -593,6 +593,7 @@ export class PrismaMatchRepository implements MatchRepository {
       venue: MatchVenue;
       gameFormat: GameFormat;
       formationId: string;
+      date?: Date | null;
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
@@ -604,6 +605,7 @@ export class PrismaMatchRepository implements MatchRepository {
           educatorId,
           opponent: input.opponent,
           dateLabel: input.dateLabel,
+          date: input.date ?? null,
           venue: toPrismaMatchVenue(input.venue),
           gameFormat: input.gameFormat,
           formationId: input.formationId,
@@ -627,6 +629,7 @@ export class PrismaMatchRepository implements MatchRepository {
     input: {
       opponent?: string;
       dateLabel?: string;
+      date?: Date | null;
       venue?: MatchVenue;
       formationId?: string;
       status?: MatchStatus;
@@ -647,6 +650,7 @@ export class PrismaMatchRepository implements MatchRepository {
         ...(input.location !== undefined ? { location: input.location } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.dateLabel !== undefined ? { dateLabel: input.dateLabel } : {}),
+        ...(input.date !== undefined ? { date: input.date } : {}),
         ...(input.venue !== undefined ? { venue: toPrismaMatchVenue(input.venue) } : {}),
         ...(input.formationId !== undefined ? { formationId: input.formationId } : {}),
         ...(input.status !== undefined ? { status: toPrismaMatchStatus(input.status) } : {}),
@@ -681,9 +685,9 @@ export class PrismaTournamentRepository implements TournamentRepository {
     return records.map(toPersistedTournament);
   }
 
-  async create(educatorId: string, input: { name: string; dateLabel: string; result?: string }): Promise<PersistedTournament> {
+  async create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedTournament> {
     const record = await this.prisma.tournamentRecord.create({
-      data: { educatorId, name: input.name, dateLabel: input.dateLabel, result: input.result ?? null },
+      data: { educatorId, name: input.name, dateLabel: input.dateLabel, date: input.date ?? null, result: input.result ?? null },
     });
     return toPersistedTournament(record);
   }
@@ -705,9 +709,9 @@ export class PrismaPlateauRepository implements PlateauRepository {
     return records.map(toPersistedPlateau);
   }
 
-  async create(educatorId: string, input: { name: string; dateLabel: string; result?: string }): Promise<PersistedPlateau> {
+  async create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedPlateau> {
     const record = await this.prisma.plateauRecord.create({
-      data: { educatorId, name: input.name, dateLabel: input.dateLabel, result: input.result ?? null },
+      data: { educatorId, name: input.name, dateLabel: input.dateLabel, date: input.date ?? null, result: input.result ?? null },
     });
     return toPersistedPlateau(record);
   }

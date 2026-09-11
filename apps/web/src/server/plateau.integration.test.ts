@@ -14,6 +14,7 @@ const summary: PlateauSummary = {
   id: "plateau-1",
   name: "Plateau de rentrée",
   dateLabel: "14 septembre 2026",
+  date: null,
   result: null,
   createdAt: "2026-09-10T00:00:00.000Z",
 };

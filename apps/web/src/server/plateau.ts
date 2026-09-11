@@ -5,13 +5,14 @@ export interface PlateauSummary {
   id: string;
   name: string;
   dateLabel: string;
+  date: string | null;
   result: string | null;
   createdAt: string;
 }
 
 export interface PlateauGateway {
   list(educatorId: string): Promise<PlateauSummary[]>;
-  create(educatorId: string, input: { name: string; dateLabel: string; result?: string }): Promise<PlateauSummary>;
+  create(educatorId: string, input: { name: string; dateLabel: string; date?: string | null; result?: string }): Promise<PlateauSummary>;
   remove(educatorId: string, plateauId: string): Promise<void>;
 }
 
@@ -67,13 +68,14 @@ export function createCreatePlateauHandler(
     const body = await readJsonBody(request);
     const name = typeof body?.name === "string" ? body.name : null;
     const dateLabel = typeof body?.dateLabel === "string" ? body.dateLabel : null;
+    const date = typeof body?.date === "string" ? body.date : null;
     const result = typeof body?.result === "string" ? body.result : undefined;
     if (name === null || dateLabel === null) {
       return Response.json({ error: "Nom et date sont requis." }, { status: 400 });
     }
 
     try {
-      const plateau = await plateaux.create(educator.id, { name, dateLabel, result });
+      const plateau = await plateaux.create(educator.id, { name, dateLabel, date, result });
       return Response.json({ plateau }, { status: 201 });
     } catch (error) {
       return errorResponse(error, log);
@@ -112,6 +114,7 @@ export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway;
       id: plateau.id,
       name: plateau.name,
       dateLabel: plateau.dateLabel,
+      date: plateau.date ? plateau.date.toISOString() : null,
       result: plateau.result,
       createdAt: plateau.createdAt.toISOString(),
     };
@@ -123,7 +126,7 @@ export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway;
         return (await service.list(educatorId)).map(toSummary);
       },
       async create(educatorId, input) {
-        return toSummary(await service.create(educatorId, input));
+        return toSummary(await service.create(educatorId, { ...input, date: input.date ? new Date(input.date) : null }));
       },
       remove(educatorId, plateauId) {
         return service.remove(educatorId, plateauId);

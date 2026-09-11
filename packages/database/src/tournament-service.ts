@@ -13,7 +13,7 @@ export class TournamentService {
     return this.tournamentRepository.listByEducator(educatorId);
   }
 
-  async create(educatorId: string, input: TournamentInput): Promise<PersistedTournament> {
+  async create(educatorId: string, input: TournamentInput & { date?: Date | null }): Promise<PersistedTournament> {
     const errors = validateTournament(input);
     if (Object.keys(errors).length > 0) {
       throw new ValidationError(Object.values(errors)[0]!);
@@ -25,6 +25,7 @@ export class TournamentService {
     return this.tournamentRepository.create(educatorId, {
       name: input.name.trim(),
       dateLabel: input.dateLabel.trim(),
+      date: input.date ?? null,
       ...(result ? { result } : {}),
     });
   }

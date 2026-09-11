@@ -6,6 +6,9 @@ export interface MatchSummary {
   id: string;
   opponent: string;
   dateLabel: string;
+  // ISO, voir le commentaire sur PersistedMatch.date côté base -- `null` pour un match créé avant
+  // l'introduction de ce champ.
+  date: string | null;
   meetingTime: string | null;
   location: string | null;
   description: string | null;
@@ -27,6 +30,7 @@ export interface MatchGateway {
     input: {
       opponent: string;
       dateLabel: string;
+      date?: string | null;
       venue: MatchVenue;
       gameFormat: number;
       formationId?: string;
@@ -47,7 +51,7 @@ export interface MatchGateway {
   updateDetails(
     educatorId: string,
     matchId: string,
-    input: { meetingTime?: string | null; location?: string | null; description?: string | null },
+    input: { date?: string | null; meetingTime?: string | null; location?: string | null; description?: string | null },
   ): Promise<MatchSummary>;
   changeFormation(educatorId: string, matchId: string, formationId: string): Promise<MatchSummary>;
   markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<MatchSummary>;
@@ -127,6 +131,7 @@ export function createCreateMatchHandler(
     const body = await readJsonBody(request);
     const opponent = typeof body?.opponent === "string" ? body.opponent : null;
     const dateLabel = typeof body?.dateLabel === "string" ? body.dateLabel : null;
+    const date = typeof body?.date === "string" ? body.date : null;
     const venue = body?.venue === "home" || body?.venue === "away" ? body.venue : null;
     const gameFormat = typeof body?.gameFormat === "number" ? body.gameFormat : null;
     const formationId = typeof body?.formationId === "string" ? body.formationId : undefined;
@@ -141,6 +146,7 @@ export function createCreateMatchHandler(
       const match = await matches.create(educator.id, {
         opponent,
         dateLabel,
+        date,
         venue,
         gameFormat,
         formationId,
@@ -227,11 +233,12 @@ export function createUpdateMatchDetailsHandler(
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
     const body = await readJsonBody(request);
+    const date = body?.date === undefined ? undefined : isNullableString(body.date) ? body.date : null;
     const meetingTime = body?.meetingTime === undefined ? undefined : isNullableString(body.meetingTime) ? body.meetingTime : null;
     const location = body?.location === undefined ? undefined : isNullableString(body.location) ? body.location : null;
     const description = body?.description === undefined ? undefined : isNullableString(body.description) ? body.description : null;
     try {
-      return Response.json({ match: await matches.updateDetails(educator.id, matchId, { meetingTime, location, description }) });
+      return Response.json({ match: await matches.updateDetails(educator.id, matchId, { date, meetingTime, location, description }) });
     } catch (error) {
       return errorResponse(error, log);
     }
@@ -320,6 +327,7 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       id: match.id,
       opponent: match.opponent,
       dateLabel: match.dateLabel,
+      date: match.date ? match.date.toISOString() : null,
       meetingTime: match.meetingTime,
       location: match.location,
       description: match.description,
@@ -344,13 +352,19 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
         return toSummary(await service.get(educatorId, matchId));
       },
       async create(educatorId, input) {
-        return toSummary(await service.create(educatorId, input));
+        return toSummary(await service.create(educatorId, { ...input, date: input.date ? new Date(input.date) : null }));
       },
       async updateLineup(educatorId, matchId, input) {
         return toSummary(await service.updateLineup(educatorId, matchId, input));
       },
       async updateDetails(educatorId, matchId, input) {
-        return toSummary(await service.updateDetails(educatorId, matchId, input));
+        const { date, ...rest } = input;
+        return toSummary(
+          await service.updateDetails(educatorId, matchId, {
+            ...rest,
+            ...(date !== undefined ? { date: date ? new Date(date) : null } : {}),
+          }),
+        );
       },
       async changeFormation(educatorId, matchId, formationId) {
         return toSummary(await service.changeFormation(educatorId, matchId, formationId));

@@ -82,9 +82,6 @@ export function SeancesView() {
   return (
     <main className="seances-shell">
       <header className="page-header seances-header">
-        <Link className="onboarding-brand" href="/app">
-          <span className="brand-mark">E</span> EvolyFoot
-        </Link>
         <div>
           <span className="eyebrow light">Mes séances</span>
           <h1 title="Le cycle de quatre semaines, séance par séance.">Le cycle de quatre semaines, séance par séance.</h1>
