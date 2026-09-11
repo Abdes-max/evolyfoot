@@ -39,6 +39,19 @@ describe("createCreateInviteHandler", () => {
     expect((await response.json()).url).toBe("https://evolyfoot.com/rejoindre/abc123");
   });
 
+  it("builds a usable http://localhost URL in local dev, even if the request came in as https://0.0.0.0", async () => {
+    // `next dev` écoute sur toutes les interfaces sans jamais servir de TLS ; un Host
+    // "0.0.0.0:3000" (adresse d'écoute, pas une adresse joignable) ne doit jamais finir dans un
+    // lien envoyé à un tuteur.
+    const handler = createCreateInviteHandler(
+      authenticated,
+      { create: async () => ({ token: "abc123", expiresAt: "2026-09-24T00:00:00.000Z" }) },
+      () => undefined,
+    );
+    const response = await handler(request("POST", "https://0.0.0.0:3000/api/invites", { playerId: "p1" }));
+    expect((await response.json()).url).toBe("http://localhost:3000/rejoindre/abc123");
+  });
+
   it("maps 'account already exists' to 409", async () => {
     const handler = createCreateInviteHandler(
       authenticated,
