@@ -1,6 +1,6 @@
 import { EducatorNotFoundError, ValidationError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
-import { createRespondToMatchHandler } from "./player-rsvp";
+import { createRespondToMatchHandler, createRespondToTrainingSessionHandler } from "./player-rsvp";
 
 const account = { id: "account-1", email: "tuteur@example.test", displayName: "Tuteur", role: "player" as const, linkedPlayerId: "p1", emailVerified: true };
 const authenticated = async () => account;
@@ -54,5 +54,51 @@ describe("createRespondToMatchHandler", () => {
       () => undefined,
     );
     expect((await handler(request({ matchId: "m1", status: "present" }))).status).toBe(400);
+  });
+});
+
+describe("createRespondToTrainingSessionHandler", () => {
+  it("requires an authenticated player account", async () => {
+    const handler = createRespondToTrainingSessionHandler(
+      anonymous,
+      { respondToTrainingSession: async () => { throw new Error("not called"); } },
+      () => undefined,
+    );
+    expect((await handler(request({ sessionId: "s1", status: "present" }))).status).toBe(401);
+  });
+
+  it("rejects a missing sessionId or an invalid status", async () => {
+    const handler = createRespondToTrainingSessionHandler(
+      authenticated,
+      { respondToTrainingSession: async () => { throw new Error("not called"); } },
+      () => undefined,
+    );
+    expect((await handler(request({ status: "present" }))).status).toBe(400);
+    expect((await handler(request({ sessionId: "s1", status: "sur-la-lune" }))).status).toBe(400);
+  });
+
+  it("forwards a valid RSVP (with comment) to the gateway", async () => {
+    const received: unknown[] = [];
+    const handler = createRespondToTrainingSessionHandler(
+      authenticated,
+      {
+        respondToTrainingSession: async (accountId, sessionId, status, comment) => {
+          received.push({ accountId, sessionId, status, comment });
+        },
+      },
+      () => undefined,
+    );
+    const response = await handler(request({ sessionId: "s1", status: "sick", comment: "Fièvre" }));
+    expect(response.status).toBe(200);
+    expect(received).toEqual([{ accountId: "account-1", sessionId: "s1", status: "sick", comment: "Fièvre" }]);
+  });
+
+  it("maps a session belonging to no one (or not this player) to a 404", async () => {
+    const handler = createRespondToTrainingSessionHandler(
+      authenticated,
+      { respondToTrainingSession: async () => { throw new EducatorNotFoundError(); } },
+      () => undefined,
+    );
+    expect((await handler(request({ sessionId: "s1", status: "present" }))).status).toBe(404);
   });
 });

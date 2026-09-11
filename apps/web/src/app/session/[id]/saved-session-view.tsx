@@ -2,7 +2,7 @@
 
 import type { TrainingSession } from "@evolyfoot/domain";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { cycleWeekLabel } from "../cycle";
 import { rehydrateTrainingSession, type SavedTrainingSession } from "../rehydrate";
 import { SessionBuilder } from "../session-builder";
@@ -18,10 +18,35 @@ type LoadState =
   | { status: "stale" }
   | { status: "ready"; session: TrainingSession; weekNumber: number; slot: number };
 
+// "YYYY-MM-DDTHH:mm" attendu par <input type="datetime-local"> -- converti depuis/vers l'ISO
+// stocké côté base, en heure locale du navigateur (un rendez-vous se pense toujours dans le
+// fuseau du club, jamais en UTC).
+function toDatetimeLocalValue(iso: string | null): string {
+  if (!iso) {
+    return "";
+  }
+  const date = new Date(iso);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function fromDatetimeLocalValue(value: string): string | null {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 export function SavedSessionView({ sessionId }: { sessionId: string }) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [authenticated, setAuthenticated] = useState(false);
   const [roster, setRoster] = useState<RosterPlayer[]>([]);
+  const [meetingAt, setMeetingAt] = useState("");
+  const [location, setLocation] = useState("");
+  const [description, setDescription] = useState("");
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +89,9 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
           return;
         }
         setRoster(rosterBody.players ?? []);
+        setMeetingAt(toDatetimeLocalValue(record.meetingAt ?? null));
+        setLocation(record.location ?? "");
+        setDescription(record.description ?? "");
         setState({ status: "ready", session: rehydrated, weekNumber: record.weekNumber, slot: record.slot });
       } catch {
         if (!cancelled) {
@@ -76,6 +104,32 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
       cancelled = true;
     };
   }, [sessionId]);
+
+  async function saveDetails(event: FormEvent) {
+    event.preventDefault();
+    setSavingDetails(true);
+    setDetailsError(null);
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}/details`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          meetingAt: fromDatetimeLocalValue(meetingAt),
+          location: location.trim() ? location.trim() : null,
+          description: description.trim() ? description.trim() : null,
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        setDetailsError(typeof body.error === "string" ? body.error : "Une erreur est survenue.");
+        return;
+      }
+    } catch {
+      setDetailsError("Une erreur est survenue.");
+    } finally {
+      setSavingDetails(false);
+    }
+  }
 
   return (
     <main className="session-shell">
@@ -120,15 +174,48 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
       )}
 
       {state.status === "ready" && (
-        <SessionBuilder
-          authenticated={authenticated}
-          mode="edit"
-          onChange={(session) => setState({ ...state, session })}
-          roster={roster}
-          session={state.session}
-          slot={state.slot}
-          weekNumber={state.weekNumber}
-        />
+        <>
+          <SessionBuilder
+            authenticated={authenticated}
+            mode="edit"
+            onChange={(session) => setState({ ...state, session })}
+            roster={roster}
+            session={state.session}
+            slot={state.slot}
+            weekNumber={state.weekNumber}
+          />
+
+          {/* Classes réutilisées de match.css (match-details-form/-save, match-slot-hint) --
+              même formulaire que côté match, voir match-prep-view.tsx. */}
+          <form className="match-details-form" onSubmit={saveDetails}>
+            <h2>Détails</h2>
+            <p className="match-slot-hint">Affichés sur la fiche que voit le joueur/tuteur.</p>
+            <label>
+              <span>Rendez-vous</span>
+              <input onChange={(event) => setMeetingAt(event.target.value)} type="datetime-local" value={meetingAt} />
+            </label>
+            <label>
+              <span>Lieu</span>
+              <input
+                onChange={(event) => setLocation(event.target.value)}
+                placeholder="Ex. Stade Marius Requier, Aix-en-Provence"
+                value={location}
+              />
+            </label>
+            <label>
+              <span>Description</span>
+              <textarea onChange={(event) => setDescription(event.target.value)} value={description} />
+            </label>
+            {detailsError && (
+              <p className="field-error" role="alert">
+                {detailsError}
+              </p>
+            )}
+            <button className="match-details-save" disabled={savingDetails} type="submit">
+              {savingDetails ? "Enregistrement…" : "Enregistrer les détails"}
+            </button>
+          </form>
+        </>
       )}
     </main>
   );

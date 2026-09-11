@@ -1,4 +1,4 @@
-import { EducatorNotFoundError } from "@evolyfoot/database";
+import { EducatorNotFoundError, TrainingSessionNotFoundError } from "@evolyfoot/database";
 import { ageGroups, type AgeGroup, type AttendanceEntry, type DevelopmentTheme } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
@@ -25,6 +25,12 @@ export interface TrainingSessionInput {
 
 export interface PersistedTrainingSession extends TrainingSessionInput {
   id: string;
+  // Rendez-vous (vrai horodatage ISO, saisi via un datepicker+heure), lieu et description --
+  // affichés sur la fiche détail que voit le joueur/tuteur, voir le commentaire dans
+  // schema.prisma. `null` par défaut, indépendants du contenu pédagogique de la séance.
+  meetingAt: string | null;
+  location: string | null;
+  description: string | null;
   createdAt: string;
 }
 
@@ -32,6 +38,11 @@ export interface TrainingSessionGateway {
   save(educatorId: string, input: TrainingSessionInput): Promise<PersistedTrainingSession>;
   list(educatorId: string): Promise<PersistedTrainingSession[]>;
   getById(educatorId: string, id: string): Promise<PersistedTrainingSession | null>;
+  updateDetails(
+    educatorId: string,
+    id: string,
+    input: { meetingAt?: string | null; location?: string | null; description?: string | null },
+  ): Promise<PersistedTrainingSession>;
 }
 
 // Pas de constante partagée côté domaine pour les thèmes (contrairement à `ageGroups`) : on la
@@ -166,6 +177,46 @@ export function createGetTrainingSessionHandler(
   };
 }
 
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+// Rendez-vous (date + heure), lieu et description -- même principe que
+// createUpdateMatchDetailsHandler côté match : un champ absent du corps de la requête est laissé
+// intact (`undefined`), une valeur `null` explicite l'efface.
+export function createUpdateTrainingSessionDetailsHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  trainingSession: Pick<TrainingSessionGateway, "updateDetails">,
+  log: (error: unknown) => void,
+): (request: Request, id: string) => Promise<Response> {
+  return async (request, id) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const body = await readJsonBody(request);
+    const meetingAt = body?.meetingAt === undefined ? undefined : isNullableString(body.meetingAt) ? body.meetingAt : null;
+    const location = body?.location === undefined ? undefined : isNullableString(body.location) ? body.location : null;
+    const description = body?.description === undefined ? undefined : isNullableString(body.description) ? body.description : null;
+    try {
+      const session = await trainingSession.updateDetails(educator.id, id, { meetingAt, location, description });
+      return Response.json({ session });
+    } catch (error) {
+      if (error instanceof TrainingSessionNotFoundError) {
+        return Response.json({ error: error.message }, { status: 404 });
+      }
+      if (error instanceof EducatorNotFoundError) {
+        return Response.json({ error: error.message }, { status: 401 });
+      }
+      if (error instanceof Error) {
+        return Response.json({ error: error.message }, { status: 400 });
+      }
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  };
+}
+
 export async function createTrainingSessionGateway(): Promise<{
   gateway: TrainingSessionGateway;
   disconnect: () => Promise<void>;
@@ -188,6 +239,9 @@ export async function createTrainingSessionGateway(): Promise<{
     blocks: session.blocks,
     weekNumber: session.weekNumber,
     slot: session.slot,
+    meetingAt: session.meetingAt ? session.meetingAt.toISOString() : null,
+    location: session.location,
+    description: session.description,
     ...(session.attendance ? { attendance: session.attendance } : {}),
     createdAt: session.createdAt.toISOString(),
   });
@@ -203,6 +257,15 @@ export async function createTrainingSessionGateway(): Promise<{
       async getById(educatorId, id) {
         const session = await service.getById(educatorId, id);
         return session ? toSummary(session) : null;
+      },
+      async updateDetails(educatorId, id, input) {
+        return toSummary(
+          await service.updateDetails(educatorId, id, {
+            ...(input.meetingAt !== undefined ? { meetingAt: input.meetingAt ? new Date(input.meetingAt) : null } : {}),
+            ...(input.location !== undefined ? { location: input.location } : {}),
+            ...(input.description !== undefined ? { description: input.description } : {}),
+          }),
+        );
       },
     },
     disconnect: database.disconnect,

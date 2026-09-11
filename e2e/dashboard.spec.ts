@@ -506,6 +506,17 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
             },
           ],
           trainingSlots: [],
+          trainingSessions: [
+            {
+              id: "s1",
+              title: "Conserver le ballon",
+              dateLabel: "Mardi 15 septembre",
+              meetingTime: "18:00",
+              location: "Stade Marius Requier, Aix-en-Provence",
+              description: "Prévoir crampons moulés, terrain synthétique.",
+              myStatus: null,
+            },
+          ],
           competitions: [{ id: "p1", type: "plateau", name: "Plateau de rentrée", dateLabel: "Dimanche 20 septembre" }],
         },
       },
@@ -514,6 +525,11 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   let rsvp: { matchId: string; status: string; comment?: string | null } | null = null;
   await page.route("**/api/joueur/rsvp", (route) => {
     rsvp = JSON.parse(route.request().postData() ?? "{}");
+    return route.fulfill({ json: { status: "ok" } });
+  });
+  let sessionRsvp: { sessionId: string; status: string; comment?: string | null } | null = null;
+  await page.route("**/api/joueur/rsvp-seance", (route) => {
+    sessionRsvp = JSON.parse(route.request().postData() ?? "{}");
     return route.fulfill({ json: { status: "ok" } });
   });
 
@@ -538,8 +554,26 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect(page.getByRole("heading", { name: "Compétitions" })).toBeVisible();
   await expect(page.getByText("Plateau de rentrée")).toBeVisible();
   await expect(page.getByText("US Vallée")).toBeVisible();
-  // Badge de réponse orange tant que le tuteur n'a pas répondu à la convocation.
-  await expect(page.getByText("En attente de réponse")).toBeVisible();
+  // Badge de réponse orange tant que le tuteur n'a pas répondu -- une pour la séance, une pour le
+  // match, toutes deux "en attente" au départ.
+  await expect(page.getByText("En attente de réponse")).toHaveCount(2);
+
+  // "Mes séances" : même page de détail, icônes + plan de l'adresse, réponse binaire -- toujours
+  // "convoquée" (pas de composition retenue pour une séance, toute l'équipe est attendue).
+  await page.locator(".player-space-matches").getByRole("link", { name: /Conserver le ballon/ }).click();
+  await expect(page).toHaveURL(/\/joueur\/seances\/s1$/);
+  await expect(page.locator(".player-match-detail")).toContainText("Conserver le ballon");
+  await expect(page.locator(".player-match-detail")).toContainText("Stade Marius Requier, Aix-en-Provence");
+  await expect(page.locator(".player-match-detail")).toContainText("18:00");
+  await expect(page.locator(".map-embed iframe")).toBeVisible();
+  await expect(page.locator(".player-tab-bar")).toHaveCount(0);
+  await page.getByRole("button", { name: "Absent" }).click();
+  await page.getByLabel("Motif").selectOption("injured");
+  await page.getByLabel(/commentaire/i).fill("Cheville qui tire");
+  await page.getByRole("button", { name: "Confirmer" }).click();
+  await expect.poll(() => sessionRsvp).toEqual({ sessionId: "s1", status: "injured", comment: "Cheville qui tire" });
+  await page.getByRole("link", { name: "← Retour" }).click();
+  await expect(page).toHaveURL(/\/joueur\/calendrier$/);
 
   // Réponse du joueur/tuteur à la convocation depuis "Mes convocations" : ouvre une vraie page
   // (/joueur/matches/:id), pas un panneau superposé -- et sans barre de navigation (page de

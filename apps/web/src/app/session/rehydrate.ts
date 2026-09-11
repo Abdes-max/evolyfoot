@@ -12,6 +12,11 @@ export interface SavedTrainingSession {
   blocks: ReadonlyArray<{ id: string; activityId: string; durationMinutes: number }>;
   weekNumber: number;
   slot: number;
+  // Rendez-vous (ISO), lieu et description -- voir saved-session-view.tsx (formulaire "Détails").
+  // Non utilisés par la reconstruction ci-dessous, juste transportés jusqu'à l'appelant.
+  meetingAt?: string | null;
+  location?: string | null;
+  description?: string | null;
 }
 
 // Reconstruit une `TrainingSession` du domaine à partir d'un enregistrement : chaque bloc

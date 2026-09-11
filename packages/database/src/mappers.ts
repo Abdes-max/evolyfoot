@@ -329,6 +329,9 @@ export function toPersistedTrainingSession(record: PrismaTrainingSessionRecord):
     blocks: record.blocks as unknown as PersistedTrainingSessionBlock[],
     weekNumber: record.weekNumber,
     slot: record.slot,
+    meetingAt: record.meetingAt,
+    location: record.location,
+    description: record.description,
     attendance: toAttendanceEntries(record.attendance),
     createdAt: record.createdAt,
   });

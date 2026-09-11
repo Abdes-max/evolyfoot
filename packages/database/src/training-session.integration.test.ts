@@ -1,6 +1,7 @@
 import { generateTrainingSession } from "@evolyfoot/domain";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createDatabaseClient } from "./client";
+import { TrainingSessionNotFoundError } from "./errors";
 import { PrismaEducatorRepository, PrismaTrainingSessionRepository } from "./prisma-repositories";
 import { TrainingSessionService, type TrainingSessionInput } from "./training-session-service";
 
@@ -125,5 +126,49 @@ describe("PostgreSQL training session persistence", () => {
     await expect(
       database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } }),
     ).resolves.toBe(0);
+  });
+
+  it("crée une séance sans rendez-vous/lieu/description par défaut", async () => {
+    const educator = await createEducator("details-default");
+    const saved = await service.save(educator.id, validInput);
+
+    expect(saved.meetingAt).toBeNull();
+    expect(saved.location).toBeNull();
+    expect(saved.description).toBeNull();
+  });
+
+  it("modifie rendez-vous/lieu/description indépendamment du contenu pédagogique", async () => {
+    const educator = await createEducator("details-update");
+    const saved = await service.save(educator.id, validInput);
+    const meetingAt = new Date("2026-09-20T17:00:00.000Z");
+
+    const updated = await service.updateDetails(educator.id, saved.id, {
+      meetingAt,
+      location: "Stade Marius Requier",
+      description: "Séance ouverte aux parents",
+    });
+    expect(updated.meetingAt).toEqual(meetingAt);
+    expect(updated.location).toBe("Stade Marius Requier");
+    expect(updated.description).toBe("Séance ouverte aux parents");
+    expect(updated.blocks).toEqual(saved.blocks);
+  });
+
+  it("efface un champ de détail de séance avec une chaîne vide ou null", async () => {
+    const educator = await createEducator("details-clear");
+    const saved = await service.save(educator.id, validInput);
+    await service.updateDetails(educator.id, saved.id, { location: "Stade X" });
+
+    const cleared = await service.updateDetails(educator.id, saved.id, { location: "  " });
+    expect(cleared.location).toBeNull();
+  });
+
+  it("rejette la modification des détails d’une séance appartenant à un autre éducateur", async () => {
+    const owner = await createEducator("details-owner");
+    const stranger = await createEducator("details-stranger");
+    const saved = await service.save(owner.id, validInput);
+
+    await expect(
+      service.updateDetails(stranger.id, saved.id, { location: "Ailleurs" }),
+    ).rejects.toBeInstanceOf(TrainingSessionNotFoundError);
   });
 });

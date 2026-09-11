@@ -40,6 +40,13 @@ export class MatchNotFoundError extends Error {
   }
 }
 
+export class TrainingSessionNotFoundError extends Error {
+  constructor() {
+    super("Séance introuvable.");
+    this.name = "TrainingSessionNotFoundError";
+  }
+}
+
 export class ObservationNotFoundError extends Error {
   constructor() {
     super("Observation introuvable.");

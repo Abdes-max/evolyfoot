@@ -4,6 +4,7 @@ import {
   createGetTrainingSessionHandler,
   createListTrainingSessionsHandler,
   createSaveTrainingSessionHandler,
+  createUpdateTrainingSessionDetailsHandler,
   type PersistedTrainingSession,
   type TrainingSessionGateway,
   type TrainingSessionInput,
@@ -22,7 +23,14 @@ const validInput: TrainingSessionInput = {
   slot: 0,
 };
 
-const persisted: PersistedTrainingSession = { ...validInput, id: "session-1", createdAt: "2026-08-29T12:00:00.000Z" };
+const persisted: PersistedTrainingSession = {
+  ...validInput,
+  id: "session-1",
+  meetingAt: null,
+  location: null,
+  description: null,
+  createdAt: "2026-08-29T12:00:00.000Z",
+};
 
 function jsonRequest(body: unknown): Request {
   return new Request("https://evolyfoot.test/api/sessions", {
@@ -129,7 +137,7 @@ describe("createSaveTrainingSessionHandler", () => {
   it("saves and returns the session on success", async () => {
     const handler = createSaveTrainingSessionHandler(
       authenticated,
-      { save: async (_id, input) => ({ ...input, id: "session-1", createdAt: "2026-08-29T12:00:00.000Z" }) },
+      { save: async (_id, input) => ({ ...input, id: "session-1", meetingAt: null, location: null, description: null, createdAt: "2026-08-29T12:00:00.000Z" }) },
       () => undefined,
     );
 
@@ -170,5 +178,49 @@ describe("createGetTrainingSessionHandler", () => {
     const response = await handler(jsonRequest(validInput), "session-1");
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ session: persisted });
+  });
+});
+
+describe("createUpdateTrainingSessionDetailsHandler", () => {
+  it("requires authentication", async () => {
+    const handler = createUpdateTrainingSessionDetailsHandler(
+      anonymous,
+      { updateDetails: async () => { throw new Error("not called"); } },
+      () => undefined,
+    );
+    expect((await handler(jsonRequest({ location: "Stade X" }), "session-1")).status).toBe(401);
+  });
+
+  it("forwards only the provided fields, leaving the rest untouched", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<TrainingSessionGateway, "updateDetails"> = {
+      updateDetails: async (educatorId, id, input) => {
+        received.push({ educatorId, id, input });
+        return persisted;
+      },
+    };
+    const handler = createUpdateTrainingSessionDetailsHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(jsonRequest({ location: "Stade Marius Requier" }), "session-1");
+
+    expect(response.status).toBe(200);
+    expect(received).toEqual([
+      { educatorId: educator.id, id: "session-1", input: { meetingAt: undefined, location: "Stade Marius Requier", description: undefined } },
+    ]);
+  });
+
+  it("accepts null to clear a field", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<TrainingSessionGateway, "updateDetails"> = {
+      updateDetails: async (_educatorId, _id, input) => {
+        received.push(input);
+        return persisted;
+      },
+    };
+    const handler = createUpdateTrainingSessionDetailsHandler(authenticated, gateway, () => undefined);
+
+    await handler(jsonRequest({ location: null }), "session-1");
+
+    expect(received).toEqual([{ meetingAt: undefined, location: null, description: undefined }]);
   });
 });

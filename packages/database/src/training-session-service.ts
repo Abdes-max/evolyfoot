@@ -1,6 +1,6 @@
 import { ageGroups, canValidateSession, findTrainingActivity } from "@evolyfoot/domain";
 import type { AgeGroup, AttendanceEntry, DevelopmentTheme, TrainingBlock, TrainingSession } from "@evolyfoot/domain";
-import { EducatorNotFoundError, ValidationError } from "./errors";
+import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
 import type {
   EducatorRepository,
   PersistedTrainingSession,
@@ -9,6 +9,17 @@ import type {
 
 // Cycle du plan de progression : 4 semaines (voir buildDevelopmentPlan côté domaine).
 export const trainingCycleWeekCount = 4;
+
+// Champ libre facultatif (lieu, description) : une chaîne vide, absente ou déjà nulle devient
+// `null` -- même principe que MatchService.normalizeOptionalText, dupliqué ici plutôt que partagé
+// entre services (voir la duplication assumée de `developmentThemes` ci-dessous).
+function normalizeOptionalText(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
 
 export interface TrainingSessionInput {
   title: string;
@@ -103,6 +114,24 @@ export class TrainingSessionService {
       weekNumber: input.weekNumber,
       slot: input.slot,
       ...(input.attendance ? { attendance: input.attendance } : {}),
+    });
+  }
+
+  // Rendez-vous (date + heure), lieu précis et description -- modifiables indépendamment du
+  // contenu pédagogique de la séance, même principe que MatchService.updateDetails.
+  async updateDetails(
+    educatorId: string,
+    sessionId: string,
+    input: { meetingAt?: Date | null; location?: string | null; description?: string | null },
+  ): Promise<PersistedTrainingSession> {
+    const existing = await this.trainingSessionRepository.findById(sessionId, educatorId);
+    if (!existing) {
+      throw new TrainingSessionNotFoundError();
+    }
+    return this.trainingSessionRepository.update(sessionId, educatorId, {
+      ...(input.meetingAt !== undefined ? { meetingAt: input.meetingAt } : {}),
+      ...(input.location !== undefined ? { location: normalizeOptionalText(input.location) } : {}),
+      ...(input.description !== undefined ? { description: normalizeOptionalText(input.description) } : {}),
     });
   }
 }
