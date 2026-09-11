@@ -57,6 +57,8 @@ class InMemoryEducatorRepository implements EducatorRepository {
   async findByLinkedPlayerId(): Promise<null> {
     return null;
   }
+
+  async markEmailVerified(): Promise<void> {}
 }
 
 class InMemoryTrainingSessionRepository implements TrainingSessionRepository {

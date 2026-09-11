@@ -17,6 +17,7 @@ export {
   PrismaMatchRepository,
   PrismaObservationRepository,
   PrismaContactMessageRepository,
+  PrismaEmailVerificationRepository,
   PrismaPlateauRepository,
   PrismaPlayerEvaluationRepository,
   PrismaPlayerInviteRepository,
@@ -33,6 +34,7 @@ export { MatchService } from "./match-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";
 export { ContactMessageService } from "./contact-message-service";
+export { EmailVerificationService, VerificationInvalidError } from "./email-verification-service";
 export { PlateauService } from "./plateau-service";
 export { PlayerDashboardService } from "./player-dashboard-service";
 export { PlayerInviteService, InviteInvalidError, PlayerAccountExistsError } from "./player-invite-service";
@@ -48,6 +50,7 @@ export type {
   ContactMessageRecord,
   ContactMessageRepository,
 } from "./contact-message-service";
+export type { CreatedVerification } from "./email-verification-service";
 export type { EducatorProfileInput, SeasonFormat } from "./educator-profile-service";
 export type { FunnelStep, MvpMetrics, WeeklyActivityPoint } from "./metrics-service";
 export type { PlayerDashboard, PlayerDashboardMatch } from "./player-dashboard-service";
@@ -64,6 +67,8 @@ export type {
   EducatorProfileRepository,
   EducatorRecord,
   EducatorRepository,
+  EmailVerificationRecord,
+  EmailVerificationRepository,
   MatchRepository,
   ObservationRepository,
   PersistedDiagnostic,

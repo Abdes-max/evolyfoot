@@ -27,6 +27,7 @@ import {
 import type {
   Diagnostic,
   Educator,
+  EmailVerification as PrismaEmailVerification,
   MatchRecord as PrismaMatchRecord,
   ObservationRecord as PrismaObservationRecord,
   PlateauRecord as PrismaPlateauRecord,
@@ -42,6 +43,7 @@ import type {
   EducatorAuthRecord,
   EducatorProfile,
   EducatorRecord,
+  EmailVerificationRecord,
   PlayerInviteRecord,
   PersistedDiagnostic,
   PersistedMatch,
@@ -236,6 +238,7 @@ export function toEducatorRecord(educator: Educator): EducatorRecord {
     // valeur inattendue, jamais "player" par erreur.
     role: educator.role === "player" ? "player" : "coach",
     linkedPlayerId: educator.linkedPlayerId,
+    emailVerifiedAt: educator.emailVerifiedAt,
     createdAt: educator.createdAt,
     updatedAt: educator.updatedAt,
   });
@@ -250,6 +253,17 @@ export function toPlayerInviteRecord(invite: PrismaPlayerInvite): PlayerInviteRe
     expiresAt: invite.expiresAt,
     consumedAt: invite.consumedAt,
     createdAt: invite.createdAt,
+  });
+}
+
+export function toEmailVerificationRecord(verification: PrismaEmailVerification): EmailVerificationRecord {
+  return Object.freeze({
+    id: verification.id,
+    educatorId: verification.educatorId,
+    tokenHash: verification.tokenHash,
+    expiresAt: verification.expiresAt,
+    consumedAt: verification.consumedAt,
+    createdAt: verification.createdAt,
   });
 }
 

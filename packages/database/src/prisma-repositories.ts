@@ -28,6 +28,7 @@ import {
   toPrismaObservationEventType,
   toPrismaTrainingDay,
   toPlayerInviteRecord,
+  toEmailVerificationRecord,
   toSessionRecord,
 } from "./mappers";
 import { ContactMessageRecord, ContactMessageRepository } from "./contact-message-service";
@@ -40,6 +41,8 @@ import type {
   EducatorProfileRepository,
   EducatorRecord,
   EducatorRepository,
+  EmailVerificationRecord,
+  EmailVerificationRepository,
   MatchRepository,
   ObservationRepository,
   PersistedDiagnostic,
@@ -191,6 +194,28 @@ export class PrismaEducatorRepository implements EducatorRepository, EducatorPro
 
   async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
     await this.prisma.educator.update({ where: { id }, data: { passwordHash } });
+  }
+
+  async markEmailVerified(id: string): Promise<void> {
+    await this.prisma.educator.update({ where: { id }, data: { emailVerifiedAt: new Date() } });
+  }
+}
+
+export class PrismaEmailVerificationRepository implements EmailVerificationRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<EmailVerificationRecord> {
+    const verification = await this.prisma.emailVerification.create({ data: input });
+    return toEmailVerificationRecord(verification);
+  }
+
+  async findByTokenHash(tokenHash: string): Promise<EmailVerificationRecord | null> {
+    const verification = await this.prisma.emailVerification.findUnique({ where: { tokenHash } });
+    return verification === null ? null : toEmailVerificationRecord(verification);
+  }
+
+  async markConsumed(id: string): Promise<void> {
+    await this.prisma.emailVerification.update({ where: { id }, data: { consumedAt: new Date() } });
   }
 }
 

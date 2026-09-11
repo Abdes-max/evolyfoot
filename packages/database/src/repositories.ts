@@ -27,6 +27,10 @@ export interface EducatorRecord {
   // tuteur/joueur, `linkedPlayerId` renseigné, ne voit que le suivi de ce joueur.
   role?: AccountRole;
   linkedPlayerId?: string | null;
+  // Rempli une fois le lien de confirmation (envoyé à l'inscription) cliqué. Optionnel comme
+  // `role`/`linkedPlayerId` : absent = compte créé avant cette fonctionnalité, traité comme non
+  // confirmé côté affichage sans casser les faux de test existants.
+  emailVerifiedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,6 +55,22 @@ export interface PlayerInviteRepository {
   create(input: { educatorId: string; playerId: string; tokenHash: string; expiresAt: Date }): Promise<PlayerInviteRecord>;
   findByTokenHash(tokenHash: string): Promise<PlayerInviteRecord | null>;
   findActiveForPlayer(playerId: string): Promise<PlayerInviteRecord | null>;
+  markConsumed(id: string): Promise<void>;
+}
+
+// Lien de confirmation envoyé par e-mail à l'inscription. Même forme que PlayerInviteRecord.
+export interface EmailVerificationRecord {
+  id: string;
+  educatorId: string;
+  tokenHash: string;
+  expiresAt: Date;
+  consumedAt: Date | null;
+  createdAt: Date;
+}
+
+export interface EmailVerificationRepository {
+  create(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<EmailVerificationRecord>;
+  findByTokenHash(tokenHash: string): Promise<EmailVerificationRecord | null>;
   markConsumed(id: string): Promise<void>;
 }
 
@@ -104,6 +124,7 @@ export interface EducatorRepository {
   findByEmail(email: string): Promise<EducatorAuthRecord | null>;
   // Compte "player" lié à ce joueur, s'il existe (0..1 via l'unique sur linked_player_id).
   findByLinkedPlayerId(playerId: string): Promise<EducatorRecord | null>;
+  markEmailVerified(id: string): Promise<void>;
 }
 
 // Lecture/écriture de la fiche profil et du mot de passe -- interface distincte d'EducatorRepository
