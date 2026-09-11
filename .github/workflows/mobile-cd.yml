@@ -2,9 +2,10 @@ name: Mobile CD
 
 # Construit et soumet l'app mobile (TestFlight + piste interne Google Play) via EAS à chaque
 # merge dans master qui touche le mobile ou ses dépendances partagées. Inerte tant que les
-# secrets ci-dessous ne sont pas configurés (le job échoue proprement à la première étape avec
-# un message explicite plutôt que d'échouer plus loin de façon confuse) -- voir docs/delivery.md
-# pour la checklist complète (comptes Apple Developer / Google Play / Expo, icônes/splash).
+# secrets ci-dessous ne sont pas configurés : le job s'arrête proprement à la première étape,
+# VERT, avec un avertissement explicite plutôt que d'échouer en rouge à chaque merge -- voir
+# docs/delivery.md pour la checklist complète (comptes Apple Developer / Google Play / Expo,
+# icônes/splash).
 #
 # Prérequis avant que ce workflow puisse réussir, à faire une seule fois, en local et de façon
 # interactive (EAS ne permet pas de générer des identifiants Apple/Google en mode non-interactif
@@ -40,16 +41,38 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      # Garde d'entrée : tant que EXPO_TOKEN/GOOGLE_SERVICE_ACCOUNT_JSON ne sont pas configurés
+      # (voir la checklist en en-tête de ce fichier), le job se termine ici, VERT, avec un
+      # avertissement explicite -- plutôt que d'échouer en rouge à chaque merge sur master à
+      # l'étape "eas build" (ça ne dépend d'aucun code de ce dépôt, seulement de secrets que
+      # quelqu'un doit configurer une fois dans GitHub). Se réactive automatiquement, sans autre
+      # changement ici, dès que ces secrets existent sur l'environnement `production`.
+      - name: Vérifier la présence des secrets EAS
+        id: secrets-check
+        run: |
+          if [ -z "$EXPO_TOKEN" ] || [ -z "$GOOGLE_JSON" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Mobile CD ignoré : EXPO_TOKEN et/ou GOOGLE_SERVICE_ACCOUNT_JSON ne sont pas configurés sur l'environnement production. Voir la checklist en en-tête de .github/workflows/mobile-cd.yml."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          GOOGLE_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+
       - name: Récupérer le code
+        if: steps.secrets-check.outputs.ready == 'true'
         uses: actions/checkout@v5
 
       - name: Installer Node.js
+        if: steps.secrets-check.outputs.ready == 'true'
         uses: actions/setup-node@v5
         with:
           node-version: 22
           package-manager-cache: false
 
       - name: Activer pnpm
+        if: steps.secrets-check.outputs.ready == 'true'
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
 
       # TEMPORAIRE (--no-frozen-lockfile au lieu de --frozen-lockfile) : pnpm-lock.yaml n'a pas pu
@@ -58,21 +81,25 @@ jobs:
       # À revenir à --frozen-lockfile dès qu'un pnpm-lock.yaml à jour est committé depuis un poste
       # avec accès au registre.
       - name: Installer les dépendances
+        if: steps.secrets-check.outputs.ready == 'true'
         run: pnpm install --no-frozen-lockfile
 
       - name: Écrire le compte de service Google Play
+        if: steps.secrets-check.outputs.ready == 'true'
         working-directory: apps/mobile
         run: echo "$GOOGLE_SERVICE_ACCOUNT_JSON" > google-service-account.json
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
 
       - name: Installer eas-cli et s'authentifier
+        if: steps.secrets-check.outputs.ready == 'true'
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Builder et soumettre (iOS + Android, profil production)
+        if: steps.secrets-check.outputs.ready == 'true'
         working-directory: apps/mobile
         # --auto-submit enchaîne la soumission TestFlight/piste interne Google Play dès que le
         # build correspondant réussit, sans étape séparée à orchestrer ni polling à écrire ici.
@@ -81,6 +108,6 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Nettoyer le compte de service Google Play
-        if: always()
+        if: always() && steps.secrets-check.outputs.ready == 'true'
         working-directory: apps/mobile
         run: rm -f google-service-account.json
