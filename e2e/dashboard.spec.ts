@@ -51,10 +51,11 @@ test("l’éducateur gère l’effectif nominatif de son équipe", async ({ page
     route.fulfill({ json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: ["Mardi", "Jeudi"] } } }),
   );
 
-  let players: Array<{ id: string; name: string }> = [];
+  let players: Array<{ id: string; firstName: string; lastName: string; name: string }> = [];
   await page.route("**/api/roster", (route) => {
     if (route.request().method() === "POST") {
-      const player = { id: `player-${players.length + 1}`, name: JSON.parse(route.request().postData() ?? "{}").name };
+      const { firstName, lastName } = JSON.parse(route.request().postData() ?? "{}");
+      const player = { id: `player-${players.length + 1}`, firstName, lastName, name: `${firstName} ${lastName}`.trim() };
       players = [...players, player];
       return route.fulfill({ status: 201, json: { player } });
     }
@@ -63,8 +64,10 @@ test("l’éducateur gère l’effectif nominatif de son équipe", async ({ page
   await page.route("**/api/roster/*", (route) => {
     const id = route.request().url().split("/").pop();
     if (route.request().method() === "PATCH") {
-      const name = JSON.parse(route.request().postData() ?? "{}").name;
-      players = players.map((player) => (player.id === id ? { ...player, name } : player));
+      const { firstName, lastName } = JSON.parse(route.request().postData() ?? "{}");
+      players = players.map((player) =>
+        player.id === id ? { ...player, firstName, lastName, name: `${firstName} ${lastName}`.trim() } : player,
+      );
       return route.fulfill({ json: { player: players.find((player) => player.id === id) } });
     }
     players = players.filter((player) => player.id !== id);
@@ -77,16 +80,18 @@ test("l’éducateur gère l’effectif nominatif de son équipe", async ({ page
   await expect(page.locator(".roster-team-summary")).toContainText("Foot à 8");
 
   await page.getByLabel("Ajouter un joueur").fill("Kylian");
+  await page.getByLabel("Nom", { exact: true }).fill("Mbappé");
   await page.getByRole("button", { name: "Ajouter" }).click();
-  await expect(page.getByText("Kylian")).toBeVisible();
+  await expect(page.getByText("Kylian Mbappé")).toBeVisible();
 
-  await page.getByRole("button", { name: "Renommer Kylian" }).click();
-  await page.getByLabel("Renommer Kylian").fill("Ousmane");
+  await page.getByRole("button", { name: "Renommer Kylian Mbappé" }).click();
+  await page.getByLabel("Prénom de Kylian Mbappé").fill("Ousmane");
+  await page.getByLabel("Nom de Kylian Mbappé", { exact: true }).fill("Dembélé");
   await page.getByRole("button", { name: "Enregistrer" }).click();
-  await expect(page.getByText("Ousmane")).toBeVisible();
+  await expect(page.getByText("Ousmane Dembélé")).toBeVisible();
 
-  await page.getByRole("button", { name: "Retirer Ousmane" }).click();
-  await expect(page.getByText("Ousmane")).not.toBeVisible();
+  await page.getByRole("button", { name: "Retirer Ousmane Dembélé" }).click();
+  await expect(page.getByText("Ousmane Dembélé")).not.toBeVisible();
   await expect(page.getByText("Aucun joueur pour l’instant.")).toBeVisible();
 });
 

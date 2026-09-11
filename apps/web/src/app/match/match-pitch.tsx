@@ -87,7 +87,9 @@ export function MatchPitch({ slots, lineup, captainPlayerId, roster = [], onSlot
                 </select>
               )}
               {assignment ? (
-                <span className="match-pitch-token-name">{assignment.playerName}</span>
+                // Initiales plutôt que le prénom entier -- même langage visuel que les pastilles
+                // du banc, le nom complet reste toujours lisible via aria-label ci-dessus.
+                <span className="match-pitch-token-name">{initials(assignment.playerName)}</span>
               ) : (
                 <span aria-hidden="true">{slot.roleLabel.slice(0, 1)}</span>
               )}

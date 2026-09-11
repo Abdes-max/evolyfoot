@@ -491,7 +491,9 @@ export function toPersistedPlayer(player: PrismaPlayer): PersistedPlayer {
   return Object.freeze({
     id: player.id,
     educatorId: player.educatorId,
-    name: player.name,
+    firstName: player.firstName,
+    lastName: player.lastName,
+    name: `${player.firstName} ${player.lastName}`.trim(),
     photo: player.photo,
     birthDate: player.birthDate,
     phone: player.phone,

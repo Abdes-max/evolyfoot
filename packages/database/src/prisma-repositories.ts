@@ -537,9 +537,9 @@ export class PrismaPlayerRepository implements PlayerRepository {
     return player === null ? null : toPersistedPlayer(player);
   }
 
-  async create(educatorId: string, name: string): Promise<PersistedPlayer> {
+  async create(educatorId: string, firstName: string, lastName = ""): Promise<PersistedPlayer> {
     try {
-      const player = await this.prisma.player.create({ data: { educatorId, name } });
+      const player = await this.prisma.player.create({ data: { educatorId, firstName, lastName } });
       return toPersistedPlayer(player);
     } catch (error) {
       return translatePlayerCreateError(error);
@@ -550,8 +550,8 @@ export class PrismaPlayerRepository implements PlayerRepository {
   // clé unique) vérifient l'appartenance à `educatorId` dans la même requête que l'écriture --
   // jamais un `findUnique` puis un `update` séparés, qui laisserait une fenêtre entre la
   // vérification et l'écriture.
-  async rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer> {
-    return this.update(id, educatorId, { name });
+  async rename(id: string, educatorId: string, firstName: string, lastName = ""): Promise<PersistedPlayer> {
+    return this.update(id, educatorId, { firstName, lastName });
   }
 
   async update(id: string, educatorId: string, patch: PlayerDetailsPatch): Promise<PersistedPlayer> {
@@ -639,6 +639,7 @@ export class PrismaMatchRepository implements MatchRepository {
       dateLabel?: string;
       date?: Date | null;
       venue?: MatchVenue;
+      gameFormat?: GameFormat;
       formationId?: string;
       status?: MatchStatus;
       lineup?: readonly MatchLineupAssignment[];
@@ -662,6 +663,7 @@ export class PrismaMatchRepository implements MatchRepository {
         ...(input.dateLabel !== undefined ? { dateLabel: input.dateLabel } : {}),
         ...(input.date !== undefined ? { date: input.date } : {}),
         ...(input.venue !== undefined ? { venue: toPrismaMatchVenue(input.venue) } : {}),
+        ...(input.gameFormat !== undefined ? { gameFormat: input.gameFormat } : {}),
         ...(input.formationId !== undefined ? { formationId: input.formationId } : {}),
         ...(input.status !== undefined ? { status: toPrismaMatchStatus(input.status) } : {}),
         ...(input.lineup !== undefined ? { lineup: input.lineup as unknown as Prisma.InputJsonValue } : {}),

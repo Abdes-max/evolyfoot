@@ -135,7 +135,7 @@ describe("PostgreSQL match persistence", () => {
     await service.updateLineup(educator.id, match.id, { lineup, captainPlayerId: "player-0" });
     const nextFormationId = listFormations(8)[1]!.id;
 
-    const updated = await service.changeFormation(educator.id, match.id, nextFormationId);
+    const updated = await service.changeFormation(educator.id, match.id, { formationId: nextFormationId });
 
     expect(updated.formationId).toBe(nextFormationId);
     expect(updated.lineup).toEqual([]);
@@ -147,7 +147,37 @@ describe("PostgreSQL match persistence", () => {
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
     const otherFormatFormationId = listFormations(11)[0]!.id;
 
-    await expect(service.changeFormation(educator.id, match.id, otherFormatFormationId)).rejects.toBeInstanceOf(ValidationError);
+    await expect(
+      service.changeFormation(educator.id, match.id, { formationId: otherFormatFormationId }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("change de format de jeu, repart d'une formation par défaut et tronque le banc au nouveau plafond", async () => {
+    const educator = await createEducator("change-game-format");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 11 });
+    const slots = formationSlots(11, match.formationId);
+    const lineup: MatchLineupAssignment[] = slots.map((slot, index) => ({ slotId: slot.id, playerId: `player-${index}`, playerName: `Joueur ${index}` }));
+    // 5 remplaçants autorisés en foot à 11 (voir maxSubstitutes), aucun en foot à 5 -> 3 max :
+    // le banc doit être tronqué, pas rejeté.
+    const substitutePlayerIds = ["sub-0", "sub-1", "sub-2", "sub-3", "sub-4"];
+    await service.updateLineup(educator.id, match.id, { lineup, captainPlayerId: "player-0", substitutePlayerIds });
+
+    const updated = await service.changeFormation(educator.id, match.id, { formationId: defaultFormationId(5), gameFormat: 5 });
+
+    expect(updated.gameFormat).toBe(5);
+    expect(updated.formationId).toBe(defaultFormationId(5));
+    expect(updated.lineup).toEqual([]);
+    expect(updated.captainPlayerId).toBeNull();
+    expect(updated.substitutePlayerIds).toEqual(["sub-0", "sub-1", "sub-2"]);
+  });
+
+  it("rejette un format de jeu invalide lors d'un changement de formation", async () => {
+    const educator = await createEducator("change-game-format-invalid");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+
+    await expect(
+      service.changeFormation(educator.id, match.id, { formationId: "whatever", gameFormat: 3 }),
+    ).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("rejette l’accès à un match appartenant à un autre éducateur", async () => {

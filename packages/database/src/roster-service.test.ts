@@ -52,12 +52,14 @@ class InMemoryPlayerRepository implements PlayerRepository {
     return this.players.get(id) ?? null;
   }
 
-  async create(educatorId: string, name: string): Promise<PersistedPlayer> {
+  async create(educatorId: string, firstName: string, lastName = ""): Promise<PersistedPlayer> {
     this.sequence += 1;
     const player: PersistedPlayer = {
       id: `player-${this.sequence}`,
       educatorId,
-      name,
+      firstName,
+      lastName,
+      name: `${firstName} ${lastName}`.trim(),
       photo: null,
       birthDate: null,
       phone: null,
@@ -69,8 +71,8 @@ class InMemoryPlayerRepository implements PlayerRepository {
     return player;
   }
 
-  async rename(id: string, educatorId: string, name: string): Promise<PersistedPlayer> {
-    return this.update(id, educatorId, { name });
+  async rename(id: string, educatorId: string, firstName: string, lastName = ""): Promise<PersistedPlayer> {
+    return this.update(id, educatorId, { firstName, lastName });
   }
 
   async update(id: string, educatorId: string, patch: PlayerDetailsPatch): Promise<PersistedPlayer> {
@@ -78,7 +80,12 @@ class InMemoryPlayerRepository implements PlayerRepository {
     if (!existing || existing.educatorId !== educatorId) {
       throw new PlayerNotFoundError();
     }
-    const updated: PersistedPlayer = { ...existing, ...patch, updatedAt: new Date("2026-08-29T13:00:00.000Z") };
+    const merged = { ...existing, ...patch };
+    const updated: PersistedPlayer = {
+      ...merged,
+      name: `${merged.firstName} ${merged.lastName}`.trim(),
+      updatedAt: new Date("2026-08-29T13:00:00.000Z"),
+    };
     this.players.set(id, updated);
     return updated;
   }
@@ -117,6 +124,25 @@ describe("RosterService", () => {
     expect(player.educatorId).toBe("educator-1");
   });
 
+  it("adds a player with a first and last name, trimming both", async () => {
+    const playerRepository = new InMemoryPlayerRepository();
+    const service = new RosterService(new InMemoryEducatorRepository(["educator-1"]), playerRepository);
+
+    const player = await service.add("educator-1", "  Mehdi  ", "  Ben Ali  ");
+
+    expect(player.firstName).toBe("Mehdi");
+    expect(player.lastName).toBe("Ben Ali");
+    expect(player.name).toBe("Mehdi Ben Ali");
+  });
+
+  it("rejects an explicitly empty last name, but tolerates an omitted one", async () => {
+    const playerRepository = new InMemoryPlayerRepository();
+    const service = new RosterService(new InMemoryEducatorRepository(["educator-1"]), playerRepository);
+
+    await expect(service.add("educator-1", "Kylian", "   ")).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.add("educator-1", "Kylian")).resolves.toMatchObject({ lastName: "" });
+  });
+
   it("lists only the players belonging to the requested educator", async () => {
     const playerRepository = new InMemoryPlayerRepository();
     const service = new RosterService(new InMemoryEducatorRepository(["educator-1", "educator-2"]), playerRepository);
@@ -145,6 +171,20 @@ describe("RosterService", () => {
     const renamed = await service.rename("educator-1", player.id, "Ousmane");
 
     expect(renamed.name).toBe("Ousmane");
+  });
+
+  it("modifie prénom et nom indépendamment via updateDetails, rejetant une chaîne vide", async () => {
+    const playerRepository = new InMemoryPlayerRepository();
+    const service = new RosterService(new InMemoryEducatorRepository(["educator-1"]), playerRepository);
+    const player = await service.add("educator-1", "Mehdi", "Ben Ali");
+
+    const updated = await service.updateDetails("educator-1", player.id, { lastName: "El Amrani" });
+    expect(updated.firstName).toBe("Mehdi");
+    expect(updated.lastName).toBe("El Amrani");
+    expect(updated.name).toBe("Mehdi El Amrani");
+
+    await expect(service.updateDetails("educator-1", player.id, { lastName: "   " })).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.updateDetails("educator-1", player.id, { firstName: "" })).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("rejects removing a player belonging to another educator", async () => {
