@@ -224,9 +224,6 @@ export function ProfilView() {
   return (
     <main className="profil-shell">
       <header className="page-header profil-header">
-        <Link className="onboarding-brand" href="/app">
-          <span className="brand-mark">E</span> EvolyFoot
-        </Link>
         <div>
           <span className="eyebrow light">Mon compte</span>
           <h1 title="Profil">Profil</h1>

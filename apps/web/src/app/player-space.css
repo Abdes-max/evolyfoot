@@ -34,6 +34,12 @@
 .player-space-history li { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
 .player-space-days { margin: 0; font-size: 13px; }
 
+/* Regroupement par semaine de "Mes convocations" (calendar-view.tsx) -- un titre ("Cette
+   semaine", "Semaine prochaine", "21-27 septembre"...) au-dessus de chaque groupe trié
+   chronologiquement. */
+.player-space-week-group + .player-space-week-group { margin-top: 18px; }
+.player-space-week-group h3 { margin: 0 0 8px; color: var(--muted); font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+
 .player-space-matches { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
 .player-space-matches strong { font-size: 13px; }
 .player-space-matches span { color: var(--muted); font-size: 11px; }

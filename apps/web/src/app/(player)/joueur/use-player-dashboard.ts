@@ -13,6 +13,7 @@ export interface DashboardMatch {
   id: string;
   opponent: string;
   dateLabel: string;
+  date: string | null;
   meetingTime: string | null;
   location: string | null;
   description: string | null;
@@ -27,6 +28,7 @@ export interface DashboardTrainingSession {
   id: string;
   title: string;
   dateLabel: string;
+  date: string | null;
   meetingTime: string | null;
   location: string | null;
   description: string | null;
@@ -38,6 +40,7 @@ export interface Competition {
   type: "plateau" | "tournoi";
   name: string;
   dateLabel: string;
+  date: string | null;
 }
 
 export interface Dashboard {

@@ -14,7 +14,7 @@ import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, Mat
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { MatchPitch } from "../match-pitch";
+import { initials, MatchPitch } from "../match-pitch";
 
 interface MatchRecord {
   id: string;
@@ -72,6 +72,9 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   // le repli pour les navigateurs qui ne le supportent pas encore (l'utilisateur n'a alors plus
   // qu'à appuyer une fois, le focus étant déjà sur le bon poste).
   const selectRefs = useRef<Record<string, HTMLSelectElement | null>>({});
+  // Même principe pour les pastilles rondes du banc (voir plus bas), indexées par position
+  // affichée plutôt que par id de poste -- le banc n'a pas de position fixe comme le terrain.
+  const benchSelectRefs = useRef<Record<number, HTMLSelectElement | null>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -198,8 +201,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     persistLineup({ ...toPlan(match), captainPlayerId: playerId || null });
   }
 
-  function openSlotPicker(slotId: string) {
-    const select = selectRefs.current[slotId];
+  function openPicker(select: HTMLSelectElement | null | undefined) {
     if (!select) {
       return;
     }
@@ -213,6 +215,30 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       }
     }
     select.focus();
+  }
+
+  function openSlotPicker(slotId: string) {
+    openPicker(selectRefs.current[slotId]);
+  }
+
+  function openBenchPicker(index: number) {
+    openPicker(benchSelectRefs.current[index]);
+  }
+
+  // Une seule opération domaine par appel (jamais retirer PUIS ajouter dans le même clic) : les
+  // deux s'appuieraient sur `match` via `toPlan()`, qui n'a pas encore vu le premier `setMatch`
+  // optimiste de persistLineup au moment du second appel synchrone -- le second écraserait le
+  // premier. Une pastille de banc déjà occupée n'offre donc que "retirer" dans son sélecteur
+  // (voir le rendu plus bas), jamais un remplacement direct par un autre joueur.
+  function setBenchSlot(index: number, playerId: string) {
+    if (!playerId) {
+      const current = match?.substitutePlayerIds[index];
+      if (current) {
+        removeSubstitutePlayer(current);
+      }
+      return;
+    }
+    addSubstitutePlayer(playerId);
   }
 
   async function changeFormation(formationId: string) {
@@ -364,13 +390,17 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   const readOnly = match.status === "played";
   const assignedPlayerIds = new Set(match.lineup.map((assignment) => assignment.playerId));
   const canFinalize = canFinalizeMatchPlan(toPlan(match));
+  // Toujours au moins 4 pastilles -- même langage visuel que le terrain (pastille vide/pleine),
+  // voir setBenchSlot ci-dessus. S'il y a déjà plus de 4 remplaçants enregistrés, une pastille de
+  // plus par joueur en trop plutôt que d'en perdre l'affichage.
+  const benchSlots: Array<string | null> = Array.from(
+    { length: Math.max(4, match.substitutePlayerIds.length) },
+    (_, index) => match.substitutePlayerIds[index] ?? null,
+  );
 
   return (
     <main className="match-shell">
       <header className="page-header match-header">
-        <Link className="onboarding-brand" href="/app">
-          <span className="brand-mark">E</span> EvolyFoot
-        </Link>
         <div>
           <span className="eyebrow light">{match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</span>
           <h1 title={match.opponent}>{match.opponent}</h1>
@@ -397,7 +427,13 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               ))}
             </div>
           )}
-          <MatchPitch captainPlayerId={match.captainPlayerId} lineup={match.lineup} onSlotClick={readOnly ? undefined : openSlotPicker} slots={slots} />
+          <MatchPitch
+            captainPlayerId={match.captainPlayerId}
+            lineup={match.lineup}
+            onSlotClear={readOnly ? undefined : (slotId) => assignSlot(slotId, "")}
+            onSlotClick={readOnly ? undefined : openSlotPicker}
+            slots={slots}
+          />
           {!readOnly && <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur.</p>}
 
           {/* Les <select> réels restent dans le DOM (masqués visuellement, pas retirés) : c'est
@@ -434,46 +470,57 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
 
           <section aria-labelledby="match-bench-title" className="match-bench">
             <h2 id="match-bench-title">Remplaçants</h2>
-            {match.substitutePlayerIds.length === 0 ? (
-              <p className="player-space-empty">Aucun remplaçant.</p>
-            ) : (
-              <ul className="match-bench-list">
-                {match.substitutePlayerIds.map((playerId) => {
-                  const player = roster.find((candidate) => candidate.id === playerId);
-                  return (
-                    <li key={playerId}>
-                      <span>{player?.name ?? "Joueur"}</span>
-                      {!readOnly && (
-                        <button aria-label={`Retirer ${player?.name ?? "ce joueur"} du banc`} onClick={() => removeSubstitutePlayer(playerId)} type="button">
-                          ×
-                        </button>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            {!readOnly && (
-              <label className="match-bench-add">
-                <span>Ajouter un remplaçant</span>
-                <select
-                  onChange={(event) => {
-                    addSubstitutePlayer(event.target.value);
-                    event.target.value = "";
-                  }}
-                  value=""
-                >
-                  <option value="">— Choisir un joueur —</option>
-                  {roster
-                    .filter((player) => !assignedPlayerIds.has(player.id) && !match.substitutePlayerIds.includes(player.id))
-                    .map((player) => (
-                      <option key={player.id} value={player.id}>
-                        {player.name}
-                      </option>
-                    ))}
-                </select>
-              </label>
-            )}
+            <div aria-label="Remplaçants" className="match-bench-tokens" role="group">
+              {benchSlots.map((playerId, index) => {
+                const player = playerId ? roster.find((candidate) => candidate.id === playerId) : null;
+                const label = player ? `Remplaçant : ${player.name}` : "Remplaçant : aucun joueur, toucher pour affecter";
+                return (
+                  <button
+                    aria-label={label}
+                    className={`match-pitch-token ${player ? "filled" : "empty"}`}
+                    disabled={readOnly}
+                    key={index}
+                    onClick={() => openBenchPicker(index)}
+                    type="button"
+                  >
+                    {player ? initials(player.name) : "+"}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Même principe que les <select> masqués du terrain plus haut : c'est sur eux
+                qu'openBenchPicker() appelle showPicker()/focus(). Une pastille déjà occupée n'offre
+                que "— Aucun joueur —" (retirer) -- jamais un remplacement direct, voir
+                setBenchSlot ci-dessus. */}
+            <div className="visually-hidden">
+              {benchSlots.map((playerId, index) => (
+                <label key={index}>
+                  {`Remplaçant ${index + 1}`}
+                  <select
+                    disabled={readOnly}
+                    onChange={(event) => setBenchSlot(index, event.target.value)}
+                    ref={(element) => {
+                      benchSelectRefs.current[index] = element;
+                    }}
+                    value={playerId ?? ""}
+                  >
+                    <option value="">— Aucun joueur —</option>
+                    {playerId ? (
+                      <option value={playerId}>{roster.find((candidate) => candidate.id === playerId)?.name ?? "Joueur"}</option>
+                    ) : (
+                      roster
+                        .filter((player) => !assignedPlayerIds.has(player.id) && !match.substitutePlayerIds.includes(player.id))
+                        .map((player) => (
+                          <option key={player.id} value={player.id}>
+                            {player.name}
+                          </option>
+                        ))
+                    )}
+                  </select>
+                </label>
+              ))}
+            </div>
           </section>
         </div>
 

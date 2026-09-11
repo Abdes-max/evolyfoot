@@ -151,9 +151,6 @@ export function RosterView() {
       <SidebarNav />
       <main className="roster-shell">
       <header className="page-header roster-header">
-        <Link className="onboarding-brand" href="/app">
-          <span className="brand-mark">E</span> EvolyFoot
-        </Link>
         <div>
           <span className="eyebrow light">MON ÉQUIPE</span>
           <h1 title="L’effectif nominatif.">L’effectif nominatif.</h1>

@@ -5,13 +5,16 @@ export interface TournamentSummary {
   id: string;
   name: string;
   dateLabel: string;
+  // ISO, voir le commentaire sur PersistedTournament.date côté base -- `null` pour une fiche
+  // créée avant l'introduction de ce champ.
+  date: string | null;
   result: string | null;
   createdAt: string;
 }
 
 export interface TournamentGateway {
   list(educatorId: string): Promise<TournamentSummary[]>;
-  create(educatorId: string, input: { name: string; dateLabel: string; result?: string }): Promise<TournamentSummary>;
+  create(educatorId: string, input: { name: string; dateLabel: string; date?: string | null; result?: string }): Promise<TournamentSummary>;
   remove(educatorId: string, tournamentId: string): Promise<void>;
 }
 
@@ -69,13 +72,14 @@ export function createCreateTournamentHandler(
     const body = await readJsonBody(request);
     const name = typeof body?.name === "string" ? body.name : null;
     const dateLabel = typeof body?.dateLabel === "string" ? body.dateLabel : null;
+    const date = typeof body?.date === "string" ? body.date : null;
     const result = typeof body?.result === "string" ? body.result : undefined;
     if (name === null || dateLabel === null) {
       return Response.json({ error: "Nom et date sont requis." }, { status: 400 });
     }
 
     try {
-      const tournament = await tournaments.create(educator.id, { name, dateLabel, result });
+      const tournament = await tournaments.create(educator.id, { name, dateLabel, date, result });
       return Response.json({ tournament }, { status: 201 });
     } catch (error) {
       return errorResponse(error, log);
@@ -114,6 +118,7 @@ export async function createTournamentGateway(): Promise<{ gateway: TournamentGa
       id: tournament.id,
       name: tournament.name,
       dateLabel: tournament.dateLabel,
+      date: tournament.date ? tournament.date.toISOString() : null,
       result: tournament.result,
       createdAt: tournament.createdAt.toISOString(),
     };
@@ -126,7 +131,7 @@ export async function createTournamentGateway(): Promise<{ gateway: TournamentGa
         return tournaments.map(toSummary);
       },
       async create(educatorId, input) {
-        return toSummary(await service.create(educatorId, input));
+        return toSummary(await service.create(educatorId, { ...input, date: input.date ? new Date(input.date) : null }));
       },
       remove(educatorId, tournamentId) {
         return service.remove(educatorId, tournamentId);

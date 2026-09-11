@@ -312,6 +312,9 @@ export interface PersistedMatch {
   educatorId: string;
   opponent: string;
   dateLabel: string;
+  // Vraie date calendaire (jour, voir le commentaire dans schema.prisma) -- `null` pour un match
+  // créé avant l'introduction de ce champ, seul `dateLabel` reste fiable pour lui.
+  date: Date | null;
   // Rendez-vous et lieu précis, distincts de `dateLabel` -- voir le commentaire sur le modèle
   // Prisma. `null` si le coach ne les a pas renseignés.
   meetingTime: string | null;
@@ -347,6 +350,7 @@ export interface MatchRepository {
       venue: MatchVenue;
       gameFormat: GameFormat;
       formationId: string;
+      date?: Date | null;
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
@@ -358,6 +362,7 @@ export interface MatchRepository {
     input: {
       opponent?: string;
       dateLabel?: string;
+      date?: Date | null;
       venue?: MatchVenue;
       formationId?: string;
       status?: MatchStatus;
@@ -379,13 +384,16 @@ export interface PersistedTournament {
   educatorId: string;
   name: string;
   dateLabel: string;
+  // Vraie date calendaire (voir le commentaire dans schema.prisma) -- `null` pour une fiche créée
+  // avant l'introduction de ce champ, seul `dateLabel` reste fiable pour elle.
+  date: Date | null;
   result: string | null;
   createdAt: Date;
 }
 
 export interface TournamentRepository {
   listByEducator(educatorId: string): Promise<PersistedTournament[]>;
-  create(educatorId: string, input: { name: string; dateLabel: string; result?: string }): Promise<PersistedTournament>;
+  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedTournament>;
   remove(id: string, educatorId: string): Promise<void>;
 }
 
@@ -395,13 +403,14 @@ export interface PersistedPlateau {
   educatorId: string;
   name: string;
   dateLabel: string;
+  date: Date | null;
   result: string | null;
   createdAt: Date;
 }
 
 export interface PlateauRepository {
   listByEducator(educatorId: string): Promise<PersistedPlateau[]>;
-  create(educatorId: string, input: { name: string; dateLabel: string; result?: string }): Promise<PersistedPlateau>;
+  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedPlateau>;
   remove(id: string, educatorId: string): Promise<void>;
 }
 

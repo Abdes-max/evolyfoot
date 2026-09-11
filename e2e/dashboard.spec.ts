@@ -329,13 +329,13 @@ test("l’éducateur enregistre un tournoi et un plateau depuis Matchs & compét
 
   const tournoiForm = page.locator(".competitions-panel", { hasText: "Tournois" });
   await tournoiForm.getByPlaceholder("Nom du tournoi").fill("Tournoi de printemps");
-  await tournoiForm.getByPlaceholder("Date").fill("12 avril");
+  await tournoiForm.getByLabel("Date").fill("2027-04-12");
   await tournoiForm.getByRole("button", { name: "Ajouter" }).click();
   await expect(tournoiForm.getByText("Tournoi de printemps")).toBeVisible();
 
   const plateauForm = page.locator(".competitions-panel", { hasText: "Plateaux" });
   await plateauForm.getByPlaceholder("Nom du plateau").fill("Plateau de rentrée");
-  await plateauForm.getByPlaceholder("Date").fill("14 septembre");
+  await plateauForm.getByLabel("Date").fill("2026-09-14");
   await plateauForm.getByRole("button", { name: "Ajouter" }).click();
   await expect(plateauForm.getByText("Plateau de rentrée")).toBeVisible();
 });
@@ -612,6 +612,7 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
               id: "m1",
               opponent: "US Vallée",
               dateLabel: "Samedi 19 septembre",
+              date: "2026-09-19T14:30:00.000Z",
               meetingTime: "14:30",
               location: "Stade Marius Requier, Aix-en-Provence",
               description: "Brassage journée 1 (triangulaire)",
@@ -626,13 +627,16 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
               id: "s1",
               title: "Conserver le ballon",
               dateLabel: "Mardi 15 septembre",
+              date: "2026-09-15T18:00:00.000Z",
               meetingTime: "18:00",
               location: "Stade Marius Requier, Aix-en-Provence",
               description: "Prévoir crampons moulés, terrain synthétique.",
               myStatus: null,
             },
           ],
-          competitions: [{ id: "p1", type: "plateau", name: "Plateau de rentrée", dateLabel: "Dimanche 20 septembre" }],
+          competitions: [
+            { id: "p1", type: "plateau", name: "Plateau de rentrée", dateLabel: "Dimanche 20 septembre", date: "2026-09-20T00:00:00.000Z" },
+          ],
         },
       },
     }),
@@ -666,7 +670,7 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await tabBar.getByRole("link", { name: "Calendrier" }).click();
   await expect(page).toHaveURL(/\/joueur\/calendrier$/);
   await expect(page.getByRole("heading", { name: "Calendrier de la semaine" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Compétitions" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mes convocations" })).toBeVisible();
   await expect(page.getByText("Plateau de rentrée")).toBeVisible();
   await expect(page.getByText("US Vallée")).toBeVisible();
   // Badge de réponse orange tant que le tuteur n'a pas répondu -- une pour la séance, une pour le

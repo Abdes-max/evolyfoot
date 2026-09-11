@@ -129,6 +129,10 @@ export class MatchService {
     input: {
       opponent: string;
       dateLabel: string;
+      // Vraie date calendaire (voir le commentaire dans schema.prisma), dérivée côté client du
+      // datepicker de création -- optionnelle pour ne pas casser un appelant qui n'a que
+      // `dateLabel` (voir la même tolérance côté TrainingSessionRepository.create).
+      date?: Date | null;
       venue: MatchVenue;
       gameFormat: number;
       formationId?: string;
@@ -147,6 +151,7 @@ export class MatchService {
     return this.matchRepository.create(educatorId, {
       opponent,
       dateLabel,
+      date: input.date ?? null,
       venue: input.venue,
       gameFormat,
       formationId,
@@ -162,10 +167,11 @@ export class MatchService {
   async updateDetails(
     educatorId: string,
     matchId: string,
-    input: { meetingTime?: string | null; location?: string | null; description?: string | null },
+    input: { date?: Date | null; meetingTime?: string | null; location?: string | null; description?: string | null },
   ): Promise<PersistedMatch> {
     await this.get(educatorId, matchId);
     return this.matchRepository.update(matchId, educatorId, {
+      ...(input.date !== undefined ? { date: input.date } : {}),
       ...(input.meetingTime !== undefined ? { meetingTime: normalizeOptionalText(input.meetingTime) } : {}),
       ...(input.location !== undefined ? { location: normalizeOptionalText(input.location) } : {}),
       ...(input.description !== undefined ? { description: normalizeOptionalText(input.description) } : {}),

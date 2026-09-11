@@ -22,6 +22,10 @@ export interface PlayerDashboardMatch {
   id: string;
   opponent: string;
   dateLabel: string;
+  // Vraie date calendaire (voir le commentaire dans schema.prisma côté base) -- `null` pour un
+  // match créé avant l'introduction de ce champ, alors exclu du tri chronologique unifié
+  // séances/matchs/compétitions (voir calendar-view.tsx), affiché en repli avec `dateLabel` seul.
+  date: Date | null;
   meetingTime: string | null;
   location: string | null;
   description: string | null;
@@ -48,6 +52,7 @@ export interface PlayerDashboardTrainingSession {
   id: string;
   title: string;
   dateLabel: string;
+  date: Date | null;
   meetingTime: string | null;
   location: string | null;
   description: string | null;
@@ -60,6 +65,7 @@ export interface PlayerDashboardCompetition {
   type: "plateau" | "tournoi";
   name: string;
   dateLabel: string;
+  date: Date | null;
 }
 
 export interface PlayerDashboard {
@@ -139,6 +145,7 @@ export class PlayerDashboardService {
           id: match.id,
           opponent: match.opponent,
           dateLabel: match.dateLabel,
+          date: match.date,
           meetingTime: match.meetingTime,
           location: match.location,
           description: match.description,
@@ -166,6 +173,7 @@ export class PlayerDashboardService {
           id: session.id,
           title: session.title,
           dateLabel: trainingSessionDateLabel(session.meetingAt, session.weekNumber, session.slot),
+          date: session.meetingAt,
           meetingTime: trainingSessionMeetingTime(session.meetingAt),
           location: session.location,
           description: session.description,
@@ -173,12 +181,19 @@ export class PlayerDashboardService {
         };
       }),
       competitions: [
-        ...plateaux.map((plateau) => ({ id: plateau.id, type: "plateau" as const, name: plateau.name, dateLabel: plateau.dateLabel })),
+        ...plateaux.map((plateau) => ({
+          id: plateau.id,
+          type: "plateau" as const,
+          name: plateau.name,
+          dateLabel: plateau.dateLabel,
+          date: plateau.date,
+        })),
         ...tournaments.map((tournament) => ({
           id: tournament.id,
           type: "tournoi" as const,
           name: tournament.name,
           dateLabel: tournament.dateLabel,
+          date: tournament.date,
         })),
       ],
     };

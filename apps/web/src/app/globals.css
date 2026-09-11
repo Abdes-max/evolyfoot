@@ -333,7 +333,10 @@ nav{flex-direction:row;justify-content:space-around;gap:2px;flex:1}
 /* 1280px partout (en-tête ET contenu en dessous, sur toutes les pages) : aligné sur .content de
    Vue d'ensemble -- chaque page choisissait auparavant sa propre largeur (1000, 1200, 900, 720...),
    incohérent d'une page à l'autre en navigant. */
-.page-header{height:150px;padding:0 max(25px,calc((100% - 1280px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:180px 1fr auto;gap:30px;align-items:center;overflow:hidden}
+/* grid-template-columns sur deux colonnes (contenu + élément de fin optionnel) depuis le retrait
+   du logo/"EvolyFoot" de ces en-têtes -- doublon avec celui déjà affiché dans la barre latérale
+   sur toutes les pages qui utilisent cette classe (voir sidebar-nav.tsx). */
+.page-header{height:150px;padding:0 max(25px,calc((100% - 1280px)/2));background:linear-gradient(155deg,#123349,#0a1219);color:var(--ink);display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center;overflow:hidden}
 /* min-width:0 annule le min-width:auto par défaut des enfants de grille (qui les empêcherait de
    rétrécir sous la largeur de leur contenu) -- sans lui, ni le titre sur une ligne ni la
    description sur deux lignes ci-dessous ne pourraient réellement se limiter. */

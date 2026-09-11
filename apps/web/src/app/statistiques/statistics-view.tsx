@@ -97,9 +97,6 @@ export function StatisticsView() {
   return (
     <main className="statistics-shell">
       <header className="page-header statistics-header">
-        <Link className="onboarding-brand" href="/app">
-          <span className="brand-mark">E</span> EvolyFoot
-        </Link>
         <div>
           <span className="eyebrow light">STATISTIQUES</span>
           <h1 title="Le suivi de ta saison.">Le suivi de ta saison.</h1>

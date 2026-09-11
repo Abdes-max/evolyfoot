@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { frenchDateLabel, parseDateInputValue, sortChronologically } from "../date-format";
 
 interface Competition {
   id: string;
   name: string;
   dateLabel: string;
+  date: string | null;
   result: string | null;
 }
 
@@ -28,7 +30,9 @@ async function readError(response: Response): Promise<string> {
 export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey }: CompetitionsPanelProps) {
   const [items, setItems] = useState<Competition[]>([]);
   const [name, setName] = useState("");
-  const [dateLabel, setDateLabel] = useState("");
+  // "YYYY-MM-DD" (valeur brute d'un <input type="date">) -- dateLabel en dérive automatiquement
+  // à l'envoi, voir add() ci-dessous.
+  const [dateInput, setDateInput] = useState("");
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
   const [adding, setAdding] = useState(false);
@@ -56,10 +60,16 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey 
     setAdding(true);
     setError("");
     try {
+      const date = parseDateInputValue(dateInput);
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, dateLabel, result: result || undefined }),
+        body: JSON.stringify({
+          name,
+          dateLabel: date ? frenchDateLabel(date) : dateInput,
+          date: date ? date.toISOString() : null,
+          result: result || undefined,
+        }),
       });
       if (!response.ok) {
         setError(await readError(response));
@@ -68,7 +78,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey 
       const body = await response.json();
       setItems((current) => [body[itemKey], ...current]);
       setName("");
-      setDateLabel("");
+      setDateInput("");
       setResult("");
     } catch {
       setError("Une erreur est survenue.");
@@ -91,7 +101,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey 
       <h2 id={`competitions-${listKey}`}>{title}</h2>
       <form className="competitions-form" onSubmit={add}>
         <input onChange={(event) => setName(event.target.value)} placeholder={`Nom du ${singular}`} value={name} />
-        <input onChange={(event) => setDateLabel(event.target.value)} placeholder="Date" value={dateLabel} />
+        <input aria-label="Date" onChange={(event) => setDateInput(event.target.value)} required type="date" value={dateInput} />
         <input onChange={(event) => setResult(event.target.value)} placeholder="Bilan (optionnel)" value={result} />
         <button disabled={adding} type="submit">
           {adding ? "Ajout…" : "Ajouter"}
@@ -106,7 +116,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey 
         <p className="competitions-empty">Aucun {singular} pour l’instant.</p>
       ) : (
         <ul className="competitions-list">
-          {items.map((item) => (
+          {sortChronologically(items, (item) => (item.date ? new Date(item.date) : null)).map((item) => (
             <li key={item.id}>
               <div>
                 <strong>{item.name}</strong>

@@ -56,9 +56,6 @@ export function ObservationsListView() {
   return (
     <main className="observations-shell">
       <header className="page-header observations-header">
-        <Link className="onboarding-brand" href="/app">
-          <span className="brand-mark">E</span> EvolyFoot
-        </Link>
         <div>
           <span className="eyebrow light">OBSERVATIONS</span>
           <h1 title="L’historique de tes observations.">L’historique de tes observations.</h1>
