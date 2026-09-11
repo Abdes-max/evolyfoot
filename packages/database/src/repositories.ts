@@ -191,6 +191,10 @@ export interface PersistedTrainingSession {
   // jours d'entraînement de l'équipe). Une seule séance par créneau (voir `create`, un upsert).
   weekNumber: number;
   slot: number;
+  // Rendez-vous (vrai horodatage), lieu et description -- voir le commentaire dans schema.prisma.
+  meetingAt: Date | null;
+  location: string | null;
+  description: string | null;
   // `undefined` pour une séance validée avant l'introduction du suivi de présence, distingué
   // d'un tableau vide (présence saisie mais personne de présent) -- voir summarizeAttendance
   // côté domaine et /statistiques, qui doivent pouvoir faire la différence.
@@ -217,6 +221,19 @@ export interface TrainingSessionRepository {
   ): Promise<PersistedTrainingSession>;
   listByEducator(educatorId: string): Promise<PersistedTrainingSession[]>;
   findById(id: string, educatorId: string): Promise<PersistedTrainingSession | null>;
+  // `updateMany` (filtre sur educatorId dans la même requête, voir PrismaMatchRepository.update
+  // pour le même principe) -- réservé aux détails (rendez-vous/lieu/description) et à la présence,
+  // jamais au contenu pédagogique de la séance (blocs), reconstruit uniquement via `create`.
+  update(
+    id: string,
+    educatorId: string,
+    input: {
+      meetingAt?: Date | null;
+      location?: string | null;
+      description?: string | null;
+      attendance?: readonly AttendanceEntry[];
+    },
+  ): Promise<PersistedTrainingSession>;
 }
 
 // Historique des observations validées. `players`/`signals` sont stockés tels quels (JSON), sans

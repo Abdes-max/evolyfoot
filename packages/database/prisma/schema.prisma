@@ -141,6 +141,14 @@ model TrainingSessionRecord {
   // « non générée ».
   weekNumber  Int              @default(1) @map("week_number")
   slot        Int              @default(0)
+  // Rendez-vous réel (date + heure), lieu et description -- même principe que MatchRecord
+  // ci-dessous, affichés sur la fiche détail que voit le joueur/tuteur. `meetingAt` est un vrai
+  // horodatage (saisi via un datepicker+heure côté coach) et non un horaire en texte libre comme
+  // MatchRecord.meetingTime : contrairement au match, une séance n'a par ailleurs aucune autre
+  // date (weekNumber/slot ne placent la séance que dans le cycle, jamais sur un jour précis).
+  meetingAt   DateTime?        @map("meeting_at")
+  location    String?
+  description String?
   // Présence à cette séance (id + nom de joueur dupliqués, voir AttendanceEntry côté domaine et
   // MatchRecord.lineup pour le même principe) -- nullable : une séance validée avant
   // l'introduction du suivi de présence n'en a pas, distingué d'une liste vide (`[]`, présence

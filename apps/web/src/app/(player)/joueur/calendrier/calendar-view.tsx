@@ -11,10 +11,10 @@ const venueLabel = { home: "Domicile", away: "Extérieur" } as const;
 // Réponse à une convocation, résumée en un badge de couleur : orange tant que rien n'est
 // renseigné, vert pour "Présent", rouge pour toute autre réponse (Absent, mais aussi Malade/
 // Blessé/Raison personnelle/En retard) -- avec le motif précis affiché en dessous, comme demandé.
-function ResponseBadge({ convoked, status }: { convoked: boolean; status: AttendanceStatus | null }) {
-  if (!convoked) {
-    return <span className="response-badge response-badge--muted">Pas encore dans le groupe</span>;
-  }
+// N'est appelé que pour un match où le joueur est convoqué -- voir le filtre juste avant le rendu
+// de la liste ci-dessous : ne pas être convoqué signifie ne pas apparaître du tout dans "Mes
+// convocations", pas y apparaître grisé.
+function ResponseBadge({ status }: { status: AttendanceStatus | null }) {
   if (status === null) {
     return <span className="response-badge response-badge--pending">En attente de réponse</span>;
   }
@@ -53,24 +53,48 @@ export function PlayerCalendarView() {
             )}
 
             <section className="player-space-block">
-              <h2>Mes convocations</h2>
-              {dashboard.upcomingMatches.length === 0 ? (
-                <p className="player-space-empty">Aucun match à venir.</p>
+              <h2>Mes séances</h2>
+              {dashboard.trainingSessions.length === 0 ? (
+                <p className="player-space-empty">Aucune séance programmée pour le moment.</p>
               ) : (
                 <ul className="player-space-matches">
-                  {dashboard.upcomingMatches.map((match) => (
-                    <li key={match.id}>
-                      <Link className={match.convoked ? "player-space-match-link convoked" : "player-space-match-link"} href={`/joueur/matches/${match.id}`}>
-                        <strong>{match.opponent}</strong>
-                        <span>
-                          {match.dateLabel} · {venueLabel[match.venue]}
-                        </span>
-                        <ResponseBadge convoked={match.convoked} status={match.myStatus} />
+                  {dashboard.trainingSessions.map((session) => (
+                    <li key={session.id}>
+                      <Link className="player-space-match-link convoked" href={`/joueur/seances/${session.id}`}>
+                        <strong>{session.title}</strong>
+                        <span>{session.meetingTime ? `${session.dateLabel} · ${session.meetingTime}` : session.dateLabel}</span>
+                        <ResponseBadge status={session.myStatus} />
                       </Link>
                     </li>
                   ))}
                 </ul>
               )}
+            </section>
+
+            <section className="player-space-block">
+              <h2>Mes convocations</h2>
+              {(() => {
+                // Ne pas être convoqué à un match à venir n'est pas une "convocation" -- ces
+                // matchs n'ont rien à faire dans cette liste (voir demande utilisateur).
+                const convocations = dashboard.upcomingMatches.filter((match) => match.convoked);
+                return convocations.length === 0 ? (
+                  <p className="player-space-empty">Aucune convocation pour le moment.</p>
+                ) : (
+                  <ul className="player-space-matches">
+                    {convocations.map((match) => (
+                      <li key={match.id}>
+                        <Link className="player-space-match-link convoked" href={`/joueur/matches/${match.id}`}>
+                          <strong>{match.opponent}</strong>
+                          <span>
+                            {match.dateLabel} · {venueLabel[match.venue]}
+                          </span>
+                          <ResponseBadge status={match.myStatus} />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
             </section>
 
             <section className="player-space-block">

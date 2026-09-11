@@ -11,6 +11,7 @@ import {
   PrismaPlayerRepository,
   PrismaSessionRepository,
   PrismaTeamRepository,
+  PrismaTrainingSessionRepository,
 } from "./prisma-repositories";
 
 const testRun = `player-rsvp-${crypto.randomUUID()}`;
@@ -26,10 +27,11 @@ const playerRepository = new PrismaPlayerRepository(database.prisma);
 const playerInviteRepository = new PrismaPlayerInviteRepository(database.prisma);
 const teamRepository = new PrismaTeamRepository(database.prisma);
 const matchRepository = new PrismaMatchRepository(database.prisma);
+const trainingSessionRepository = new PrismaTrainingSessionRepository(database.prisma);
 
 const authService = new AuthService(educatorRepository, sessionRepository);
 const inviteService = new PlayerInviteService(educatorRepository, playerRepository, playerInviteRepository, teamRepository, authService);
-const rsvpService = new PlayerRsvpService(educatorRepository, playerRepository, matchRepository);
+const rsvpService = new PlayerRsvpService(educatorRepository, playerRepository, matchRepository, trainingSessionRepository);
 
 async function createCoach(suffix: string) {
   return educatorRepository.create({
@@ -120,5 +122,57 @@ describe("PlayerRsvpService", () => {
     await matchRepository.update(match.id, coach.id, { status: "played" });
 
     await expect(rsvpService.respondToMatch(tutorAccountId, match.id, "present")).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("records the tutor's own RSVP to a training session, with a comment carried for a non-present status", async () => {
+    const { coach, player, tutorAccountId } = await createTutorAccount("session-rsvp");
+    const other = await playerRepository.create(coach.id, "Autre joueur séance");
+    const session = await trainingSessionRepository.create(coach.id, {
+      title: "Séance test",
+      ageGroup: "U11",
+      playerCount: 12,
+      theme: "Conserver le ballon",
+      intention: "Test",
+      blocks: [],
+      weekNumber: 1,
+      slot: 0,
+      attendance: [{ playerId: other.id, playerName: "Autre joueur séance", present: true }],
+    });
+
+    await rsvpService.respondToTrainingSession(tutorAccountId, session.id, "sick", "Fièvre depuis hier soir");
+
+    const reloaded = await trainingSessionRepository.findById(session.id, coach.id);
+    expect(reloaded!.attendance).toHaveLength(2);
+    const mine = reloaded!.attendance!.find((entry) => entry.playerId === player.id);
+    expect(mine).toMatchObject({ playerName: `${testRun}-session-rsvp-player`, status: "sick", present: false, comment: "Fièvre depuis hier soir" });
+    const theirs = reloaded!.attendance!.find((entry) => entry.playerId === other.id);
+    expect(theirs).toMatchObject({ present: true });
+  });
+
+  it("responding to a training session twice replaces the previous answer", async () => {
+    const { coach, tutorAccountId } = await createTutorAccount("session-twice");
+    const session = await trainingSessionRepository.create(coach.id, {
+      title: "Séance test",
+      ageGroup: "U11",
+      playerCount: 12,
+      theme: "Conserver le ballon",
+      intention: "Test",
+      blocks: [],
+      weekNumber: 1,
+      slot: 0,
+    });
+
+    await rsvpService.respondToTrainingSession(tutorAccountId, session.id, "late");
+    await rsvpService.respondToTrainingSession(tutorAccountId, session.id, "present");
+
+    const reloaded = await trainingSessionRepository.findById(session.id, coach.id);
+    expect(reloaded!.attendance).toHaveLength(1);
+    expect(reloaded!.attendance![0]!.status).toBe("present");
+    expect(reloaded!.attendance![0]!.comment ?? null).toBeNull();
+  });
+
+  it("rejects a coach account for a training session RSVP too", async () => {
+    const coach = await createCoach("session-coach-only");
+    await expect(rsvpService.respondToTrainingSession(coach.id, "any-session", "present")).rejects.toBeInstanceOf(EducatorNotFoundError);
   });
 });

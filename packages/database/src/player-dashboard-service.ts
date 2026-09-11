@@ -34,11 +34,24 @@ export interface PlayerDashboardMatch {
 
 // Créneau du cycle occupé par une séance déjà générée -- juste de quoi savoir, jour par jour de
 // la semaine, si une séance existe (voir apps/web/weekly-calendar.tsx, dont le calcul de grille
-// est réutilisé côté joueur avec ces mêmes weekNumber/slot ; le joueur n'a en revanche aucun accès
-// à la séance elle-même, contrairement au coach).
+// est réutilisé côté joueur avec ces mêmes weekNumber/slot). Toujours présent même sans rendez-vous
+// (voir PlayerDashboardTrainingSession ci-dessous pour la fiche détaillée, cliquable elle).
 export interface PlayerDashboardTrainingSlot {
   weekNumber: number;
   slot: number;
+}
+
+// Séance à laquelle répondre présent/absent, même principe que PlayerDashboardMatch -- mais
+// toujours "convoquée" : à la différence d'un match, il n'y a pas de composition/effectif retenu
+// pour une séance, toute l'équipe y est attendue par défaut.
+export interface PlayerDashboardTrainingSession {
+  id: string;
+  title: string;
+  dateLabel: string;
+  meetingTime: string | null;
+  location: string | null;
+  description: string | null;
+  myStatus: AttendanceStatus | null;
 }
 
 // Plateau ou tournoi -- fusionnés sous "compétition", seule distinction utile pour le joueur.
@@ -57,7 +70,23 @@ export interface PlayerDashboard {
   matchAttendance: AttendanceSummary;
   upcomingMatches: PlayerDashboardMatch[];
   trainingSlots: PlayerDashboardTrainingSlot[];
+  trainingSessions: PlayerDashboardTrainingSession[];
   competitions: PlayerDashboardCompetition[];
+}
+
+// "Samedi 19 septembre" -- ou, à défaut de rendez-vous fixé par le coach, un repère générique sur
+// le cycle ("Semaine 1 · créneau 1") : c'est la seule date dont dispose une séance non datée.
+function trainingSessionDateLabel(meetingAt: Date | null, weekNumber: number, slot: number): string {
+  if (meetingAt) {
+    return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+      .format(meetingAt)
+      .replace(/^\p{L}/u, (letter) => letter.toUpperCase());
+  }
+  return `Semaine ${weekNumber} · créneau ${slot + 1}`;
+}
+
+function trainingSessionMeetingTime(meetingAt: Date | null): string | null {
+  return meetingAt ? new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(meetingAt) : null;
 }
 
 // Toutes les données sont lues via l'éducateur PROPRIÉTAIRE du joueur (`Player.educatorId`),
@@ -131,6 +160,18 @@ export class PlayerDashboardService {
       matchAttendance: summarizeAttendance(matchEntries),
       upcomingMatches,
       trainingSlots: sessions.map((session) => ({ weekNumber: session.weekNumber, slot: session.slot })),
+      trainingSessions: sessions.map((session) => {
+        const myEntry = session.attendance?.find((entry) => entry.playerId === playerId);
+        return {
+          id: session.id,
+          title: session.title,
+          dateLabel: trainingSessionDateLabel(session.meetingAt, session.weekNumber, session.slot),
+          meetingTime: trainingSessionMeetingTime(session.meetingAt),
+          location: session.location,
+          description: session.description,
+          myStatus: myEntry ? attendanceStatusOf(myEntry) : null,
+        };
+      }),
       competitions: [
         ...plateaux.map((plateau) => ({ id: plateau.id, type: "plateau" as const, name: plateau.name, dateLabel: plateau.dateLabel })),
         ...tournaments.map((tournament) => ({

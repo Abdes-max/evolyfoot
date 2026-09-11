@@ -10,6 +10,7 @@ export {
   PlayerEvaluationNotFoundError,
   PlayerNotFoundError,
   TeamNotFoundError,
+  TrainingSessionNotFoundError,
   ValidationError,
 } from "./errors";
 export {

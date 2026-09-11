@@ -21,6 +21,18 @@ export interface DashboardMatch {
   myStatus: AttendanceStatus | null;
 }
 
+// Même principe que DashboardMatch, pour une séance d'entraînement -- toujours "convoquée"
+// (voir PlayerDashboardTrainingSession côté base, il n'y a pas de composition pour une séance).
+export interface DashboardTrainingSession {
+  id: string;
+  title: string;
+  dateLabel: string;
+  meetingTime: string | null;
+  location: string | null;
+  description: string | null;
+  myStatus: AttendanceStatus | null;
+}
+
 export interface Competition {
   id: string;
   type: "plateau" | "tournoi";
@@ -36,6 +48,7 @@ export interface Dashboard {
   matchAttendance: { present: number; absent: number; total: number; rate: number };
   upcomingMatches: DashboardMatch[];
   trainingSlots: { weekNumber: number; slot: number }[];
+  trainingSessions: DashboardTrainingSession[];
   competitions: Competition[];
 }
 

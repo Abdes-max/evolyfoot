@@ -53,7 +53,6 @@
 .response-badge--present { background: var(--good-bg); color: var(--good); }
 .response-badge--absent { background: var(--bad-bg); color: var(--bad); }
 .response-badge--absent small { text-transform: none; font-weight: 600; font-size: 10px; letter-spacing: 0; opacity: .85; }
-.response-badge--muted { color: var(--muted); font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
 
 /* Page de détail d'un match (/joueur/matches/:id, match-detail-view.tsx) -- ouverte depuis le
    calendrier ou "Mes convocations", jamais en panneau superposé. */

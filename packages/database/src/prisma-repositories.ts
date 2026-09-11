@@ -8,6 +8,7 @@ import {
   PlayerEvaluationNotFoundError,
   PlayerNotFoundError,
   TeamNotFoundError,
+  TrainingSessionNotFoundError,
 } from "./errors";
 import {
   toEducatorAuthRecord,
@@ -404,6 +405,32 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
   async findById(id: string, educatorId: string): Promise<PersistedTrainingSession | null> {
     const record = await this.prisma.trainingSessionRecord.findFirst({ where: { id, educatorId } });
     return record ? toPersistedTrainingSession(record) : null;
+  }
+
+  async update(
+    id: string,
+    educatorId: string,
+    input: {
+      meetingAt?: Date | null;
+      location?: string | null;
+      description?: string | null;
+      attendance?: readonly AttendanceEntry[];
+    },
+  ): Promise<PersistedTrainingSession> {
+    const { count } = await this.prisma.trainingSessionRecord.updateMany({
+      where: { id, educatorId },
+      data: {
+        ...(input.meetingAt !== undefined ? { meetingAt: input.meetingAt } : {}),
+        ...(input.location !== undefined ? { location: input.location } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
+      },
+    });
+    if (count === 0) {
+      throw new TrainingSessionNotFoundError();
+    }
+    const record = await this.prisma.trainingSessionRecord.findUniqueOrThrow({ where: { id } });
+    return toPersistedTrainingSession(record);
   }
 }
 

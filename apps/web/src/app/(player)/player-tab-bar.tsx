@@ -17,7 +17,7 @@ const tabs = [
 
 export function PlayerTabBar() {
   const pathname = usePathname() ?? "";
-  if (pathname.startsWith("/joueur/matches/")) {
+  if (pathname.startsWith("/joueur/matches/") || pathname.startsWith("/joueur/seances/")) {
     return null;
   }
 

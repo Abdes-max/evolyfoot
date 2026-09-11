@@ -1,7 +1,7 @@
 import { generateTrainingSession } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
 import { TrainingSessionService, type TrainingSessionInput } from "./training-session-service";
-import { EducatorNotFoundError, ValidationError } from "./errors";
+import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
 import type {
   EducatorRecord,
   EducatorRepository,
@@ -88,6 +88,9 @@ class InMemoryTrainingSessionRepository implements TrainingSessionRepository {
     const record: PersistedTrainingSession = {
       id: `session-${this.created.length + 1}`,
       educatorId,
+      meetingAt: null,
+      location: null,
+      description: null,
       ...input,
       createdAt: new Date("2026-08-29T12:00:00.000Z"),
     };
@@ -101,6 +104,19 @@ class InMemoryTrainingSessionRepository implements TrainingSessionRepository {
 
   async findById(id: string, educatorId: string): Promise<PersistedTrainingSession | null> {
     return this.created.find((session) => session.id === id && session.educatorId === educatorId) ?? null;
+  }
+
+  async update(
+    id: string,
+    educatorId: string,
+    input: { meetingAt?: Date | null; location?: string | null; description?: string | null; attendance?: PersistedTrainingSession["attendance"] },
+  ): Promise<PersistedTrainingSession> {
+    const record = this.created.find((session) => session.id === id && session.educatorId === educatorId);
+    if (!record) {
+      throw new TrainingSessionNotFoundError();
+    }
+    Object.assign(record, input);
+    return record;
   }
 }
 
