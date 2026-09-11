@@ -1,12 +1,18 @@
 import { EducatorNotFoundError, MatchNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
+import { matchMeetingTime } from "./match-time";
 import type { EducatorRepository, MatchRepository, MessageRepository, PersistedMatch, PersistedTrainingSession, PlayerRepository, TrainingSessionRepository } from "./repositories";
+
+// Fuseau du club plutôt que celui (souvent UTC) du serveur qui exécute ce code -- voir le même
+// correctif dans match-time.ts.
+const clubTimeZone = "Europe/Paris";
 
 // "Samedi 19 septembre" -- même format que PlayerDashboardMatch, dupliqué ici plutôt que partagé
 // (voir la même duplication assumée pour trainingSessionDateLabel côté PlayerDashboardService) :
-// le message de convocation doit rester lisible même si la séance n'a pas encore de rendez-vous.
+// le message de convocation doit rester lisible même si la séance n'a pas encore de rendez-vous
+// (créée avant que ce champ ne soit obligatoire).
 function trainingSessionDateLabel(session: PersistedTrainingSession): string {
   if (session.meetingAt) {
-    return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+    return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: clubTimeZone })
       .format(session.meetingAt)
       .replace(/^\p{L}/u, (letter) => letter.toUpperCase());
   }
@@ -14,11 +20,17 @@ function trainingSessionDateLabel(session: PersistedTrainingSession): string {
 }
 
 function trainingSessionMeetingTime(session: PersistedTrainingSession): string | null {
-  return session.meetingAt ? new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(session.meetingAt) : null;
+  return session.meetingAt
+    ? new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: clubTimeZone }).format(session.meetingAt)
+    : null;
 }
 
 function matchConvocationText(match: PersistedMatch): string {
-  const when = match.meetingTime ? `${match.dateLabel} · ${match.meetingTime}` : match.dateLabel;
+  // Priorité au rendez-vous (l'heure à laquelle se présenter) plutôt qu'au coup d'envoi lui-même,
+  // voir matchMeetingTime -- son repli sur le texte libre historique couvre le match créé avant
+  // l'introduction de `date`/`meetingOffsetMinutes`.
+  const time = matchMeetingTime(match.date, match.meetingOffsetMinutes, match.meetingTime);
+  const when = time ? `${match.dateLabel} · ${time}` : match.dateLabel;
   const where = match.location ? ` — ${match.location}` : "";
   return `Convocation : match contre ${match.opponent}, ${when}${where}. Merci de répondre présent ou absent dans l'appli.`;
 }

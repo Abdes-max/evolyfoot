@@ -9,6 +9,12 @@ export interface MatchSummary {
   // ISO, voir le commentaire sur PersistedMatch.date côté base -- `null` pour un match créé avant
   // l'introduction de ce champ.
   date: string | null;
+  // Heure du coup d'envoi, dérivée de `date` (voir matchKickoffTime côté base).
+  kickoffTime: string | null;
+  // Minutes avant le coup d'envoi (voir matchMeetingTime côté base) -- `meetingTime` ci-dessous
+  // est la valeur affichée (calculée depuis `date`/`meetingOffsetMinutes`, ou le texte libre en
+  // repli) ; celle-ci est la valeur BRUTE, éditable dans le formulaire "Détails" du coach.
+  meetingOffsetMinutes: number | null;
   meetingTime: string | null;
   location: string | null;
   description: string | null;
@@ -34,6 +40,7 @@ export interface MatchGateway {
       venue: MatchVenue;
       gameFormat: number;
       formationId?: string;
+      meetingOffsetMinutes?: number | null;
       meetingTime?: string;
       location?: string;
       description?: string;
@@ -51,7 +58,13 @@ export interface MatchGateway {
   updateDetails(
     educatorId: string,
     matchId: string,
-    input: { date?: string | null; meetingTime?: string | null; location?: string | null; description?: string | null },
+    input: {
+      date?: string | null;
+      meetingOffsetMinutes?: number | null;
+      meetingTime?: string | null;
+      location?: string | null;
+      description?: string | null;
+    },
   ): Promise<MatchSummary>;
   changeFormation(educatorId: string, matchId: string, formationId: string): Promise<MatchSummary>;
   markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<MatchSummary>;
@@ -135,6 +148,7 @@ export function createCreateMatchHandler(
     const venue = body?.venue === "home" || body?.venue === "away" ? body.venue : null;
     const gameFormat = typeof body?.gameFormat === "number" ? body.gameFormat : null;
     const formationId = typeof body?.formationId === "string" ? body.formationId : undefined;
+    const meetingOffsetMinutes = typeof body?.meetingOffsetMinutes === "number" ? body.meetingOffsetMinutes : undefined;
     const meetingTime = typeof body?.meetingTime === "string" ? body.meetingTime : undefined;
     const location = typeof body?.location === "string" ? body.location : undefined;
     const description = typeof body?.description === "string" ? body.description : undefined;
@@ -150,6 +164,7 @@ export function createCreateMatchHandler(
         venue,
         gameFormat,
         formationId,
+        meetingOffsetMinutes,
         meetingTime,
         location,
         description,
@@ -219,6 +234,10 @@ function isNullableString(value: unknown): value is string | null {
   return value === null || typeof value === "string";
 }
 
+function isNullableNumber(value: unknown): value is number | null {
+  return value === null || typeof value === "number";
+}
+
 // Rendez-vous, lieu et description : modifiables indépendamment de la composition, voir
 // MatchService.updateDetails côté base. Chaque champ absent du corps de la requête est laissé
 // intact (`undefined`), une valeur `null` explicite l'efface.
@@ -234,11 +253,15 @@ export function createUpdateMatchDetailsHandler(
     }
     const body = await readJsonBody(request);
     const date = body?.date === undefined ? undefined : isNullableString(body.date) ? body.date : null;
+    const meetingOffsetMinutes =
+      body?.meetingOffsetMinutes === undefined ? undefined : isNullableNumber(body.meetingOffsetMinutes) ? body.meetingOffsetMinutes : null;
     const meetingTime = body?.meetingTime === undefined ? undefined : isNullableString(body.meetingTime) ? body.meetingTime : null;
     const location = body?.location === undefined ? undefined : isNullableString(body.location) ? body.location : null;
     const description = body?.description === undefined ? undefined : isNullableString(body.description) ? body.description : null;
     try {
-      return Response.json({ match: await matches.updateDetails(educator.id, matchId, { date, meetingTime, location, description }) });
+      return Response.json({
+        match: await matches.updateDetails(educator.id, matchId, { date, meetingOffsetMinutes, meetingTime, location, description }),
+      });
     } catch (error) {
       return errorResponse(error, log);
     }
@@ -318,7 +341,9 @@ export function createRemoveMatchHandler(
 }
 
 export async function createMatchGateway(): Promise<{ gateway: MatchGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, MatchService, PrismaEducatorRepository, PrismaMatchRepository } = await import("@evolyfoot/database");
+  const { createDatabaseClient, MatchService, PrismaEducatorRepository, PrismaMatchRepository, matchKickoffTime, matchMeetingTime } = await import(
+    "@evolyfoot/database"
+  );
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new MatchService(new PrismaEducatorRepository(database.prisma), new PrismaMatchRepository(database.prisma));
 
@@ -328,7 +353,9 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       opponent: match.opponent,
       dateLabel: match.dateLabel,
       date: match.date ? match.date.toISOString() : null,
-      meetingTime: match.meetingTime,
+      kickoffTime: matchKickoffTime(match.date),
+      meetingOffsetMinutes: match.meetingOffsetMinutes,
+      meetingTime: matchMeetingTime(match.date, match.meetingOffsetMinutes, match.meetingTime),
       location: match.location,
       description: match.description,
       venue: match.venue,

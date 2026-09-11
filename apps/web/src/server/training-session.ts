@@ -20,14 +20,17 @@ export interface TrainingSessionInput {
   blocks: readonly TrainingSessionBlockInput[];
   weekNumber: number;
   slot: number;
+  // ISO, obligatoire -- voir le commentaire sur TrainingSessionInput.meetingAt côté base.
+  meetingAt: string;
   attendance?: readonly AttendanceEntry[];
 }
 
-export interface PersistedTrainingSession extends TrainingSessionInput {
+export interface PersistedTrainingSession extends Omit<TrainingSessionInput, "meetingAt"> {
   id: string;
-  // Rendez-vous (vrai horodatage ISO, saisi via un datepicker+heure), lieu et description --
-  // affichés sur la fiche détail que voit le joueur/tuteur, voir le commentaire dans
-  // schema.prisma. `null` par défaut, indépendants du contenu pédagogique de la séance.
+  // Rendez-vous (vrai horodatage ISO, saisi via un datepicker+heure) -- `null` seulement pour une
+  // séance créée avant que ce champ ne devienne obligatoire (voir TrainingSessionInput.meetingAt
+  // ci-dessus). Lieu et description : affichés sur la fiche détail que voit le joueur/tuteur, voir
+  // le commentaire dans schema.prisma.
   meetingAt: string | null;
   location: string | null;
   description: string | null;
@@ -108,6 +111,8 @@ function isTrainingSessionInputShaped(
     typeof value.slot === "number" &&
     Number.isInteger(value.slot) &&
     value.slot >= 0 &&
+    typeof value.meetingAt === "string" &&
+    !Number.isNaN(new Date(value.meetingAt).getTime()) &&
     (value.attendance === undefined || (Array.isArray(value.attendance) && value.attendance.every(isAttendanceEntryShaped)))
   );
 }
@@ -249,7 +254,7 @@ export async function createTrainingSessionGateway(): Promise<{
   return {
     gateway: {
       async save(educatorId, input) {
-        return toSummary(await service.save(educatorId, input));
+        return toSummary(await service.save(educatorId, { ...input, meetingAt: new Date(input.meetingAt) }));
       },
       async list(educatorId) {
         return (await service.list(educatorId)).map(toSummary);

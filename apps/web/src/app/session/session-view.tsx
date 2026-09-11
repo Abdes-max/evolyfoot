@@ -103,6 +103,7 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
       </header>
       <SessionBuilder
         authenticated={authenticated}
+        meetingAt={null}
         onChange={setSession}
         roster={roster}
         session={session}

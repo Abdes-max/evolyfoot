@@ -45,6 +45,7 @@ describe("session builder", () => {
 
       render(<SessionView slot={0} weekNumber={1} />);
       await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/diagnostic"));
+      fireEvent.change(screen.getByLabelText("Rendez-vous (date et heure)"), { target: { value: "2026-09-15T18:00" } });
       fireEvent.click(screen.getByRole("button", { name: "Valider cette séance" }));
 
       await vi.waitFor(() =>
@@ -59,6 +60,7 @@ describe("session builder", () => {
 
       render(<SessionView slot={0} weekNumber={1} />);
       await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/auth/session"));
+      fireEvent.change(screen.getByLabelText("Rendez-vous (date et heure)"), { target: { value: "2026-09-15T18:00" } });
       fireEvent.click(screen.getByRole("button", { name: "Valider cette séance" }));
 
       expect(await screen.findByText(/connecte-toi pour enregistrer cette séance/i)).toBeInTheDocument();

@@ -30,6 +30,10 @@ export interface TrainingSessionInput {
   blocks: ReadonlyArray<{ id: string; activityId: string; durationMinutes: number }>;
   weekNumber: number;
   slot: number;
+  // Rendez-vous (date + heure) -- obligatoire : une séance se génère désormais avec une vraie
+  // date dès le départ, plutôt que de la laisser vide jusqu'à un passage ultérieur par le
+  // formulaire "Détails" (voir updateDetails ci-dessous, toujours disponible pour la corriger).
+  meetingAt: Date;
   attendance?: ReadonlyArray<AttendanceEntry>;
 }
 
@@ -69,6 +73,9 @@ export class TrainingSessionService {
     }
     if (!Number.isInteger(input.slot) || input.slot < 0) {
       throw new ValidationError("Le créneau de la séance est invalide.");
+    }
+    if (!(input.meetingAt instanceof Date) || Number.isNaN(input.meetingAt.getTime())) {
+      throw new ValidationError("Indique la date et l’heure de la séance.");
     }
 
     // Reconstruit la séance complète (activités résolues depuis le catalogue du domaine, pas
@@ -113,6 +120,7 @@ export class TrainingSessionService {
       })),
       weekNumber: input.weekNumber,
       slot: input.slot,
+      meetingAt: input.meetingAt,
       ...(input.attendance ? { attendance: input.attendance } : {}),
     });
   }

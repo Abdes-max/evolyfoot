@@ -69,10 +69,18 @@ export function MatchDetailView({ matchId }: { matchId: string }) {
             <dl className="player-match-detail-facts">
               <div>
                 <dt>
-                  <ClockIcon /> Rendez-vous
+                  <ClockIcon /> Coup d’envoi
                 </dt>
-                <dd>{match.meetingTime ? `${match.dateLabel} · ${match.meetingTime}` : match.dateLabel}</dd>
+                <dd>{match.kickoffTime ? `${match.dateLabel} · ${match.kickoffTime}` : match.dateLabel}</dd>
               </div>
+              {match.meetingTime && (
+                <div>
+                  <dt>
+                    <ClockIcon /> Rendez-vous
+                  </dt>
+                  <dd>{match.meetingTime}</dd>
+                </div>
+              )}
               {match.location && (
                 <div>
                   <dt>

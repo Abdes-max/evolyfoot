@@ -41,6 +41,7 @@ const validInput: TrainingSessionInput = {
   })),
   weekNumber: 1,
   slot: 0,
+  meetingAt: new Date("2026-09-15T18:00:00.000Z"),
 };
 
 async function createEducator(suffix: string) {
@@ -128,13 +129,21 @@ describe("PostgreSQL training session persistence", () => {
     ).resolves.toBe(0);
   });
 
-  it("crée une séance sans rendez-vous/lieu/description par défaut", async () => {
+  it("enregistre le rendez-vous obligatoire dès la création, sans lieu/description par défaut", async () => {
     const educator = await createEducator("details-default");
     const saved = await service.save(educator.id, validInput);
 
-    expect(saved.meetingAt).toBeNull();
+    expect(saved.meetingAt).toEqual(validInput.meetingAt);
     expect(saved.location).toBeNull();
     expect(saved.description).toBeNull();
+  });
+
+  it("rejette une séance sans rendez-vous", async () => {
+    const educator = await createEducator("no-meeting-at");
+
+    await expect(
+      service.save(educator.id, { ...validInput, meetingAt: undefined as unknown as Date }),
+    ).rejects.toThrow("Indique la date et l’heure de la séance.");
   });
 
   it("modifie rendez-vous/lieu/description indépendamment du contenu pédagogique", async () => {

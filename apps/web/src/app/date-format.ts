@@ -20,6 +20,27 @@ export function parseDateInputValue(value: string): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+// "YYYY-MM-DDTHH:mm" (valeur brute d'un <input type="datetime-local">) -- interprétée en heure
+// locale du navigateur par `new Date()` faute de fuseau explicite dans la chaîne, ce qui est
+// justement ce qu'on veut ici (un coup d'envoi se pense toujours dans le fuseau du club, jamais
+// en UTC) -- même principe que dans saved-session-view.tsx pour meetingAt.
+export function parseDatetimeInputValue(value: string): Date | null {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function toDatetimeInputValue(iso: string | null): string {
+  if (!iso) {
+    return "";
+  }
+  const date = new Date(iso);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 // Ordre chronologique (le plus proche d'abord) partout où une liste doit toujours l'être --
 // séances, matchs, tournois/plateaux, observations (voir les pages listes correspondantes). Les
 // éléments sans vraie date (fiche créée avant l'introduction du champ `date`, voir le commentaire

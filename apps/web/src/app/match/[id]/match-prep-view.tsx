@@ -20,6 +20,9 @@ interface MatchRecord {
   id: string;
   opponent: string;
   dateLabel: string;
+  date: string | null;
+  kickoffTime: string | null;
+  meetingOffsetMinutes: number | null;
   meetingTime: string | null;
   location: string | null;
   description: string | null;
@@ -57,10 +60,12 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   // pré-remplie pour tout l'effectif, pour ne pas avoir à la recopier depuis `roster` via un
   // useEffect à chaque chargement.
   const [absentPlayerIds, setAbsentPlayerIds] = useState<ReadonlySet<string>>(new Set());
-  // Rendez-vous, lieu et description -- affichés sur la page de détail du joueur/tuteur
+  // Lieu et description -- affichés sur la page de détail du joueur/tuteur
   // (/joueur/matches/:id). Champs texte libres, initialisés au chargement du match (voir
   // l'effet ci-dessous) puis enregistrés indépendamment de la composition.
-  const [meetingTime, setMeetingTime] = useState("");
+  // Rendez-vous exprimé en minutes avant le coup d'envoi (voir matchMeetingTime côté base) --
+  // chaîne vide tant que non renseigné, plutôt qu'un `meetingTime` en texte libre.
+  const [meetingOffsetMinutes, setMeetingOffsetMinutes] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [savingDetails, setSavingDetails] = useState(false);
@@ -104,7 +109,9 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         }
         setMatch(matchBody.match);
         setRoster(rosterBody.players ?? []);
-        setMeetingTime(matchBody.match?.meetingTime ?? "");
+        setMeetingOffsetMinutes(
+          typeof matchBody.match?.meetingOffsetMinutes === "number" ? String(matchBody.match.meetingOffsetMinutes) : "",
+        );
         setLocation(matchBody.match?.location ?? "");
         setDescription(matchBody.match?.description ?? "");
         // Pré-coche les absents déjà connus -- notamment un joueur/tuteur qui a répondu à sa
@@ -268,10 +275,11 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     setSavingDetails(true);
     setSaveError("");
     try {
+      const parsedOffset = meetingOffsetMinutes.trim() ? Number(meetingOffsetMinutes) : null;
       const response = await fetch(`/api/matches/${matchId}/details`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ meetingTime, location, description }),
+        body: JSON.stringify({ meetingOffsetMinutes: Number.isInteger(parsedOffset) ? parsedOffset : null, location, description }),
       });
       if (!response.ok) {
         setSaveError(await readErrorMessage(response));
@@ -527,15 +535,20 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         <div className="match-slot-panel">
           <form className="match-details-form" onSubmit={saveDetails}>
             <h2>Détails</h2>
-            <p className="match-slot-hint">Affichés sur la fiche que voit le joueur/tuteur.</p>
+            <p className="match-slot-hint">
+              Coup d’envoi : {match.kickoffTime ? `${match.dateLabel} · ${match.kickoffTime}` : match.dateLabel}
+            </p>
             <label>
-              <span>Rendez-vous</span>
+              <span>Rendez-vous, minutes avant le match</span>
               <input
                 disabled={readOnly}
-                onChange={(event) => setMeetingTime(event.target.value)}
-                placeholder="Ex. 14:30"
-                value={meetingTime}
+                min={0}
+                onChange={(event) => setMeetingOffsetMinutes(event.target.value)}
+                placeholder="Ex. 30"
+                type="number"
+                value={meetingOffsetMinutes}
               />
+              {match.meetingTime && <span className="match-slot-hint">Rendez-vous calculé : {match.meetingTime}</span>}
             </label>
             <label>
               <span>Lieu</span>

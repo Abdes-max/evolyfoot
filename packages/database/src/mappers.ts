@@ -400,6 +400,7 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     opponent: record.opponent,
     dateLabel: record.dateLabel,
     date: record.date,
+    meetingOffsetMinutes: record.meetingOffsetMinutes,
     meetingTime: record.meetingTime,
     location: record.location,
     description: record.description,

@@ -54,6 +54,7 @@ const validSession = {
   blocks: generated.blocks.map((block) => ({ id: block.id, activityId: block.activity.id, durationMinutes: block.durationMinutes })),
   weekNumber: 1,
   slot: 0,
+  meetingAt: new Date("2026-09-15T18:00:00.000Z"),
 };
 
 function completeDraft(): ObservationDraft {
