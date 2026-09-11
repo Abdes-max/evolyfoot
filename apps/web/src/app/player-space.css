@@ -45,7 +45,15 @@
 .player-space-match-link:hover, .player-space-match-link:focus-visible { border-color: var(--accent); }
 .player-space-match-link.convoked { border-color: var(--accent-dark); }
 .player-space-tag { font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
-.player-space-match-link.convoked .player-space-tag { color: var(--good); }
+
+/* Badge de réponse à une convocation (calendar-view.tsx) : orange en attente, vert présent, rouge
+   pour toute autre réponse -- avec le motif précis en petit dessous. */
+.response-badge { display: inline-flex; align-items: baseline; gap: 5px; width: fit-content; padding: 3px 9px; border-radius: 99px; font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
+.response-badge--pending { background: var(--warn-bg); color: var(--warn); }
+.response-badge--present { background: var(--good-bg); color: var(--good); }
+.response-badge--absent { background: var(--bad-bg); color: var(--bad); }
+.response-badge--absent small { text-transform: none; font-weight: 600; font-size: 10px; letter-spacing: 0; opacity: .85; }
+.response-badge--muted { color: var(--muted); font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
 
 /* Page de détail d'un match (/joueur/matches/:id, match-detail-view.tsx) -- ouverte depuis le
    calendrier ou "Mes convocations", jamais en panneau superposé. */
@@ -54,13 +62,34 @@
 .player-match-detail-teams strong { font-size: 18px; }
 .player-match-detail-venue { margin: 0; color: var(--muted); font-size: 13px; }
 .player-match-detail-facts { display: grid; gap: 10px; margin: 0; }
-.player-match-detail-facts dt { font-size: 10.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.player-match-detail-facts dt { display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
 .player-match-detail-facts dd { margin: 2px 0 0; font-size: 14px; }
-.player-match-detail-description { margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: 13px; line-height: 1.5; }
+.player-match-detail-description { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: 13px; line-height: 1.5; }
+.player-match-detail-description svg { flex-shrink: 0; margin-top: 3px; color: var(--muted); }
+
+/* Plan de l'adresse (map-embed.tsx) -- Google Maps sans clé d'API. */
+.map-embed { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.map-embed iframe { width: 100%; height: 180px; border: 0; display: block; }
+
 .player-match-detail-rsvp p { margin: 0 0 8px; font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
-.player-match-detail-rsvp-options { display: flex; flex-wrap: wrap; gap: 8px; }
-.player-match-detail-rsvp-options .choice { min-height: 40px; padding: 0 16px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 12.5px; font-weight: 700; }
-.player-match-detail-rsvp-options .choice.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+
+/* Réponse binaire présent/absent (rsvp-control.tsx) -- vert/rouge, même langage de couleur que les
+   badges de la liste des convocations (.response-badge). */
+.rsvp-control-choices { display: flex; gap: 8px; }
+.rsvp-control-choices .choice { flex: 1; min-height: 42px; padding: 0 16px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 12.5px; font-weight: 700; }
+.rsvp-control-choices .choice.active { border-color: var(--good); background: var(--good); color: #06210f; }
+.rsvp-control-choices .choice.absent.active { border-color: var(--bad); background: var(--bad); color: #350808; }
+
+/* Popup de précision du motif d'absence -- pas une boîte de dialogue navigateur, un panneau
+   in-page classique. */
+.rsvp-popup-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(5, 8, 14, .65); padding: 20px; }
+.rsvp-popup { width: min(360px, 100%); display: grid; gap: 14px; padding: 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.rsvp-popup h3 { margin: 0; font-size: 14px; }
+.rsvp-popup-field { display: grid; gap: 6px; font-size: 11.5px; color: var(--muted); font-weight: 700; }
+.rsvp-popup-field select, .rsvp-popup-field textarea { border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); color: var(--ink); padding: 9px 11px; font-size: 13px; font-family: inherit; resize: vertical; }
+.rsvp-popup-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.rsvp-popup-cancel { min-height: 38px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-weight: 700; font-size: 12px; }
+.rsvp-popup-confirm { min-height: 38px; padding: 0 16px; border-radius: 9px; border: none; background: var(--bad); color: #350808; font-weight: 800; font-size: 12px; }
 
 @media (max-width: 720px) {
   .player-space-grid, .player-space-progress { grid-template-columns: 1fr; }

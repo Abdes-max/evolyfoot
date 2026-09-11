@@ -1,12 +1,33 @@
 "use client";
 
-import { attendanceStatusLabels } from "@evolyfoot/domain";
+import { attendanceStatusLabels, type AttendanceStatus } from "@evolyfoot/domain";
 import Link from "next/link";
 import { PlayerSpaceHeader } from "../../player-space-header";
 import { usePlayerDashboard } from "../use-player-dashboard";
 import { WeekCalendar } from "../week-calendar";
 
 const venueLabel = { home: "Domicile", away: "Extérieur" } as const;
+
+// Réponse à une convocation, résumée en un badge de couleur : orange tant que rien n'est
+// renseigné, vert pour "Présent", rouge pour toute autre réponse (Absent, mais aussi Malade/
+// Blessé/Raison personnelle/En retard) -- avec le motif précis affiché en dessous, comme demandé.
+function ResponseBadge({ convoked, status }: { convoked: boolean; status: AttendanceStatus | null }) {
+  if (!convoked) {
+    return <span className="response-badge response-badge--muted">Pas encore dans le groupe</span>;
+  }
+  if (status === null) {
+    return <span className="response-badge response-badge--pending">En attente de réponse</span>;
+  }
+  if (status === "present") {
+    return <span className="response-badge response-badge--present">Présent</span>;
+  }
+  return (
+    <span className="response-badge response-badge--absent">
+      Absent
+      <small>{attendanceStatusLabels[status]}</small>
+    </span>
+  );
+}
 
 // Onglet "Calendrier" (voir player-tab-bar.tsx) : la semaine, les convocations aux matchs et les
 // compétitions -- tout ce qui décrit ce qui se passe, plutôt que ce qui décrit le joueur lui-même
@@ -44,13 +65,7 @@ export function PlayerCalendarView() {
                         <span>
                           {match.dateLabel} · {venueLabel[match.venue]}
                         </span>
-                        <span className="player-space-tag">
-                          {match.myStatus
-                            ? `Réponse : ${attendanceStatusLabels[match.myStatus]}`
-                            : match.convoked
-                              ? "Convoqué"
-                              : "Pas encore dans le groupe"}
-                        </span>
+                        <ResponseBadge convoked={match.convoked} status={match.myStatus} />
                       </Link>
                     </li>
                   ))}

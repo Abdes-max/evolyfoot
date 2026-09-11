@@ -40,10 +40,18 @@ export interface AttendanceEntry {
   // Optionnel : absent sur une entrée créée avant l'introduction des motifs détaillés (simple
   // présent/absent). Un lecteur qui veut le détail retombe sur "present"/"absent" selon `present`.
   readonly status?: AttendanceStatus;
+  // Précision libre laissée par le joueur/tuteur en répondant à une convocation (motif détaillé
+  // d'une absence). Jamais renseigné pour une entrée saisie par le coach lui-même.
+  readonly comment?: string | null;
 }
 
-export function createAttendanceEntry(playerId: string, playerName: string, status: AttendanceStatus): AttendanceEntry {
-  return Object.freeze({ playerId, playerName, status, present: isPresentStatus(status) });
+export function createAttendanceEntry(
+  playerId: string,
+  playerName: string,
+  status: AttendanceStatus,
+  comment?: string | null,
+): AttendanceEntry {
+  return Object.freeze({ playerId, playerName, status, present: isPresentStatus(status), comment: comment ?? null });
 }
 
 // Le statut effectif d'une entrée, avec repli sur le binaire présent/absent pour les entrées
