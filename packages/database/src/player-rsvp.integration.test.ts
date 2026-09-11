@@ -136,6 +136,7 @@ describe("PlayerRsvpService", () => {
       blocks: [],
       weekNumber: 1,
       slot: 0,
+      meetingAt: new Date("2026-09-15T18:00:00.000Z"),
       attendance: [{ playerId: other.id, playerName: "Autre joueur séance", present: true }],
     });
 
@@ -160,6 +161,7 @@ describe("PlayerRsvpService", () => {
       blocks: [],
       weekNumber: 1,
       slot: 0,
+      meetingAt: new Date("2026-09-15T18:00:00.000Z"),
     });
 
     await rsvpService.respondToTrainingSession(tutorAccountId, session.id, "late");

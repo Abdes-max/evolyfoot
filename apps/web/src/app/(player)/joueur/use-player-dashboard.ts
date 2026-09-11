@@ -14,6 +14,7 @@ export interface DashboardMatch {
   opponent: string;
   dateLabel: string;
   date: string | null;
+  kickoffTime: string | null;
   meetingTime: string | null;
   location: string | null;
   description: string | null;

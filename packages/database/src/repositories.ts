@@ -217,6 +217,10 @@ export interface TrainingSessionRepository {
       blocks: PersistedTrainingSessionBlock[];
       weekNumber: number;
       slot: number;
+      // Rendez-vous (date + heure) -- obligatoire dès la génération de la séance (voir
+      // TrainingSessionService.save), contrairement à `location`/`description`, réservés au
+      // formulaire "Détails" une fois la séance déjà enregistrée.
+      meetingAt: Date;
       attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedTrainingSession>;
@@ -312,11 +316,15 @@ export interface PersistedMatch {
   educatorId: string;
   opponent: string;
   dateLabel: string;
-  // Vraie date calendaire (jour, voir le commentaire dans schema.prisma) -- `null` pour un match
-  // créé avant l'introduction de ce champ, seul `dateLabel` reste fiable pour lui.
+  // Vraie date ET heure du coup d'envoi (voir le commentaire dans schema.prisma) -- `null` pour un
+  // match créé avant l'introduction de ce champ, seul `dateLabel` reste fiable pour lui.
   date: Date | null;
-  // Rendez-vous et lieu précis, distincts de `dateLabel` -- voir le commentaire sur le modèle
-  // Prisma. `null` si le coach ne les a pas renseignés.
+  // Rendez-vous exprimé en minutes avant le coup d'envoi (voir matchMeetingTime côté base pour le
+  // calcul) -- `null` si non renseigné, ou pour un match créé avant l'introduction de ce champ.
+  meetingOffsetMinutes: number | null;
+  // Lieu précis, distinct de `dateLabel` -- voir le commentaire sur le modèle Prisma. `null` si
+  // le coach ne l'a pas renseigné. `meetingTime` (texte libre) reste le repli pour un rendez-vous
+  // saisi avant `meetingOffsetMinutes`, voir matchMeetingTime.
   meetingTime: string | null;
   location: string | null;
   description: string | null;
@@ -351,6 +359,7 @@ export interface MatchRepository {
       gameFormat: GameFormat;
       formationId: string;
       date?: Date | null;
+      meetingOffsetMinutes?: number | null;
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
@@ -370,6 +379,7 @@ export interface MatchRepository {
       captainPlayerId?: string | null;
       substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
+      meetingOffsetMinutes?: number | null;
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;

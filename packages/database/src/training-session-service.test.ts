@@ -33,6 +33,7 @@ const validInput: TrainingSessionInput = {
   })),
   weekNumber: 1,
   slot: 0,
+  meetingAt: new Date("2026-09-15T18:00:00.000Z"),
 };
 
 class InMemoryEducatorRepository implements EducatorRepository {

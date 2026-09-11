@@ -394,13 +394,15 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
       blocks: PersistedTrainingSessionBlock[];
       weekNumber: number;
       slot: number;
+      meetingAt: Date;
       attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedTrainingSession> {
     const blocks = input.blocks as unknown as Prisma.InputJsonValue;
     const attendance = input.attendance ? (input.attendance as unknown as Prisma.InputJsonValue) : undefined;
     try {
-      // Upsert sur le créneau : (re)générer la séance d'un créneau déjà occupé la remplace.
+      // Upsert sur le créneau : (re)générer la séance d'un créneau déjà occupé la remplace, y
+      // compris son rendez-vous (obligatoire à chaque génération, voir TrainingSessionService.save).
       const record = await this.prisma.trainingSessionRecord.upsert({
         where: {
           training_session_slot: { educatorId, weekNumber: input.weekNumber, slot: input.slot },
@@ -415,6 +417,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
           blocks,
           weekNumber: input.weekNumber,
           slot: input.slot,
+          meetingAt: input.meetingAt,
           attendance,
         },
         update: {
@@ -424,6 +427,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
           theme: toPrismaDevelopmentTheme(input.theme),
           intention: input.intention,
           blocks,
+          meetingAt: input.meetingAt,
           ...(attendance !== undefined ? { attendance } : {}),
         },
       });
@@ -594,6 +598,7 @@ export class PrismaMatchRepository implements MatchRepository {
       gameFormat: GameFormat;
       formationId: string;
       date?: Date | null;
+      meetingOffsetMinutes?: number | null;
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
@@ -606,6 +611,7 @@ export class PrismaMatchRepository implements MatchRepository {
           opponent: input.opponent,
           dateLabel: input.dateLabel,
           date: input.date ?? null,
+          meetingOffsetMinutes: input.meetingOffsetMinutes ?? null,
           venue: toPrismaMatchVenue(input.venue),
           gameFormat: input.gameFormat,
           formationId: input.formationId,
@@ -637,6 +643,7 @@ export class PrismaMatchRepository implements MatchRepository {
       captainPlayerId?: string | null;
       substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
+      meetingOffsetMinutes?: number | null;
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
@@ -646,6 +653,7 @@ export class PrismaMatchRepository implements MatchRepository {
       where: { id, educatorId },
       data: {
         ...(input.opponent !== undefined ? { opponent: input.opponent } : {}),
+        ...(input.meetingOffsetMinutes !== undefined ? { meetingOffsetMinutes: input.meetingOffsetMinutes } : {}),
         ...(input.meetingTime !== undefined ? { meetingTime: input.meetingTime } : {}),
         ...(input.location !== undefined ? { location: input.location } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),

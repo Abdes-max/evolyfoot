@@ -35,6 +35,7 @@ export { ConvocationService } from "./convocation-service";
 export { DiagnosticService } from "./diagnostic-service";
 export { EducatorProfileService, seasonFormats } from "./educator-profile-service";
 export { MatchService } from "./match-service";
+export { matchKickoffTime, matchMeetingTime } from "./match-time";
 export { MessagingService } from "./messaging-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";

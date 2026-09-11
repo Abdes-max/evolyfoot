@@ -18,31 +18,13 @@ type LoadState =
   | { status: "stale" }
   | { status: "ready"; session: TrainingSession; weekNumber: number; slot: number };
 
-// "YYYY-MM-DDTHH:mm" attendu par <input type="datetime-local"> -- converti depuis/vers l'ISO
-// stocké côté base, en heure locale du navigateur (un rendez-vous se pense toujours dans le
-// fuseau du club, jamais en UTC).
-function toDatetimeLocalValue(iso: string | null): string {
-  if (!iso) {
-    return "";
-  }
-  const date = new Date(iso);
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function fromDatetimeLocalValue(value: string): string | null {
-  if (!value) {
-    return null;
-  }
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
-
 export function SavedSessionView({ sessionId }: { sessionId: string }) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [authenticated, setAuthenticated] = useState(false);
   const [roster, setRoster] = useState<RosterPlayer[]>([]);
-  const [meetingAt, setMeetingAt] = useState("");
+  // Passé tel quel à <SessionBuilder>, qui porte désormais le seul input du rendez-vous (voir son
+  // commentaire) -- ce fichier ne garde que lieu/description dans son propre formulaire "Détails".
+  const [recordMeetingAt, setRecordMeetingAt] = useState<string | null>(null);
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [savingDetails, setSavingDetails] = useState(false);
@@ -91,7 +73,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
           return;
         }
         setRoster(rosterBody.players ?? []);
-        setMeetingAt(toDatetimeLocalValue(record.meetingAt ?? null));
+        setRecordMeetingAt(record.meetingAt ?? null);
         setLocation(record.location ?? "");
         setDescription(record.description ?? "");
         setState({ status: "ready", session: rehydrated, weekNumber: record.weekNumber, slot: record.slot });
@@ -116,7 +98,6 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          meetingAt: fromDatetimeLocalValue(meetingAt),
           location: location.trim() ? location.trim() : null,
           description: description.trim() ? description.trim() : null,
         }),
@@ -200,6 +181,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
         <>
           <SessionBuilder
             authenticated={authenticated}
+            meetingAt={recordMeetingAt}
             mode="edit"
             onChange={(session) => setState({ ...state, session })}
             roster={roster}
@@ -209,14 +191,11 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
           />
 
           {/* Classes réutilisées de match.css (match-details-form/-save, match-slot-hint) --
-              même formulaire que côté match, voir match-prep-view.tsx. */}
+              même formulaire que côté match, voir match-prep-view.tsx. Le rendez-vous se règle
+              directement dans <SessionBuilder> ci-dessus (voir son commentaire), pas ici. */}
           <form className="match-details-form" onSubmit={saveDetails}>
             <h2>Détails</h2>
             <p className="match-slot-hint">Affichés sur la fiche que voit le joueur/tuteur.</p>
-            <label>
-              <span>Rendez-vous</span>
-              <input onChange={(event) => setMeetingAt(event.target.value)} type="datetime-local" value={meetingAt} />
-            </label>
             <label>
               <span>Lieu</span>
               <input

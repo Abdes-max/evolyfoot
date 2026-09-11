@@ -128,6 +128,7 @@ test("le coach personnalise, valide puis observe sa séance", async ({ page }) =
   await expect(page.getByText("Organisation", { exact: true }).first()).toBeVisible();
   await page.getByRole("button", { name: "Ajouter 5 minutes" }).first().click();
   await expect(page.getByText("80 min")).toBeVisible();
+  await page.getByLabel("Rendez-vous (date et heure)").fill("2026-09-15T18:00");
   await page.getByRole("button", { name: "Valider cette séance" }).click();
   await expect(page.getByRole("status")).toContainText("Séance prête");
   await page.getByRole("link", { name: /observer cette séance/i }).click();

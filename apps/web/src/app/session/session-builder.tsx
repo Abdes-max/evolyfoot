@@ -12,6 +12,7 @@ import {
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useState } from "react";
+import { parseDatetimeInputValue, toDatetimeInputValue } from "../date-format";
 import { TacticalDiagramView } from "../tactical-diagram";
 
 interface RosterPlayer {
@@ -27,6 +28,13 @@ interface SessionBuilderProps {
   // Créneau du cycle où la séance est enregistrée (upsert sur (éducateur, semaine, slot)).
   weekNumber: number;
   slot: number;
+  // Rendez-vous (date + heure), obligatoire -- ISO si la séance en a déjà un (mode "edit"), sinon
+  // `null` (mode "create", à renseigner avant de pouvoir valider). Un seul input pour ce champ,
+  // ici plutôt que dans le formulaire "Détails" de saved-session-view.tsx (qui ne garde que
+  // lieu/description) : "Valider cette séance" ci-dessous appelle le même POST /api/sessions dans
+  // les deux modes, toujours avec un rendez-vous -- deux formulaires distincts pour un même champ
+  // auraient pu se marcher dessus (l'un écrasant silencieusement la valeur de l'autre).
+  meetingAt: string | null;
   // "create" : nouvelle séance générée pour un créneau, on saisit la présence. "edit" : on ré-ouvre
   // une séance déjà enregistrée pour ajuster son déroulé -- la présence, saisie à la préparation,
   // n'est pas redemandée (et n'est pas réécrite) ici.
@@ -51,18 +59,25 @@ export function SessionBuilder({
   session,
   weekNumber,
   slot,
+  meetingAt,
   mode = "create",
 }: SessionBuilderProps) {
   const capturesAttendance = mode === "create" && roster.length > 0;
   const [validationStatus, setValidationStatus] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  // Initialisé une seule fois depuis la prop (valeur de départ, pas une resynchronisation
+  // continue) : l'initialiseur paresseux de useState ne s'exécute qu'au montage, donc pas besoin
+  // d'un useEffect ici -- voir le même principe ailleurs dans l'appli pour éviter la règle
+  // react-hooks/set-state-in-effect.
+  const [meetingAtInput, setMeetingAtInput] = useState(() => toDatetimeInputValue(meetingAt));
   // Ensemble des absents plutôt qu'une carte complète pré-remplie pour tout l'effectif : tout le
   // monde est présent par défaut (le cas le plus fréquent, l'éducateur décoche les absents plutôt
   // que de tout cocher) -- et ça évite de devoir recopier `roster` dans un état local via un
   // useEffect à chaque fois qu'il arrive du parent (voir sidebar-nav.tsx pour le même correctif).
   const [absentPlayerIds, setAbsentPlayerIds] = useState<ReadonlySet<string>>(new Set());
   const duration = getSessionDuration(session);
-  const isValid = canValidateSession(session);
+  const meetingAtDate = parseDatetimeInputValue(meetingAtInput);
+  const isValid = canValidateSession(session) && meetingAtDate !== null;
 
   function editSession(nextSession: TrainingSession) {
     onChange(nextSession);
@@ -85,6 +100,9 @@ export function SessionBuilder({
   async function validateSession() {
     if (!authenticated) {
       setSaveState("auth-required");
+      return;
+    }
+    if (!meetingAtDate) {
       return;
     }
 
@@ -111,6 +129,7 @@ export function SessionBuilder({
             activityId: block.activity.id,
             durationMinutes: block.durationMinutes,
           })),
+          meetingAt: meetingAtDate.toISOString(),
           weekNumber,
           slot,
           ...(attendance.length > 0 ? { attendance } : {}),
@@ -179,6 +198,11 @@ export function SessionBuilder({
           </li>
         );})}
       </ol>
+
+      <label className="session-meeting-at">
+        <span>Rendez-vous (date et heure)</span>
+        <input onChange={(event) => setMeetingAtInput(event.target.value)} required type="datetime-local" value={meetingAtInput} />
+      </label>
 
       {capturesAttendance && (
         <section aria-labelledby="session-attendance-title" className="session-attendance">

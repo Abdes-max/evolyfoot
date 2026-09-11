@@ -5,7 +5,7 @@ import type { GameFormat, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { frenchDateLabel, parseDateInputValue, sortChronologically } from "../date-format";
+import { frenchDateLabel, parseDatetimeInputValue, sortChronologically } from "../date-format";
 import { CompetitionsPanel } from "./competitions-panel";
 
 interface MatchSummary {
@@ -37,8 +37,9 @@ export function MatchListView() {
   const [matches, setMatches] = useState<MatchSummary[]>([]);
   const [creating, setCreating] = useState(false);
   const [opponent, setOpponent] = useState("");
-  // "YYYY-MM-DD" (valeur brute d'un <input type="date">) -- dateLabel ("Samedi 12 septembre")
-  // est dérivé automatiquement à l'envoi, voir createMatch ci-dessous.
+  // "YYYY-MM-DDTHH:mm" (valeur brute d'un <input type="datetime-local">) -- dateLabel ("Samedi 12
+  // septembre") est dérivé automatiquement à l'envoi, voir createMatch ci-dessous ; l'heure elle-
+  // même reste dans `date` (coup d'envoi réel).
   const [dateInput, setDateInput] = useState("");
   const [venue, setVenue] = useState<MatchVenue>("home");
   const [gameFormat, setGameFormat] = useState<GameFormat>(8);
@@ -95,7 +96,7 @@ export function MatchListView() {
     setSubmitting(true);
     setCreateError("");
     try {
-      const date = parseDateInputValue(dateInput);
+      const date = parseDatetimeInputValue(dateInput);
       const response = await fetch("/api/matches", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -156,7 +157,7 @@ export function MatchListView() {
                 </label>
                 <label>
                   Date
-                  <input onChange={(event) => setDateInput(event.target.value)} required type="date" value={dateInput} />
+                  <input onChange={(event) => setDateInput(event.target.value)} required type="datetime-local" value={dateInput} />
                 </label>
               </div>
               <div className="form-row">

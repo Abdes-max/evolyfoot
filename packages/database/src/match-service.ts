@@ -21,6 +21,12 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
   return trimmed ? trimmed : null;
 }
 
+// Rendez-vous exprimé en minutes avant le coup d'envoi (voir matchMeetingTime côté base) -- un
+// entier positif ou nul, sinon `null` (non renseigné).
+function normalizeMeetingOffset(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
+}
+
 function normalizeDateLabel(dateLabel: string): string {
   const trimmed = dateLabel.trim();
   if (!trimmed) {
@@ -136,6 +142,7 @@ export class MatchService {
       venue: MatchVenue;
       gameFormat: number;
       formationId?: string;
+      meetingOffsetMinutes?: number | null;
       meetingTime?: string;
       location?: string;
       description?: string;
@@ -152,6 +159,7 @@ export class MatchService {
       opponent,
       dateLabel,
       date: input.date ?? null,
+      meetingOffsetMinutes: normalizeMeetingOffset(input.meetingOffsetMinutes),
       venue: input.venue,
       gameFormat,
       formationId,
@@ -161,17 +169,25 @@ export class MatchService {
     });
   }
 
-  // Rendez-vous, lieu précis et description -- modifiables indépendamment de la composition,
-  // avant comme après que le match soit joué (une adresse ou une note reste correcte a
-  // posteriori, contrairement à la composition qui décrit une prévision).
+  // Rendez-vous (calculé à `date - meetingOffsetMinutes`, voir matchMeetingTime), lieu précis et
+  // description -- modifiables indépendamment de la composition, avant comme après que le match
+  // soit joué (une adresse ou une note reste correcte a posteriori, contrairement à la
+  // composition qui décrit une prévision).
   async updateDetails(
     educatorId: string,
     matchId: string,
-    input: { date?: Date | null; meetingTime?: string | null; location?: string | null; description?: string | null },
+    input: {
+      date?: Date | null;
+      meetingOffsetMinutes?: number | null;
+      meetingTime?: string | null;
+      location?: string | null;
+      description?: string | null;
+    },
   ): Promise<PersistedMatch> {
     await this.get(educatorId, matchId);
     return this.matchRepository.update(matchId, educatorId, {
       ...(input.date !== undefined ? { date: input.date } : {}),
+      ...(input.meetingOffsetMinutes !== undefined ? { meetingOffsetMinutes: normalizeMeetingOffset(input.meetingOffsetMinutes) } : {}),
       ...(input.meetingTime !== undefined ? { meetingTime: normalizeOptionalText(input.meetingTime) } : {}),
       ...(input.location !== undefined ? { location: normalizeOptionalText(input.location) } : {}),
       ...(input.description !== undefined ? { description: normalizeOptionalText(input.description) } : {}),

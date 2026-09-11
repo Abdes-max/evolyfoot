@@ -316,17 +316,19 @@ model MatchRecord {
   educator        Educator            @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   opponent        String
   dateLabel       String              @map("date_label")
-  // Vraie date calendaire (jour, pas d'heure -- voir meetingTime pour le rendez-vous), dérivée du
-  // datepicker de création et utilisée pour trier/regrouper par semaine (voir
-  // PlayerDashboardService et les pages listes côté coach). Nullable : un match créé avant
-  // l'introduction de ce champ n'en a pas, seul `dateLabel` (texte libre saisi à l'époque) reste
-  // fiable pour lui.
+  // Vraie date ET heure du coup d'envoi, dérivée du datepicker de création (datetime-local) --
+  // utilisée pour trier/regrouper par semaine (voir PlayerDashboardService et les pages listes
+  // côté coach) et pour calculer le rendez-vous (voir meetingOffsetMinutes ci-dessous). Nullable :
+  // un match créé avant l'introduction de ce champ n'en a pas, seul `dateLabel` (texte libre saisi
+  // à l'époque) reste fiable pour lui.
   date            DateTime?
-  // Rendez-vous (avant le coup d'envoi -- échauffement...) et adresse précise, distincts de
-  // `dateLabel` (l'heure/le jour du match lui-même, en texte libre). Tous deux optionnels : un
-  // match créé avant leur introduction, ou dont le coach n'a pas encore précisé ces détails, n'en
-  // a pas -- la page de détail du joueur/tuteur (/joueur/matches/:id) les affiche seulement s'ils
-  // existent.
+  // Rendez-vous (avant le coup d'envoi -- échauffement...), calculé automatiquement à
+  // `date - meetingOffsetMinutes` quand les deux sont renseignés (voir matchMeetingTime côté
+  // domaine) : le coach indique juste "X minutes avant le match" plutôt que de ressaisir une
+  // heure. `meetingTime` (texte libre) reste le repli pour un match créé avant l'introduction de
+  // `date`/`meetingOffsetMinutes`, ou dont le coach a saisi un rendez-vous à une heure qui ne suit
+  // pas cette règle (jour différent, par exemple).
+  meetingOffsetMinutes Int?           @map("meeting_offset_minutes")
   meetingTime     String?             @map("meeting_time")
   location        String?
   description     String?

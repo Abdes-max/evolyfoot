@@ -21,12 +21,12 @@ const validInput: TrainingSessionInput = {
   blocks: [{ id: "b1", activityId: "activite-1", durationMinutes: 75 }],
   weekNumber: 1,
   slot: 0,
+  meetingAt: "2026-09-15T18:00:00.000Z",
 };
 
 const persisted: PersistedTrainingSession = {
   ...validInput,
   id: "session-1",
-  meetingAt: null,
   location: null,
   description: null,
   createdAt: "2026-08-29T12:00:00.000Z",
@@ -137,7 +137,7 @@ describe("createSaveTrainingSessionHandler", () => {
   it("saves and returns the session on success", async () => {
     const handler = createSaveTrainingSessionHandler(
       authenticated,
-      { save: async (_id, input) => ({ ...input, id: "session-1", meetingAt: null, location: null, description: null, createdAt: "2026-08-29T12:00:00.000Z" }) },
+      { save: async (_id, input) => ({ ...input, id: "session-1", location: null, description: null, createdAt: "2026-08-29T12:00:00.000Z" }) },
       () => undefined,
     );
 

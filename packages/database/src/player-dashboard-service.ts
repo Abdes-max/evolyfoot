@@ -1,6 +1,7 @@
 import { attendanceStatusOf, summarizeAttendance } from "@evolyfoot/domain";
 import type { AttendanceEntry, AttendanceStatus, AttendanceSummary, PlayerEvaluationScores, TrainingDay } from "@evolyfoot/domain";
 import { EducatorNotFoundError } from "./errors";
+import { matchKickoffTime, matchMeetingTime } from "./match-time";
 import type {
   EducatorRepository,
   MatchRepository,
@@ -26,6 +27,9 @@ export interface PlayerDashboardMatch {
   // match créé avant l'introduction de ce champ, alors exclu du tri chronologique unifié
   // séances/matchs/compétitions (voir calendar-view.tsx), affiché en repli avec `dateLabel` seul.
   date: Date | null;
+  // Heure du coup d'envoi (dérivée de `date`, voir matchKickoffTime côté base) -- distincte de
+  // `meetingTime`, le rendez-vous avant le match.
+  kickoffTime: string | null;
   meetingTime: string | null;
   location: string | null;
   description: string | null;
@@ -80,11 +84,16 @@ export interface PlayerDashboard {
   competitions: PlayerDashboardCompetition[];
 }
 
-// "Samedi 19 septembre" -- ou, à défaut de rendez-vous fixé par le coach, un repère générique sur
-// le cycle ("Semaine 1 · créneau 1") : c'est la seule date dont dispose une séance non datée.
+// Fuseau du club plutôt que celui (souvent UTC) du serveur qui exécute ce code -- voir le même
+// correctif dans match-time.ts.
+const clubTimeZone = "Europe/Paris";
+
+// "Samedi 19 septembre" -- ou, à défaut de rendez-vous (séance créée avant que ce champ ne soit
+// obligatoire), un repère générique sur le cycle ("Semaine 1 · créneau 1"), seule date dont elle
+// dispose alors.
 function trainingSessionDateLabel(meetingAt: Date | null, weekNumber: number, slot: number): string {
   if (meetingAt) {
-    return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+    return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: clubTimeZone })
       .format(meetingAt)
       .replace(/^\p{L}/u, (letter) => letter.toUpperCase());
   }
@@ -92,7 +101,7 @@ function trainingSessionDateLabel(meetingAt: Date | null, weekNumber: number, sl
 }
 
 function trainingSessionMeetingTime(meetingAt: Date | null): string | null {
-  return meetingAt ? new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(meetingAt) : null;
+  return meetingAt ? new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: clubTimeZone }).format(meetingAt) : null;
 }
 
 // Toutes les données sont lues via l'éducateur PROPRIÉTAIRE du joueur (`Player.educatorId`),
@@ -146,7 +155,8 @@ export class PlayerDashboardService {
           opponent: match.opponent,
           dateLabel: match.dateLabel,
           date: match.date,
-          meetingTime: match.meetingTime,
+          kickoffTime: matchKickoffTime(match.date),
+          meetingTime: matchMeetingTime(match.date, match.meetingOffsetMinutes, match.meetingTime),
           location: match.location,
           description: match.description,
           venue: match.venue,
