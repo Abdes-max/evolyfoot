@@ -317,7 +317,54 @@ test("un visiteur non connecté découvre la vitrine sur la page d'accueil", asy
   // masqué sous 820px en attendant un menu mobile dédié).
   await page.locator(".m-footer").getByRole("link", { name: "Tarifs" }).click();
   await expect(page).toHaveURL(/\/tarifs$/);
-  await expect(page.getByRole("heading", { name: /gratuit pour une équipe/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /gratuit pour planifier/i })).toBeVisible();
+});
+
+test("le visiteur compare les fréquences de paiement Premium sur /tarifs", async ({ page }) => {
+  await page.context().clearCookies();
+  await page.route("**/api/auth/session", (route) => route.fulfill({ json: { educator: null, role: null } }));
+  await page.goto("/tarifs");
+
+  const premiumPrice = page.locator(".m-plan-featured .m-plan-price");
+
+  // Sélectionné par défaut : annuel payé en une fois, le moins cher.
+  await expect(premiumPrice).toContainText("4,92");
+
+  await page.getByRole("radio", { name: "Mensuel" }).click();
+  await expect(premiumPrice).toContainText("9 €");
+});
+
+test("les pages légales sont publiques et affichent leurs sections", async ({ page }) => {
+  await page.context().clearCookies();
+  await page.route("**/api/auth/session", (route) => route.fulfill({ json: { educator: null, role: null } }));
+
+  await page.goto("/mentions-legales");
+  await expect(page).toHaveURL(/\/mentions-legales$/);
+  await expect(page.getByRole("heading", { name: "Mentions légales", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Éditeur du site" })).toBeVisible();
+
+  await page.locator(".m-footer").getByRole("link", { name: "Confidentialité" }).click();
+  await expect(page).toHaveURL(/\/confidentialite$/);
+  await expect(page.getByRole("heading", { name: "Droits des personnes" })).toBeVisible();
+
+  await page.locator(".m-footer").getByRole("link", { name: "CGU" }).click();
+  await expect(page).toHaveURL(/\/cgu$/);
+  await expect(page.getByRole("heading", { name: "Compte joueur / tuteur" })).toBeVisible();
+});
+
+test("l'image de partage de la vitrine se génère correctement", async ({ page }) => {
+  await page.context().clearCookies();
+  await page.route("**/api/auth/session", (route) => route.fulfill({ json: { educator: null, role: null } }));
+  await page.goto("/");
+
+  // L'URL exacte de l'image porte un hash généré au build (`/opengraph-image-xxxxx`) : on la lit
+  // depuis la balise og:image plutôt que de la coder en dur.
+  const ogImageUrl = await page.locator('meta[property="og:image"]').getAttribute("content");
+  expect(ogImageUrl).toBeTruthy();
+
+  const response = await page.request.get(ogImageUrl!);
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toContain("image/png");
 });
 
 test("un visiteur envoie un message depuis le formulaire de contact", async ({ page }) => {
@@ -331,7 +378,9 @@ test("un visiteur envoie un message depuis le formulaire de contact", async ({ p
   });
 
   await page.goto("/contact");
-  await page.getByLabel("Ton nom").fill("Camille Éducatrice");
+  // pressSequentially plutôt que fill : sur WebKit, un fill() sur ce champ peut se voir vidé par
+  // le fill() suivant (bizarrerie connue du driver Playwright, pas un bug de l'application).
+  await page.getByLabel("Ton nom").pressSequentially("Camille Éducatrice");
   await page.getByLabel("Adresse e-mail").fill("camille@example.test");
   await page.getByLabel("Ton message").fill("Une idée pour la bibliothèque d’exercices.");
   await page.getByRole("button", { name: "Envoyer le message" }).click();

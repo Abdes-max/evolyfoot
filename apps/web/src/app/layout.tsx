@@ -18,7 +18,10 @@ import "./player-space.css";
 import "./page-backgrounds.css";
 import { AuthGate } from "./auth-gate";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://evolyfoot.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "EvolyFoot — Piloter la progression",
   description: "L'assistant de progression des éducateurs de football de jeunes.",
 };
