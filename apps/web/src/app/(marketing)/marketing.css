@@ -38,7 +38,8 @@
 .m-header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px clamp(16px, 5vw, 48px); background: rgba(10, 14, 21, 0.82); backdrop-filter: blur(10px); border-bottom: 1px solid var(--m-line); }
 .m-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -.4px; text-decoration: none; }
 .m-brand .brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--m-accent); color: var(--m-accent-ink); font-size: 15px; }
-.m-nav { display: flex; align-items: center; gap: 22px; }
+/* flex-direction explicite : la règle globale `nav` de globals.css empile ses liens en colonne. */
+.m-nav { display: flex; flex-direction: row; align-items: center; gap: 22px; }
 .m-nav a { text-decoration: none; font-size: 13.5px; font-weight: 650; color: var(--m-muted); }
 .m-nav a:hover { color: var(--m-ink); }
 .m-header-actions { display: flex; align-items: center; gap: 10px; }
@@ -63,6 +64,17 @@
 .m-section { width: min(1100px, calc(100% - 40px)); margin: 0 auto; padding: clamp(48px, 8vw, 96px) 0; }
 .m-eyebrow { display: inline-block; margin-bottom: 14px; padding: 6px 12px; border-radius: 99px; background: var(--m-accent-soft); color: var(--m-accent-dark); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; }
 .m-hero { text-align: center; }
+.m-hero-split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 56px); align-items: center; text-align: left; }
+.m-hero-split h1, .m-hero-split p { margin-left: 0; }
+.m-hero-split .m-hero-actions { justify-content: flex-start; }
+.m-hero-card { padding: 16px; border: 1px solid var(--m-line); border-radius: 18px; background: var(--m-surface); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35); }
+.m-hero-card-tag { display: inline-block; padding: 4px 10px; border-radius: 99px; background: var(--m-accent-soft); color: var(--m-accent-dark); font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; }
+.m-section .m-hero-card h2 { margin: 10px 0 4px; font-size: 16px; letter-spacing: -.2px; text-align: left; }
+.m-hero-card > p { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; }
+.m-hero-card-why { margin: 12px 0 0 !important; padding-top: 10px; border-top: 1px solid var(--m-line); }
+@media (max-width: 820px) {
+  .m-hero-split { grid-template-columns: 1fr; }
+}
 .m-hero h1 { margin: 0 auto 18px; max-width: 760px; font-size: clamp(30px, 5vw, 48px); line-height: 1.1; letter-spacing: -1.5px; }
 .m-hero p { margin: 0 auto 28px; max-width: 620px; font-size: clamp(15px, 2vw, 18px); line-height: 1.6; color: var(--m-muted); }
 .m-hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }

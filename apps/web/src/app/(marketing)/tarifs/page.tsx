@@ -5,21 +5,22 @@ import { PricingToggle } from "./pricing-toggle";
 export const metadata: Metadata = {
   title: "Tarifs — EvolyFoot",
   description:
-    "EvolyFoot est gratuit pour planifier et suivre une équipe U10–U13. Premium ajoute le constructeur de séance, l’évaluation joueur et les outils multi-équipes.",
+    "EvolyFoot est gratuit pour une équipe U10–U13, constructeur de séance et évaluation joueur compris. Premium est en préparation.",
 };
 
 const free = [
   "Diagnostic guidé et cycle de 4 semaines",
-  "Bibliothèque d’exercices, en consultation",
+  "Bibliothèque d’exercices et constructeur de séance",
+  "Évaluation joueur datée en toile d’araignée",
   "Calendrier hebdomadaire : séances et matchs",
   "Préparation de match : composition, capitaine, formation",
   "Présences et rapport de saison",
   "Accès joueur / tuteur en lecture seule, sur invitation",
 ];
 
+// Rien de cette liste n'existe encore dans l'app : ne rien y ajouter avant que ce soit livré sans
+// la marquer "à venir" dans la page.
 const premium = [
-  "Constructeur de séance personnalisée",
-  "Évaluation joueur datée en toile d’araignée",
   "Plusieurs équipes sur un même compte",
   "Partage entre éducateurs d’un même club",
   "Export des séances et des bilans en PDF",
@@ -31,10 +32,10 @@ export default function TarifsPage() {
     <main>
       <section className="m-section m-hero">
         <span className="m-eyebrow">Tarifs</span>
-        <h1>Gratuit pour planifier. Premium pour créer et suivre en détail.</h1>
+        <h1>Tout ce qui existe aujourd’hui est gratuit.</h1>
         <p>
-          Le plan gratuit couvre le diagnostic, le cycle, le calendrier et les matchs d’une équipe. Premium ajoute le
-          constructeur de séance et l’évaluation joueur, avec trois façons de payer.
+          Le plan gratuit couvre toutes les fonctionnalités disponibles pour une équipe. Premium ajoutera des outils
+          pour aller plus loin : ils sont en préparation et signalés comme tels ci-dessous.
         </p>
       </section>
 
@@ -45,7 +46,7 @@ export default function TarifsPage() {
             <div className="m-plan-price">
               0 €<small>Pour une équipe, sans limite de durée</small>
             </div>
-            <p className="m-plan-desc">Pour planifier la saison et suivre les présences et les matchs.</p>
+            <p className="m-plan-desc">Pour préparer la saison, créer ses séances et suivre chaque joueur.</p>
             <ul>
               {free.map((item) => (
                 <li key={item}>{item}</li>
@@ -57,12 +58,12 @@ export default function TarifsPage() {
           </article>
 
           <article className="m-plan m-plan-featured">
-            <h3>Premium</h3>
+            <h3>Premium · à venir</h3>
             <PricingToggle />
-            <p className="m-plan-desc">Pour construire tes propres séances et suivre la progression de chaque joueur.</p>
+            <p className="m-plan-desc">Fonctionnalités à venir, pas encore disponibles dans l’application.</p>
             <ul>
               {premium.map((item) => (
-                <li key={item}>{item}</li>
+                <li key={item}>{item} (à venir)</li>
               ))}
             </ul>
             <Link className="m-btn m-btn-primary" href="/contact">
