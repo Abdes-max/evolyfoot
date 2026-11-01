@@ -147,8 +147,8 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
   return (
     <main className="session-shell">
       <header className="session-header">
-        <Link className="onboarding-brand" href="/app">
-          <span className="brand-mark">E</span> EvolyFoot
+        <Link className="session-back" href="/seances">
+          ← Mes séances
         </Link>
         {state.status === "ready" ? (
           <>
