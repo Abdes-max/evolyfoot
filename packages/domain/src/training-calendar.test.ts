@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { suggestedMeetingAt } from "./cycle";
+import { currentCycleWeek, firstFreeCycleSlot, suggestedMeetingAt } from "./training-calendar";
+
+describe("firstFreeCycleSlot", () => {
+  it("renvoie le premier créneau sans séance", () => {
+    expect(firstFreeCycleSlot([{ weekNumber: 1, slot: 0 }], 2)).toEqual({ weekNumber: 1, slot: 1 });
+  });
+
+  it("renvoie null quand le cycle est complet", () => {
+    const sessions = [1, 2, 3, 4].map((weekNumber) => ({ weekNumber, slot: 0 }));
+
+    expect(firstFreeCycleSlot(sessions, 1)).toBeNull();
+    expect(currentCycleWeek(sessions, 1)).toBe(4);
+  });
+});
 
 describe("suggestedMeetingAt", () => {
   // Mardi 3 novembre 2026, 10h (heure locale).

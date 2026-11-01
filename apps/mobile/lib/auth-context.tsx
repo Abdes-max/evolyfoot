@@ -1,10 +1,12 @@
 import type {
+  AttendanceEntry,
   DiagnosticScores,
   MatchLineupAssignment,
   MatchStatus,
   MatchVenue,
   ObservationDraft,
   PlayerReference,
+  SavedTrainingSession,
   TeamProfile,
   TrainingSession,
 } from "@evolyfoot/domain";
@@ -35,6 +37,14 @@ export type AuthResult = { ok: true } | { ok: false; error: string };
 export type MatchResult = { ok: true; match: MobileMatch } | { ok: false; error: string };
 export type MatchListResult = { ok: true; matches: MobileMatch[] } | { ok: false; error: string };
 
+// Créneau du cycle et rendez-vous, exigés par `POST /api/sessions`.
+export interface SessionSlotInput {
+  weekNumber: number;
+  slot: number;
+  meetingAt: string;
+  attendance?: readonly AttendanceEntry[];
+}
+
 export interface AuthContextValue {
   educator: Educator | null;
   // Vrai le temps de relire la session enregistrée au lancement de l'app.
@@ -47,7 +57,8 @@ export interface AuthContextValue {
   logout(): Promise<void>;
   saveTeam(profile: TeamProfile): Promise<AuthResult>;
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
-  saveTrainingSession(session: TrainingSession): Promise<AuthResult>;
+  saveTrainingSession(session: TrainingSession, slotInput: SessionSlotInput): Promise<AuthResult>;
+  listSessions(): Promise<readonly SavedTrainingSession[]>;
   saveObservation(draft: ObservationDraft, matchId?: string): Promise<AuthResult>;
   addPlayer(name: string): Promise<AuthResult>;
   renamePlayer(id: string, name: string): Promise<AuthResult>;
@@ -236,7 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const saveTrainingSession = useCallback(
-    async (session: TrainingSession): Promise<AuthResult> => {
+    async (session: TrainingSession, slotInput: SessionSlotInput): Promise<AuthResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour enregistrer cette séance." };
       }
@@ -254,6 +265,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             activityId: block.activity.id,
             durationMinutes: block.durationMinutes,
           })),
+          weekNumber: slotInput.weekNumber,
+          slot: slotInput.slot,
+          meetingAt: slotInput.meetingAt,
+          ...(slotInput.attendance && slotInput.attendance.length > 0 ? { attendance: slotInput.attendance } : {}),
         }),
       });
       if (!response.ok) {
@@ -263,6 +278,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [sessionToken],
   );
+
+  const listSessions = useCallback(async (): Promise<readonly SavedTrainingSession[]> => {
+    if (!sessionToken) {
+      return [];
+    }
+    const response = await apiFetch("/api/sessions", { sessionToken }).catch(() => null);
+    if (!response?.ok) {
+      return [];
+    }
+    const body = await response.json().catch(() => ({ sessions: [] }));
+    return body.sessions ?? [];
+  }, [sessionToken]);
 
   const saveObservation = useCallback(
     async (draft: ObservationDraft, matchId?: string): Promise<AuthResult> => {
@@ -437,6 +464,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveTeam,
       saveDiagnostic,
       saveTrainingSession,
+      listSessions,
       saveObservation,
       addPlayer,
       renamePlayer,
@@ -460,6 +488,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveTeam,
       saveDiagnostic,
       saveTrainingSession,
+      listSessions,
       saveObservation,
       addPlayer,
       renamePlayer,

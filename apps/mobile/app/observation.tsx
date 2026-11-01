@@ -56,7 +56,7 @@ function createDraft(type: ObservationEventType, players: readonly PlayerReferen
 }
 
 export default function ObservationScreen() {
-  const { type, matchId } = useLocalSearchParams<{ type?: string; matchId?: string }>();
+  const { type, matchId, week } = useLocalSearchParams<{ type?: string; matchId?: string; week?: string }>();
   const { diagnosticScores, roster, saveObservation, getMatch } = useAuth();
   const initialEventType: ObservationEventType = type === "match" ? "match" : "training";
   // Un match préparé (voir /match) restreint la liste aux joueurs réellement alignés -- plus
@@ -75,7 +75,8 @@ export default function ObservationScreen() {
   const remaining = diagnosticCriteria.length - draft.ratings.length;
   // Résolu depuis le diagnostic déjà enregistré (comme dans plan.tsx et session.tsx), avec repli
   // sur la démonstration tant que l'éducateur n'a pas encore fait le sien.
-  const currentWeek: DevelopmentWeek = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores)).weeks[0];
+  const planWeeks = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores)).weeks;
+  const currentWeek: DevelopmentWeek = planWeeks[Number(week) - 1] ?? planWeeks[0];
 
   useEffect(() => {
     if (!matchId) {

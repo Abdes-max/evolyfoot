@@ -4,7 +4,7 @@ import { buildDevelopmentPlan, summarizeDiagnostic, type DiagnosticScores } from
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { cycleWeekDateRangeLabel } from "../date-format";
-import { currentCycleWeek, trainingCycleWeekCount } from "../session/cycle";
+import { currentCycleWeek, firstFreeCycleSlot, trainingCycleWeekCount } from "../session/cycle";
 
 interface SavedSession {
   id: string;
@@ -81,10 +81,7 @@ export function SeancesView() {
     sessions.find((session) => session.weekNumber === weekNumber && session.slot === slot);
 
   // Premier créneau libre du cycle ; le premier créneau de la semaine en cours si tout est généré.
-  const nextSlot =
-    plan.weeks
-      .flatMap((week) => slotLabels.map((_, slot) => ({ weekNumber: week.week, slot })))
-      .find(({ weekNumber, slot }) => !sessionAt(weekNumber, slot)) ?? { weekNumber: activeWeek, slot: 0 };
+  const nextSlot = firstFreeCycleSlot(sessions, slotLabels.length) ?? { weekNumber: activeWeek, slot: 0 };
 
   return (
     <main className="seances-shell">

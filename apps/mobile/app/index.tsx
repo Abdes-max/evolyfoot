@@ -1,7 +1,15 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { demoFocus, nextSession } from "@evolyfoot/domain";
+import {
+  buildDevelopmentPlan,
+  currentCycleWeek,
+  firstFreeCycleSlot,
+  summarizeDiagnostic,
+  trainingCycleWeekCount,
+  type SavedTrainingSession,
+} from "@evolyfoot/domain";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Link } from "expo-router";
+import { Link, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { useAuth } from "../lib/auth-context";
 
 function initials(displayName: string): string {
@@ -15,9 +23,47 @@ function initials(displayName: string): string {
     .join("");
 }
 
+function sessionDuration(session: SavedTrainingSession): number {
+  return session.blocks.reduce((total, block) => total + block.durationMinutes, 0);
+}
+
+function meetingLabel(iso: string): string {
+  return new Date(iso).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+}
+
 export default function HomeScreen() {
-  const { educator, team, logout } = useAuth();
+  const { educator, team, diagnosticScores, listSessions, logout } = useAuth();
+  const [sessions, setSessions] = useState<readonly SavedTrainingSession[]>([]);
+  const [now] = useState(() => Date.now());
   const firstName = educator?.displayName.split(" ")[0] ?? "";
+  const today = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
+
+  // Relu à chaque retour sur l'accueil : une séance vient peut-être d'être validée.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      listSessions().then((list) => {
+        if (!cancelled) {
+          setSessions(list);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [listSessions]),
+  );
+
+  const slotsPerWeek = Math.max(team?.trainingDays.length ?? 1, 1);
+  const activeWeek = currentCycleWeek(sessions, slotsPerWeek);
+  const plan = diagnosticScores ? buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores)) : null;
+  const week = plan?.weeks[activeWeek - 1];
+  const totalSlots = slotsPerWeek * trainingCycleWeekCount;
+  const progress = Math.round((Math.min(sessions.length, totalSlots) / totalSlots) * 100);
+  const upcoming = [...sessions]
+    .filter((session) => session.meetingAt && new Date(session.meetingAt).getTime() >= now)
+    .sort((a, b) => new Date(a.meetingAt!).getTime() - new Date(b.meetingAt!).getTime())[0];
+  const freeSlot = firstFreeCycleSlot(sessions, slotsPerWeek);
+  const target = upcoming ?? freeSlot ?? { weekNumber: activeWeek, slot: 0 };
 
   function confirmLogout() {
     Alert.alert("Se déconnecter ?", undefined, [
@@ -31,7 +77,7 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.page}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.eyebrow}>LUNDI 17 AOÛT</Text>
+            <Text style={styles.eyebrow}>{today}</Text>
             <Text style={styles.title}>Bonjour {firstName},</Text>
             <Text style={styles.subtitle}>{team ? `${team.name} · ${team.ageGroup}` : "Pas encore d’équipe"}</Text>
           </View>
@@ -40,36 +86,71 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.focusCard}>
-          <Text style={styles.focusEyebrow}>PRIORITÉ DU CYCLE · SEMAINE 3/4</Text>
-          <Text style={styles.focusTitle}>{demoFocus.label}</Text>
-          <Text style={styles.focusBody}>Faire émerger davantage de soutien proche et de solutions devant le ballon.</Text>
-          <View style={styles.progress}>
-            <View style={[styles.progressValue, { width: `${demoFocus.progress}%` }]} />
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.focusMeta}>
-              {demoFocus.sessionsCompleted}/{demoFocus.sessionsTotal} séances
+        {plan && week ? (
+          <View style={styles.focusCard}>
+            <Text style={styles.focusEyebrow}>
+              PRIORITÉ DU CYCLE · SEMAINE {activeWeek}/{trainingCycleWeekCount}
             </Text>
-            <Text style={styles.focusMeta}>{demoFocus.progress}%</Text>
+            <Text style={styles.focusTitle}>{week.theme}</Text>
+            <Text style={styles.focusBody}>{week.intention}</Text>
+            <View style={styles.progress}>
+              <View style={[styles.progressValue, { width: `${progress}%` }]} />
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.focusMeta}>
+                {Math.min(sessions.length, totalSlots)}/{totalSlots} séances
+              </Text>
+              <Text style={styles.focusMeta}>{progress}%</Text>
+            </View>
           </View>
-        </View>
+        ) : (
+          <Link href="/diagnostic" asChild>
+            <TouchableOpacity accessibilityRole="button" style={styles.focusCard}>
+              <Text style={styles.focusEyebrow}>POUR COMMENCER</Text>
+              <Text style={styles.focusTitle}>Fais ton diagnostic</Text>
+              <Text style={styles.focusBody}>Il choisit les priorités de ton cycle de quatre semaines.</Text>
+            </TouchableOpacity>
+          </Link>
+        )}
 
         <Text style={styles.sectionTitle}>Prochaine séance</Text>
         <View style={styles.sessionCard}>
-          <View style={styles.row}>
-            <Text style={styles.eyebrow}>{nextSession.dateLabel.toUpperCase()}</Text>
-            <Text style={styles.chip}>{nextSession.intensity}</Text>
-          </View>
-          <Text style={styles.cardTitle}>{nextSession.title}</Text>
-          <Text style={styles.cardBody}>
-            {nextSession.durationMinutes} min · {nextSession.playerCount} joueurs · Jeu de position
-          </Text>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Ouvrir la séance</Text>
-            <Text style={styles.buttonText}>→</Text>
-          </TouchableOpacity>
+          {upcoming?.meetingAt ? (
+            <>
+              <Text style={styles.eyebrow}>{meetingLabel(upcoming.meetingAt).toUpperCase()}</Text>
+              <Text style={styles.cardTitle}>{upcoming.title}</Text>
+              <Text style={styles.cardBody}>
+                {sessionDuration(upcoming)} min · {upcoming.playerCount} joueurs · {upcoming.theme}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.eyebrow}>À GÉNÉRER</Text>
+              <Text style={styles.cardTitle}>Ta prochaine séance t’attend</Text>
+              <Text style={styles.cardBody}>Une séance prête en un geste, à partir de ton plan.</Text>
+            </>
+          )}
+          <Link href={`/session?week=${target.weekNumber}&slot=${target.slot}`} asChild>
+            <TouchableOpacity accessibilityRole="button" style={styles.button}>
+              <Text style={styles.buttonText}>{upcoming ? "Ouvrir la séance" : "Générer ma séance"}</Text>
+              <Text style={styles.buttonText}>→</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
+
+        <Link href={`/observation?type=training&week=${activeWeek}`} asChild>
+          <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
+            <Text style={styles.observationText}>Observer ma séance</Text>
+            <Text style={styles.observationText}>→</Text>
+          </TouchableOpacity>
+        </Link>
+
+        <Link href="/seances" asChild>
+          <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
+            <Text style={styles.observationText}>Toutes mes séances</Text>
+            <Text style={styles.observationText}>→</Text>
+          </TouchableOpacity>
+        </Link>
 
         <Link href="/match" asChild>
           <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
@@ -77,14 +158,6 @@ export default function HomeScreen() {
             <Text style={styles.observationText}>→</Text>
           </TouchableOpacity>
         </Link>
-
-        <View style={styles.suggestion}>
-          <View style={styles.suggestionContent}>
-            <Text style={styles.eyebrow}>SUGGESTION EVOLY</Text>
-            <Text style={styles.suggestionTitle}>Garde le thème, change la contrainte.</Text>
-            <Text style={styles.cardBody}>Réduis l&apos;espace mardi pour provoquer des décisions plus rapides.</Text>
-          </View>
-        </View>
 
         <Link href="/onboarding" asChild>
           <TouchableOpacity style={styles.setupButton}>
