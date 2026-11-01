@@ -69,3 +69,9 @@ main > :nth-child(3) { animation-delay: 100ms; }
 
 .dashboard-empty { margin: 0; padding: 16px 18px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .dashboard-empty a { color: var(--accent-dark); font-weight: 800; }
+
+/* Ligne d'horizon néon et titres lumineux, communs à toutes les pages de l'application. */
+.page-header { position: relative; box-shadow: 0 1px 0 rgba(47, 212, 255, 0.55), 0 8px 34px rgba(47, 212, 255, 0.16); }
+.page-header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), var(--volt), var(--accent), transparent); }
+.page-header h1 { text-shadow: 0 0 18px rgba(47, 212, 255, 0.55); }
+.focus-card { box-shadow: 0 0 26px rgba(47, 212, 255, 0.16); border-color: rgba(47, 212, 255, 0.4); }

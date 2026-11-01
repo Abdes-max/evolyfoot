@@ -41,6 +41,7 @@ export function PlayerCard({ name, photo, position, jerseyNumber, preferredFoot,
 
   return (
     <div className="player-card-frame">
+      <div className="player-card-border">
       <article aria-label={`Carte de ${name}`} className="player-card">
       <div className="player-card-top">
         <div className="player-card-rating">
@@ -95,6 +96,7 @@ export function PlayerCard({ name, photo, position, jerseyNumber, preferredFoot,
         <p className="player-card-trend">{trendLabel(overall, playerOverallScore(previousScores))}</p>
       )}
       </article>
+      </div>
     </div>
   );
 }
