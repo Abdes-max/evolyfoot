@@ -735,6 +735,8 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect(page.locator(".player-match-detail")).toContainText("Conserver le ballon");
   await expect(page.locator(".player-match-detail")).toContainText("Stade Marius Requier, Aix-en-Provence");
   await expect(page.locator(".player-match-detail")).toContainText("18:00");
+  await expect(page.locator(".map-embed iframe")).toHaveCount(0);
+  await page.getByRole("button", { name: "Afficher les cartes" }).click();
   await expect(page.locator(".map-embed iframe")).toBeVisible();
   await expect(page.locator(".player-tab-bar")).toHaveCount(0);
   await page.getByRole("button", { name: "Absent" }).click();
