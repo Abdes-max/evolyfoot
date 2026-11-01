@@ -20,6 +20,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { parseDatetimeInputValue, toDatetimeInputValue } from "../../date-format";
 import { initials, MatchPitch } from "../match-pitch";
 import { PlaceInput } from "../../place-input";
+import { MatchAnalysis } from "./match-analysis";
 import { MatchResultForm } from "./match-result-form";
 
 interface MatchRecord {
@@ -40,6 +41,7 @@ interface MatchRecord {
   captainPlayerId: string | null;
   substitutePlayerIds: string[];
   attendance?: AttendanceEntry[];
+  opponentFormationId?: string | null;
   goalsFor?: number | null;
   goalsAgainst?: number | null;
   playerStats?: MatchPlayerStat[];
@@ -557,6 +559,14 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               ))}
             </select>
           </label>
+
+          <MatchAnalysis
+            formationId={match.formationId}
+            gameFormat={gameFormat}
+            key={`${match.gameFormat}-${match.formationId}`}
+            matchId={matchId}
+            opponentFormationId={match.opponentFormationId ?? null}
+          />
 
           {!readOnly && (
             <div className="match-convocation">

@@ -26,6 +26,7 @@ export interface MatchSummary {
   captainPlayerId: string | null;
   substitutePlayerIds: readonly string[];
   attendance?: readonly AttendanceEntry[];
+  opponentFormationId: string | null;
   goalsFor: number | null;
   goalsAgainst: number | null;
   playerStats: readonly MatchPlayerStat[];
@@ -67,6 +68,7 @@ export interface MatchGateway {
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
+      opponentFormationId?: string | null;
     },
   ): Promise<MatchSummary>;
   changeFormation(
@@ -266,9 +268,10 @@ export function createUpdateMatchDetailsHandler(
     const meetingTime = body?.meetingTime === undefined ? undefined : isNullableString(body.meetingTime) ? body.meetingTime : null;
     const location = body?.location === undefined ? undefined : isNullableString(body.location) ? body.location : null;
     const description = body?.description === undefined ? undefined : isNullableString(body.description) ? body.description : null;
+    const opponentFormationId = body?.opponentFormationId === undefined ? undefined : isNullableString(body.opponentFormationId) ? body.opponentFormationId : null;
     try {
       return Response.json({
-        match: await matches.updateDetails(educator.id, matchId, { date, meetingOffsetMinutes, meetingTime, location, description }),
+        match: await matches.updateDetails(educator.id, matchId, { date, meetingOffsetMinutes, meetingTime, location, description, opponentFormationId }),
       });
     } catch (error) {
       return errorResponse(error, log);
@@ -417,6 +420,7 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       captainPlayerId: match.captainPlayerId,
       substitutePlayerIds: match.substitutePlayerIds,
       ...(match.attendance ? { attendance: match.attendance } : {}),
+      opponentFormationId: match.opponentFormationId,
       goalsFor: match.goalsFor,
       goalsAgainst: match.goalsAgainst,
       playerStats: match.playerStats,

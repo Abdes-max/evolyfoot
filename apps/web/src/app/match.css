@@ -166,3 +166,29 @@
   .match-prep-layout { grid-template-columns: 1fr; }
   .match-pitch { max-width: 320px; margin: 0 auto; }
 }
+
+/* Analyse de l'adversaire. */
+.match-analysis { margin-bottom: 18px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.match-analysis h2 { margin: 0 0 12px; font-family: var(--font-display), "Arial Narrow", sans-serif; font-size: 26px; font-weight: 800; text-transform: uppercase; }
+.match-analysis label { display: grid; gap: 5px; max-width: 280px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.match-analysis select { min-height: 42px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); color: var(--ink); }
+.match-analysis-body { display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 16px; }
+.match-analysis-body svg { display: block; width: 100%; height: auto; }
+.match-analysis-ours { fill: var(--accent); }
+.match-analysis-theirs { fill: #ff8f7a; }
+.match-analysis-legend { display: flex; gap: 14px; margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.match-analysis-legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 50%; background: var(--accent); }
+.match-analysis-legend .theirs::before { background: #ff8f7a; }
+.match-analysis-summary { margin: 0 0 12px; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.4; }
+.match-analysis-lines, .match-analysis-exercises { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.match-analysis-lines li { padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+.match-analysis-lines li > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.match-analysis-lines strong { font-size: 13px; }
+.match-analysis-lines p { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.match-analysis-balance { font-size: 12px; font-weight: 800; }
+.match-analysis-balance.advantage { color: var(--volt); }
+.match-analysis-balance.even { color: var(--accent-dark); }
+.match-analysis-balance.disadvantage { color: #ff8f7a; }
+.match-analysis h3 { margin: 14px 0 8px; font-size: 14px; }
+.match-analysis-exercises a { display: block; min-height: 40px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--accent-dark); font-size: 13px; font-weight: 700; text-decoration: none; }
+@media (max-width: 760px) { .match-analysis-body { grid-template-columns: minmax(0, 1fr); } .match-analysis-body svg { max-width: 220px; margin: 0 auto; } }
