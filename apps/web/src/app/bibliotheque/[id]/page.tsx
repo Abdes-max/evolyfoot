@@ -1,7 +1,7 @@
 import { findTrainingActivity, trainingActivityCatalogue, type TrainingBlockKind } from "@evolyfoot/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { TacticalDiagramView } from "../../tactical-diagram";
+import { ExerciseSheet } from "../../exercise-sheet";
 import { ExerciseFeedback } from "./exercise-feedback";
 import { SidebarNav } from "../../sidebar-nav";
 
@@ -45,79 +45,11 @@ export default async function ExercisePage({ params }: ExercisePageProps) {
         </span>
       </header>
 
-      <div className="exercise-layout">
-        <div>
-          <div className="exercise-diagram-card">
-            <TacticalDiagramView caption={activity.title} diagram={activity.diagram} />
-            <p className="exercise-diagram-note">
-              {activity.fieldSize} · {activity.defenderCount > 0 ? `${activity.defenderCount} défenseur${activity.defenderCount > 1 ? "s" : ""}` : "Sans opposition"}
-            </p>
-          </div>
-        </div>
-
-        <div>
-          <span className="eyebrow">{kindLabels[activity.kind]}</span>
-          <h1>{activity.title}</h1>
-
-          <div className="exercise-meta-row">
-            <span className="exercise-chip">
-              <svg fill="none" height="14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="14">
-                <rect height="18" rx="2" width="18" x="3" y="3" />
-                <path d="M3 15h6v6" />
-              </svg>
-              {activity.fieldSize}
-            </span>
-            <span className="exercise-chip">
-              <svg fill="none" height="14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="14">
-                <circle cx="9" cy="8" r="3.2" />
-                <path d="M3 20v-1.2A4.5 4.5 0 0 1 7.5 14.3h3A4.5 4.5 0 0 1 15 18.8V20" />
-              </svg>
-              {activity.defenderCount > 0 ? `${activity.defenderCount} défenseur${activity.defenderCount > 1 ? "s" : ""}` : "Sans opposition"}
-            </span>
-            {activity.hasGoalkeeper && (
-              <span className="exercise-chip">
-                <svg fill="none" height="14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="14">
-                  <rect height="14" rx="2" width="14" x="5" y="5" />
-                </svg>
-                Gardien
-              </span>
-            )}
-            {activity.equipment.map((item) => (
-              <span className="exercise-chip" key={item}>
-                <svg fill="none" height="14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="14">
-                  <path d="M12 3 20 20H4Z" />
-                </svg>
-                {item}
-              </span>
-            ))}
-          </div>
-
-          <div className="exercise-callout">
-            <span className="eyebrow">But du jeu</span>
-            <p>{activity.objective}</p>
-          </div>
-
-          <div className="exercise-block-title">Règles &amp; consignes</div>
-          <ol className="exercise-rules">
-            {activity.rules.map((rule, ruleIndex) => (
-              <li key={rule}>
-                <span className="exercise-rule-num">{String(ruleIndex + 1).padStart(2, "0")}</span>
-                {rule}
-              </li>
-            ))}
-          </ol>
-
-          <div className="exercise-block-title">Points de coaching</div>
-          <ul className="exercise-coaching">
-            {activity.coachingPoints.map((point) => (
-              <li key={point}>
-                <span aria-hidden="true" className="exercise-coaching-arrow">→</span>
-                {point}
-              </li>
-            ))}
-          </ul>
-        </div>
+      <div className="exercise-heading">
+        <span className="session-exercise-kind">{kindLabels[activity.kind]}</span>
+        <h1 className="session-exercise-title">{activity.title}</h1>
       </div>
+      <ExerciseSheet activity={activity} />
 
       <ExerciseFeedback />
 

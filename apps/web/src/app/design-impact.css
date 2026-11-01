@@ -103,10 +103,11 @@ main > :nth-child(3) { animation-delay: 100ms; }
     --volt: #3b6b00;
   }
   html, body { background: #fff; color: #10202c; }
-  .sidebar, .session-back, .session-why button, .session-print, .session-actions, .session-block button, .session-block select, .session-block-diagram a, nextjs-portal { display: none !important; }
+  .sidebar, .session-back, .session-why button, .session-print, .session-exercise-library, nextjs-portal { display: none !important; }
   main, .session-shell { padding: 0 !important; min-height: 0; background: #fff; }
   .session-header { padding: 0 0 8px; background: none; box-shadow: none; }
   .session-header h1, .page-header h1 { color: #10202c; text-shadow: none; }
-  .session-block { break-inside: avoid; }
-  .session-block article { background: #fff; box-shadow: none; }
+  .sheet { grid-template-columns: 40% 1fr; }
+  .sheet-stage { position: static; box-shadow: none; }
+  .session-validation, .session-meeting-at, .session-attendance, .match-details-form, .match-convocation, .session-validation-error { display: none !important; }
 }

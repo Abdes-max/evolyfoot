@@ -67,16 +67,43 @@ describe("session builder", () => {
     });
   });
 
-  it("affiche les informations pratiques de chaque situation et l’effectif", () => {
+  it("résume chaque temps dans une liste, sans le détail de l'exercice", () => {
     render(<SessionView slot={0} weekNumber={1} />);
 
     expect(screen.getByText("14 joueurs")).toBeVisible();
-    expect(screen.getAllByText("Organisation")).toHaveLength(4);
-    expect(screen.getAllByText("Consigne")).toHaveLength(4);
-    expect(screen.getAllByText("À observer")).toHaveLength(4);
     expect(screen.getByText("Accueil", { exact: true })).toBeVisible();
     expect(screen.getByText("Situation principale", { exact: true })).toBeVisible();
+    expect(screen.queryByText("Organisation")).not.toBeInTheDocument();
+  });
+
+  it("ouvre la fiche d'un exercice et passe au suivant", () => {
+    render(<SessionView slot={0} weekNumber={1} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Récupérer en cinq secondes" }));
+
+    expect(screen.getByText("Exercice 3 sur 4")).toBeVisible();
+    expect(screen.getByText("Organisation")).toBeVisible();
     expect(screen.getByText("Jeu 5 contre 5 avec deux zones de marque.")).toBeVisible();
+    expect(screen.getByRole("link", { name: /voir dans la bibliothèque/i })).toHaveAttribute("href", expect.stringContaining("/bibliotheque/main-"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Exercice suivant" }));
+    expect(screen.getByText("Exercice 4 sur 4")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "← Toute la séance" }));
+    expect(screen.getByRole("list", { name: "Les temps de la séance" })).toBeVisible();
+  });
+
+  it("met toutes les fiches dans l'export PDF", () => {
+    const print = vi.fn(() => expect(screen.getAllByText("Organisation")).toHaveLength(4));
+    vi.stubGlobal("print", print);
+    window.print = print;
+    render(<SessionView slot={0} weekNumber={1} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Exporter en PDF" }));
+
+    expect(print).toHaveBeenCalledOnce();
+    expect(screen.queryByText("Organisation")).not.toBeInTheDocument();
+    vi.unstubAllGlobals();
   });
 
   it("permet de remplacer chaque situation de la séance", () => {
@@ -87,13 +114,10 @@ describe("session builder", () => {
     }
   });
 
-  it("affiche le schéma tactique de chaque situation avec un lien vers la bibliothèque", () => {
+  it("affiche le schéma tactique de chaque situation", () => {
     render(<SessionView slot={0} weekNumber={1} />);
 
     expect(screen.getAllByRole("img", { name: /schéma tactique/i })).toHaveLength(4);
-    const detailLinks = screen.getAllByRole("link", { name: /voir le détail/i });
-    expect(detailLinks).toHaveLength(4);
-    expect(detailLinks[0]).toHaveAttribute("href", "/bibliotheque/welcome-recuperer");
   });
 
   it("conserve le focus sur le contrôle du même bloc après un déplacement", () => {
