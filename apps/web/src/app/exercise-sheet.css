@@ -52,10 +52,23 @@
 .session-exercise-library { display: block; padding: 12px 16px; border-top: 1px solid var(--line); color: var(--accent-dark); font-size: 13px; font-weight: 800; text-decoration: none; }
 .session-print-sheet { margin-bottom: 18px; break-inside: avoid; }
 
-.tactical-diagram-ball { fill: #fff; stroke: #0b131e; stroke-width: 1.5; }
-.tactical-diagram.live .tactical-diagram-token { filter: drop-shadow(0 0 5px currentColor); }
-.tactical-diagram.live .tactical-diagram-arrow { stroke-dasharray: 8 6; animation: tactical-arrow 1.4s linear infinite; }
-@keyframes tactical-arrow { to { stroke-dashoffset: -28; } }
+/* Lecteur d'animation de la fiche. */
+.tactical-player .tactical-diagram { padding: 16px 16px 8px; }
+.tactical-player-token { transition: opacity 240ms ease; }
+.tactical-player-token.idle { opacity: 0.5; }
+.tactical-player-token .tactical-diagram-token { filter: drop-shadow(0 0 4px rgba(47, 212, 255, 0.55)); }
+.tactical-player-pass { stroke: #fff; stroke-width: 1.6; stroke-dasharray: 5 5; opacity: 0.75; }
+.tactical-player-press { stroke: #ff8f7a; stroke-width: 1.4; stroke-dasharray: 4 5; opacity: 0.8; }
+.tactical-player-ring { fill: none; stroke: var(--volt); stroke-width: 2; }
+.tactical-player-ring.press { stroke: #ff8f7a; }
+.tactical-player-ball { fill: #fff; stroke: #0b131e; stroke-width: 1.2; }
+.tactical-player-progress { display: flex; gap: 5px; padding: 6px 16px 0; }
+.tactical-player-progress span { flex: 1; height: 3px; overflow: hidden; border-radius: 2px; background: var(--line); }
+.tactical-player-progress i { display: block; height: 100%; background: var(--accent); }
+.tactical-player-caption { min-height: 22px; margin: 10px 16px 6px; color: var(--ink); font-size: 14px; font-weight: 700; text-align: center; }
+.tactical-player-controls { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px 14px; }
+.tactical-player-controls button { min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--ink); font-size: 15px; font-weight: 800; }
+.tactical-player-controls button.primary { min-width: 56px; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-size: 13px; }
 
 @media (max-width: 860px) {
   .sheet { grid-template-columns: minmax(0, 1fr); }
@@ -66,8 +79,7 @@
   .session-run-actions { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tactical-diagram.live .tactical-diagram-arrow { animation: none; }
-  .tactical-diagram-ball { display: none; }
+  .tactical-player-token { transition: none; }
   .session-run-item { transition: none; }
 }
 
