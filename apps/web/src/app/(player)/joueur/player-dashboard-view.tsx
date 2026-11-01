@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import { DonutChart, RadarChart } from "../../charts";
 import { colorForEvaluation } from "../../evaluation-colors";
+import { AccountPrivacy } from "../../account-privacy";
 import { PlayerCard } from "../../player-card";
 import { SelfEvaluation } from "./self-evaluation";
 import { PlayerSpaceHeader } from "../player-space-header";
@@ -190,6 +191,10 @@ export function PlayerSpaceView() {
                 )}
               </section>
             </div>
+
+            <section className="player-space-block">
+              <AccountPrivacy warning="Cette action est définitive : ton compte sera supprimé. Le suivi du joueur reste chez l’éducateur." />
+            </section>
           </>
         )}
       </main>

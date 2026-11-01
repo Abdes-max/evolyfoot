@@ -2,6 +2,7 @@
 
 import { allFormationIds, playStyles } from "@evolyfoot/domain";
 import Link from "next/link";
+import { AccountPrivacy } from "../account-privacy";
 import { useEffect, useMemo, useState } from "react";
 
 interface Profile {
@@ -444,6 +445,10 @@ export function ProfilView() {
                   </button>
                 </div>
               )}
+            </div>
+
+            <div className="profil-block">
+              <AccountPrivacy warning="Cette action est définitive : ton équipe, tes joueurs, tes séances, tes matchs et les comptes tuteur liés seront supprimés." />
             </div>
           </>
         )}

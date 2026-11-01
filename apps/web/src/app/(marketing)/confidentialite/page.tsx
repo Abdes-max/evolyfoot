@@ -37,6 +37,14 @@ export default function ConfidentialitePage() {
           ],
         },
         {
+          title: "Prestataires techniques",
+          paragraphs: [
+            "Brevo achemine les e-mails du service : confirmation d’adresse, mot de passe oublié.",
+            "Photon, service fondé sur OpenStreetMap, reçoit le texte saisi dans le champ Lieu pour proposer des adresses. La demande passe par nos serveurs : ton adresse IP ne lui est pas transmise.",
+            "Google Maps affiche les cartes de lieu, uniquement après ton accord dans l’application. Google reçoit alors l’adresse affichée et ton adresse IP.",
+          ],
+        },
+        {
           title: "Durée de conservation",
           paragraphs: [
             "Les données sont conservées le temps de l’utilisation active du compte, puis [durée à préciser] après la dernière connexion, sauf demande de suppression anticipée.",
@@ -45,6 +53,7 @@ export default function ConfidentialitePage() {
         {
           title: "Droits des personnes",
           paragraphs: [
+            "Depuis ton profil, tu peux télécharger toutes tes données et supprimer ton compte. Pour un compte éducateur, la suppression efface aussi l’équipe, ses joueurs et les comptes tuteur liés.",
             "Conformément au RGPD, toute personne concernée dispose d’un droit d’accès, de rectification, d’effacement, de limitation et de portabilité de ses données, exerçable auprès de [adresse e-mail de contact données].",
           ],
         },

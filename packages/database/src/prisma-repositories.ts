@@ -41,6 +41,7 @@ import {
 import { ContactMessageRecord, ContactMessageRepository } from "./contact-message-service";
 import { normalizeEducatorEmail } from "./email";
 import type {
+  AccountRepository,
   DiagnosticRepository,
   EducatorAuthRecord,
   EducatorProfile,
@@ -270,6 +271,45 @@ export class PrismaPasswordResetRepository implements PasswordResetRepository {
       await transaction.session.deleteMany({ where: { educatorId } });
       return true;
     });
+  }
+}
+
+export class PrismaAccountRepository implements AccountRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  // Tout ce qui appartient au compte, sans ses secrets ni les jetons de session et d'invitation.
+  async exportData(id: string): Promise<Record<string, unknown> | null> {
+    const account = await this.prisma.educator.findUnique({
+      where: { id },
+      omit: { passwordHash: true },
+      include: {
+        team: true,
+        diagnostic: true,
+        players: { include: { evaluations: true } },
+        linkedPlayer: { include: { evaluations: true } },
+        trainingSessions: true,
+        observations: true,
+        matches: true,
+        tournaments: true,
+        plateaux: true,
+        personalExercises: true,
+      },
+    });
+    if (!account) {
+      return null;
+    }
+    const playerIds = account.linkedPlayerId ? [account.linkedPlayerId] : account.players.map((player) => player.id);
+    const messages = await this.prisma.messageRecord.findMany({ where: { playerId: { in: playerIds } }, orderBy: { createdAt: "asc" } });
+    return { ...account, messages };
+  }
+
+  async findPasswordHash(id: string): Promise<string | null> {
+    const account = await this.prisma.educator.findUnique({ where: { id }, select: { passwordHash: true } });
+    return account?.passwordHash ?? null;
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.educator.delete({ where: { id } });
   }
 }
 
