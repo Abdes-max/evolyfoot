@@ -86,3 +86,27 @@ main > :nth-child(3) { animation-delay: 100ms; }
   inset: 0;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23062330' d='M5 9h9.5v3.2H5zM5 14.4h7.5v3.2H5zM5 19.8h9.5V23H5z'/%3E%3Cpath fill='%23062330' d='M16.4 9h3.5l2 8.2 2-8.2h3.5l-4 14h-3z'/%3E%3C/svg%3E") center / 100% no-repeat;
 }
+
+.session-print { min-height: 40px; margin-bottom: 12px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); color: var(--ink); font-size: 12px; font-weight: 800; }
+
+/* Export PDF : le navigateur imprime la séance en clair, sans la navigation ni les commandes. */
+@media print {
+  :root {
+    --paper: #fff;
+    --surface: #fff;
+    --surface-2: #fff;
+    --ink: #10202c;
+    --muted: #41505c;
+    --line: #c9d3dc;
+    --accent: #0b5a73;
+    --accent-dark: #0b5a73;
+    --volt: #3b6b00;
+  }
+  html, body { background: #fff; color: #10202c; }
+  .sidebar, .session-back, .session-why button, .session-print, .session-actions, .session-block button, .session-block select, .session-block-diagram a, nextjs-portal { display: none !important; }
+  main, .session-shell { padding: 0 !important; min-height: 0; background: #fff; }
+  .session-header { padding: 0 0 8px; background: none; box-shadow: none; }
+  .session-header h1, .page-header h1 { color: #10202c; text-shadow: none; }
+  .session-block { break-inside: avoid; }
+  .session-block article { background: #fff; box-shadow: none; }
+}

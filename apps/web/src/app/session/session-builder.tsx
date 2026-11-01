@@ -166,6 +166,9 @@ export function SessionBuilder({
         <strong aria-atomic="true" aria-label={`Durée totale : ${duration} minutes`} aria-live="polite">{duration} min</strong>
       </div>
 
+      <button className="session-print" onClick={() => window.print()} type="button">
+        Exporter en PDF
+      </button>
       <ol className="session-block-list" aria-label="Les quatre temps de la séance">
         {session.blocks.map((block, index) => {
           const canReplace = canReplaceSessionActivity(session, index);
