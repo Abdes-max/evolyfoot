@@ -66,6 +66,7 @@ export {
   canReplaceSessionActivity,
   canValidateSession,
   findTrainingActivity,
+  explainTrainingSession,
   generateTrainingSession,
   getSessionDuration,
   moveSessionBlock,

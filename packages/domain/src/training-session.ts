@@ -206,19 +206,63 @@ export function generateTrainingSession(
   ageGroup: AgeGroup,
   playerCount: number,
   slot?: number,
+  // Décale le choix des exercices : "Proposer une autre séance" régénère le même créneau.
+  variant = 0,
 ): TrainingSession {
-  const id =
+  const baseId =
     slot === undefined
       ? `session-week-${week.week}-${ageGroup}-${playerCount}`
       : `session-week-${week.week}-slot-${slot}-${ageGroup}-${playerCount}`;
+  const id = variant === 0 ? baseId : `${baseId}-variant-${variant}`;
+  // Tourne dans les exercices du thème pour que deux créneaux n'aient pas le même déroulé.
+  // Déterministe : le même créneau redonne la même séance, sans état à persister.
+  const rotation = week.week - 1 + (slot ?? 0) + variant;
   const title = slot === undefined ? `Séance ${week.week} · ${week.phase}` : `Séance ${slot + 1} · ${week.phase}`;
   const kinds: TrainingBlockKind[] = ["welcome", "activation", "main", "game"];
   const blocks = kinds.map((kind, index) => {
-    const activity = catalogue.find((candidate) => candidate.kind === kind && candidate.compatibleThemes.includes(week.theme));
+    const candidates = catalogue.filter((candidate) => candidate.kind === kind && candidate.compatibleThemes.includes(week.theme));
+    const activity = candidates[rotation % candidates.length];
     if (!activity) throw new Error(`Aucune activité compatible pour le bloc ${kind} et le thème ${week.theme}.`);
     return { id: `${id}-block-${kind}`, activity: cloneActivity(activity), durationMinutes: blockDurations[index] };
   });
   return { id, title, ageGroup, playerCount, theme: week.theme, intention: week.intention, blocks };
+}
+
+export interface SessionExplanation {
+  readonly summary: string;
+  readonly blocks: ReadonlyArray<{ readonly blockId: string; readonly reason: string }>;
+}
+
+const phaseReasons: Record<DevelopmentWeek["phase"], string> = {
+  "Découvrir": "fait découvrir le comportement visé",
+  "Stabiliser": "fait répéter le comportement dans des contextes variés",
+  "Mettre sous pression": "réduit le temps et l’espace pour éprouver le comportement",
+  "Évaluer": "laisse les joueurs s’exprimer pour observer ce qui est acquis",
+};
+
+const kindReasons: Record<TrainingBlockKind, string> = {
+  welcome: "Met le groupe en route sur le thème dès l’arrivée.",
+  activation: "Installe le geste et les repères avant la situation principale.",
+  main: "Cœur de la séance : c’est ici que l’intention de la semaine se travaille.",
+  game: "Vérifie en jeu si le comportement apparaît sans consigne.",
+};
+
+// Répartition indicative : les situations principales se jouent en deux zones jumelles.
+function groupHint(kind: TrainingBlockKind, playerCount: number): string {
+  if (kind !== "main") return "";
+  const smallGroup = Math.floor(playerCount / 2);
+  return ` Pour ${playerCount} joueurs : deux groupes de ${smallGroup}${playerCount % 2 === 1 ? ` et ${smallGroup + 1}` : ""}.`;
+}
+
+// Explication pure, recalculée à l'affichage : rien de plus à enregistrer avec la séance.
+export function explainTrainingSession(session: TrainingSession, week: DevelopmentWeek): SessionExplanation {
+  return {
+    summary: `Semaine ${week.week}, phase « ${week.phase} » : cette séance ${phaseReasons[week.phase]}. Le thème « ${session.theme} » vient de ton diagnostic. Repère de la semaine : ${week.observable}`,
+    blocks: session.blocks.map((block) => ({
+      blockId: block.id,
+      reason: `${kindReasons[block.activity.kind]}${groupHint(block.activity.kind, session.playerCount)}`,
+    })),
+  };
 }
 
 export function getSessionDuration(session: TrainingSession): number { return session.blocks.reduce((total, block) => total + block.durationMinutes, 0); }

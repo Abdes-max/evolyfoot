@@ -5,6 +5,7 @@ import {
   canReplaceSessionActivity,
   canValidateSession,
   findTrainingActivity,
+  explainTrainingSession,
   generateTrainingSession,
   getSessionDuration,
   moveSessionBlock,
@@ -59,6 +60,34 @@ describe("training session generation", () => {
 
     expect(second.blocks[0].activity.title).not.toBe("Modification locale");
     expect(second.blocks[0].activity.compatibleThemes).toEqual(["Progresser ensemble"]);
+  });
+});
+
+describe("variété et explication des séances générées", () => {
+  const conserverWeek = { ...developmentWeek, theme: "Conserver le ballon" as const };
+  const titles = (generated: ReturnType<typeof generateTrainingSession>) => generated.blocks.map((block) => block.activity.title);
+
+  it("varie le déroulé entre deux créneaux d'une même semaine", () => {
+    expect(titles(generateTrainingSession(conserverWeek, "U12", 14, 0))).not.toEqual(titles(generateTrainingSession(conserverWeek, "U12", 14, 1)));
+  });
+
+  it("propose une autre séance sur le même créneau avec un identifiant distinct", () => {
+    const first = generateTrainingSession(conserverWeek, "U12", 14, 0);
+    const other = generateTrainingSession(conserverWeek, "U12", 14, 0, 1);
+
+    expect(titles(other)).not.toEqual(titles(first));
+    expect(other.id).not.toBe(first.id);
+    expect(generateTrainingSession(conserverWeek, "U12", 14, 0, 1)).toEqual(other);
+  });
+
+  it("explique la séance et chaque bloc", () => {
+    const generated = generateTrainingSession(conserverWeek, "U12", 15, 0);
+    const explanation = explainTrainingSession(generated, conserverWeek);
+
+    expect(explanation.summary).toContain("Découvrir");
+    expect(explanation.summary).toContain("Conserver le ballon");
+    expect(explanation.blocks.map((block) => block.blockId)).toEqual(generated.blocks.map((block) => block.id));
+    expect(explanation.blocks[2]?.reason).toContain("deux groupes de 7 et 8");
   });
 });
 

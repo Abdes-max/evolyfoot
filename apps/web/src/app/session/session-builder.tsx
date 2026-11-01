@@ -35,6 +35,8 @@ interface SessionBuilderProps {
   // les deux modes, toujours avec un rendez-vous -- deux formulaires distincts pour un même champ
   // auraient pu se marcher dessus (l'un écrasant silencieusement la valeur de l'autre).
   meetingAt: string | null;
+  // Raison de chaque bloc, affichée pour une séance tout juste générée.
+  blockReasons?: ReadonlyArray<{ blockId: string; reason: string }>;
   // "create" : nouvelle séance générée pour un créneau, on saisit la présence. "edit" : on ré-ouvre
   // une séance déjà enregistrée pour ajuster son déroulé -- la présence, saisie à la préparation,
   // n'est pas redemandée (et n'est pas réécrite) ici.
@@ -60,6 +62,7 @@ export function SessionBuilder({
   weekNumber,
   slot,
   meetingAt,
+  blockReasons = [],
   mode = "create",
 }: SessionBuilderProps) {
   const capturesAttendance = mode === "create" && roster.length > 0;
@@ -161,6 +164,7 @@ export function SessionBuilder({
         {session.blocks.map((block, index) => {
           const canReplace = canReplaceSessionActivity(session, index);
           const replacementHintId = `${block.id}-replacement-hint`;
+          const reason = blockReasons.find((candidate) => candidate.blockId === block.id)?.reason;
           return (
           <li className="session-block" key={block.id}>
             <span className="session-block-number">{index + 1}</span>
@@ -179,6 +183,7 @@ export function SessionBuilder({
                 </div>
                 <div className="session-block-text">
                   <p>{block.activity.objective}</p>
+                  {reason && <p className="session-block-reason">{reason}</p>}
                   <dl className="session-block-details">
                     <div><dt>Organisation</dt><dd>{block.activity.organization}</dd></div>
                     <div><dt>Consigne</dt><dd>{block.activity.instruction}</dd></div>
