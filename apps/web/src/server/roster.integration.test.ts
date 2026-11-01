@@ -19,6 +19,11 @@ const player: RosterPlayer = {
   birthDate: null,
   phone: null,
   email: null,
+  position: null,
+  jerseyNumber: null,
+  preferredFoot: null,
+  strengths: null,
+  workAreas: null,
 };
 
 function jsonRequest(method: string, body?: unknown): Request {

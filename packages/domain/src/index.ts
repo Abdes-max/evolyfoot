@@ -144,6 +144,15 @@ export {
   validatePlayerEvaluationScores,
 } from "./player-evaluation";
 export type { PlayerEvaluationAspect, PlayerEvaluationScores } from "./player-evaluation";
+export {
+  isValidJerseyNumber,
+  playerAspectCodes,
+  playerFeet,
+  playerOverallScore,
+  playerPositionCodes,
+  playerPositions,
+} from "./player-profile";
+export type { PlayerFoot, PlayerPosition } from "./player-profile";
 export { validateTournament } from "./tournament";
 export type { TournamentErrors, TournamentInput } from "./tournament";
 export { validatePlateau } from "./plateau";

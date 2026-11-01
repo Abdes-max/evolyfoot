@@ -305,6 +305,11 @@ export interface PersistedPlayer {
   birthDate: string | null;
   phone: string | null;
   email: string | null;
+  position: string | null;
+  jerseyNumber: string | null;
+  preferredFoot: string | null;
+  strengths: string | null;
+  workAreas: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -318,6 +323,11 @@ export type PlayerDetailsPatch = Partial<{
   birthDate: string | null;
   phone: string | null;
   email: string | null;
+  position: string | null;
+  jerseyNumber: string | null;
+  preferredFoot: string | null;
+  strengths: string | null;
+  workAreas: string | null;
 }>;
 
 export interface PlayerRepository {
