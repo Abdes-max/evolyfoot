@@ -37,7 +37,6 @@
 /* Header */
 .m-header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px clamp(16px, 5vw, 48px); background: rgba(10, 14, 21, 0.82); backdrop-filter: blur(10px); border-bottom: 1px solid var(--m-line); }
 .m-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -.4px; text-decoration: none; }
-.m-brand .brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--m-accent); color: var(--m-accent-ink); font-size: 15px; }
 /* flex-direction explicite : la règle globale `nav` de globals.css empile ses liens en colonne. */
 .m-nav { display: flex; flex-direction: row; align-items: center; gap: 22px; }
 .m-nav a { text-decoration: none; font-size: 13.5px; font-weight: 650; color: var(--m-muted); }

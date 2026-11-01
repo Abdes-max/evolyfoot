@@ -85,6 +85,8 @@ model Educator {
   diploma           String?
   seasonFormat      String?                  @map("season_format")
   // Profil de coach : valeurs contrôlées par EducatorProfileService (playStyles côté domaine).
+  // Cycle de 4 semaines en cours : les écrans de planification ne lisent que ses séances.
+  currentCycle      Int                      @default(1) @map("current_cycle")
   playStyle         String?                  @map("play_style")
   preferredFormation String?                 @map("preferred_formation")
   team              Team?
@@ -150,6 +152,7 @@ model TrainingSessionRecord {
   // l'équipe). Une seule séance par créneau (contrainte d'unicité) : la (re)générer remplace la
   // précédente. Le calendrier du tableau de bord s'en sert pour ouvrir la bonne séance ou signaler
   // « non générée ».
+  cycleNumber Int              @default(1) @map("cycle_number")
   weekNumber  Int              @default(1) @map("week_number")
   slot        Int              @default(0)
   // Rendez-vous réel (date + heure), lieu et description -- même principe que MatchRecord
@@ -167,7 +170,7 @@ model TrainingSessionRecord {
   attendance  Json?
   createdAt   DateTime         @default(now()) @map("created_at")
 
-  @@unique([educatorId, weekNumber, slot], name: "training_session_slot")
+  @@unique([educatorId, cycleNumber, weekNumber, slot], name: "training_session_slot")
   @@index([educatorId])
   @@map("training_sessions")
 }

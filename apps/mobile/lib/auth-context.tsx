@@ -70,6 +70,7 @@ export interface AuthContextValue {
   listSessions(): Promise<readonly SavedTrainingSession[]>;
   listPersonalExercises(): Promise<readonly PersonalExercise[]>;
   getPlayStyle(): Promise<string | null>;
+  startNextCycle(): Promise<AuthResult>;
   saveObservation(draft: ObservationDraft, matchId?: string): Promise<AuthResult>;
   addPlayer(firstName: string, lastName: string): Promise<AuthResult>;
   renamePlayer(id: string, firstName: string, lastName: string): Promise<AuthResult>;
@@ -308,6 +309,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return body.sessions ?? [];
   }, [sessionToken]);
 
+  const startNextCycle = useCallback(async (): Promise<AuthResult> => {
+    const response = await apiFetch("/api/cycles/next", { method: "POST", sessionToken }).catch(() => null);
+    if (!response) {
+      return { ok: false, error: GENERIC_ERROR };
+    }
+    return response.ok ? { ok: true } : { ok: false, error: await readErrorMessage(response) };
+  }, [sessionToken]);
+
   const getPlayStyle = useCallback(async (): Promise<string | null> => {
     const response = await apiFetch("/api/profile", { sessionToken }).catch(() => null);
     const body = await response?.json().catch(() => null);
@@ -506,6 +515,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       listSessions,
       listPersonalExercises,
       getPlayStyle,
+      startNextCycle,
       saveObservation,
       addPlayer,
       renamePlayer,

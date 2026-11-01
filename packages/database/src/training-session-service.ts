@@ -55,8 +55,29 @@ export class TrainingSessionService {
     private readonly personalExerciseRepository?: PersonalExerciseRepository,
   ) {}
 
+  // Le cycle en cours : c'est lui que lisent le plan, les séances et le calendrier.
   async list(educatorId: string): Promise<PersistedTrainingSession[]> {
+    const [cycle, sessions] = await Promise.all([
+      this.trainingSessionRepository.currentCycle(educatorId),
+      this.trainingSessionRepository.listByEducator(educatorId),
+    ]);
+    return sessions.filter((session) => session.cycleNumber === cycle);
+  }
+
+  // Toutes les séances, cycles précédents compris, pour la vue saison.
+  async listSeason(educatorId: string): Promise<PersistedTrainingSession[]> {
     return this.trainingSessionRepository.listByEducator(educatorId);
+  }
+
+  async currentCycle(educatorId: string): Promise<number> {
+    return this.trainingSessionRepository.currentCycle(educatorId);
+  }
+
+  async startNextCycle(educatorId: string): Promise<number> {
+    if ((await this.list(educatorId)).length === 0) {
+      throw new ValidationError("Prépare au moins une séance avant de passer au cycle suivant.");
+    }
+    return this.trainingSessionRepository.advanceCycle(educatorId);
   }
 
   async getById(educatorId: string, id: string): Promise<PersistedTrainingSession | null> {
@@ -125,6 +146,7 @@ export class TrainingSessionService {
         activityId: block.activityId,
         durationMinutes: block.durationMinutes,
       })),
+      cycleNumber: await this.trainingSessionRepository.currentCycle(educatorId),
       weekNumber: input.weekNumber,
       slot: input.slot,
       meetingAt: input.meetingAt,

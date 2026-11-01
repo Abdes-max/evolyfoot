@@ -206,6 +206,7 @@ export interface PersistedTrainingSessionBlock {
 export interface PersistedTrainingSession {
   id: string;
   educatorId: string;
+  cycleNumber: number;
   title: string;
   ageGroup: AgeGroup;
   playerCount: number;
@@ -239,6 +240,7 @@ export interface TrainingSessionRepository {
       theme: DevelopmentTheme;
       intention: string;
       blocks: PersistedTrainingSessionBlock[];
+      cycleNumber: number;
       weekNumber: number;
       slot: number;
       // Rendez-vous (date + heure) -- obligatoire dès la génération de la séance (voir
@@ -249,6 +251,9 @@ export interface TrainingSessionRepository {
     },
   ): Promise<PersistedTrainingSession>;
   listByEducator(educatorId: string): Promise<PersistedTrainingSession[]>;
+  currentCycle(educatorId: string): Promise<number>;
+  // Passe au cycle suivant et renvoie son numéro.
+  advanceCycle(educatorId: string): Promise<number>;
   findById(id: string, educatorId: string): Promise<PersistedTrainingSession | null>;
   // `updateMany` (filtre sur educatorId dans la même requête, voir PrismaMatchRepository.update
   // pour le même principe) -- réservé aux détails (rendez-vous/lieu/description) et à la présence,

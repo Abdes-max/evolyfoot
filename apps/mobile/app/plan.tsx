@@ -1,7 +1,8 @@
-import { buildDevelopmentPlan, summarizeDiagnostic, type DiagnosticScores } from "@evolyfoot/domain";
+import { buildDevelopmentPlan, summarizeDiagnostic, trainingCycleWeekCount, type DiagnosticScores, type SavedTrainingSession } from "@evolyfoot/domain";
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { Link } from "expo-router";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Link, router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 
 // Diagnostic de démonstration, utilisé tant que l'éducateur connecté n'a pas encore fait le
@@ -10,8 +11,33 @@ import { useAuth } from "../lib/auth-context";
 const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
 
 export default function PlanScreen() {
-  const { diagnosticScores } = useAuth();
+  const { diagnosticScores, team, listSessions, startNextCycle } = useAuth();
+  const [sessions, setSessions] = useState<readonly SavedTrainingSession[]>([]);
   const plan = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores));
+  const cycleComplete = sessions.length >= Math.max(team?.trainingDays.length ?? 1, 1) * trainingCycleWeekCount;
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      listSessions().then((list) => {
+        if (!cancelled) {
+          setSessions(list);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [listSessions]),
+  );
+
+  async function nextCycle() {
+    const result = await startNextCycle();
+    if (result.ok) {
+      router.push("/diagnostic");
+    } else {
+      Alert.alert("Le cycle suivant n’a pas démarré.", result.error);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -31,11 +57,17 @@ export default function PlanScreen() {
             </View>
           </View>
         ))}
-        <Link asChild href="/session">
-          <TouchableOpacity style={styles.sessionButton}>
-            <Text style={styles.sessionButtonText}>Préparer la première séance →</Text>
+        {cycleComplete ? (
+          <TouchableOpacity onPress={nextCycle} style={styles.sessionButton}>
+            <Text style={styles.sessionButtonText}>Démarrer le cycle suivant →</Text>
           </TouchableOpacity>
-        </Link>
+        ) : (
+          <Link asChild href="/session">
+            <TouchableOpacity style={styles.sessionButton}>
+              <Text style={styles.sessionButtonText}>Préparer la première séance →</Text>
+            </TouchableOpacity>
+          </Link>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
