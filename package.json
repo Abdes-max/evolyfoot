@@ -28,5 +28,11 @@
     "prettier": "latest",
     "turbo": "latest",
     "typescript": "~6.0.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "sharp": "0.35.5",
+      "shell-quote": "1.12.0"
+    }
   }
 }
