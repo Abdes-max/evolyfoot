@@ -64,6 +64,7 @@ export interface AuthContextValue {
   login(email: string, password: string): Promise<AuthResult>;
   register(email: string, password: string, displayName: string): Promise<AuthResult>;
   logout(): Promise<void>;
+  deleteAccount(password: string): Promise<AuthResult>;
   saveTeam(profile: TeamProfile): Promise<AuthResult>;
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
   saveTrainingSession(session: TrainingSession, slotInput: SessionSlotInput): Promise<AuthResult>;
@@ -187,6 +188,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionToken(null);
     await clearSessionToken();
   }, [sessionToken]);
+
+  const deleteAccount = useCallback(
+    async (password: string): Promise<AuthResult> => {
+      const response = await apiFetch("/api/account", { method: "DELETE", sessionToken, body: JSON.stringify({ password }) }).catch(() => null);
+      if (!response) {
+        return { ok: false, error: GENERIC_ERROR };
+      }
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      await logout();
+      return { ok: true };
+    },
+    [logout, sessionToken],
+  );
 
   // Reprend la session enregistrée au lancement. Un jeton refusé est effacé ; une panne réseau le
   // conserve, pour ne pas déconnecter l'éducateur parce que le terrain n'a pas de réseau.
@@ -509,6 +525,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      deleteAccount,
       saveTeam,
       saveDiagnostic,
       saveTrainingSession,
@@ -536,6 +553,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      deleteAccount,
       saveTeam,
       saveDiagnostic,
       saveTrainingSession,
