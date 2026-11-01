@@ -34,7 +34,7 @@
     "@evolyfoot/typescript-config": "workspace:*",
     "@types/react": "~19.2.2",
     "eslint": "9.39.5",
-    "eslint-config-expo": "latest",
+    "eslint-config-expo": "58.0.4",
     "typescript": "~6.0.3"
   }
 }

@@ -26,7 +26,7 @@ jobs:
     environment: production
     steps:
       - name: Récupérer le code et redémarrer la stack
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
@@ -45,7 +45,7 @@ jobs:
             docker compose up -d --build
             docker image prune -f
       - name: Vérifier la santé du déploiement
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}

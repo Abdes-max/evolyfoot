@@ -5,7 +5,7 @@
 #   web      → serveur Next.js autonome (docker build --target web)
 #   migrator → exécute `prisma migrate deploy` une fois, puis quitte (--target migrator)
 
-FROM node:22-alpine AS base
+FROM node:22.23.3-alpine AS base
 RUN corepack enable
 WORKDIR /repo
 
@@ -14,10 +14,7 @@ WORKDIR /repo
 # qu'un COPY par package.json de workspace, au prix d'un cache Docker moins fin.
 FROM base AS deps
 COPY . .
-# TEMPORAIRE (--no-frozen-lockfile au lieu de --frozen-lockfile) : voir le commentaire équivalent
-# dans .github/workflows/ci.yml -- pnpm-lock.yaml n'a pas pu être régénéré après l'ajout de
-# nodemailer. À revenir à --frozen-lockfile dès qu'un pnpm-lock.yaml à jour est committé.
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # --- Build : génère le client Prisma puis la sortie autonome de Next.js. ---
 FROM deps AS builder
@@ -32,7 +29,7 @@ WORKDIR /repo
 ENTRYPOINT ["pnpm", "--filter", "@evolyfoot/database", "exec", "prisma", "migrate", "deploy"]
 
 # --- Web : serveur Next.js autonome, image finale minimale. ---
-FROM node:22-alpine AS web
+FROM node:22.23.3-alpine AS web
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 WORKDIR /app
 

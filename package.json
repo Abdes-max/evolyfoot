@@ -24,9 +24,9 @@
     "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "@playwright/test": "latest",
-    "prettier": "latest",
-    "turbo": "latest",
+    "@playwright/test": "1.64.1",
+    "prettier": "3.9.10",
+    "turbo": "2.11.10",
     "typescript": "~6.0.3"
   },
   "pnpm": {
