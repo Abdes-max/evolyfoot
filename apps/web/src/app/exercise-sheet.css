@@ -96,3 +96,15 @@
 @media (max-width: 600px) {
   .session-exercise-bar { flex-wrap: wrap; }
 }
+
+/* Plan de saison : frise des cycles jusqu'en juin. */
+.season-plan { min-width: 0; max-width: 100%; margin-bottom: 22px; }
+.season-plan h2 { margin: 0 0 6px; font-family: var(--font-display), "Arial Narrow", sans-serif; font-size: 28px; font-weight: 800; text-transform: uppercase; }
+.season-plan > p { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.season-plan > p a { color: var(--accent-dark); font-weight: 800; }
+.season-plan ol { display: flex; gap: 10px; margin: 0; padding: 0 0 10px; overflow-x: auto; list-style: none; scroll-snap-type: x proximity; }
+.season-plan li { flex: 0 0 210px; display: grid; gap: 3px; align-content: start; padding: 13px 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); scroll-snap-align: start; }
+.season-plan li.current { border-color: var(--accent); box-shadow: 0 0 18px rgba(47, 212, 255, 0.18); }
+.season-plan li > span { color: var(--accent-dark); font-size: 12px; font-weight: 800; }
+.season-plan li strong { margin-top: 4px; font-size: 15px; line-height: 1.25; }
+.season-plan li small { color: var(--muted); font-size: 12px; line-height: 1.35; }
