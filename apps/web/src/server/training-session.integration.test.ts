@@ -150,15 +150,15 @@ describe("createSaveTrainingSessionHandler", () => {
 
 describe("createListTrainingSessionsHandler", () => {
   it("requires an authenticated session", async () => {
-    const handler = createListTrainingSessionsHandler(anonymous, { list: async () => [] });
+    const handler = createListTrainingSessionsHandler(anonymous, { list: async () => [], currentCycle: async () => 1 });
     expect((await handler(jsonRequest(validInput))).status).toBe(401);
   });
 
   it("returns the educator's saved sessions", async () => {
-    const handler = createListTrainingSessionsHandler(authenticated, { list: async () => [persisted] });
+    const handler = createListTrainingSessionsHandler(authenticated, { list: async () => [persisted], currentCycle: async () => 1 });
     const response = await handler(jsonRequest(validInput));
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ sessions: [persisted] });
+    expect(await response.json()).toEqual({ sessions: [persisted], cycleNumber: 1 });
   });
 });
 

@@ -439,6 +439,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
       theme: DevelopmentTheme;
       intention: string;
       blocks: PersistedTrainingSessionBlock[];
+      cycleNumber: number;
       weekNumber: number;
       slot: number;
       meetingAt: Date;
@@ -452,7 +453,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
       // compris son rendez-vous (obligatoire à chaque génération, voir TrainingSessionService.save).
       const record = await this.prisma.trainingSessionRecord.upsert({
         where: {
-          training_session_slot: { educatorId, weekNumber: input.weekNumber, slot: input.slot },
+          training_session_slot: { educatorId, cycleNumber: input.cycleNumber, weekNumber: input.weekNumber, slot: input.slot },
         },
         create: {
           educatorId,
@@ -462,6 +463,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
           theme: toPrismaDevelopmentTheme(input.theme),
           intention: input.intention,
           blocks,
+          cycleNumber: input.cycleNumber,
           weekNumber: input.weekNumber,
           slot: input.slot,
           meetingAt: input.meetingAt,
@@ -487,6 +489,20 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
   async listByEducator(educatorId: string): Promise<PersistedTrainingSession[]> {
     const records = await this.prisma.trainingSessionRecord.findMany({ where: { educatorId }, orderBy: { createdAt: "desc" } });
     return records.map(toPersistedTrainingSession);
+  }
+
+  async currentCycle(educatorId: string): Promise<number> {
+    const educator = await this.prisma.educator.findUnique({ where: { id: educatorId }, select: { currentCycle: true } });
+    return educator?.currentCycle ?? 1;
+  }
+
+  async advanceCycle(educatorId: string): Promise<number> {
+    const educator = await this.prisma.educator.update({
+      where: { id: educatorId },
+      data: { currentCycle: { increment: 1 } },
+      select: { currentCycle: true },
+    });
+    return educator.currentCycle;
   }
 
   async findById(id: string, educatorId: string): Promise<PersistedTrainingSession | null> {

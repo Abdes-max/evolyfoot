@@ -1,4 +1,4 @@
-import { EducatorNotFoundError, TrainingSessionNotFoundError } from "@evolyfoot/database";
+import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "@evolyfoot/database";
 import { ageGroups, type AgeGroup, type AttendanceEntry, type DevelopmentTheme } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
@@ -39,7 +39,9 @@ export interface PersistedTrainingSession extends Omit<TrainingSessionInput, "me
 
 export interface TrainingSessionGateway {
   save(educatorId: string, input: TrainingSessionInput): Promise<PersistedTrainingSession>;
-  list(educatorId: string): Promise<PersistedTrainingSession[]>;
+  list(educatorId: string, scope?: "cycle" | "season"): Promise<PersistedTrainingSession[]>;
+  currentCycle(educatorId: string): Promise<number>;
+  startNextCycle(educatorId: string): Promise<number>;
   getById(educatorId: string, id: string): Promise<PersistedTrainingSession | null>;
   updateDetails(
     educatorId: string,
@@ -153,15 +155,38 @@ export function createSaveTrainingSessionHandler(
 
 export function createListTrainingSessionsHandler(
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
-  trainingSession: Pick<TrainingSessionGateway, "list">,
+  trainingSession: Pick<TrainingSessionGateway, "list" | "currentCycle">,
 ): (request: Request) => Promise<Response> {
   return async (request) => {
     const educator = await resolveEducator(request);
     if (!educator) {
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
-    const sessions = await trainingSession.list(educator.id);
-    return Response.json({ sessions });
+    const scope = new URL(request.url).searchParams.get("scope") === "season" ? "season" : "cycle";
+    const [sessions, cycleNumber] = await Promise.all([trainingSession.list(educator.id, scope), trainingSession.currentCycle(educator.id)]);
+    return Response.json({ sessions, cycleNumber });
+  };
+}
+
+export function createStartNextCycleHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  trainingSession: Pick<TrainingSessionGateway, "startNextCycle">,
+  log: (error: unknown) => void,
+): (request: Request) => Promise<Response> {
+  return async (request) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    try {
+      return Response.json({ cycleNumber: await trainingSession.startNextCycle(educator.id) });
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return Response.json({ error: error.message }, { status: 400 });
+      }
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
   };
 }
 
@@ -257,9 +282,11 @@ export async function createTrainingSessionGateway(): Promise<{
       async save(educatorId, input) {
         return toSummary(await service.save(educatorId, { ...input, meetingAt: new Date(input.meetingAt) }));
       },
-      async list(educatorId) {
-        return (await service.list(educatorId)).map(toSummary);
+      async list(educatorId, scope = "cycle") {
+        return (await (scope === "season" ? service.listSeason(educatorId) : service.list(educatorId))).map(toSummary);
       },
+      currentCycle: (educatorId) => service.currentCycle(educatorId),
+      startNextCycle: (educatorId) => service.startNextCycle(educatorId),
       async getById(educatorId, id) {
         const session = await service.getById(educatorId, id);
         return session ? toSummary(session) : null;

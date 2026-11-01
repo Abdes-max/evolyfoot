@@ -44,7 +44,7 @@ export function SaisonView() {
     (async () => {
       try {
         const [sessions, matches, tournaments, plateaux] = await Promise.all([
-          readList<{ id: string; title: string; meetingAt: string | null }>("/api/sessions", "sessions"),
+          readList<{ id: string; title: string; meetingAt: string | null }>("/api/sessions?scope=season", "sessions"),
           readList<{ id: string; opponent: string; date: string | null }>("/api/matches", "matches"),
           readList<{ id: string; name: string; date: string | null }>("/api/tournaments", "tournaments"),
           readList<{ id: string; name: string; date: string | null }>("/api/plateaux", "plateaux"),

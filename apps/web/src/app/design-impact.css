@@ -79,7 +79,7 @@ main > :nth-child(3) { animation-delay: 100ms; }
 .session-style-note { margin-top: 8px; color: var(--volt); font-weight: 700; }
 
 /* Monogramme EV : le texte reste pour les lecteurs d'écran, le tracé vient d'icon.svg. */
-.brand-mark, .m-brand .brand-mark { position: relative; font-size: 0; background: linear-gradient(135deg, var(--accent), var(--volt)); }
+.brand-mark { position: relative; font-size: 0; background: linear-gradient(135deg, var(--accent), var(--volt)); }
 .brand-mark::after {
   content: "";
   position: absolute;

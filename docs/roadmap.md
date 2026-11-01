@@ -15,7 +15,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 | Suivi joueur | Carte joueur, profil sportif, évaluations datées, auto-évaluation comparée, buts et passes de la saison |
 | Espace joueur / tuteur | Compte sur invitation, calendrier, réponses aux convocations, messages (web uniquement) |
 | Comptes | Inscription, connexion, confirmation d'e-mail, mot de passe oublié |
-| Saison | Vue mois par mois ; un seul cycle de 4 semaines à la fois |
+| Saison | Vue mois par mois ; cycles de 4 semaines enchaînés, avec nouveau diagnostic à chaque cycle |
 | Vitrine | Pages en ligne ; contenu légal à compléter |
 | E-mails en production | Code prêt ; configuration Brevo du VPS à confirmer |
 | Mobile | Deux applications iOS et Android non publiées : EvolyFoot Coach (`apps/mobile`) et EvolyFoot Player (`apps/mobile-player`) ; non testées sur téléphone réel |
@@ -35,7 +35,6 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 
 ### Produit
 
-- [ ] Enchaîner plusieurs cycles sur la saison : aujourd'hui, un seul cycle de 4 semaines existe et la vue saison ne fait que rassembler les événements.
 - [ ] Faire relire les 80 exercices ajoutés en novembre par un éducateur.
 - [ ] Mesurer les indicateurs MVP restants (voir docs/mvp.md) : temps de préparation, temps de compte rendu, ajustements acceptés.
 - [ ] Ajouter de vrais témoignages à la vitrine dès que des éducateurs utilisent l’application, sans chiffres inventés.

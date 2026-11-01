@@ -359,6 +359,7 @@ export function toPersistedTrainingSession(record: PrismaTrainingSessionRecord):
   return Object.freeze({
     id: record.id,
     educatorId: record.educatorId,
+    cycleNumber: record.cycleNumber,
     title: record.title,
     ageGroup: fromPrismaAgeGroup(record.ageGroup),
     playerCount: record.playerCount,

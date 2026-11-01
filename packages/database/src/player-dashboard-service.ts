@@ -160,9 +160,10 @@ export class PlayerDashboardService {
     const playerId = owned.id;
     const ownerId = owned.educatorId;
 
-    const [team, sessions, matches, evaluations, plateaux, tournaments] = await Promise.all([
+    const [team, sessions, currentCycle, matches, evaluations, plateaux, tournaments] = await Promise.all([
       this.teamRepository.findForEducator(ownerId),
       this.trainingSessionRepository.listByEducator(ownerId),
+      this.trainingSessionRepository.currentCycle(ownerId),
       this.matchRepository.listByEducator(ownerId),
       this.playerEvaluationRepository.listByPlayer(playerId, ownerId),
       this.plateauRepository.listByEducator(ownerId),
@@ -215,7 +216,9 @@ export class PlayerDashboardService {
       trainingAttendance: summarizeAttendance(trainingEntries),
       matchAttendance: summarizeAttendance(matchEntries),
       upcomingMatches,
-      trainingSlots: sessions.map((session) => ({ weekNumber: session.weekNumber, slot: session.slot })),
+      trainingSlots: sessions
+        .filter((session) => session.cycleNumber === currentCycle)
+        .map((session) => ({ weekNumber: session.weekNumber, slot: session.slot })),
       trainingSessions: sessions.map((session) => {
         const myEntry = session.attendance?.find((entry) => entry.playerId === playerId);
         return {

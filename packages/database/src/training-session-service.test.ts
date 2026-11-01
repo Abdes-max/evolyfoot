@@ -64,6 +64,16 @@ class InMemoryEducatorRepository implements EducatorRepository {
 
 class InMemoryTrainingSessionRepository implements TrainingSessionRepository {
   readonly created: PersistedTrainingSession[] = [];
+  cycle = 1;
+
+  async currentCycle(): Promise<number> {
+    return this.cycle;
+  }
+
+  async advanceCycle(): Promise<number> {
+    this.cycle += 1;
+    return this.cycle;
+  }
 
   async create(
     educatorId: string,
@@ -74,13 +84,17 @@ class InMemoryTrainingSessionRepository implements TrainingSessionRepository {
       theme: PersistedTrainingSession["theme"];
       intention: string;
       blocks: PersistedTrainingSessionBlock[];
+      cycleNumber: number;
       weekNumber: number;
       slot: number;
     },
   ): Promise<PersistedTrainingSession> {
     const existing = this.created.find(
       (session) =>
-        session.educatorId === educatorId && session.weekNumber === input.weekNumber && session.slot === input.slot,
+        session.educatorId === educatorId &&
+        session.cycleNumber === input.cycleNumber &&
+        session.weekNumber === input.weekNumber &&
+        session.slot === input.slot,
     );
     if (existing) {
       Object.assign(existing, input);
@@ -120,6 +134,29 @@ class InMemoryTrainingSessionRepository implements TrainingSessionRepository {
     return record;
   }
 }
+
+describe("TrainingSessionService cycles", () => {
+  const session = { ...validInput, meetingAt: new Date("2026-11-03T18:00:00.000Z") };
+
+  it("refuse de passer au cycle suivant sans séance", async () => {
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), new InMemoryTrainingSessionRepository());
+
+    await expect(service.startNextCycle("educator-1")).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("libère les créneaux du nouveau cycle et garde l'historique pour la saison", async () => {
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), new InMemoryTrainingSessionRepository());
+    await service.save("educator-1", session);
+
+    expect(await service.startNextCycle("educator-1")).toBe(2);
+    expect(await service.list("educator-1")).toEqual([]);
+
+    await service.save("educator-1", session);
+
+    expect(await service.list("educator-1")).toHaveLength(1);
+    expect((await service.listSeason("educator-1")).map((saved) => saved.cycleNumber)).toEqual([1, 2]);
+  });
+});
 
 describe("TrainingSessionService.save", () => {
   it("rejects an unknown activity id before writing anything", async () => {
