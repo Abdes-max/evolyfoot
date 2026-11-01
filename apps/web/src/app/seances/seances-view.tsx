@@ -80,6 +80,12 @@ export function SeancesView() {
   const sessionAt = (weekNumber: number, slot: number) =>
     sessions.find((session) => session.weekNumber === weekNumber && session.slot === slot);
 
+  // Premier créneau libre du cycle ; le premier créneau de la semaine en cours si tout est généré.
+  const nextSlot =
+    plan.weeks
+      .flatMap((week) => slotLabels.map((_, slot) => ({ weekNumber: week.week, slot })))
+      .find(({ weekNumber, slot }) => !sessionAt(weekNumber, slot)) ?? { weekNumber: activeWeek, slot: 0 };
+
   return (
     <main className="seances-shell">
       <header className="page-header seances-header">
@@ -90,8 +96,8 @@ export function SeancesView() {
             Génère chaque séance à partir du plan, puis ajuste-la avant l’entraînement.
           </p>
         </div>
-        <Link className="seances-create" href={`/session?week=${activeWeek}&slot=0`}>
-          Créer une séance
+        <Link className="seances-create" href={`/session?week=${nextSlot.weekNumber}&slot=${nextSlot.slot}`}>
+          Générer ma prochaine séance
         </Link>
       </header>
 
