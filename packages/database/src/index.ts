@@ -23,6 +23,7 @@ export {
   PrismaObservationRepository,
   PrismaContactMessageRepository,
   PrismaEmailVerificationRepository,
+  PrismaPasswordResetRepository,
   PrismaPlateauRepository,
   PrismaPersonalExerciseRepository,
   PrismaPlayerEvaluationRepository,
@@ -43,6 +44,7 @@ export { MessagingService } from "./messaging-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";
 export { ContactMessageService } from "./contact-message-service";
+export { PasswordResetInvalidError, PasswordResetService } from "./password-reset-service";
 export { EmailVerificationService, VerificationInvalidError } from "./email-verification-service";
 export { PlateauService } from "./plateau-service";
 export { PlayerDashboardService } from "./player-dashboard-service";

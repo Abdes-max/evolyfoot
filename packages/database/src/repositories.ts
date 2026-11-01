@@ -71,6 +71,23 @@ export interface EmailVerificationRecord {
   createdAt: Date;
 }
 
+export interface PasswordResetRecord {
+  id: string;
+  educatorId: string;
+  expiresAt: Date;
+  consumedAt: Date | null;
+}
+
+export interface PasswordResetRepository {
+  countCreatedSince(educatorId: string, since: Date): Promise<number>;
+  // Crée le lien et annule ceux encore valides pour ce compte.
+  replaceForEducator(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<void>;
+  findByTokenHash(tokenHash: string): Promise<PasswordResetRecord | null>;
+  // Atomique : consomme le lien, change le mot de passe et ferme les sessions. `false` si le lien
+  // a déjà été consommé entre-temps.
+  apply(id: string, educatorId: string, passwordHash: string): Promise<boolean>;
+}
+
 export interface EmailVerificationRepository {
   create(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<EmailVerificationRecord>;
   findByTokenHash(tokenHash: string): Promise<EmailVerificationRecord | null>;
