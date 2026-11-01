@@ -6,7 +6,9 @@ import {
   attendanceStatusLabels,
   canFinalizeMatchPlan,
   clearSlot,
+  defaultFormationId,
   formationSlots,
+  gameFormats,
   listFormations,
   maxSubstitutes,
   removeSubstitute,
@@ -227,8 +229,8 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     addSubstitutePlayer(playerId);
   }
 
-  async function changeFormation(formationId: string) {
-    if (!match || formationId === match.formationId) {
+  async function changeFormation(formationId: string, gameFormat?: GameFormat) {
+    if (!match || (formationId === match.formationId && gameFormat === undefined)) {
       return;
     }
     setSaveError("");
@@ -236,7 +238,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       const response = await fetch(`/api/matches/${matchId}/formation`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ formationId }),
+        body: JSON.stringify({ formationId, ...(gameFormat !== undefined ? { gameFormat } : {}) }),
       });
       if (!response.ok) {
         setSaveError(await readErrorMessage(response));
@@ -247,6 +249,16 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     } catch {
       setSaveError("Une erreur est survenue.");
     }
+  }
+
+  // Changer de format de jeu change aussi les formations disponibles : repart de la première
+  // formation du nouveau format plutôt que de garder un formationId qui n'existerait plus dedans
+  // (même repli que defaultFormationId côté domaine).
+  function changeGameFormat(newGameFormat: GameFormat) {
+    if (!match || newGameFormat === match.gameFormat) {
+      return;
+    }
+    changeFormation(defaultFormationId(newGameFormat), newGameFormat);
   }
 
   async function saveDetails(event: FormEvent) {
@@ -408,6 +420,18 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
 
       <section className="match-content match-prep-layout">
         <div>
+          {!readOnly && (
+            <label className="match-game-format-picker">
+              <span>Format de jeu</span>
+              <select onChange={(event) => changeGameFormat(Number(event.target.value) as GameFormat)} value={gameFormat}>
+                {gameFormats.map((format) => (
+                  <option key={format} value={format}>
+                    Foot à {format}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {!readOnly && formations.length > 1 && (
             <div className="match-formation-picker" role="group" aria-label="Formation">
               {formations.map((formation) => (

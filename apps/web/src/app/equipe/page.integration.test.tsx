@@ -52,7 +52,7 @@ describe("roster", () => {
   });
 
   it("ajoute un joueur", async () => {
-    let players: Array<{ id: string; name: string }> = [];
+    let players: Array<{ id: string; firstName: string; lastName: string; name: string }> = [];
     vi.mocked(fetch).mockImplementation(async (input, init) => {
       const url = typeof input === "string" ? input : (input as Request).url;
       if (url.includes("/api/auth/session")) {
@@ -62,7 +62,8 @@ describe("roster", () => {
         return jsonResponse({ profile: team });
       }
       if (url.endsWith("/api/roster") && init?.method === "POST") {
-        const player = { id: "player-2", name: JSON.parse(String(init.body)).name };
+        const { firstName, lastName } = JSON.parse(String(init.body));
+        const player = { id: "player-2", firstName, lastName, name: `${firstName} ${lastName}`.trim() };
         players = [...players, player];
         return new Response(JSON.stringify({ player }), { status: 201 });
       }
@@ -76,9 +77,10 @@ describe("roster", () => {
     await screen.findByLabelText("Ajouter un joueur");
 
     fireEvent.change(screen.getByLabelText("Ajouter un joueur"), { target: { value: "Ousmane" } });
+    fireEvent.change(screen.getByLabelText("Nom"), { target: { value: "Dembélé" } });
     fireEvent.click(screen.getByRole("button", { name: "Ajouter" }));
 
-    expect(await screen.findByText("Ousmane")).toBeInTheDocument();
+    expect(await screen.findByText("Ousmane Dembélé")).toBeInTheDocument();
   });
 
   it("retire un joueur", async () => {

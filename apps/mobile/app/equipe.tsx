@@ -6,41 +6,45 @@ import { useAuth } from "../lib/auth-context";
 
 export default function EquipeScreen() {
   const { team, roster, addPlayer, renamePlayer, removePlayer } = useAuth();
-  const [newName, setNewName] = useState("");
+  const [newFirstName, setNewFirstName] = useState("");
+  const [newLastName, setNewLastName] = useState("");
   const [addError, setAddError] = useState("");
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
+  const [editingFirstName, setEditingFirstName] = useState("");
+  const [editingLastName, setEditingLastName] = useState("");
   const [rowError, setRowError] = useState<{ id: string; message: string } | null>(null);
 
   async function submitAdd() {
-    if (!newName.trim()) {
-      setAddError("Indique un prénom.");
+    if (!newFirstName.trim() || !newLastName.trim()) {
+      setAddError("Indique un prénom et un nom.");
       return;
     }
     setAdding(true);
     setAddError("");
-    const result = await addPlayer(newName);
+    const result = await addPlayer(newFirstName, newLastName);
     setAdding(false);
     if (!result.ok) {
       setAddError(result.error);
       return;
     }
-    setNewName("");
+    setNewFirstName("");
+    setNewLastName("");
   }
 
-  function startEditing(id: string, name: string) {
+  function startEditing(id: string, firstName: string, lastName: string) {
     setEditingId(id);
-    setEditingName(name);
+    setEditingFirstName(firstName);
+    setEditingLastName(lastName);
     setRowError(null);
   }
 
   async function confirmRename(id: string) {
-    if (!editingName.trim()) {
-      setRowError({ id, message: "Indique un prénom." });
+    if (!editingFirstName.trim() || !editingLastName.trim()) {
+      setRowError({ id, message: "Indique un prénom et un nom." });
       return;
     }
-    const result = await renamePlayer(id, editingName);
+    const result = await renamePlayer(id, editingFirstName, editingLastName);
     if (!result.ok) {
       setRowError({ id, message: result.error });
       return;
@@ -78,11 +82,18 @@ export default function EquipeScreen() {
         <Text style={styles.label}>Ajouter un joueur</Text>
         <View style={styles.addRow}>
           <TextInput
-            accessibilityLabel="Ajouter un joueur"
-            onChangeText={setNewName}
+            accessibilityLabel="Prénom du joueur"
+            onChangeText={setNewFirstName}
             placeholder="Prénom"
             style={styles.input}
-            value={newName}
+            value={newFirstName}
+          />
+          <TextInput
+            accessibilityLabel="Nom du joueur"
+            onChangeText={setNewLastName}
+            placeholder="Nom"
+            style={styles.input}
+            value={newLastName}
           />
           <TouchableOpacity disabled={adding} onPress={submitAdd} style={styles.addButton}>
             <Text style={styles.addButtonText}>{adding ? "Ajout…" : "Ajouter"}</Text>
@@ -95,10 +106,16 @@ export default function EquipeScreen() {
             {editingId === player.id ? (
               <>
                 <TextInput
-                  accessibilityLabel={`Renommer ${player.name}`}
-                  onChangeText={setEditingName}
+                  accessibilityLabel={`Prénom de ${player.name}`}
+                  onChangeText={setEditingFirstName}
                   style={styles.rowInput}
-                  value={editingName}
+                  value={editingFirstName}
+                />
+                <TextInput
+                  accessibilityLabel={`Nom de ${player.name}`}
+                  onChangeText={setEditingLastName}
+                  style={styles.rowInput}
+                  value={editingLastName}
                 />
                 <View style={styles.rowActions}>
                   <TouchableOpacity onPress={() => confirmRename(player.id)} style={styles.rowButton}>
@@ -115,7 +132,7 @@ export default function EquipeScreen() {
                 <View style={styles.rowActions}>
                   <TouchableOpacity
                     accessibilityLabel={`Renommer ${player.name}`}
-                    onPress={() => startEditing(player.id, player.name)}
+                    onPress={() => startEditing(player.id, player.firstName, player.lastName)}
                     style={styles.rowButton}
                   >
                     <Text style={styles.rowButtonText}>Renommer</Text>

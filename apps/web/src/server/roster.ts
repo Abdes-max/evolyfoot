@@ -4,6 +4,10 @@ import type { PublicEducator } from "./auth";
 
 export interface RosterPlayer {
   id: string;
+  firstName: string;
+  lastName: string;
+  // Nom complet (`${firstName} ${lastName}`.trim()) -- gardé pour tous les affichages qui n'ont
+  // besoin que d'une chaîne unique (composition de match, présence, messagerie...).
   name: string;
   photo: string | null;
   birthDate: string | null;
@@ -11,12 +15,13 @@ export interface RosterPlayer {
   email: string | null;
 }
 
-// Clés de fiche joueur acceptées dans le corps d'un PATCH (hors `name`, traité à part).
+// Clés de fiche joueur acceptées dans le corps d'un PATCH (hors `firstName`/`lastName`, traités à
+// part -- une chaîne vide y est rejetée, contrairement aux clés ci-dessous où elle efface).
 const detailKeys = ["photo", "birthDate", "phone", "email"] as const;
 
 export interface RosterGateway {
   list(educatorId: string): Promise<RosterPlayer[]>;
-  add(educatorId: string, name: string): Promise<RosterPlayer>;
+  add(educatorId: string, firstName: string, lastName: string): Promise<RosterPlayer>;
   update(educatorId: string, playerId: string, input: PlayerDetailsInput): Promise<RosterPlayer>;
   remove(educatorId: string, playerId: string): Promise<void>;
 }
@@ -64,13 +69,14 @@ export function createAddPlayerHandler(
     }
 
     const body = await readJsonBody(request);
-    const name = body && typeof body.name === "string" ? body.name : null;
-    if (name === null) {
-      return Response.json({ error: "Un prénom est requis." }, { status: 400 });
+    const firstName = body && typeof body.firstName === "string" ? body.firstName : null;
+    const lastName = body && typeof body.lastName === "string" ? body.lastName : null;
+    if (firstName === null || lastName === null) {
+      return Response.json({ error: "Le prénom et le nom sont requis." }, { status: 400 });
     }
 
     try {
-      const player = await roster.add(educator.id, name);
+      const player = await roster.add(educator.id, firstName, lastName);
       return Response.json({ player }, { status: 201 });
     } catch (error) {
       if (error instanceof EducatorNotFoundError) {
@@ -102,11 +108,17 @@ export function createUpdatePlayerHandler(
       return Response.json({ error: "Requête invalide." }, { status: 400 });
     }
     const input: PlayerDetailsInput = {};
-    if ("name" in body) {
-      if (typeof body.name !== "string") {
+    if ("firstName" in body) {
+      if (typeof body.firstName !== "string") {
         return Response.json({ error: "Un prénom est requis." }, { status: 400 });
       }
-      input.name = body.name;
+      input.firstName = body.firstName;
+    }
+    if ("lastName" in body) {
+      if (typeof body.lastName !== "string") {
+        return Response.json({ error: "Un nom est requis." }, { status: 400 });
+      }
+      input.lastName = body.lastName;
     }
     for (const key of detailKeys) {
       if (!(key in body)) {
@@ -171,6 +183,8 @@ export async function createRosterGateway(): Promise<{ gateway: RosterGateway; d
 
   const toRosterPlayer = (player: Awaited<ReturnType<typeof service.add>>): RosterPlayer => ({
     id: player.id,
+    firstName: player.firstName,
+    lastName: player.lastName,
     name: player.name,
     photo: player.photo,
     birthDate: player.birthDate,
@@ -183,8 +197,8 @@ export async function createRosterGateway(): Promise<{ gateway: RosterGateway; d
       async list(educatorId) {
         return (await service.list(educatorId)).map(toRosterPlayer);
       },
-      async add(educatorId, name) {
-        return toRosterPlayer(await service.add(educatorId, name));
+      async add(educatorId, firstName, lastName) {
+        return toRosterPlayer(await service.add(educatorId, firstName, lastName));
       },
       async update(educatorId, playerId, input) {
         return toRosterPlayer(await service.updateDetails(educatorId, playerId, input));

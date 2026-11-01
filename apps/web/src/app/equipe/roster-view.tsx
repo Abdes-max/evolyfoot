@@ -6,6 +6,8 @@ import { SidebarNav } from "../sidebar-nav";
 
 interface RosterPlayer {
   id: string;
+  firstName: string;
+  lastName: string;
   name: string;
   photo?: string | null;
 }
@@ -31,11 +33,13 @@ export function RosterView() {
   const [authenticated, setAuthenticated] = useState<boolean | undefined>(undefined);
   const [team, setTeam] = useState<TeamSummary | null>(null);
   const [players, setPlayers] = useState<RosterPlayer[]>([]);
-  const [newName, setNewName] = useState("");
+  const [newFirstName, setNewFirstName] = useState("");
+  const [newLastName, setNewLastName] = useState("");
   const [addError, setAddError] = useState("");
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
+  const [editingFirstName, setEditingFirstName] = useState("");
+  const [editingLastName, setEditingLastName] = useState("");
   const [rowError, setRowError] = useState<{ id: string; message: string } | null>(null);
 
   useEffect(() => {
@@ -76,8 +80,8 @@ export function RosterView() {
 
   async function addPlayer(event: FormEvent) {
     event.preventDefault();
-    if (!newName.trim()) {
-      setAddError("Indique un prénom.");
+    if (!newFirstName.trim() || !newLastName.trim()) {
+      setAddError("Indique un prénom et un nom.");
       return;
     }
 
@@ -87,7 +91,7 @@ export function RosterView() {
       const response = await fetch("/api/roster", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: newName }),
+        body: JSON.stringify({ firstName: newFirstName, lastName: newLastName }),
       });
       if (!response.ok) {
         setAddError(await readErrorMessage(response));
@@ -95,7 +99,8 @@ export function RosterView() {
       }
       const body = await response.json();
       setPlayers((current) => [...current, body.player]);
-      setNewName("");
+      setNewFirstName("");
+      setNewLastName("");
     } catch {
       setAddError("Une erreur est survenue.");
     } finally {
@@ -105,13 +110,14 @@ export function RosterView() {
 
   function startEditing(player: RosterPlayer) {
     setEditingId(player.id);
-    setEditingName(player.name);
+    setEditingFirstName(player.firstName);
+    setEditingLastName(player.lastName);
     setRowError(null);
   }
 
   async function confirmRename(playerId: string) {
-    if (!editingName.trim()) {
-      setRowError({ id: playerId, message: "Indique un prénom." });
+    if (!editingFirstName.trim() || !editingLastName.trim()) {
+      setRowError({ id: playerId, message: "Indique un prénom et un nom." });
       return;
     }
 
@@ -119,7 +125,7 @@ export function RosterView() {
       const response = await fetch(`/api/roster/${playerId}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: editingName }),
+        body: JSON.stringify({ firstName: editingFirstName, lastName: editingLastName }),
       });
       if (!response.ok) {
         setRowError({ id: playerId, message: await readErrorMessage(response) });
@@ -181,13 +187,19 @@ export function RosterView() {
           )}
 
           <form className="roster-add-form" onSubmit={addPlayer}>
-            <label htmlFor="roster-new-player-name">Ajouter un joueur</label>
+            <label htmlFor="roster-new-player-first-name">Ajouter un joueur</label>
             <div className="roster-add-row">
               <input
-                id="roster-new-player-name"
-                onChange={(event) => setNewName(event.target.value)}
+                id="roster-new-player-first-name"
+                onChange={(event) => setNewFirstName(event.target.value)}
                 placeholder="Prénom"
-                value={newName}
+                value={newFirstName}
+              />
+              <input
+                aria-label="Nom"
+                onChange={(event) => setNewLastName(event.target.value)}
+                placeholder="Nom"
+                value={newLastName}
               />
               <button disabled={adding} type="submit">
                 {adding ? "Ajout…" : "Ajouter"}
@@ -202,9 +214,14 @@ export function RosterView() {
                 {editingId === player.id ? (
                   <>
                     <input
-                      aria-label={`Renommer ${player.name}`}
-                      onChange={(event) => setEditingName(event.target.value)}
-                      value={editingName}
+                      aria-label={`Prénom de ${player.name}`}
+                      onChange={(event) => setEditingFirstName(event.target.value)}
+                      value={editingFirstName}
+                    />
+                    <input
+                      aria-label={`Nom de ${player.name}`}
+                      onChange={(event) => setEditingLastName(event.target.value)}
+                      value={editingLastName}
                     />
                     <div className="roster-row-actions">
                       <button onClick={() => confirmRename(player.id)} type="button">

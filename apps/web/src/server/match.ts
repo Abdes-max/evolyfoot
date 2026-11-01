@@ -66,7 +66,11 @@ export interface MatchGateway {
       description?: string | null;
     },
   ): Promise<MatchSummary>;
-  changeFormation(educatorId: string, matchId: string, formationId: string): Promise<MatchSummary>;
+  changeFormation(
+    educatorId: string,
+    matchId: string,
+    input: { formationId: string; gameFormat?: number },
+  ): Promise<MatchSummary>;
   markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<MatchSummary>;
   remove(educatorId: string, matchId: string): Promise<void>;
 }
@@ -281,12 +285,13 @@ export function createChangeFormationHandler(
 
     const body = await readJsonBody(request);
     const formationId = typeof body?.formationId === "string" ? body.formationId : null;
+    const gameFormat = typeof body?.gameFormat === "number" ? body.gameFormat : undefined;
     if (formationId === null) {
       return Response.json({ error: "Une formation est requise." }, { status: 400 });
     }
 
     try {
-      return Response.json({ match: await matches.changeFormation(educator.id, matchId, formationId) });
+      return Response.json({ match: await matches.changeFormation(educator.id, matchId, { formationId, gameFormat }) });
     } catch (error) {
       return errorResponse(error, log);
     }
@@ -393,8 +398,8 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
           }),
         );
       },
-      async changeFormation(educatorId, matchId, formationId) {
-        return toSummary(await service.changeFormation(educatorId, matchId, formationId));
+      async changeFormation(educatorId, matchId, input) {
+        return toSummary(await service.changeFormation(educatorId, matchId, input));
       },
       async markPlayed(educatorId, matchId, attendance) {
         return toSummary(await service.markPlayed(educatorId, matchId, attendance));

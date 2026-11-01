@@ -1,10 +1,26 @@
 import { EducatorNotFoundError, ValidationError } from "./errors";
 import type { EducatorRepository, PersistedPlayer, PlayerDetailsPatch, PlayerRepository } from "./repositories";
 
-function normalizeName(name: string): string {
-  const trimmed = name.trim();
+function normalizeFirstName(value: string): string {
+  const trimmed = value.trim();
   if (!trimmed) {
     throw new ValidationError("Indique un prénom.");
+  }
+  return trimmed;
+}
+
+// `undefined` (paramètre omis) se replie silencieusement sur "" -- les très nombreux appels
+// directs au repository dans les fixtures de test n'ont besoin que d'un nom d'affichage
+// quelconque (voir le commentaire sur PlayerRepository.create). Une chaîne vide fournie
+// explicitement (formulaire réel : ajout ou fiche détail) est en revanche rejetée -- la fiche
+// joueur exige toujours prénom ET nom dès qu'on les renseigne.
+function normalizeLastName(value: string | undefined): string {
+  if (value === undefined) {
+    return "";
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new ValidationError("Indique un nom.");
   }
   return trimmed;
 }
@@ -32,7 +48,8 @@ function normalizeOptional(value: string | null | undefined, limit: number): str
 }
 
 export interface PlayerDetailsInput {
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   photo?: string | null;
   birthDate?: string | null;
   phone?: string | null;
@@ -49,23 +66,28 @@ export class RosterService {
     return this.playerRepository.listByEducator(educatorId);
   }
 
-  async add(educatorId: string, name: string): Promise<PersistedPlayer> {
-    const trimmed = normalizeName(name);
+  async add(educatorId: string, firstName: string, lastName?: string): Promise<PersistedPlayer> {
+    const trimmedFirstName = normalizeFirstName(firstName);
+    const trimmedLastName = normalizeLastName(lastName);
     if (!(await this.educatorRepository.existsById(educatorId))) {
       throw new EducatorNotFoundError();
     }
-    return this.playerRepository.create(educatorId, trimmed);
+    return this.playerRepository.create(educatorId, trimmedFirstName, trimmedLastName);
   }
 
-  async rename(educatorId: string, playerId: string, name: string): Promise<PersistedPlayer> {
-    const trimmed = normalizeName(name);
-    return this.playerRepository.rename(playerId, educatorId, trimmed);
+  async rename(educatorId: string, playerId: string, firstName: string, lastName?: string): Promise<PersistedPlayer> {
+    const trimmedFirstName = normalizeFirstName(firstName);
+    const trimmedLastName = normalizeLastName(lastName);
+    return this.playerRepository.rename(playerId, educatorId, trimmedFirstName, trimmedLastName);
   }
 
   async updateDetails(educatorId: string, playerId: string, input: PlayerDetailsInput): Promise<PersistedPlayer> {
     const patch: PlayerDetailsPatch = {};
-    if (input.name !== undefined) {
-      patch.name = normalizeName(input.name);
+    if (input.firstName !== undefined) {
+      patch.firstName = normalizeFirstName(input.firstName);
+    }
+    if (input.lastName !== undefined) {
+      patch.lastName = normalizeLastName(input.lastName);
     }
     if (input.birthDate !== undefined) {
       const normalized = normalizeOptional(input.birthDate, maxFieldLength);

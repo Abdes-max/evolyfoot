@@ -10,7 +10,16 @@ import {
 } from "./roster";
 
 const educator = { id: "educator-1", email: "coach@example.test", displayName: "Coach" };
-const player: RosterPlayer = { id: "player-1", name: "Kylian", photo: null, birthDate: null, phone: null, email: null };
+const player: RosterPlayer = {
+  id: "player-1",
+  firstName: "Kylian",
+  lastName: "Test",
+  name: "Kylian Test",
+  photo: null,
+  birthDate: null,
+  phone: null,
+  email: null,
+};
 
 function jsonRequest(method: string, body?: unknown): Request {
   return new Request("https://evolyfoot.test/api/roster", {
@@ -46,7 +55,7 @@ describe("createAddPlayerHandler", () => {
   it("requires an authenticated session before reading the body", async () => {
     const handler = createAddPlayerHandler(anonymous, { add: async () => { throw new Error("not called"); } }, () => undefined);
 
-    const response = await handler(jsonRequest("POST", { name: "Kylian" }));
+    const response = await handler(jsonRequest("POST", { firstName: "Kylian", lastName: "Test" }));
 
     expect(response.status).toBe(401);
   });
@@ -61,17 +70,17 @@ describe("createAddPlayerHandler", () => {
     };
     const handler = createAddPlayerHandler(authenticated, gateway, () => undefined);
 
-    await handler(jsonRequest("POST", { name: "Kylian", educatorId: "attacker-supplied-id" }));
+    await handler(jsonRequest("POST", { firstName: "Kylian", lastName: "Test", educatorId: "attacker-supplied-id" }));
 
     expect(receivedIds).toEqual([educator.id]);
   });
 
-  it("rejects a missing name without calling the gateway", async () => {
+  it("rejects a missing first or last name without calling the gateway", async () => {
     const handler = createAddPlayerHandler(authenticated, { add: async () => { throw new Error("not called"); } }, () => undefined);
 
-    const response = await handler(jsonRequest("POST", {}));
-
-    expect(response.status).toBe(400);
+    expect((await handler(jsonRequest("POST", {}))).status).toBe(400);
+    expect((await handler(jsonRequest("POST", { firstName: "Kylian" }))).status).toBe(400);
+    expect((await handler(jsonRequest("POST", { lastName: "Test" }))).status).toBe(400);
   });
 
   it("maps a domain validation failure to a 400 with its message", async () => {
@@ -82,7 +91,7 @@ describe("createAddPlayerHandler", () => {
     };
     const handler = createAddPlayerHandler(authenticated, gateway, () => undefined);
 
-    const response = await handler(jsonRequest("POST", { name: "   " }));
+    const response = await handler(jsonRequest("POST", { firstName: "   ", lastName: "Test" }));
     const body = await response.json();
 
     expect(response.status).toBe(400);
@@ -97,18 +106,24 @@ describe("createAddPlayerHandler", () => {
     };
     const handler = createAddPlayerHandler(authenticated, gateway, () => undefined);
 
-    const response = await handler(jsonRequest("POST", { name: "Kylian" }));
+    const response = await handler(jsonRequest("POST", { firstName: "Kylian", lastName: "Test" }));
 
     expect(response.status).toBe(401);
   });
 
   it("adds and returns the player on success", async () => {
-    const handler = createAddPlayerHandler(authenticated, { add: async () => player }, () => undefined);
+    const received: unknown[] = [];
+    const handler = createAddPlayerHandler(
+      authenticated,
+      { add: async (educatorId, firstName, lastName) => { received.push({ educatorId, firstName, lastName }); return player; } },
+      () => undefined,
+    );
 
-    const response = await handler(jsonRequest("POST", { name: "Kylian" }));
+    const response = await handler(jsonRequest("POST", { firstName: "Kylian", lastName: "Test" }));
 
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ player });
+    expect(received).toEqual([{ educatorId: educator.id, firstName: "Kylian", lastName: "Test" }]);
   });
 });
 
@@ -116,7 +131,7 @@ describe("createUpdatePlayerHandler", () => {
   it("requires an authenticated session", async () => {
     const handler = createUpdatePlayerHandler(anonymous, { update: async () => { throw new Error("not called"); } }, () => undefined);
 
-    const response = await handler(jsonRequest("PATCH", { name: "Mbappé" }), player.id);
+    const response = await handler(jsonRequest("PATCH", { firstName: "Mbappé" }), player.id);
 
     expect(response.status).toBe(401);
   });
@@ -129,7 +144,7 @@ describe("createUpdatePlayerHandler", () => {
     };
     const handler = createUpdatePlayerHandler(authenticated, gateway, () => undefined);
 
-    const response = await handler(jsonRequest("PATCH", { name: "Mbappé" }), player.id);
+    const response = await handler(jsonRequest("PATCH", { firstName: "Mbappé" }), player.id);
 
     expect(response.status).toBe(404);
   });
@@ -144,17 +159,17 @@ describe("createUpdatePlayerHandler", () => {
     };
     const handler = createUpdatePlayerHandler(authenticated, gateway, () => undefined);
 
-    await handler(jsonRequest("PATCH", { name: "Mbappé", phone: "0102", nope: "x", email: null }), player.id);
-    expect(received).toEqual([{ name: "Mbappé", phone: "0102", email: null }]);
+    await handler(jsonRequest("PATCH", { firstName: "Mbappé", lastName: "Roi", phone: "0102", nope: "x", email: null }), player.id);
+    expect(received).toEqual([{ firstName: "Mbappé", lastName: "Roi", phone: "0102", email: null }]);
 
     expect((await handler(jsonRequest("PATCH", { nope: "x" }), player.id)).status).toBe(400);
   });
 
   it("updates and returns the player on success", async () => {
-    const updated: RosterPlayer = { ...player, name: "Mbappé" };
+    const updated: RosterPlayer = { ...player, firstName: "Mbappé", name: "Mbappé Test" };
     const handler = createUpdatePlayerHandler(authenticated, { update: async () => updated }, () => undefined);
 
-    const response = await handler(jsonRequest("PATCH", { name: "Mbappé" }), player.id);
+    const response = await handler(jsonRequest("PATCH", { firstName: "Mbappé" }), player.id);
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ player: updated });

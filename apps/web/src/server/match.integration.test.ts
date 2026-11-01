@@ -234,9 +234,9 @@ describe("createChangeFormationHandler", () => {
   it("forwards the chosen formation to the gateway", async () => {
     const received: unknown[] = [];
     const gateway: Pick<MatchGateway, "changeFormation"> = {
-      changeFormation: async (educatorId, matchId, formationId) => {
-        received.push({ educatorId, matchId, formationId });
-        return { ...match, formationId };
+      changeFormation: async (educatorId, matchId, input) => {
+        received.push({ educatorId, matchId, input });
+        return { ...match, formationId: input.formationId };
       },
     };
     const handler = createChangeFormationHandler(authenticated, gateway, () => undefined);
@@ -244,7 +244,27 @@ describe("createChangeFormationHandler", () => {
     const response = await handler(jsonRequest("PUT", { formationId: "2-3-2" }), "match-1");
 
     expect(response.status).toBe(200);
-    expect(received).toEqual([{ educatorId: educator.id, matchId: "match-1", formationId: "2-3-2" }]);
+    expect(received).toEqual([
+      { educatorId: educator.id, matchId: "match-1", input: { formationId: "2-3-2", gameFormat: undefined } },
+    ]);
+  });
+
+  it("also forwards a chosen game format to the gateway", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<MatchGateway, "changeFormation"> = {
+      changeFormation: async (educatorId, matchId, input) => {
+        received.push({ educatorId, matchId, input });
+        return { ...match, formationId: input.formationId, gameFormat: input.gameFormat ?? match.gameFormat };
+      },
+    };
+    const handler = createChangeFormationHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(jsonRequest("PUT", { formationId: "3-3-1", gameFormat: 5 }), "match-1");
+
+    expect(response.status).toBe(200);
+    expect(received).toEqual([
+      { educatorId: educator.id, matchId: "match-1", input: { formationId: "3-3-1", gameFormat: 5 } },
+    ]);
   });
 
   it("translates a formation/format mismatch into a 400", async () => {
