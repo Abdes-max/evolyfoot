@@ -3,6 +3,7 @@
 import type { TrainingSession } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import { PlaceInput } from "../../place-input";
 import { cycleWeekLabel } from "../cycle";
 import type { PersonalExercise } from "@evolyfoot/domain";
 import { rehydrateTrainingSession, type SavedTrainingSession } from "../rehydrate";
@@ -208,11 +209,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
             <p className="match-slot-hint">Affichés sur la fiche que voit le joueur/tuteur.</p>
             <label>
               <span>Lieu</span>
-              <input
-                onChange={(event) => setLocation(event.target.value)}
-                placeholder="Ex. Stade Marius Requier, Aix-en-Provence"
-                value={location}
-              />
+              <PlaceInput onChange={setLocation} value={location} />
             </label>
             <label>
               <span>Description</span>

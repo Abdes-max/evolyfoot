@@ -1,7 +1,7 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { attendanceStatusLabels, attendanceStatuses, type AttendanceStatus } from "@evolyfoot/domain";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Screen } from "../components/screen";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
@@ -51,7 +51,17 @@ export default function CalendarScreen() {
           <View key={event.key} style={styles.event}>
             <Text style={styles.kind}>{event.kind === "match" ? "MATCH" : "ENTRAÎNEMENT"}</Text>
             <Text style={styles.title}>{event.title}</Text>
-            <Text style={styles.meta}>{[event.dateLabel, event.time, event.location].filter(Boolean).join(" · ")}</Text>
+            <Text style={styles.meta}>{[event.dateLabel, event.time].filter(Boolean).join(" · ")}</Text>
+            {event.location ? (
+              <TouchableOpacity
+                accessibilityRole="link"
+                onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location!)}`)}
+                style={styles.place}
+              >
+                <Text style={styles.placeText}>{event.location}</Text>
+                <Text style={styles.placeLink}>Voir le plan →</Text>
+              </TouchableOpacity>
+            ) : null}
             {event.canRespond ? (
               <View style={styles.choices}>
                 <TouchableOpacity
@@ -89,6 +99,9 @@ const styles = StyleSheet.create({
   kind: { color: colors.lime, fontSize: 11, fontWeight: "900" },
   title: { color: colors.ink, fontSize: 17, fontWeight: "800", marginTop: 3 },
   meta: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 3 },
+  place: { minHeight: 44, marginTop: spacing.sm, padding: spacing.sm, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primaryDark },
+  placeText: { color: colors.ink, fontSize: 13, fontWeight: "700" },
+  placeLink: { color: colors.primary, fontSize: 12, fontWeight: "800", marginTop: 2 },
   choices: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
   choice: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
   choicePresent: { backgroundColor: colors.primary, borderColor: colors.primary },

@@ -2,6 +2,7 @@
 
 import { attendanceStatusLabels, type AttendanceStatus } from "@evolyfoot/domain";
 import Link from "next/link";
+import { MapEmbed } from "../../../map-embed";
 import { sortChronologically, weekGroupKey, weekGroupLabel } from "../../../date-format";
 import { PlayerSpaceHeader } from "../../player-space-header";
 import { usePlayerDashboard } from "../use-player-dashboard";
@@ -33,7 +34,7 @@ function ResponseBadge({ status }: { status: AttendanceStatus | null }) {
 // formes d'origine possibles, réduites ici à une forme commune juste pour le tri/l'affichage ;
 // chacune garde son lien et son badge propres (une compétition n'a ni page de détail, ni réponse).
 type CalendarItem =
-  | { kind: "seance"; id: string; date: Date | null; title: string; dateLabel: string; meetingTime: string | null; myStatus: AttendanceStatus | null }
+  | { kind: "seance"; id: string; date: Date | null; title: string; dateLabel: string; meetingTime: string | null; location: string | null; myStatus: AttendanceStatus | null }
   | {
       kind: "match";
       id: string;
@@ -41,6 +42,7 @@ type CalendarItem =
       title: string;
       dateLabel: string;
       meetingTime: string | null;
+      location: string | null;
       venue: "home" | "away";
       myStatus: AttendanceStatus | null;
     }
@@ -62,6 +64,7 @@ export function PlayerCalendarView() {
             title: session.title,
             dateLabel: session.dateLabel,
             meetingTime: session.meetingTime,
+            location: session.location,
             myStatus: session.myStatus,
           }),
         ),
@@ -77,6 +80,7 @@ export function PlayerCalendarView() {
               title: match.opponent,
               dateLabel: match.dateLabel,
               meetingTime: match.meetingTime,
+              location: match.location,
               venue: match.venue,
               myStatus: match.myStatus,
             }),
@@ -157,6 +161,12 @@ export function PlayerCalendarView() {
                                 </span>
                                 <ResponseBadge status={item.myStatus} />
                               </Link>
+                              {item.location && (
+                                <div className="player-space-convocation-place">
+                                  <p>{item.location}</p>
+                                  <MapEmbed address={item.location} compact />
+                                </div>
+                              )}
                             </li>
                           );
                         })}

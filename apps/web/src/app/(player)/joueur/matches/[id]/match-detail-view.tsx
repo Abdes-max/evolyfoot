@@ -4,7 +4,7 @@ import type { AttendanceStatus } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useState } from "react";
 import { ClockIcon, NoteIcon, PinIcon } from "../../../event-icons";
-import { MapEmbed } from "../../../map-embed";
+import { MapEmbed } from "../../../../map-embed";
 import { RsvpControl } from "../../../rsvp-control";
 import { usePlayerDashboard } from "../../use-player-dashboard";
 

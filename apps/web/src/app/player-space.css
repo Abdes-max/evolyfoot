@@ -75,6 +75,14 @@
 /* Plan de l'adresse (map-embed.tsx) -- Google Maps sans clé d'API. */
 .map-embed { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
 .map-embed iframe { width: 100%; height: 180px; border: 0; display: block; }
+.map-embed.compact iframe { height: 120px; }
+.player-space-convocation-place { display: grid; gap: 6px; margin-top: 6px; }
+.player-space-convocation-place p { margin: 0; color: var(--ink); font-size: 12.5px; font-weight: 600; }
+.place-input { position: relative; display: grid; gap: 8px; }
+.place-input input { width: 100%; }
+.place-input-list { position: absolute; z-index: 20; top: 100%; left: 0; right: 0; max-height: 240px; overflow-y: auto; margin: 4px 0 0; padding: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5); list-style: none; }
+.place-input-list li { padding: 10px 11px; border-radius: 7px; color: var(--ink); font-size: 13px; line-height: 1.35; cursor: pointer; }
+.place-input-list li:hover, .place-input-list li.active { background: var(--primary-soft, rgba(47, 212, 255, 0.14)); }
 
 .player-match-detail-rsvp p { margin: 0 0 8px; font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
 
