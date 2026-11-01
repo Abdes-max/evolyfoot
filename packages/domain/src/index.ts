@@ -17,15 +17,6 @@ export interface WeeklyFocus {
   sessionsTotal: number;
 }
 
-export interface SessionPreview {
-  id: string;
-  title: string;
-  dateLabel: string;
-  durationMinutes: number;
-  playerCount: number;
-  intensity: "Modérée" | "Soutenue";
-}
-
 export const demoTeam = {
   name: "FC Horizon",
   ageGroup: "U12" as AgeGroup,
@@ -40,15 +31,6 @@ export const demoFocus: WeeklyFocus = {
   progress: 62,
   sessionsCompleted: 3,
   sessionsTotal: 5,
-};
-
-export const nextSession: SessionPreview = {
-  id: "session-1",
-  title: "Jouer, bouger, proposer",
-  dateLabel: "Mardi · 18:00",
-  durationMinutes: 75,
-  playerCount: 14,
-  intensity: "Soutenue",
 };
 
 export { suggestAdjustment } from "./progression";
