@@ -79,13 +79,12 @@ describe("session builder", () => {
     expect(screen.getByText("Jeu 5 contre 5 avec deux zones de marque.")).toBeVisible();
   });
 
-  it("explique pourquoi une situation sans alternative ne peut pas être remplacée", () => {
+  it("permet de remplacer chaque situation de la séance", () => {
     render(<SessionView slot={0} weekNumber={1} />);
 
-    const replaceButtons = screen.getAllByRole("button", { name: /remplacer la situation/i });
-    expect(replaceButtons[0]).toBeDisabled();
-    expect(replaceButtons[0]).toHaveAccessibleDescription("Aucune autre situation compatible pour ce bloc.");
-    expect(replaceButtons[2]).toBeEnabled();
+    for (const button of screen.getAllByRole("button", { name: /remplacer la situation/i })) {
+      expect(button).toBeEnabled();
+    }
   });
 
   it("affiche le schéma tactique de chaque situation avec un lien vers la bibliothèque", () => {

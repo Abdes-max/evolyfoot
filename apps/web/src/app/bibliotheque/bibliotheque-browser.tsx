@@ -1,6 +1,6 @@
 "use client";
 
-import { trainingActivityCatalogue, type TrainingActivity, type TrainingBlockKind } from "@evolyfoot/domain";
+import { trainingActivityCatalogue, type DevelopmentTheme, type TrainingActivity, type TrainingBlockKind } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { TacticalDiagramView } from "../tactical-diagram";
@@ -19,6 +19,14 @@ const kindFilters: ReadonlyArray<{ value: TrainingBlockKind | "all"; label: stri
   { value: "game", label: "Jeu" },
 ];
 
+const themeFilters: ReadonlyArray<DevelopmentTheme | "all"> = [
+  "all",
+  "Conserver le ballon",
+  "Progresser ensemble",
+  "Finir les actions",
+  "Récupérer rapidement",
+];
+
 function matchesQuery(activity: TrainingActivity, query: string) {
   const haystack = `${activity.title} ${activity.objective}`.toLowerCase();
   return haystack.includes(query.toLowerCase());
@@ -27,13 +35,17 @@ function matchesQuery(activity: TrainingActivity, query: string) {
 export function BibliothequeBrowser() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<TrainingBlockKind | "all">("all");
+  const [theme, setTheme] = useState<DevelopmentTheme | "all">("all");
 
   const activities = useMemo(
     () =>
       trainingActivityCatalogue.filter(
-        (activity) => (kind === "all" || activity.kind === kind) && matchesQuery(activity, query),
+        (activity) =>
+          (kind === "all" || activity.kind === kind) &&
+          (theme === "all" || activity.compatibleThemes.includes(theme)) &&
+          matchesQuery(activity, query),
       ),
-    [kind, query],
+    [kind, query, theme],
   );
 
   return (
@@ -57,6 +69,13 @@ export function BibliothequeBrowser() {
               type="button"
             >
               {filter.label}
+            </button>
+          ))}
+        </div>
+        <div className="bibliotheque-filters" role="group" aria-label="Filtrer par thème">
+          {themeFilters.map((filter) => (
+            <button aria-pressed={theme === filter} className={theme === filter ? "active" : ""} key={filter} onClick={() => setTheme(filter)} type="button">
+              {filter === "all" ? "Tous les thèmes" : filter}
             </button>
           ))}
         </div>

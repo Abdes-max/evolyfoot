@@ -1,5 +1,6 @@
 import type { DevelopmentWeek } from "./development-plan";
 import type { AgeGroup, DevelopmentTheme } from "./index";
+import { extraActivitySets } from "./training-activities-extra";
 
 export type TrainingBlockKind = "welcome" | "activation" | "main" | "game";
 
@@ -118,7 +119,7 @@ function buildDiagram(kind: TrainingBlockKind, defenderCount: number, hasGoalkee
 }
 
 // --- Catalogue des activités ---
-type ActivityDetails = Omit<TrainingActivity, "id" | "kind" | "compatibleThemes" | "diagram">;
+export type ActivityDetails = Omit<TrainingActivity, "id" | "kind" | "compatibleThemes" | "diagram">;
 interface ThemeActivitySet { slug: string; welcome: ActivityDetails; activation: ActivityDetails; main: ActivityDetails[]; game: ActivityDetails; }
 
 const themeActivitySets: Record<DevelopmentTheme, ThemeActivitySet> = {
@@ -174,7 +175,18 @@ function buildCatalogue(): TrainingActivity[] {
       diagram: buildDiagram(kind, details.defenderCount, details.hasGoalkeeper),
       ...details,
     });
-    return [create("welcome", set.welcome), create("activation", set.activation), ...set.main.map((details, index) => create("main", details, `-${index + 1}`)), create("game", set.game)];
+    const extra = extraActivitySets[theme as DevelopmentTheme];
+    const createExtras = (kind: TrainingBlockKind, list: ActivityDetails[]) => list.map((details, index) => create(kind, details, `-x${index + 1}`));
+    return [
+      create("welcome", set.welcome),
+      create("activation", set.activation),
+      ...set.main.map((details, index) => create("main", details, `-${index + 1}`)),
+      create("game", set.game),
+      ...createExtras("welcome", extra.welcome),
+      ...createExtras("activation", extra.activation),
+      ...createExtras("main", extra.main),
+      ...createExtras("game", extra.game),
+    ];
   });
 }
 const catalogue = buildCatalogue();
