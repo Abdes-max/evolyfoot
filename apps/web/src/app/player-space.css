@@ -128,3 +128,14 @@
 .account-privacy form p { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.45; }
 .account-privacy label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 700; }
 .account-privacy input { width: min(340px, 100%); padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); color: var(--ink); }
+
+.staff-panel h3 { margin: 0 0 6px; }
+.staff-panel > p { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.staff-panel ul { display: grid; gap: 7px; margin: 0 0 12px; padding: 0; list-style: none; }
+.staff-panel li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+.staff-panel li span { display: grid; min-width: 0; }
+.staff-panel li strong { font-size: 14px; }
+.staff-panel li small { overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; }
+.staff-invite { display: flex; flex-wrap: wrap; gap: 8px; }
+.staff-invite input { flex: 1; min-width: 200px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); color: var(--ink); }
+.staff-invite small { width: 100%; color: var(--muted); font-size: 12px; }

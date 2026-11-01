@@ -13,6 +13,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 | Matchs et compétitions | Analyse de l'adversaire par système de jeu, composition, convocations avec adresse et plan, recherche de lieu, présences, score, buteurs et passeurs, tournois, plateaux |
 | Profil de coach | Style de jeu et formation préférée : règle de match dans chaque séance, formation pré-sélectionnée |
 | Suivi joueur | Carte joueur, profil sportif, évaluations datées, auto-évaluation comparée, buts et passes de la saison |
+| Staff | Adjoints invités par lien, avec leur propre compte, qui travaillent sur l'équipe de l'éducateur |
 | Espace joueur / tuteur | Compte sur invitation, calendrier, réponses aux convocations, messages (web uniquement) |
 | Comptes | Inscription, connexion, confirmation d'e-mail, mot de passe oublié |
 | Saison | Vue mois par mois ; cycles de 4 semaines enchaînés, avec nouveau diagnostic à chaque cycle |

@@ -2,7 +2,7 @@ import { DuplicateEducatorEmailError, InvalidCredentialsError, ValidationError }
 
 export const SESSION_COOKIE_NAME = "evolyfoot_session";
 
-export type AccountRole = "coach" | "player";
+export type AccountRole = "coach" | "player" | "assistant";
 
 export interface PublicEducator {
   id: string;
@@ -224,7 +224,7 @@ function toPublicAccount(account: {
   id: string;
   email: string;
   displayName: string;
-  role?: "coach" | "player";
+  role?: AccountRole;
   linkedPlayerId?: string | null;
   emailVerifiedAt?: Date | null;
 }): PublicAccount {
@@ -232,7 +232,7 @@ function toPublicAccount(account: {
     id: account.id,
     email: account.email,
     displayName: account.displayName,
-    role: account.role === "player" ? "player" : "coach",
+    role: account.role ?? "coach",
     linkedPlayerId: account.linkedPlayerId ?? null,
     emailVerified: account.emailVerifiedAt != null,
   };
@@ -252,6 +252,13 @@ export async function resolveAccountFromRequest(request: Request): Promise<Publi
   } finally {
     await disconnect();
   }
+}
+
+// Compte éducateur ou adjoint, tel quel : pour ce qui concerne la personne connectée (son profil,
+// son mot de passe), jamais le compte de l'équipe qu'elle rejoint.
+export async function resolveOwnAccountFromRequest(request: Request): Promise<PublicAccount | null> {
+  const account = await resolveAccountFromRequest(request);
+  return account?.role === "player" ? null : account;
 }
 
 export async function resolvePlayerAccountFromRequest(request: Request): Promise<PublicAccount | null> {

@@ -10,7 +10,7 @@ async function resolveEducator(request: Request): Promise<PublicAccount | null> 
   const { gateway, disconnect } = await createAuthGateway();
   try {
     const account = await gateway.getAccountForSession(token);
-    return account?.role === "player" ? null : account;
+    return account?.role === "coach" ? account : null;
   } finally {
     await disconnect();
   }

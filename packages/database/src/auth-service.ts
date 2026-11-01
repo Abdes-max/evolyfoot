@@ -109,7 +109,15 @@ export class AuthService {
   // `role` absent ⇒ coach (comptes créés avant l'introduction du rôle).
   async getEducatorForSession(sessionToken: string): Promise<EducatorRecord | null> {
     const account = await this.getAccountForSession(sessionToken);
-    return account && account.role !== "player" ? account : null;
+    if (!account || account.role === "player") {
+      return null;
+    }
+    // Un adjoint travaille sur les données de son éducateur : toutes les routes d'équipe reçoivent
+    // donc le compte titulaire. Ce qui touche au compte lui-même passe par getAccountForSession.
+    if (account.role === "assistant") {
+      return account.ownerEducatorId ? this.educatorRepository.findById(account.ownerEducatorId) : null;
+    }
+    return account;
   }
 
   // L'inverse : ne résout que les comptes "player".

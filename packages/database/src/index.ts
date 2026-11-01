@@ -1,4 +1,5 @@
 export { AccountService } from "./account-service";
+export { maxStaffMembers, StaffService } from "./staff-service";
 export { createDatabaseClient } from "./client";
 export { normalizeEducatorEmail } from "./email";
 export {
@@ -18,6 +19,7 @@ export {
 } from "./errors";
 export {
   PrismaAccountRepository,
+  PrismaStaffRepository,
   PrismaDiagnosticRepository,
   PrismaEducatorRepository,
   PrismaMatchRepository,

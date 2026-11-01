@@ -41,6 +41,10 @@ import {
 import { ContactMessageRecord, ContactMessageRepository } from "./contact-message-service";
 import { normalizeEducatorEmail } from "./email";
 import type {
+  AccountRole,
+  StaffInviteRecord,
+  StaffMember,
+  StaffRepository,
   AccountRepository,
   DiagnosticRepository,
   EducatorAuthRecord,
@@ -148,8 +152,9 @@ export class PrismaEducatorRepository implements EducatorRepository, EducatorPro
     email: string;
     displayName: string;
     passwordHash: string;
-    role?: "coach" | "player";
+    role?: AccountRole;
     linkedPlayerId?: string;
+    ownerEducatorId?: string;
   }): Promise<EducatorRecord> {
     try {
       const educator = await this.prisma.educator.create({
@@ -159,6 +164,7 @@ export class PrismaEducatorRepository implements EducatorRepository, EducatorPro
           passwordHash: input.passwordHash,
           ...(input.role ? { role: input.role } : {}),
           ...(input.linkedPlayerId ? { linkedPlayerId: input.linkedPlayerId } : {}),
+          ...(input.ownerEducatorId ? { ownerEducatorId: input.ownerEducatorId } : {}),
         },
       });
       return toEducatorRecord(educator);
@@ -271,6 +277,39 @@ export class PrismaPasswordResetRepository implements PasswordResetRepository {
       await transaction.session.deleteMany({ where: { educatorId } });
       return true;
     });
+  }
+}
+
+export class PrismaStaffRepository implements StaffRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async listMembers(ownerId: string): Promise<StaffMember[]> {
+    return this.prisma.educator.findMany({
+      where: { ownerEducatorId: ownerId, role: "assistant" },
+      select: { id: true, displayName: true, email: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async createInvite(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<void> {
+    await this.prisma.staffInvite.create({ data: input });
+  }
+
+  async findInviteByTokenHash(tokenHash: string): Promise<StaffInviteRecord | null> {
+    return this.prisma.staffInvite.findUnique({
+      where: { tokenHash },
+      select: { id: true, educatorId: true, tokenHash: true, expiresAt: true, consumedAt: true },
+    });
+  }
+
+  async consumeInvite(id: string): Promise<boolean> {
+    const { count } = await this.prisma.staffInvite.updateMany({ where: { id, consumedAt: null }, data: { consumedAt: new Date() } });
+    return count === 1;
+  }
+
+  async removeMember(ownerId: string, memberId: string): Promise<boolean> {
+    const { count } = await this.prisma.educator.deleteMany({ where: { id: memberId, ownerEducatorId: ownerId, role: "assistant" } });
+    return count === 1;
   }
 }
 

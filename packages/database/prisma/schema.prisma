@@ -72,6 +72,11 @@ model Educator {
   // Renseigné uniquement pour un compte "player" : le joueur suivi (dans l'effectif d'un coach).
   linkedPlayerId    String?                  @unique @db.Uuid @map("linked_player_id")
   linkedPlayer      Player?                  @relation("PlayerFollowers", fields: [linkedPlayerId], references: [id], onDelete: Cascade)
+  // Renseigné uniquement pour un compte "assistant" : l'éducateur dont il rejoint l'équipe.
+  ownerEducatorId   String?                  @db.Uuid @map("owner_educator_id")
+  owner             Educator?                @relation("TeamStaff", fields: [ownerEducatorId], references: [id], onDelete: Cascade)
+  staff             Educator[]               @relation("TeamStaff")
+  staffInvites      StaffInvite[]
   invitesCreated    PlayerInvite[]
   // Fiche profil de l'éducateur (page /profil). Tous optionnels : renseignés après l'inscription,
   // qui ne demande que nom / e-mail / mot de passe. `birthDate` est stocké en texte ISO
@@ -104,6 +109,7 @@ model Educator {
   createdAt         DateTime                 @default(now()) @map("created_at")
   updatedAt         DateTime                 @updatedAt @map("updated_at")
 
+  @@index([ownerEducatorId])
   @@map("educators")
 }
 
@@ -272,6 +278,20 @@ model Player {
 // Invitation générée par un coach pour qu'un tuteur crée un compte lié à un joueur de son
 // effectif. Le jeton n'est stocké que haché (comme Session.tokenHash) ; `consumedAt` marque la
 // consommation (usage unique).
+// Invitation éducateur -> adjoint. Seule l'empreinte du jeton est stockée.
+model StaffInvite {
+  id         String    @id @default(uuid()) @db.Uuid
+  educatorId String    @db.Uuid @map("educator_id")
+  educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([educatorId])
+  @@map("staff_invites")
+}
+
 model PlayerInvite {
   id         String    @id @default(uuid()) @db.Uuid
   educatorId String    @db.Uuid @map("educator_id")
