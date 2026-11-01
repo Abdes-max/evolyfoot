@@ -21,8 +21,9 @@
 
 ## Hors MVP
 
-- Messagerie parents/joueurs.
-- Gestion des convocations et paiements.
+Messagerie parents/joueurs et convocations ont été livrées après coup, voir `docs/roadmap.md`.
+
+- Paiements.
 - Analyse vidéo automatisée.
 - Réseau social ou marketplace d'exercices.
 - Statistiques compétitives avancées.

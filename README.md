@@ -37,7 +37,7 @@ pnpm dev:mobile
 
 ## Base de données locale
 
-La fondation PostgreSQL est disponible pour les migrations et les tests d’intégration. L’authentification éducateur, les API d’équipe sécurisées et la synchronisation web/mobile ne sont pas encore livrées.
+PostgreSQL porte toutes les données de l'application. L’avancement et le reste à faire sont tenus dans [`docs/roadmap.md`](docs/roadmap.md).
 
 Crée une base locale nommée, avec son volume persistant :
 

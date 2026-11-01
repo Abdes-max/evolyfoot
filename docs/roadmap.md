@@ -1,6 +1,61 @@
 # Plan et avancement
 
-Dernière mise à jour : 1er novembre 2026 (génération de séance, catalogue de 100 exercices, mobile de bord de terrain, bibliothèque personnelle, auto-évaluation, vue saison).
+Dernière mise à jour : 1er novembre 2026.
+
+## État actuel
+
+Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque merge dans `master`. Application mobile construite mais non publiée.
+
+| Domaine | État |
+| --- | --- |
+| Boucle produit (diagnostic, plan, séance, observation, ajustement) | Livrée, web et mobile |
+| Séances | Génération variée et expliquée, 100 exercices, exercices personnels |
+| Matchs et compétitions | Composition, convocations, présences, tournois, plateaux |
+| Suivi joueur | Fiche, évaluations datées, auto-évaluation comparée |
+| Espace joueur / tuteur | Compte sur invitation, calendrier, réponses aux convocations, messages (web uniquement) |
+| Comptes | Inscription, connexion, confirmation d'e-mail, mot de passe oublié |
+| Saison | Vue mois par mois ; un seul cycle de 4 semaines à la fois |
+| Vitrine | Pages en ligne ; contenu légal à compléter |
+| E-mails en production | Code prêt ; configuration Brevo du VPS à confirmer |
+| Mobile | Accueil, séances, présences, observation, matchs, effectif ; non testé sur téléphone réel |
+
+## Reste à faire
+
+### Bloquant avant une ouverture publique (à faire par le porteur du projet)
+
+- [ ] Renseigner Brevo dans le `.env` du VPS, authentifier le domaine d'envoi, puis tester un vrai e-mail (voir docs/delivery.md).
+- [ ] Compléter les mentions légales, les CGU et la politique de confidentialité : identité de l'éditeur, hébergeur, dates. Les pages affichent encore des champs `[à compléter]`.
+- [ ] Décider du sort de la PR #69 (format de jeu modifiable, prénom et nom des joueurs) : elle est ouverte depuis septembre et n'a pas été revérifiée sur le `master` actuel.
+
+### Mobile
+
+- [ ] Tester l'application sur un téléphone réel (voir la limite Expo Go en bas de ce fichier).
+- [ ] Ajouter icônes et écran de démarrage, absents d'`app.json`.
+- [ ] Créer les comptes Expo, Apple Developer et Google Play Console, puis publier en TestFlight et en piste interne.
+- [ ] Porter sur mobile ce qui n'existe que sur le web : espace joueur, statistiques, historique des observations, profil, bibliothèque, vue saison.
+
+### Produit
+
+- [ ] Enchaîner plusieurs cycles sur la saison : aujourd'hui, un seul cycle de 4 semaines existe et la vue saison ne fait que rassembler les événements.
+- [ ] Faire relire les 80 exercices ajoutés en novembre par un éducateur.
+- [ ] Mesurer les indicateurs MVP restants (voir docs/mvp.md) : temps de préparation, temps de compte rendu, ajustements acceptés.
+- [ ] Ajouter de vrais témoignages à la vitrine dès que des éducateurs utilisent l’application, sans chiffres inventés.
+
+### Offre payante et clubs (non commencé)
+
+- [ ] Paiement Premium : tarifs seulement proposés, aucun contrôle d'accès ni facturation.
+- [ ] Fonctions annoncées « à venir » sur la page Tarifs : plusieurs équipes, partage entre éducateurs, export PDF, historique multi-saisons.
+- [ ] Offre club, écartée pour l'instant. Plusieurs équipes par compte demande de revoir le modèle de données (un éducateur n'a aujourd'hui qu'une équipe).
+
+### Technique
+
+- [ ] Activer le contrôle Prettier dans la CI.
+- [ ] Revenir à `--frozen-lockfile` en CI et épingler les dépendances déclarées en `latest`.
+- [ ] Ajouter une limite de tentatives sur la connexion et une limite par adresse IP sur le mot de passe oublié.
+- [ ] Lire automatiquement les photos de schéma, si cela reste souhaité : elles sont aujourd’hui stockées et affichées seulement.
+- [ ] Multilingue : non commencé.
+
+# Historique
 
 ## Phase 0 — Fondation
 
@@ -70,7 +125,7 @@ Dernière mise à jour : 1er novembre 2026 (génération de séance, catalogue d
 - [ ] EAS Build preview — attend un compte Expo/EAS et des icônes/splash (actuellement absents d'`app.json`).
 - [ ] TestFlight et piste interne Google Play — attend les comptes Apple Developer et Google Play Console (paiement/identité du porteur du projet, ne peuvent pas être créés par un agent).
 - [ ] Mesure des indicateurs MVP.
-- [~] Site vitrine — fondation posée le 10 septembre 2026. `/` devient la page d'accueil publique (marque, accroche « Prépare des séances qui font progresser, sans y passer tes soirées », boucle en 4 étapes, aperçu des fonctionnalités, FAQ), le tableau de bord de l'app déménage sur `/app` (redirection automatique d'un éducateur connecté qui arrive sur `/`). Nouveau groupe de routes `(marketing)`, `marketing-routes.ts` partagé par `proxy.ts` et `auth-gate.tsx` pour rendre les pages vitrine publiques, `sitemap.ts` + `robots.ts` (exclus du matcher du proxy, corrigé après coup). **Thème sombre** (aligné sur l'app) avec fond d'écran discret : demi-terrain stylisé + halo. Chaque page de l'app reçoit aussi un motif de fond en trait à ~2 % d'opacité, en lien avec son thème (`page-backgrounds.css`). Pages secondaires (`/educateurs`, `/methode`, `/tarifs`, `/a-propos`, `/contact`, `/telecharger`, légales) en gabarit provisoire. Reste à faire : menu mobile du header, contenu détaillé de chaque page, `POST /api/contact`, captures d'écran de l'app, balises OpenGraph.
+- [x] Site vitrine — fondation posée le 10 septembre 2026. `/` devient la page d'accueil publique (marque, accroche « Prépare des séances qui font progresser, sans y passer tes soirées », boucle en 4 étapes, aperçu des fonctionnalités, FAQ), le tableau de bord de l'app déménage sur `/app` (redirection automatique d'un éducateur connecté qui arrive sur `/`). Nouveau groupe de routes `(marketing)`, `marketing-routes.ts` partagé par `proxy.ts` et `auth-gate.tsx` pour rendre les pages vitrine publiques, `sitemap.ts` + `robots.ts` (exclus du matcher du proxy, corrigé après coup). **Thème sombre** (aligné sur l'app) avec fond d'écran discret : demi-terrain stylisé + halo. Chaque page de l'app reçoit aussi un motif de fond en trait à ~2 % d'opacité, en lien avec son thème (`page-backgrounds.css`). Les pages secondaires, le menu mobile, le formulaire de contact et l'image de partage ont été livrés depuis ; seul le contenu légal reste à compléter (voir « Reste à faire »).
 - [x] Comptes joueur / tuteur — 10 septembre 2026. Le compte de l'app est discriminé par `role` (`coach` | `player`) : `getEducatorForSession` ne résout que les comptes coach, donc les 123 routes API éducateur rejettent automatiquement un jeton joueur. Rattachement par **invitation du coach** : depuis la fiche joueur, un lien `/rejoindre/:token` (jeton haché, usage unique, 14 j) que le tuteur ouvre pour créer un compte `player` lié à ce joueur (`Educator.linkedPlayerId`). Nouvel espace `/joueur` (groupe `(player)`) — en lecture seule : radar de la dernière évaluation + historique, présence aux séances et aux matchs, jours d'entraînement, convocations aux matchs à venir. Toutes ces données sont lues via l'éducateur **propriétaire** du joueur, jamais via le compte joueur. `auth-gate.tsx` et `login-form.tsx` aiguillent selon le rôle (`/app` vs `/joueur`) et empêchent chaque rôle d'aller dans l'espace de l'autre. `PlayerInvite` model, `PlayerInviteService`, `PlayerDashboardService`, routes `POST /api/invites`, `GET /api/invites/:token`, `POST /api/auth/register-player`, `GET /api/joueur`. Compromis assumés : les comptes joueur restent des lignes `educators` (colonne `sessions.educator_id` sémantiquement datée) ; un même e-mail ne peut pas être à la fois coach et joueur.
 - [x] Corrections trouvées via un vrai test navigateur/téléphone sur `evolyfoot.com` — 7 septembre 2026 :
   - Espacement des champs de formulaire (`team-form`) : les marges individuelles des enfants doublaient l'espacement au lieu de laisser le `gap` du conteneur flex le gérer.
@@ -79,4 +134,5 @@ Dernière mise à jour : 1er novembre 2026 (génération de séance, catalogue d
   - Grille de priorités (« Ce qui mérite ton attention ») empilée en une seule colonne sur mobile alors que la largeur le permettait : passée en 2 colonnes (repli en 1 colonne sous 380px), avec une variante de carte compacte adaptée.
 - [x] Plan issu de la comparaison avec Nextrainers, hors offre club — 1er novembre 2026 : vitrine (menu, police, hero, tarifs alignés sur l'existant), séance générée variée et expliquée, catalogue de 100 exercices filtrable par thème, session mobile persistante, accueil et séances mobiles sur données réelles avec présences, auto-évaluation du joueur, bibliothèque personnelle avec import par texte et photo de schéma, vue saison `/saison`. Reste hors périmètre : multi-équipes et offre club, cycles enchaînés sur l'année, lecture automatique des photos de schéma, paiement Premium, publication sur les stores.
 - [x] Mot de passe oublié — 1er novembre 2026 : lien à usage unique valable 1 heure, jeton stocké haché, trois demandes par heure au plus, réponse identique que le compte existe ou non, sessions fermées après le changement. E-mail de confirmation étendu aux comptes tuteur. Vérifié de bout en bout avec MailHog ; Brevo reste à renseigner dans le `.env` du VPS (voir docs/delivery.md).
+- [x] Navigation et déploiement — 1er novembre 2026 : menu et lien de retour sur les pages de séance, radar de la fiche joueur comparant éducateur et auto-évaluation, barre d'onglets de l'espace joueur corrigée, déploiements en file avec limite de 25 minutes.
 - [ ] Test sur téléphone réel via Expo Go — bloqué en l'état : le mode tunnel (fonctionne sur n'importe quel réseau) nécessite l'installation de `@expo/ngrok`, impossible depuis ce poste sans VPN d'entreprise actif (registre npm interne uniquement) ; le mode LAN fonctionne (serveur vérifié joignable) mais suppose que le téléphone soit sur le même Wi-Fi que le poste de développement, non confirmé.
