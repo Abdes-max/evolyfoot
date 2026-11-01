@@ -1,4 +1,5 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { PlayerCard } from "../components/player-card";
@@ -12,9 +13,10 @@ export default function MyCardScreen() {
   const [now] = useState(() => Date.now());
 
   function confirmLogout() {
-    Alert.alert("Se déconnecter ?", undefined, [
+    Alert.alert("Mon compte", undefined, [
       { text: "Annuler", style: "cancel" },
-      { text: "Se déconnecter", style: "destructive", onPress: logout },
+      { text: "Se déconnecter", onPress: logout },
+      { text: "Supprimer mon compte", style: "destructive", onPress: () => router.push("/compte") },
     ]);
   }
 
@@ -25,7 +27,7 @@ export default function MyCardScreen() {
     <Screen
       action={
         <TouchableOpacity accessibilityRole="button" onPress={confirmLogout} style={styles.logout}>
-          <Text style={styles.logoutText}>Quitter</Text>
+          <Text style={styles.logoutText}>Compte</Text>
         </TouchableOpacity>
       }
       title="Ma carte"

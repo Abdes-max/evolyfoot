@@ -8,7 +8,7 @@ import {
   type SavedTrainingSession,
 } from "@evolyfoot/domain";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Link, useFocusEffect } from "expo-router";
+import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { useAuth } from "../lib/auth-context";
 
@@ -66,9 +66,10 @@ export default function HomeScreen() {
   const target = upcoming ?? freeSlot ?? { weekNumber: activeWeek, slot: 0 };
 
   function confirmLogout() {
-    Alert.alert("Se déconnecter ?", undefined, [
+    Alert.alert("Mon compte", undefined, [
       { text: "Annuler", style: "cancel" },
-      { text: "Se déconnecter", style: "destructive", onPress: logout },
+      { text: "Se déconnecter", onPress: logout },
+      { text: "Supprimer mon compte", style: "destructive", onPress: () => router.push("/compte") },
     ]);
   }
 
@@ -81,7 +82,7 @@ export default function HomeScreen() {
             <Text style={styles.title}>Bonjour {firstName},</Text>
             <Text style={styles.subtitle}>{team ? `${team.name} · ${team.ageGroup}` : "Pas encore d’équipe"}</Text>
           </View>
-          <TouchableOpacity accessibilityLabel="Se déconnecter" onPress={confirmLogout} style={styles.avatar}>
+          <TouchableOpacity accessibilityLabel="Mon compte" onPress={confirmLogout} style={styles.avatar}>
             <Text style={styles.avatarText}>{educator ? initials(educator.displayName) : "?"}</Text>
           </TouchableOpacity>
         </View>

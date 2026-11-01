@@ -9,6 +9,7 @@ interface AuthContextValue {
   restoring: boolean;
   login(email: string, password: string): Promise<AuthResult>;
   logout(): Promise<void>;
+  deleteAccount(password: string): Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -53,6 +54,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await clearSessionToken();
   }, [sessionToken]);
 
+  const deleteAccount = useCallback(
+    async (password: string): Promise<AuthResult> => {
+      const response = await apiFetch("/api/account", { method: "DELETE", sessionToken, body: JSON.stringify({ password }) }).catch(() => null);
+      if (!response) {
+        return { ok: false, error: GENERIC_ERROR };
+      }
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        return { ok: false, error: typeof body.error === "string" ? body.error : GENERIC_ERROR };
+      }
+      await logout();
+      return { ok: true };
+    },
+    [logout, sessionToken],
+  );
+
   // Reprend la session enregistrée au lancement. Une panne réseau conserve le jeton, pour ne pas
   // déconnecter le joueur parce que le terrain n'a pas de réseau.
   useEffect(() => {
@@ -85,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const value = useMemo(() => ({ sessionToken, restoring, login, logout }), [sessionToken, restoring, login, logout]);
+  const value = useMemo(() => ({ sessionToken, restoring, login, logout, deleteAccount }), [sessionToken, restoring, login, logout, deleteAccount]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
