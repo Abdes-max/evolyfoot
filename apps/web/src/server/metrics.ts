@@ -16,7 +16,7 @@ function isAdminEmail(email: string): boolean {
 }
 
 export function createMetricsHandler(
-  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  resolveEducator: (request: Request) => Promise<(PublicEducator & { emailVerified: boolean }) | null>,
   metrics: Pick<MetricsGateway, "get">,
   log: (error: unknown) => void,
 ): (request: Request) => Promise<Response> {
@@ -25,7 +25,8 @@ export function createMetricsHandler(
     if (!educator) {
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
-    if (!isAdminEmail(educator.email)) {
+    // Une adresse non confirmée pourrait avoir été inscrite par n'importe qui.
+    if (!educator.emailVerified || !isAdminEmail(educator.email)) {
       // 403, pas 404 : ce n'est pas un secret que la route existe, seulement que son contenu
       // (des données agrégées sur l'ensemble des éducateurs) est réservé.
       return Response.json({ error: "Accès réservé." }, { status: 403 });

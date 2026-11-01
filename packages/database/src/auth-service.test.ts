@@ -76,6 +76,10 @@ class InMemorySessionRepository implements SessionRepository {
     return session;
   }
 
+  async deleteOthers(): Promise<void> {
+    this.byTokenHash.clear();
+  }
+
   async deleteByTokenHash(tokenHash: string): Promise<void> {
     this.deleteCount += 1;
     this.byTokenHash.delete(tokenHash);
@@ -138,6 +142,12 @@ describe("AuthService.register", () => {
 });
 
 describe("AuthService.login", () => {
+  it("refuse un mot de passe démesuré sans le calculer", async () => {
+    const { service } = createService();
+
+    await expect(service.login({ email: "coach@example.test", password: "x".repeat(129) })).rejects.toBeInstanceOf(InvalidCredentialsError);
+  });
+
   it("opens a new session for the correct password", async () => {
     const { service } = createService();
     await service.register({ email: "coach@example.test", password: "motdepasse1", displayName: "Coach" });

@@ -1,10 +1,16 @@
 import { normalizeEducatorEmail } from "./email";
 import { InvalidCredentialsError, ValidationError } from "./errors";
-import { hashPassword, validatePassword, verifyPassword } from "./password";
+import { MAX_PASSWORD_LENGTH, hashPassword, validatePassword, verifyPassword } from "./password";
 import { generateSessionToken, hashSessionToken } from "./session-token";
 import type { EducatorRecord, EducatorRepository, SessionRepository } from "./repositories";
 
 const DEFAULT_SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30; // 30 jours
+
+let absentHash: Promise<string> | null = null;
+function absentAccountHash(): Promise<string> {
+  absentHash ??= hashPassword("compte-inexistant");
+  return absentHash;
+}
 
 export interface AuthenticatedSession {
   educator: EducatorRecord;
@@ -59,8 +65,16 @@ export class AuthService {
 
   async login(input: { email: string; password: string }): Promise<AuthenticatedSession> {
     const email = asValidationError(() => normalizeEducatorEmail(input.email));
+    if (input.password.length > MAX_PASSWORD_LENGTH) {
+      throw new InvalidCredentialsError();
+    }
     const record = await this.educatorRepository.findByEmail(email);
-    if (!record || !(await verifyPassword(input.password, record.passwordHash))) {
+    if (!record) {
+      // Même calcul que pour un compte existant : le temps de réponse ne révèle pas l'adresse.
+      await verifyPassword(input.password, await absentAccountHash());
+      throw new InvalidCredentialsError();
+    }
+    if (!(await verifyPassword(input.password, record.passwordHash))) {
       throw new InvalidCredentialsError();
     }
     const educator: EducatorRecord = {

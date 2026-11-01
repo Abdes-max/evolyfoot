@@ -2,6 +2,7 @@ import type { PublicEducator } from "@/server/auth";
 import { createEmailVerificationGateway } from "@/server/email-verification";
 import { createConsumeInviteHandler, createPlayerInviteGateway } from "@/server/player-invite";
 import { resolveOrigin } from "@/server/request-origin";
+import { hour, limitByAddress } from "@/server/rate-limit";
 
 // Même principe que /api/auth/register : le lien part après la création du compte, et un échec
 // d'envoi ne fait jamais échouer celle-ci.
@@ -15,6 +16,11 @@ async function sendVerificationEmail(account: PublicEducator, origin: string): P
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const tooMany = limitByAddress(request, "register-player", 10, hour);
+  if (tooMany) {
+    return tooMany;
+  }
+
   const { gateway, disconnect } = await createPlayerInviteGateway();
   try {
     const response = await createConsumeInviteHandler(gateway, console.error)(request);

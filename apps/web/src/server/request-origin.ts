@@ -10,7 +10,12 @@
 //
 // Partagé par tout ce qui construit un lien absolu à partir d'une requête entrante : invitation
 // tuteur (player-invite.ts) et confirmation d'e-mail (email-verification.ts).
+// En production, `APP_URL` fixe l'adresse : un lien de mot de passe ne dépend jamais de la requête.
 export function resolveOrigin(request: Request): string {
+  const configured = process.env.APP_URL?.trim().replace(/\/+$/, "");
+  if (configured) {
+    return configured;
+  }
   const url = new URL(request.url);
   const isLocal = url.hostname === "0.0.0.0" || url.hostname === "127.0.0.1" || url.hostname === "localhost";
   const hostname = url.hostname === "0.0.0.0" ? "localhost" : url.hostname;

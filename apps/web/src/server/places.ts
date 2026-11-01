@@ -1,4 +1,5 @@
 import type { PublicEducator } from "./auth";
+import { hitRateLimit, minute } from "./rate-limit";
 
 const photonUrl = "https://photon.komoot.io/api/";
 const maxResults = 5;
@@ -45,6 +46,10 @@ export function createSearchPlacesHandler(
     const educator = await resolveEducator(request);
     if (!educator) {
       return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+
+    if (hitRateLimit(`places:${educator.id}`, 60, minute) !== null) {
+      return Response.json({ places: [] });
     }
 
     const query = (new URL(request.url).searchParams.get("q") ?? "").trim().slice(0, maxQueryLength);

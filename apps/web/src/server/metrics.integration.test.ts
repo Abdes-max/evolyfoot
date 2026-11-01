@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createMetricsHandler, type MvpMetrics } from "./metrics";
 
-const admin = { id: "1", email: "coach-admin@example.test", displayName: "Admin" };
-const educator = { id: "2", email: "coach@example.test", displayName: "Coach" };
+const admin = { id: "1", email: "coach-admin@example.test", displayName: "Admin", emailVerified: true };
+const educator = { id: "2", email: "coach@example.test", displayName: "Coach", emailVerified: true };
 
 const sampleMetrics: MvpMetrics = {
   funnel: [
@@ -38,6 +38,18 @@ describe("createMetricsHandler", () => {
     const response = await handler(new Request("https://evolyfoot.test/api/admin/metrics"));
 
     expect(response.status).toBe(401);
+  });
+
+  it("refuse une adresse admin qui n'a pas été confirmée", async () => {
+    const handler = createMetricsHandler(
+      async () => ({ ...admin, emailVerified: false }),
+      { get: async () => { throw new Error("not called"); } },
+      () => undefined,
+    );
+
+    const response = await handler(new Request("https://evolyfoot.test/api/admin/metrics"));
+
+    expect(response.status).toBe(403);
   });
 
   it("rejects an authenticated educator who is not on the admin allowlist", async () => {

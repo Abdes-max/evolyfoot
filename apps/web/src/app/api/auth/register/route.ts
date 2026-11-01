@@ -1,6 +1,7 @@
 import { createAuthGateway, createRegisterHandler, type PublicEducator } from "@/server/auth";
 import { createEmailVerificationGateway } from "@/server/email-verification";
 import { resolveOrigin } from "@/server/request-origin";
+import { hour, limitByAddress } from "@/server/rate-limit";
 
 // Envoie le lien de confirmation juste après la création du compte -- en dehors de
 // createRegisterHandler (qui reste testable sans dépendre du mailer) : un échec d'envoi ne doit
@@ -16,6 +17,11 @@ async function sendVerificationEmail(educator: PublicEducator, origin: string): 
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const tooMany = limitByAddress(request, "register", 10, hour);
+  if (tooMany) {
+    return tooMany;
+  }
+
   const { gateway, disconnect } = await createAuthGateway();
   try {
     const response = await createRegisterHandler(gateway, console.error)(request);

@@ -1,5 +1,7 @@
 import { allFormationIds, playStyles } from "@evolyfoot/domain";
 import { EducatorNotFoundError, InvalidCredentialsError, ValidationError } from "./errors";
+import { hashSessionToken } from "./session-token";
+import type { SessionRepository } from "./repositories";
 import { hashPassword, validatePassword, verifyPassword } from "./password";
 import type { EducatorProfile, EducatorProfilePatch, EducatorProfileRepository } from "./repositories";
 
@@ -95,7 +97,10 @@ export interface EducatorProfileInput {
 }
 
 export class EducatorProfileService {
-  constructor(private readonly educatorRepository: EducatorProfileRepository) {}
+  constructor(
+    private readonly educatorRepository: EducatorProfileRepository,
+    private readonly sessionRepository?: Pick<SessionRepository, "deleteOthers">,
+  ) {}
 
   async get(educatorId: string): Promise<EducatorProfile> {
     const profile = await this.educatorRepository.findProfileById(educatorId);
@@ -112,7 +117,7 @@ export class EducatorProfileService {
     return this.educatorRepository.updateProfile(educatorId, buildPatch(input));
   }
 
-  async changePassword(educatorId: string, currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(educatorId: string, currentPassword: string, newPassword: string, currentSessionToken?: string | null): Promise<void> {
     const record = await this.educatorRepository.findAuthById(educatorId);
     if (!record) {
       throw new EducatorNotFoundError();
@@ -127,5 +132,7 @@ export class EducatorProfileService {
       throw new ValidationError(error instanceof Error ? error.message : "Mot de passe invalide.");
     }
     await this.educatorRepository.updatePasswordHash(educatorId, await hashPassword(validated));
+    // Un appareil resté connecté avec l'ancien mot de passe perd l'accès, sauf celui-ci.
+    await this.sessionRepository?.deleteOthers(educatorId, currentSessionToken ? hashSessionToken(currentSessionToken) : null);
   }
 }
