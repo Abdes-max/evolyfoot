@@ -19,10 +19,10 @@ test.beforeEach(async ({ page }) => {
 test("l'éducateur accède au fil directeur de sa semaine", async ({ page }) => {
   await page.goto("/app");
 
-  await expect(page.getByRole("heading", { name: "Bonjour Abdes," })).toBeVisible();
-  await expect(page.getByText("Créer des solutions autour du porteur")).toBeVisible();
-  await expect(page.getByRole("link", { name: /ouvrir la séance/i })).toBeVisible();
-  await expect(page.getByText("Garde le même thème, change la contrainte.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bonjour Coach," })).toBeVisible();
+  await expect(page.getByRole("link", { name: /crée ton équipe/i })).toHaveAttribute("href", "/onboarding");
+  await expect(page.getByRole("link", { name: "Préparer ma prochaine séance" })).toBeVisible();
+  await expect(page.getByText("Tes ajustements apparaîtront ici.")).toBeVisible();
 });
 
 test("l’éducateur configure son équipe avant le diagnostic", async ({ page }) => {

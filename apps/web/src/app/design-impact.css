@@ -66,3 +66,6 @@ main > :nth-child(3) { animation-delay: 100ms; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+.dashboard-empty { margin: 0; padding: 16px 18px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.dashboard-empty a { color: var(--accent-dark); font-weight: 800; }
