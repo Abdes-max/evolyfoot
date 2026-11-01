@@ -129,6 +129,8 @@ export { fixtureFromTitle, parseCalendarFile } from "./calendar-import";
 export type { CalendarEvent, ImportedFixture } from "./calendar-import";
 export { analyzeMatchup } from "./tactical-analysis";
 export type { LineBalance, MatchupAnalysis, MatchupLine } from "./tactical-analysis";
+export { buildSeasonPlan } from "./season-plan";
+export type { SeasonPlanCycle } from "./season-plan";
 export { allFormationIds, playStyleNote, playStyles } from "./coach-style";
 export type { PlayStyle } from "./coach-style";
 export { matchResultMaxGoals, playerSeasonTotals, validateMatchResult } from "./match-result";
