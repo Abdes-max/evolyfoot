@@ -1,4 +1,5 @@
 import type { AgeGroup, DevelopmentTheme } from "./index";
+import { personalExerciseToActivity, type PersonalExercise } from "./personal-exercise";
 import { findTrainingActivity, type TrainingSession } from "./training-session";
 
 // Le cycle du plan de progression compte 4 semaines (voir buildDevelopmentPlan).
@@ -71,11 +72,16 @@ export interface SavedTrainingSession {
 }
 
 // Reconstruit une `TrainingSession` à partir d'un enregistrement : chaque bloc retrouve son activité
-// dans le catalogue. Retourne `null` si une activité n'existe plus dans le catalogue.
-export function rehydrateTrainingSession(record: SavedTrainingSession): TrainingSession | null {
+// dans le catalogue ou parmi les exercices personnels de l'éducateur. Retourne `null` si une
+// activité n'existe plus.
+export function rehydrateTrainingSession(
+  record: SavedTrainingSession,
+  personalExercises: readonly PersonalExercise[] = [],
+): TrainingSession | null {
+  const personalActivities = personalExercises.map(personalExerciseToActivity);
   const blocks: TrainingSession["blocks"] = [];
   for (const block of record.blocks) {
-    const activity = findTrainingActivity(block.activityId);
+    const activity = findTrainingActivity(block.activityId) ?? personalActivities.find((candidate) => candidate.id === block.activityId);
     if (!activity) {
       return null;
     }

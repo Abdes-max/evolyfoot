@@ -13,6 +13,8 @@ import type {
   ObservationReportRating,
   ObservationReportSummary,
   PlayerEvaluationScores,
+  PersonalExercise,
+  PersonalExerciseInput,
   PlayerReference,
   PlayerSignal,
   TeamProfile,
@@ -479,6 +481,12 @@ export interface PlayerEvaluationRepository {
     educatorId: string,
     input: { scores?: PlayerEvaluationScores; createdAt?: Date },
   ): Promise<PersistedPlayerEvaluation>;
+  remove(id: string, educatorId: string): Promise<void>;
+}
+
+export interface PersonalExerciseRepository {
+  listByEducator(educatorId: string): Promise<PersonalExercise[]>;
+  create(educatorId: string, input: PersonalExerciseInput): Promise<PersonalExercise>;
   remove(id: string, educatorId: string): Promise<void>;
 }
 

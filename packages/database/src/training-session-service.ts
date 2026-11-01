@@ -1,9 +1,10 @@
-import { ageGroups, canValidateSession, findTrainingActivity } from "@evolyfoot/domain";
+import { ageGroups, canValidateSession, findTrainingActivity, isPersonalActivityId, personalExerciseToActivity } from "@evolyfoot/domain";
 import type { AgeGroup, AttendanceEntry, DevelopmentTheme, TrainingBlock, TrainingSession } from "@evolyfoot/domain";
 import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
 import type {
   EducatorRepository,
   PersistedTrainingSession,
+  PersonalExerciseRepository,
   TrainingSessionRepository,
 } from "./repositories";
 
@@ -51,6 +52,7 @@ export class TrainingSessionService {
   constructor(
     private readonly educatorRepository: EducatorRepository,
     private readonly trainingSessionRepository: TrainingSessionRepository,
+    private readonly personalExerciseRepository?: PersonalExerciseRepository,
   ) {}
 
   async list(educatorId: string): Promise<PersistedTrainingSession[]> {
@@ -81,8 +83,13 @@ export class TrainingSessionService {
     // Reconstruit la séance complète (activités résolues depuis le catalogue du domaine, pas
     // fournies par le client) pour réutiliser canValidateSession telle quelle plutôt que de
     // dupliquer la règle des 60-90 minutes ici.
+    // Un exercice personnel n'est accepté que s'il appartient à cet éducateur.
+    const usesPersonalExercise = input.blocks.some((block) => isPersonalActivityId(block.activityId));
+    const personalActivities = usesPersonalExercise
+      ? ((await this.personalExerciseRepository?.listByEducator(educatorId)) ?? []).map(personalExerciseToActivity)
+      : [];
     const blocks: TrainingBlock[] = input.blocks.map((block) => {
-      const activity = findTrainingActivity(block.activityId);
+      const activity = findTrainingActivity(block.activityId) ?? personalActivities.find((candidate) => candidate.id === block.activityId);
       if (!activity) {
         throw new ValidationError(`Activité inconnue : ${block.activityId}.`);
       }

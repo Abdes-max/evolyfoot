@@ -26,6 +26,8 @@ export interface TrainingActivity {
   defenderCount: number;
   hasGoalkeeper: boolean;
   diagram: TacticalDiagram;
+  // Photo d'un schéma papier, pour un exercice personnel.
+  photo?: string;
 }
 export interface TrainingBlock { id: string; activity: TrainingActivity; durationMinutes: number; }
 export interface TrainingSession { id: string; title: string; ageGroup: AgeGroup; playerCount: number; theme: DevelopmentTheme; intention: string; blocks: TrainingBlock[]; }
@@ -111,7 +113,7 @@ function fullPitchDiagram(attackersPerSide: number, defendersPerSide: number, go
   return { width: DIAGRAM_WIDTH, height: DIAGRAM_HEIGHT, zones: [pitch], tokens, arrows };
 }
 
-function buildDiagram(kind: TrainingBlockKind, defenderCount: number, hasGoalkeeper: boolean): TacticalDiagram {
+export function buildDiagram(kind: TrainingBlockKind, defenderCount: number, hasGoalkeeper: boolean): TacticalDiagram {
   if (kind === "welcome") return singleZoneDiagram(3, defenderCount, hasGoalkeeper);
   if (kind === "activation") return singleZoneDiagram(4, defenderCount, hasGoalkeeper);
   if (kind === "main") return doubleZoneDiagram(3, defenderCount, hasGoalkeeper);
@@ -308,9 +310,16 @@ export function replaceSessionActivity(session: TrainingSession, index: number):
   if (!block) return session;
   const candidates = replacementCandidates(session, index);
   const currentIndex = candidates.findIndex((activity) => activity.id === block.activity.id);
-  if (candidates.length < 2 || currentIndex < 0) return session;
+  if (candidates.length === 0 || (candidates.length === 1 && currentIndex === 0)) return session;
   const blocks = [...session.blocks];
   blocks[index] = { ...block, activity: cloneActivity(candidates[(currentIndex + 1) % candidates.length]) };
+  return { ...session, blocks };
+}
+export function replaceBlockActivity(session: TrainingSession, index: number, activity: TrainingActivity): TrainingSession {
+  const block = session.blocks[index];
+  if (!block) return session;
+  const blocks = [...session.blocks];
+  blocks[index] = { ...block, activity: cloneActivity(activity) };
   return { ...session, blocks };
 }
 export function canValidateSession(session: TrainingSession): boolean { const duration = getSessionDuration(session); return duration >= 60 && duration <= 90; }

@@ -8,6 +8,7 @@ import {
   summarizeDiagnostic,
   type AgeGroup,
   type DiagnosticScores,
+  type PersonalExercise,
   type TrainingSession,
 } from "@evolyfoot/domain";
 import Link from "next/link";
@@ -54,6 +55,7 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
   const [scores, setScores] = useState<DiagnosticScores>(demoScores);
   const [meetingAt, setMeetingAt] = useState<string | null>(null);
   const [variant, setVariant] = useState(0);
+  const [personalExercises, setPersonalExercises] = useState<readonly PersonalExercise[]>([]);
   const explanation = explainTrainingSession(session, planWeek(scores, weekNumber));
 
   function proposeAnotherSession() {
@@ -78,16 +80,18 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
           return;
         }
 
-        const [teamResponse, diagnosticResponse, rosterResponse, sessionsResponse] = await Promise.all([
+        const [teamResponse, diagnosticResponse, rosterResponse, sessionsResponse, personalResponse] = await Promise.all([
           fetch("/api/team"),
           fetch("/api/diagnostic"),
           fetch("/api/roster"),
           fetch("/api/sessions"),
+          fetch("/api/personal-exercises"),
         ]);
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
         const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
         const sessionsBody = await sessionsResponse.json().catch(() => ({ sessions: [] }));
+        const personalBody = await personalResponse.json().catch(() => ({ exercises: [] }));
         if (cancelled) {
           return;
         }
@@ -100,6 +104,7 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
         setScores(savedScores);
         setSession(buildSessionForWeek(savedScores, ageGroup, playerCount, weekNumber, slot));
         setRoster(rosterBody.players ?? []);
+        setPersonalExercises(personalBody.exercises ?? []);
         setMeetingAt(suggestedMeetingAt(trainingDays[slot], weekNumber, activeWeek, new Date()));
       } catch {
         // Reste sur la séance de démonstration.
@@ -139,6 +144,7 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
         key={meetingAt ?? "sans-rendez-vous"}
         meetingAt={meetingAt}
         onChange={setSession}
+        personalExercises={personalExercises}
         roster={roster}
         session={session}
         slot={slot}

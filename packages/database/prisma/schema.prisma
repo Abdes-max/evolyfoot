@@ -92,6 +92,7 @@ model Educator {
   matches           MatchRecord[]
   tournaments       TournamentRecord[]
   plateaux          PlateauRecord[]
+  personalExercises PersonalExerciseRecord[]
   playerEvaluations PlayerEvaluationRecord[]
   messages          MessageRecord[]
   createdAt         DateTime                 @default(now()) @map("created_at")
@@ -401,6 +402,26 @@ model PlateauRecord {
 
 // Message envoyé depuis le formulaire de contact du site vitrine (public, sans compte). Pas d'e-mail
 // sortant pour l'instant : les messages sont simplement stockés et relus depuis /admin.
+// Exercice créé ou importé par un éducateur. `kind` et `theme` sont validés côté domaine
+// (validatePersonalExercise) ; `photo` est une data URL d'image.
+model PersonalExerciseRecord {
+  id           String   @id @default(uuid()) @db.Uuid
+  educatorId   String   @db.Uuid @map("educator_id")
+  educator     Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  kind         String
+  theme        String
+  title        String
+  objective    String
+  organization String
+  instruction  String
+  observable   String
+  photo        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([educatorId])
+  @@map("personal_exercises")
+}
+
 model ContactMessage {
   id        String   @id @default(uuid()) @db.Uuid
   name      String

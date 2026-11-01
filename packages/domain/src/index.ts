@@ -56,6 +56,15 @@ export type { ObservationSummary } from "./progression";
 export { suggestAdjustmentFromObservation } from "./adjustment";
 export type { AdjustmentAction, AdjustmentSuggestion } from "./adjustment";
 export {
+  isPersonalActivityId,
+  parseExerciseText,
+  personalActivityPrefix,
+  personalExerciseMaxPerEducator,
+  personalExerciseToActivity,
+  validatePersonalExercise,
+} from "./personal-exercise";
+export type { ImportedExerciseText, PersonalExercise, PersonalExerciseInput } from "./personal-exercise";
+export {
   currentCycleWeek,
   firstFreeCycleSlot,
   rehydrateTrainingSession,
@@ -76,6 +85,7 @@ export {
   findTrainingActivity,
   explainTrainingSession,
   generateTrainingSession,
+  replaceBlockActivity,
   getSessionDuration,
   moveSessionBlock,
   replaceSessionActivity,
