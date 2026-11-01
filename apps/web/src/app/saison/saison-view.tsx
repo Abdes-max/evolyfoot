@@ -3,6 +3,7 @@
 import { buildSeasonCalendar, type SeasonEventInput, type SeasonEventType } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { SeasonPlanView } from "./season-plan-view";
 
 const typeLabels: Record<SeasonEventType, string> = {
   session: "Séance",
@@ -85,6 +86,7 @@ export function SaisonView() {
 
       <section className="seances-content">
         {status === "error" && <p className="seances-auth">La saison n’a pas pu être chargée.</p>}
+        <SeasonPlanView now={now} />
         {calendar.undatedCount > 0 && (
           <p className="seances-hint">
             {calendar.undatedCount} événement{calendar.undatedCount > 1 ? "s" : ""} sans date réelle n’apparaît pas ici.
