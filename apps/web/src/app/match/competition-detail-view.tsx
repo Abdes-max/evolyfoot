@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PlaceInput } from "../place-input";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { parseDateInputValue } from "../date-format";
@@ -185,11 +186,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
             </label>
             <label>
               <span>Lieu</span>
-              <input
-                onChange={(event) => setLocation(event.target.value)}
-                placeholder="Ex. Stade Marius Requier, Aix-en-Provence"
-                value={location}
-              />
+              <PlaceInput onChange={setLocation} value={location} />
             </label>
             <label>
               <span>Description</span>

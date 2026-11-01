@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { parseDatetimeInputValue, toDatetimeInputValue } from "../../date-format";
 import { initials, MatchPitch } from "../match-pitch";
+import { PlaceInput } from "../../place-input";
 import { MatchResultForm } from "./match-result-form";
 
 interface MatchRecord {
@@ -532,12 +533,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             </label>
             <label>
               <span>Lieu</span>
-              <input
-                disabled={readOnly}
-                onChange={(event) => setLocation(event.target.value)}
-                placeholder="Ex. Stade Marius Requier, Aix-en-Provence"
-                value={location}
-              />
+              <PlaceInput disabled={readOnly} onChange={setLocation} value={location} />
             </label>
             <label>
               <span>Description</span>
