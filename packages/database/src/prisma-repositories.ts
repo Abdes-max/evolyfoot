@@ -753,6 +753,7 @@ export class PrismaMatchRepository implements MatchRepository {
       captainPlayerId?: string | null;
       substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
+      opponentFormationId?: string | null;
       goalsFor?: number;
       goalsAgainst?: number;
       playerStats?: readonly MatchPlayerStat[];
@@ -782,6 +783,7 @@ export class PrismaMatchRepository implements MatchRepository {
           ? { substitutePlayerIds: input.substitutePlayerIds as unknown as Prisma.InputJsonValue }
           : {}),
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
+        ...(input.opponentFormationId !== undefined ? { opponentFormationId: input.opponentFormationId } : {}),
         ...(input.goalsFor !== undefined ? { goalsFor: input.goalsFor } : {}),
         ...(input.goalsAgainst !== undefined ? { goalsAgainst: input.goalsAgainst } : {}),
         ...(input.playerStats !== undefined ? { playerStats: input.playerStats as unknown as Prisma.InputJsonValue } : {}),

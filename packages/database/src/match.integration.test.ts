@@ -270,6 +270,16 @@ describe("PostgreSQL match persistence", () => {
     expect(saved.playerStats.map((stat) => stat.playerName)).toEqual(["Yanis"]);
   });
 
+  it("enregistre le système de l'adversaire et refuse un système du mauvais format", async () => {
+    const educator = await createEducator("opponent");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+
+    const updated = await service.updateDetails(educator.id, match.id, { opponentFormationId: "3-2-2" });
+
+    expect(updated.opponentFormationId).toBe("3-2-2");
+    await expect(service.updateDetails(educator.id, match.id, { opponentFormationId: "4-3-3" })).rejects.toThrow(/n’existe pas/);
+  });
+
   it("efface un champ de détail avec une chaîne vide ou null", async () => {
     const educator = await createEducator("details-clear");
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8, location: "Stade X" });
