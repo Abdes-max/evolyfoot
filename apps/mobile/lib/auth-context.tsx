@@ -8,8 +8,9 @@ import type {
   TeamProfile,
   TrainingSession,
 } from "@evolyfoot/domain";
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "./api";
+import { clearSessionToken, readSessionToken, writeSessionToken } from "./session-storage";
 
 export interface Educator {
   id: string;
@@ -36,6 +37,8 @@ export type MatchListResult = { ok: true; matches: MobileMatch[] } | { ok: false
 
 export interface AuthContextValue {
   educator: Educator | null;
+  // Vrai le temps de relire la session enregistrée au lancement de l'app.
+  restoring: boolean;
   team: TeamProfile | null;
   diagnosticScores: DiagnosticScores | null;
   roster: readonly PlayerReference[];
@@ -72,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [diagnosticScores, setDiagnosticScores] = useState<DiagnosticScores | null>(null);
   const [roster, setRoster] = useState<readonly PlayerReference[]>([]);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(true);
 
   const fetchTeam = useCallback(async (token: string) => {
     try {
@@ -115,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const body = await response.json();
       setEducator(body.educator);
       setSessionToken(body.sessionToken);
+      await writeSessionToken(body.sessionToken);
       await Promise.all([fetchTeam(body.sessionToken), fetchDiagnostic(body.sessionToken), fetchRoster(body.sessionToken)]);
       return { ok: true };
     },
@@ -133,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const body = await response.json();
       setEducator(body.educator);
       setSessionToken(body.sessionToken);
+      await writeSessionToken(body.sessionToken);
       setTeam(null);
       setDiagnosticScores(null);
       setRoster([]);
@@ -150,7 +156,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setDiagnosticScores(null);
     setRoster([]);
     setSessionToken(null);
+    await clearSessionToken();
   }, [sessionToken]);
+
+  // Reprend la session enregistrée au lancement. Un jeton refusé est effacé ; une panne réseau le
+  // conserve, pour ne pas déconnecter l'éducateur parce que le terrain n'a pas de réseau.
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const token = await readSessionToken();
+      if (!token) {
+        return;
+      }
+      const response = await apiFetch("/api/auth/session", { sessionToken: token }).catch(() => null);
+      if (!response || response.status >= 500) {
+        return;
+      }
+      const body = await response.json().catch(() => ({ educator: null }));
+      if (!body.educator) {
+        await clearSessionToken();
+        return;
+      }
+      if (cancelled) {
+        return;
+      }
+      setEducator(body.educator);
+      setSessionToken(token);
+      await Promise.all([fetchTeam(token), fetchDiagnostic(token), fetchRoster(token)]);
+    })().finally(() => {
+      if (!cancelled) {
+        setRestoring(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchTeam, fetchDiagnostic, fetchRoster]);
 
   const saveTeam = useCallback(
     async (profile: TeamProfile): Promise<AuthResult> => {
@@ -384,6 +427,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       educator,
+      restoring,
       team,
       diagnosticScores,
       roster,
@@ -406,6 +450,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }),
     [
       educator,
+      restoring,
       team,
       diagnosticScores,
       roster,
