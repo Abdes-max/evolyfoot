@@ -77,7 +77,7 @@ export function MetricsView() {
     <main className="metrics-shell">
       <header className="metrics-header">
         <Link className="onboarding-brand" href="/app">
-          <span className="brand-mark">E</span> EvolyFoot
+          <span className="brand-mark">EV</span> EvolyFoot
         </Link>
         <span className="eyebrow light">TABLEAU DE BORD</span>
         <h1>Indicateurs MVP.</h1>

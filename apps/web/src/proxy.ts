@@ -40,6 +40,6 @@ export const config = {
     // /api/auth/* doit d'ailleurs rester joignable pour pouvoir se connecter), les fichiers
     // statiques Next.js, le favicon, et les fichiers SEO générés (sitemap.xml, robots.txt) qui
     // doivent rester publics pour les moteurs.
-    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|icon.svg|sitemap.xml|robots.txt).*)",
   ],
 };
