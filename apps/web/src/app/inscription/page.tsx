@@ -17,7 +17,7 @@ export default function InscriptionPage() {
           <TacticalDiagramView diagram={backdropActivity.diagram} />
         </div>
         <Link className="onboarding-brand" href="/">
-          <span className="brand-mark">E</span> EvolyFoot
+          <span className="brand-mark">EV</span> EvolyFoot
         </Link>
         <div className="onboarding-hook">
           <span className="eyebrow light">ESPACE ÉDUCATEUR</span>

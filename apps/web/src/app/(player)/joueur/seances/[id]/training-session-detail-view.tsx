@@ -43,7 +43,7 @@ export function TrainingSessionDetailView({ sessionId }: { sessionId: string }) 
     <div className="player-space">
       <header className="player-space-header">
         <Link className="onboarding-brand" href="/joueur">
-          <span className="brand-mark">E</span> EvolyFoot
+          <span className="brand-mark">EV</span> EvolyFoot
         </Link>
         <Link className="player-space-logout" href="/joueur/calendrier">
           ← Retour

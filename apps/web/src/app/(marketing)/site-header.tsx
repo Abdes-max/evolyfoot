@@ -16,7 +16,7 @@ export function SiteHeader() {
   return (
     <header className="m-header">
       <Link className="m-brand" href="/" onClick={() => setOpen(false)}>
-        <span className="brand-mark">E</span> EvolyFoot
+        <span className="brand-mark">EV</span> EvolyFoot
       </Link>
 
       <nav aria-label="Navigation du site" className="m-nav">

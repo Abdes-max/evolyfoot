@@ -7,7 +7,7 @@ export function PlayerSpaceHeader() {
   return (
     <header className="player-space-header">
       <Link className="onboarding-brand" href="/joueur">
-        <span className="brand-mark">E</span> EvolyFoot
+        <span className="brand-mark">EV</span> EvolyFoot
       </Link>
       <button className="player-space-logout" onClick={playerLogout} type="button">
         Se déconnecter

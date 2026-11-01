@@ -30,7 +30,7 @@ export function SidebarNav() {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <span className="brand-mark">E</span>
+        <span className="brand-mark">EV</span>
         <span>EvolyFoot</span>
       </div>
       <nav aria-label="Navigation principale">

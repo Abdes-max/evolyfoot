@@ -16,7 +16,7 @@ export default async function ReinitialiserMotDePassePage({ params }: { params: 
     <main className="onboarding-shell">
       <section className="onboarding-intro">
         <Link className="onboarding-brand" href="/">
-          <span className="brand-mark">E</span> EvolyFoot
+          <span className="brand-mark">EV</span> EvolyFoot
         </Link>
         <div>
           <span className="eyebrow light">NOUVEAU MOT DE PASSE</span>

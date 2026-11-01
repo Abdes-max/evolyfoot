@@ -6,7 +6,7 @@ export function SiteFooter() {
       <div className="m-section">
         <div className="m-footer-col">
           <Link className="m-brand" href="/">
-            <span className="brand-mark">E</span> EvolyFoot
+            <span className="brand-mark">EV</span> EvolyFoot
           </Link>
           <span style={{ color: "var(--m-muted)", fontSize: 12.5 }}>
             L’assistant de progression des éducateurs de football de jeunes.
