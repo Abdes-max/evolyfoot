@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { RadarChart } from "../../charts";
-import { colorForEvaluation } from "../../evaluation-colors";
+import { colorForEvaluation, defaultComparedEvaluationIds, evaluationLabel } from "../../evaluation-colors";
 import { resizeImageToDataUrl } from "../../image-resize";
 import { MessagingThread } from "../../messaging-thread";
 
@@ -79,7 +79,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [editingEvaluationId, setEditingEvaluationId] = useState<string | null>(null);
   const [addingEvaluation, setAddingEvaluation] = useState(false);
   const [evaluationError, setEvaluationError] = useState("");
-  // Évaluations superposées sur le radar (voir RadarChart.series) -- la plus récente y est déjà
+  // Évaluations superposées sur le radar (voir RadarChart.series) -- les dernières de chaque source y sont
   // par défaut, comparer les autres est un choix explicite plutôt qu'un graphe surchargé d'emblée.
   const [comparedEvaluationIds, setComparedEvaluationIds] = useState<ReadonlySet<string>>(new Set());
 
@@ -119,7 +119,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
         setPlayer(found);
         const loadedEvaluations: Evaluation[] = evaluationsResponse.ok ? (evaluationsBody.evaluations ?? []) : [];
         setEvaluations(loadedEvaluations);
-        setComparedEvaluationIds(loadedEvaluations[0] ? new Set([loadedEvaluations[0].id]) : new Set());
+        setComparedEvaluationIds(defaultComparedEvaluationIds(loadedEvaluations));
         setStatus("ready");
       } catch {
         if (!cancelled) {
@@ -481,7 +481,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                             .filter((evaluation) => comparedEvaluationIds.has(evaluation.id))
                             .map((evaluation) => ({
                               key: evaluation.id,
-                              label: formatDate(evaluation.createdAt),
+                              label: evaluationLabel(evaluation, formatDate(evaluation.createdAt)),
                               color: colorForEvaluation(evaluation.id, evaluations),
                               scores: evaluation.scores,
                             }))
@@ -491,7 +491,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                   />
                   {comparedEvaluationIds.size === 0 && (
                     <p className="player-radar-caption">
-                      {latest ? `Dernière évaluation · ${formatDate(latest.createdAt)}` : "Aperçu de la note en cours de saisie"}
+                      {latest ? evaluationLabel(latest, formatDate(latest.createdAt)) : "Aperçu de la note en cours de saisie"}
                     </p>
                   )}
                 </div>
