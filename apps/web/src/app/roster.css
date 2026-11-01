@@ -154,3 +154,6 @@
   .player-grid,.player-form{grid-template-columns:1fr}
   .player-evaluation-layout{grid-template-columns:1fr}
 }
+
+.player-header-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; }
+.player-header-actions .session-print { margin: 0; }

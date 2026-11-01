@@ -103,10 +103,22 @@ main > :nth-child(3) { animation-delay: 100ms; }
     --volt: #3b6b00;
   }
   html, body { background: #fff; color: #10202c; }
-  .sidebar, .session-back, .session-why button, .session-print, .session-exercise-library, .tactical-player-controls, .tactical-player-progress, nextjs-portal { display: none !important; }
+  .sidebar, .session-back, .session-why button, .session-print, .session-exercise-library, .tactical-player-controls, .tactical-player-progress, .print-hidden, .player-back, .player-photo-actions, .player-edit, .player-evaluation-history-actions, .player-evaluation-compare, nextjs-portal { display: none !important; }
   main, .session-shell { padding: 0 !important; min-height: 0; background: #fff; }
   .session-header { padding: 0 0 8px; background: none; box-shadow: none; }
   .session-header h1, .page-header h1 { color: #10202c; text-shadow: none; }
+  .player-shell, .statistics-shell { padding: 0 !important; }
+  .page-header { height: auto; padding: 0 0 8px; background: none; box-shadow: none; }
+  .page-header::after { display: none; }
+  .player-hero { grid-template-columns: 300px 1fr; overflow: visible; border-color: var(--line); background: #fff; box-shadow: none; break-inside: avoid; }
+  .player-hero::before, .player-hero::after { display: none; }
+  .player-card-frame { animation: none; filter: none; }
+  /* La carte garde son fond sombre : son texte clair serait illisible sur le blanc du papier. */
+  .player-card-border, .player-card { --accent: #2fd4ff; --accent-dark: #86e8ff; --volt: #c6ff3d; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .player-block-head h2 { text-shadow: none; }
+  .player-card::before { display: none; }
+  .player-block { break-inside: avoid; background: #fff; }
+  .player-evaluation-layout { grid-template-columns: 1fr 1fr; }
   .sheet { grid-template-columns: 40% 1fr; }
   .sheet-stage { position: static; box-shadow: none; }
   .session-validation, .session-meeting-at, .session-attendance, .match-details-form, .match-convocation, .session-validation-error { display: none !important; }
