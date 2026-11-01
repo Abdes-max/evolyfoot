@@ -13,6 +13,8 @@ export interface ProfileSummary {
   phone: string | null;
   diploma: string | null;
   seasonFormat: string | null;
+  playStyle: string | null;
+  preferredFormation: string | null;
   createdAt: string;
 }
 
@@ -24,7 +26,7 @@ export interface ProfileGateway {
 
 // Champs texte optionnels de la fiche : présents dans le corps => `string | null` accepté (null
 // efface), absents => on n'y touche pas.
-const optionalFields = ["birthDate", "club", "country", "address", "phone", "diploma", "seasonFormat"] as const;
+const optionalFields = ["birthDate", "club", "country", "address", "phone", "diploma", "seasonFormat", "playStyle", "preferredFormation"] as const;
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
   try {
@@ -163,6 +165,8 @@ export async function createProfileGateway(): Promise<{ gateway: ProfileGateway;
       phone: profile.phone,
       diploma: profile.diploma,
       seasonFormat: profile.seasonFormat,
+      playStyle: profile.playStyle,
+      preferredFormation: profile.preferredFormation,
       createdAt: profile.createdAt.toISOString(),
     };
   }

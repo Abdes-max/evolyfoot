@@ -109,6 +109,8 @@ export interface EducatorProfile {
   phone: string | null;
   diploma: string | null;
   seasonFormat: string | null;
+  playStyle: string | null;
+  preferredFormation: string | null;
   createdAt: Date;
 }
 
@@ -122,6 +124,8 @@ export type EducatorProfilePatch = Partial<{
   phone: string | null;
   diploma: string | null;
   seasonFormat: string | null;
+  playStyle: string | null;
+  preferredFormation: string | null;
 }>;
 
 export interface PersistedTeamProfile {

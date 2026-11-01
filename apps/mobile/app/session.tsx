@@ -50,13 +50,14 @@ function shiftMeeting(iso: string, minutes: number): string {
 }
 
 export default function SessionScreen() {
-  const { team, diagnosticScores, roster, saveTrainingSession, listSessions, listPersonalExercises } = useAuth();
+  const { team, diagnosticScores, roster, saveTrainingSession, listSessions, listPersonalExercises, getPlayStyle } = useAuth();
   const params = useLocalSearchParams<{ week?: string; slot?: string }>();
   const weekNumber = clampSearchNumber(params.week, 1, 4);
   const slot = clampSearchNumber(params.slot, 0, 4);
   const plan = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores));
   const week = plan.weeks[weekNumber - 1] ?? plan.weeks[0];
   const [variant, setVariant] = useState(0);
+  const [playStyle, setPlayStyle] = useState<string | null>(null);
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [meetingAt, setMeetingAt] = useState(tomorrowEvening);
   const [absentPlayerIds, setAbsentPlayerIds] = useState<ReadonlySet<string>>(new Set());
@@ -66,7 +67,19 @@ export default function SessionScreen() {
   const [session, setSession] = useState(() => {
     return generateTrainingSession(week, team?.ageGroup ?? demoTeam.ageGroup, team?.playerCount ?? demoTeam.playerCount, slot);
   });
-  const explanation = explainTrainingSession(session, week);
+  const explanation = explainTrainingSession(session, week, playStyle);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPlayStyle().then((style) => {
+      if (!cancelled) {
+        setPlayStyle(style);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [getPlayStyle]);
   const capturesAttendance = !alreadySaved && roster.length > 0;
 
   // Une séance déjà enregistrée sur ce créneau est rouverte telle quelle ; sinon le rendez-vous est
@@ -155,6 +168,7 @@ export default function SessionScreen() {
           <View style={styles.why}>
             <Text style={styles.summaryLabel}>POURQUOI CETTE SÉANCE</Text>
             <Text style={styles.detailText}>{explanation.summary}</Text>
+            {explanation.styleNote ? <Text style={styles.detailText}>{explanation.styleNote}</Text> : null}
             <TouchableOpacity accessibilityRole="button" hitSlop={8} onPress={proposeAnotherSession} style={styles.action}>
               <Text style={styles.actionText}>Proposer une autre séance</Text>
             </TouchableOpacity>
