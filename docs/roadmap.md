@@ -49,7 +49,6 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 ### Technique
 
 - [ ] Activer le contrôle Prettier dans la CI.
-- [ ] Revenir à `--frozen-lockfile` en CI et épingler les dépendances déclarées en `latest`.
 - [ ] Lire automatiquement les photos de schéma, si cela reste souhaité : elles sont aujourd’hui stockées et affichées seulement.
 - [ ] Multilingue : non commencé.
 

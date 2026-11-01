@@ -67,11 +67,11 @@ jobs:
 
       - name: Récupérer le code
         if: steps.secrets-check.outputs.ready == 'true'
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Installer Node.js
         if: steps.secrets-check.outputs.ready == 'true'
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
           package-manager-cache: false
@@ -80,14 +80,9 @@ jobs:
         if: steps.secrets-check.outputs.ready == 'true'
         run: corepack enable && corepack prepare pnpm@10.15.1 --activate
 
-      # TEMPORAIRE (--no-frozen-lockfile au lieu de --frozen-lockfile) : pnpm-lock.yaml n'a pas pu
-      # être régénéré après l'ajout de nodemailer (registre npm interne injoignable depuis
-      # l'environnement où ce paquet a été ajouté) -- voir la même note dans ci.yml/Dockerfile.
-      # À revenir à --frozen-lockfile dès qu'un pnpm-lock.yaml à jour est committé depuis un poste
-      # avec accès au registre.
       - name: Installer les dépendances
         if: steps.secrets-check.outputs.ready == 'true'
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Écrire le compte de service Google Play
         if: steps.secrets-check.outputs.ready == 'true'
@@ -98,7 +93,7 @@ jobs:
 
       - name: Installer eas-cli et s'authentifier
         if: steps.secrets-check.outputs.ready == 'true'
-        uses: expo/expo-github-action@v8
+        uses: expo/expo-github-action@c7b66a9c327a43a8fa7c0158e7f30d6040d2481e # v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
