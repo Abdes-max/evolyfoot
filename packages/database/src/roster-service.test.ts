@@ -64,6 +64,11 @@ class InMemoryPlayerRepository implements PlayerRepository {
       birthDate: null,
       phone: null,
       email: null,
+      position: null,
+      jerseyNumber: null,
+      preferredFoot: null,
+      strengths: null,
+      workAreas: null,
       createdAt: new Date("2026-08-29T12:00:00.000Z"),
       updatedAt: new Date("2026-08-29T12:00:00.000Z"),
     };
@@ -171,6 +176,23 @@ describe("RosterService", () => {
     const renamed = await service.rename("educator-1", player.id, "Ousmane");
 
     expect(renamed.name).toBe("Ousmane");
+  });
+
+  it("enregistre le profil sportif et refuse les valeurs hors liste", async () => {
+    const service = new RosterService(new InMemoryEducatorRepository(["educator-1"]), new InMemoryPlayerRepository());
+    const player = await service.add("educator-1", "Yanis", "Benali");
+
+    const updated = await service.updateDetails("educator-1", player.id, {
+      position: "Milieu",
+      jerseyNumber: "8",
+      preferredFoot: "Gauche",
+      strengths: "  Vision du jeu  ",
+    });
+    expect(updated).toMatchObject({ position: "Milieu", jerseyNumber: "8", preferredFoot: "Gauche", strengths: "Vision du jeu" });
+
+    await expect(service.updateDetails("educator-1", player.id, { position: "Libéro" })).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.updateDetails("educator-1", player.id, { preferredFoot: "Tête" })).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.updateDetails("educator-1", player.id, { jerseyNumber: "123" })).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("modifie prénom et nom indépendamment via updateDetails, rejetant une chaîne vide", async () => {

@@ -13,11 +13,16 @@ export interface RosterPlayer {
   birthDate: string | null;
   phone: string | null;
   email: string | null;
+  position: string | null;
+  jerseyNumber: string | null;
+  preferredFoot: string | null;
+  strengths: string | null;
+  workAreas: string | null;
 }
 
 // Clés de fiche joueur acceptées dans le corps d'un PATCH (hors `firstName`/`lastName`, traités à
 // part -- une chaîne vide y est rejetée, contrairement aux clés ci-dessous où elle efface).
-const detailKeys = ["photo", "birthDate", "phone", "email"] as const;
+const detailKeys = ["photo", "birthDate", "phone", "email", "position", "jerseyNumber", "preferredFoot", "strengths", "workAreas"] as const;
 
 export interface RosterGateway {
   list(educatorId: string): Promise<RosterPlayer[]>;
@@ -190,6 +195,11 @@ export async function createRosterGateway(): Promise<{ gateway: RosterGateway; d
     birthDate: player.birthDate,
     phone: player.phone,
     email: player.email,
+    position: player.position,
+    jerseyNumber: player.jerseyNumber,
+    preferredFoot: player.preferredFoot,
+    strengths: player.strengths,
+    workAreas: player.workAreas,
   });
 
   return {

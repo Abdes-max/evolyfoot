@@ -499,6 +499,11 @@ export function toPersistedPlayer(player: PrismaPlayer): PersistedPlayer {
     birthDate: player.birthDate,
     phone: player.phone,
     email: player.email,
+    position: player.position,
+    jerseyNumber: player.jerseyNumber,
+    preferredFoot: player.preferredFoot,
+    strengths: player.strengths,
+    workAreas: player.workAreas,
     createdAt: player.createdAt,
     updatedAt: player.updatedAt,
   });

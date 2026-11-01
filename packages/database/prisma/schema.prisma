@@ -241,6 +241,13 @@ model Player {
   birthDate  String?                 @map("birth_date")
   phone      String?
   email      String?
+  // Profil sportif, tous optionnels : valeurs contrôlées par RosterService (playerPositions,
+  // playerFeet côté domaine). Le numéro reste un texte, jamais utilisé dans un calcul.
+  position      String?
+  jerseyNumber  String? @map("jersey_number")
+  preferredFoot String? @map("preferred_foot")
+  strengths     String?
+  workAreas     String? @map("work_areas")
   // Historique borné d'évaluations datées (voir playerEvaluationMaxPerSeason côté domaine),
   // plus « une seule par joueur » : d'où la relation 1-N ci-dessous au lieu d'un `?`.
   evaluations PlayerEvaluationRecord[]

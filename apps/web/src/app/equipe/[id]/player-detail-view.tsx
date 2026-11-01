@@ -6,6 +6,8 @@ import {
   playerEvaluationMaxPerSeason,
   playerEvaluationMaxScore,
   playerEvaluationMinScore,
+  playerFeet,
+  playerPositions,
   type PlayerEvaluationScores,
 } from "@evolyfoot/domain";
 import Link from "next/link";
@@ -14,6 +16,7 @@ import { RadarChart } from "../../charts";
 import { colorForEvaluation, defaultComparedEvaluationIds, evaluationLabel } from "../../evaluation-colors";
 import { resizeImageToDataUrl } from "../../image-resize";
 import { MessagingThread } from "../../messaging-thread";
+import { PlayerCard } from "../../player-card";
 
 interface Player {
   id: string;
@@ -24,6 +27,11 @@ interface Player {
   birthDate: string | null;
   phone: string | null;
   email: string | null;
+  position: string | null;
+  jerseyNumber: string | null;
+  preferredFoot: string | null;
+  strengths: string | null;
+  workAreas: string | null;
 }
 
 interface Evaluation {
@@ -60,7 +68,31 @@ function formatBirthDate(value: string | null): string {
 
 const playerPhotoMaxSide = 320;
 
-type DetailForm = { firstName: string; lastName: string; birthDate: string; phone: string; email: string };
+type DetailForm = {
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  phone: string;
+  email: string;
+  position: string;
+  jerseyNumber: string;
+  preferredFoot: string;
+  strengths: string;
+  workAreas: string;
+};
+
+const emptyDetailForm: DetailForm = {
+  firstName: "",
+  lastName: "",
+  birthDate: "",
+  phone: "",
+  email: "",
+  position: "",
+  jerseyNumber: "",
+  preferredFoot: "",
+  strengths: "",
+  workAreas: "",
+};
 
 export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [status, setStatus] = useState<"loading" | "ready" | "not-found" | "unauthenticated">("loading");
@@ -68,7 +100,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<DetailForm>({ firstName: "", lastName: "", birthDate: "", phone: "", email: "" });
+  const [form, setForm] = useState<DetailForm>(emptyDetailForm);
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -145,6 +177,11 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
       birthDate: player.birthDate ?? "",
       phone: player.phone ?? "",
       email: player.email ?? "",
+      position: player.position ?? "",
+      jerseyNumber: player.jerseyNumber ?? "",
+      preferredFoot: player.preferredFoot ?? "",
+      strengths: player.strengths ?? "",
+      workAreas: player.workAreas ?? "",
     });
     setDetailsError("");
     setEditing(true);
@@ -179,6 +216,11 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
       birthDate: form.birthDate || null,
       phone: form.phone || null,
       email: form.email || null,
+      position: form.position || null,
+      jerseyNumber: form.jerseyNumber || null,
+      preferredFoot: form.preferredFoot || null,
+      strengths: form.strengths || null,
+      workAreas: form.workAreas || null,
     });
     setSavingDetails(false);
     if (ok) {
@@ -328,6 +370,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   }
 
   const latest = evaluations[0];
+  const coachEvaluations = evaluations.filter((evaluation) => evaluation.source !== "player");
 
   return (
     <main className="player-shell">
@@ -335,7 +378,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
         <div>
           <span className="eyebrow light">Fiche joueur</span>
           <h1 title={player?.name ?? "Joueur"}>{player?.name ?? "Joueur"}</h1>
-          <p title="Coordonnées et suivi de progression.">Coordonnées et suivi de progression.</p>
+          <p title="Profil, coordonnées et suivi de progression.">Profil, coordonnées et suivi de progression.</p>
         </div>
         <Link className="player-back" href="/equipe">
           ← Effectif
@@ -357,16 +400,17 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
 
         {status === "ready" && player && (
           <>
-            <div className="player-block player-identity">
-              <div className="player-photo">
-                {player.photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img alt={`Photo de ${player.name}`} src={player.photo} />
-                ) : (
-                  <span aria-hidden="true">
-                    {player.name.trim().slice(0, 1).toUpperCase() || "?"}
-                  </span>
-                )}
+            <div className="player-hero" data-number={player.jerseyNumber ?? ""}>
+              <div className="player-card-column">
+                <PlayerCard
+                  jerseyNumber={player.jerseyNumber}
+                  name={player.name}
+                  photo={player.photo}
+                  position={player.position}
+                  preferredFoot={player.preferredFoot}
+                  previousScores={coachEvaluations[1]?.scores ?? null}
+                  scores={coachEvaluations[0]?.scores ?? null}
+                />
                 <div className="player-photo-actions">
                   <button disabled={photoBusy} onClick={() => fileInputRef.current?.click()} type="button">
                     {photoBusy ? "…" : player.photo ? "Changer la photo" : "Ajouter une photo"}
@@ -388,7 +432,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
 
               <div className="player-identity-body">
                 <div className="player-block-head">
-                  <h2>Coordonnées</h2>
+                  <h2>Profil et coordonnées</h2>
                   {!editing && (
                     <button className="player-edit" onClick={startEditing} type="button">
                       Modifier
@@ -430,6 +474,51 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                         value={form.email}
                       />
                     </label>
+                    <label>
+                      <span>Poste</span>
+                      <select onChange={(event) => setForm({ ...form, position: event.target.value })} value={form.position}>
+                        <option value="">Non renseigné</option>
+                        {playerPositions.map((position) => (
+                          <option key={position}>{position}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Numéro</span>
+                      <input
+                        inputMode="numeric"
+                        maxLength={2}
+                        onChange={(event) => setForm({ ...form, jerseyNumber: event.target.value })}
+                        value={form.jerseyNumber}
+                      />
+                    </label>
+                    <label>
+                      <span>Pied fort</span>
+                      <select onChange={(event) => setForm({ ...form, preferredFoot: event.target.value })} value={form.preferredFoot}>
+                        <option value="">Non renseigné</option>
+                        {playerFeet.map((foot) => (
+                          <option key={foot}>{foot}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="player-wide">
+                      <span>Points forts</span>
+                      <textarea
+                        maxLength={1000}
+                        onChange={(event) => setForm({ ...form, strengths: event.target.value })}
+                        rows={3}
+                        value={form.strengths}
+                      />
+                    </label>
+                    <label className="player-wide">
+                      <span>Axes de travail</span>
+                      <textarea
+                        maxLength={1000}
+                        onChange={(event) => setForm({ ...form, workAreas: event.target.value })}
+                        rows={3}
+                        value={form.workAreas}
+                      />
+                    </label>
                     {detailsError && (
                       <p className="player-error" role="alert">
                         {detailsError}
@@ -447,6 +536,18 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                 ) : (
                   <dl className="player-grid">
                     <div>
+                      <dt>Poste</dt>
+                      <dd>{player.position ?? "—"}</dd>
+                    </div>
+                    <div>
+                      <dt>Numéro</dt>
+                      <dd>{player.jerseyNumber ?? "—"}</dd>
+                    </div>
+                    <div>
+                      <dt>Pied fort</dt>
+                      <dd>{player.preferredFoot ?? "—"}</dd>
+                    </div>
+                    <div>
                       <dt>Date de naissance</dt>
                       <dd>{formatBirthDate(player.birthDate)}</dd>
                     </div>
@@ -457,6 +558,14 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                     <div>
                       <dt>E-mail</dt>
                       <dd>{player.email ?? "—"}</dd>
+                    </div>
+                    <div className="player-wide">
+                      <dt>Points forts</dt>
+                      <dd>{player.strengths ?? "—"}</dd>
+                    </div>
+                    <div className="player-wide">
+                      <dt>Axes de travail</dt>
+                      <dd>{player.workAreas ?? "—"}</dd>
                     </div>
                   </dl>
                 )}
@@ -472,7 +581,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
               <div className="player-block-head">
                 <h2>Évaluation</h2>
                 <span className="player-count">
-                  {evaluations.filter((evaluation) => evaluation.source !== "player").length}/{playerEvaluationMaxPerSeason}
+                  {coachEvaluations.length}/{playerEvaluationMaxPerSeason}
                 </span>
               </div>
 
