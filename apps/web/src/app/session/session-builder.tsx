@@ -5,9 +5,13 @@ import {
   canReplaceSessionActivity,
   canValidateSession,
   getSessionDuration,
+  isPersonalActivityId,
   moveSessionBlock,
+  personalExerciseToActivity,
+  replaceBlockActivity,
   replaceSessionActivity,
   type AttendanceEntry,
+  type PersonalExercise,
   type TrainingSession,
 } from "@evolyfoot/domain";
 import Link from "next/link";
@@ -37,6 +41,7 @@ interface SessionBuilderProps {
   meetingAt: string | null;
   // Raison de chaque bloc, affichée pour une séance tout juste générée.
   blockReasons?: ReadonlyArray<{ blockId: string; reason: string }>;
+  personalExercises?: readonly PersonalExercise[];
   // "create" : nouvelle séance générée pour un créneau, on saisit la présence. "edit" : on ré-ouvre
   // une séance déjà enregistrée pour ajuster son déroulé -- la présence, saisie à la préparation,
   // n'est pas redemandée (et n'est pas réécrite) ici.
@@ -63,6 +68,7 @@ export function SessionBuilder({
   slot,
   meetingAt,
   blockReasons = [],
+  personalExercises = [],
   mode = "create",
 }: SessionBuilderProps) {
   const capturesAttendance = mode === "create" && roster.length > 0;
@@ -178,8 +184,15 @@ export function SessionBuilder({
               </div>
               <div className="session-block-body">
                 <div className="session-block-diagram">
-                  <TacticalDiagramView diagram={block.activity.diagram} />
-                  <Link className="inline-cta" href={`/bibliotheque/${block.activity.id}`}>Voir le détail →</Link>
+                  {block.activity.photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img alt={`Schéma de ${block.activity.title}`} className="personal-exercise-photo" src={block.activity.photo} />
+                  ) : (
+                    <TacticalDiagramView diagram={block.activity.diagram} />
+                  )}
+                  {!isPersonalActivityId(block.activity.id) && (
+                    <Link className="inline-cta" href={`/bibliotheque/${block.activity.id}`}>Voir le détail →</Link>
+                  )}
                 </div>
                 <div className="session-block-text">
                   <p>{block.activity.objective}</p>
@@ -197,6 +210,27 @@ export function SessionBuilder({
                 <button aria-label="Monter" disabled={index === 0} onClick={() => editSession(moveSessionBlock(session, index, index - 1))} type="button">Monter</button>
                 <button aria-label="Descendre" disabled={index === session.blocks.length - 1} onClick={() => editSession(moveSessionBlock(session, index, index + 1))} type="button">Descendre</button>
                 <button aria-describedby={!canReplace ? replacementHintId : undefined} aria-label="Remplacer la situation" disabled={!canReplace} onClick={() => editSession(replaceSessionActivity(session, index))} type="button">Remplacer</button>
+                {personalExercises.some((exercise) => exercise.kind === block.activity.kind) && (
+                  <select
+                    aria-label="Utiliser un de mes exercices"
+                    onChange={(event) => {
+                      const exercise = personalExercises.find((candidate) => candidate.id === event.target.value);
+                      if (exercise) {
+                        editSession(replaceBlockActivity(session, index, personalExerciseToActivity(exercise)));
+                      }
+                    }}
+                    value=""
+                  >
+                    <option value="">Mes exercices…</option>
+                    {personalExercises
+                      .filter((exercise) => exercise.kind === block.activity.kind)
+                      .map((exercise) => (
+                        <option key={exercise.id} value={exercise.id}>
+                          {exercise.title}
+                        </option>
+                      ))}
+                  </select>
+                )}
                 {!canReplace && <span className="visually-hidden" id={replacementHintId}>Aucune autre situation compatible pour ce bloc.</span>}
               </div>
             </article>

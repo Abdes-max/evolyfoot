@@ -5,6 +5,7 @@ import type {
   MatchStatus,
   MatchVenue,
   ObservationDraft,
+  PersonalExercise,
   PlayerReference,
   SavedTrainingSession,
   TeamProfile,
@@ -59,6 +60,7 @@ export interface AuthContextValue {
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
   saveTrainingSession(session: TrainingSession, slotInput: SessionSlotInput): Promise<AuthResult>;
   listSessions(): Promise<readonly SavedTrainingSession[]>;
+  listPersonalExercises(): Promise<readonly PersonalExercise[]>;
   saveObservation(draft: ObservationDraft, matchId?: string): Promise<AuthResult>;
   addPlayer(name: string): Promise<AuthResult>;
   renamePlayer(id: string, name: string): Promise<AuthResult>;
@@ -291,6 +293,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return body.sessions ?? [];
   }, [sessionToken]);
 
+  const listPersonalExercises = useCallback(async (): Promise<readonly PersonalExercise[]> => {
+    if (!sessionToken) {
+      return [];
+    }
+    const response = await apiFetch("/api/personal-exercises", { sessionToken }).catch(() => null);
+    if (!response?.ok) {
+      return [];
+    }
+    const body = await response.json().catch(() => ({ exercises: [] }));
+    return body.exercises ?? [];
+  }, [sessionToken]);
+
   const saveObservation = useCallback(
     async (draft: ObservationDraft, matchId?: string): Promise<AuthResult> => {
       if (!sessionToken) {
@@ -465,6 +479,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveDiagnostic,
       saveTrainingSession,
       listSessions,
+      listPersonalExercises,
       saveObservation,
       addPlayer,
       renamePlayer,
@@ -489,6 +504,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveDiagnostic,
       saveTrainingSession,
       listSessions,
+      listPersonalExercises,
       saveObservation,
       addPlayer,
       renamePlayer,

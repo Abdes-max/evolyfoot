@@ -1,4 +1,5 @@
 import { Prisma } from "./generated/prisma/client";
+import type { PersonalExercise, PersonalExerciseInput } from "@evolyfoot/domain";
 import type { PrismaClient } from "./generated/prisma/client";
 import {
   DiagnosticNotFoundError,
@@ -66,6 +67,7 @@ import type {
   PlateauRepository,
   PlayerDetailsPatch,
   PlayerEvaluationRepository,
+  PersonalExerciseRepository,
   PlayerEvaluationSource,
   PlayerRepository,
   PlayerInviteRecord,
@@ -805,6 +807,48 @@ export class PrismaContactMessageRepository implements ContactMessageRepository 
       message: record.message,
       createdAt: record.createdAt,
     }));
+  }
+}
+
+function toPersonalExercise(record: {
+  id: string;
+  kind: string;
+  theme: string;
+  title: string;
+  objective: string;
+  organization: string;
+  instruction: string;
+  observable: string;
+  photo: string | null;
+}): PersonalExercise {
+  return {
+    id: record.id,
+    // Valeurs contrôlées par validatePersonalExercise avant toute écriture.
+    kind: record.kind as PersonalExercise["kind"],
+    theme: record.theme as PersonalExercise["theme"],
+    title: record.title,
+    objective: record.objective,
+    organization: record.organization,
+    instruction: record.instruction,
+    observable: record.observable,
+    photo: record.photo,
+  };
+}
+
+export class PrismaPersonalExerciseRepository implements PersonalExerciseRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async listByEducator(educatorId: string): Promise<PersonalExercise[]> {
+    const records = await this.prisma.personalExerciseRecord.findMany({ where: { educatorId }, orderBy: { createdAt: "desc" } });
+    return records.map(toPersonalExercise);
+  }
+
+  async create(educatorId: string, input: PersonalExerciseInput): Promise<PersonalExercise> {
+    return toPersonalExercise(await this.prisma.personalExerciseRecord.create({ data: { educatorId, ...input } }));
+  }
+
+  async remove(id: string, educatorId: string): Promise<void> {
+    await this.prisma.personalExerciseRecord.deleteMany({ where: { id, educatorId } });
   }
 }
 

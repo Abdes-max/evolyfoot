@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { RadarChart } from "../../charts";
 import { colorForEvaluation } from "../../evaluation-colors";
+import { resizeImageToDataUrl } from "../../image-resize";
 import { MessagingThread } from "../../messaging-thread";
 
 interface Player {
@@ -55,34 +56,7 @@ function formatBirthDate(value: string | null): string {
     : parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
-// Redimensionne l'image choisie à 320px de côté max et la renvoie en data URL JPEG compacte --
-// le stockage se fait tel quel en base (pas de service d'objets), inutile d'y mettre l'original.
-function resizeToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("lecture impossible"));
-    reader.onload = () => {
-      const image = new Image();
-      image.onerror = () => reject(new Error("image invalide"));
-      image.onload = () => {
-        const maxSide = 320;
-        const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(image.width * scale);
-        canvas.height = Math.round(image.height * scale);
-        const context = canvas.getContext("2d");
-        if (!context) {
-          reject(new Error("canvas indisponible"));
-          return;
-        }
-        context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
-      };
-      image.src = String(reader.result);
-    };
-    reader.readAsDataURL(file);
-  });
-}
+const playerPhotoMaxSide = 320;
 
 type DetailForm = { name: string; birthDate: string; phone: string; email: string };
 
@@ -217,7 +191,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
     setPhotoBusy(true);
     setDetailsError("");
     try {
-      const dataUrl = await resizeToDataUrl(file);
+      const dataUrl = await resizeImageToDataUrl(file, playerPhotoMaxSide);
       await patchPlayer({ photo: dataUrl });
     } catch {
       setDetailsError("Impossible de traiter cette image.");

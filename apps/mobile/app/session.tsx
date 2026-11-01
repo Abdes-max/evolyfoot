@@ -50,7 +50,7 @@ function shiftMeeting(iso: string, minutes: number): string {
 }
 
 export default function SessionScreen() {
-  const { team, diagnosticScores, roster, saveTrainingSession, listSessions } = useAuth();
+  const { team, diagnosticScores, roster, saveTrainingSession, listSessions, listPersonalExercises } = useAuth();
   const params = useLocalSearchParams<{ week?: string; slot?: string }>();
   const weekNumber = clampSearchNumber(params.week, 1, 4);
   const slot = clampSearchNumber(params.slot, 0, 4);
@@ -74,12 +74,12 @@ export default function SessionScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    listSessions().then((sessions) => {
+    Promise.all([listSessions(), listPersonalExercises()]).then(([sessions, personalExercises]) => {
       if (cancelled) {
         return;
       }
       const saved = sessions.find((candidate) => candidate.weekNumber === weekNumber && candidate.slot === slot);
-      const restored = saved ? rehydrateTrainingSession(saved) : null;
+      const restored = saved ? rehydrateTrainingSession(saved, personalExercises) : null;
       if (saved && restored) {
         setSession(restored);
         setAlreadySaved(true);
@@ -98,7 +98,7 @@ export default function SessionScreen() {
     return () => {
       cancelled = true;
     };
-  }, [listSessions, slot, team, weekNumber]);
+  }, [listPersonalExercises, listSessions, slot, team, weekNumber]);
 
   function proposeAnotherSession() {
     const nextVariant = variant + 1;

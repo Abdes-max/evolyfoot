@@ -4,6 +4,7 @@ import type { TrainingSession } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { cycleWeekLabel } from "../cycle";
+import type { PersonalExercise } from "@evolyfoot/domain";
 import { rehydrateTrainingSession, type SavedTrainingSession } from "../rehydrate";
 import { SessionBuilder } from "../session-builder";
 
@@ -25,6 +26,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
   // Passé tel quel à <SessionBuilder>, qui porte désormais le seul input du rendez-vous (voir son
   // commentaire) -- ce fichier ne garde que lieu/description dans son propre formulaire "Détails".
   const [recordMeetingAt, setRecordMeetingAt] = useState<string | null>(null);
+  const [personalExercises, setPersonalExercises] = useState<readonly PersonalExercise[]>([]);
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [savingDetails, setSavingDetails] = useState(false);
@@ -59,6 +61,12 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
           setState({ status: "not-found" });
           return;
         }
+        const personalBody = await fetch("/api/personal-exercises")
+          .then((response) => response.json())
+          .catch(() => ({ exercises: [] }));
+        if (cancelled) {
+          return;
+        }
         const recordBody = await recordResponse.json().catch(() => ({ session: null }));
         const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
         const record: SavedTrainingSession | null = recordBody.session ?? null;
@@ -67,12 +75,13 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
           return;
         }
 
-        const rehydrated = rehydrateTrainingSession(record);
+        const rehydrated = rehydrateTrainingSession(record, personalBody.exercises ?? []);
         if (!rehydrated) {
           setState({ status: "stale" });
           return;
         }
         setRoster(rosterBody.players ?? []);
+        setPersonalExercises(personalBody.exercises ?? []);
         setRecordMeetingAt(record.meetingAt ?? null);
         setLocation(record.location ?? "");
         setDescription(record.description ?? "");
@@ -184,6 +193,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
             meetingAt={recordMeetingAt}
             mode="edit"
             onChange={(session) => setState({ ...state, session })}
+            personalExercises={personalExercises}
             roster={roster}
             session={state.session}
             slot={state.slot}

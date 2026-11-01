@@ -24,6 +24,7 @@ export {
   PrismaContactMessageRepository,
   PrismaEmailVerificationRepository,
   PrismaPlateauRepository,
+  PrismaPersonalExerciseRepository,
   PrismaPlayerEvaluationRepository,
   PrismaPlayerInviteRepository,
   PrismaPlayerRepository,
@@ -74,6 +75,7 @@ export type { CreatedInvite, InvitePreview } from "./player-invite-service";
 export type { PlayerDetailsInput } from "./roster-service";
 export type { TeamStats } from "./stats-service";
 export type { TrainingSessionInput } from "./training-session-service";
+export { PersonalExerciseService } from "./personal-exercise-service";
 export type {
   AccountRole,
   DiagnosticRepository,

@@ -80,3 +80,18 @@
      colonne à gauche, mais il faut une marge basse pour ne pas passer dessous. */
   .bibliotheque-shell, .exercise-shell { padding-left: 0; padding-bottom: 90px; }
 }
+
+.personal-exercises { width: min(1280px, calc(100% - 50px)); margin: 22px auto 0; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.personal-exercises-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.personal-exercises-head h2 { margin: 0 0 4px; font-size: 15px; }
+.personal-exercises-head p { margin: 0; font-size: 12.5px; color: var(--muted); }
+.personal-exercise-form { display: grid; gap: 10px; margin-top: 16px; }
+.personal-exercise-form label { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.personal-exercise-form input, .personal-exercise-form textarea, .personal-exercise-form select { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--ink); font: inherit; font-weight: 500; }
+.personal-exercise-form > button:not(.continue-button) { justify-self: start; min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--ink); font-size: 12px; font-weight: 800; cursor: pointer; }
+.personal-exercise-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.personal-exercise-photo { display: block; max-width: 100%; max-height: 260px; border-radius: 10px; }
+.personal-exercise-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+.personal-exercise-list li { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); font-size: 12px; }
+.personal-exercise-list span, .personal-exercise-list p { margin: 0; color: var(--muted); }
+.personal-exercise-list button { justify-self: start; border: 0; background: none; color: var(--accent); font-size: 11.5px; font-weight: 800; cursor: pointer; padding: 4px 0; }
