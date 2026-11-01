@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import { DonutChart, RadarChart } from "../../charts";
 import { colorForEvaluation } from "../../evaluation-colors";
+import { SelfEvaluation } from "./self-evaluation";
 import { PlayerSpaceHeader } from "../player-space-header";
 import { usePlayerDashboard } from "./use-player-dashboard";
 
@@ -35,12 +36,14 @@ export function PlayerSpaceView() {
   // classement est connu plutôt qu'en useEffect (react-hooks/set-state-in-effect, voir
   // auth-gate.tsx) : un simple indicateur `seededCompare` évite de réinitialiser la sélection à
   // chaque re-rendu une fois que l'utilisateur a lui-même coché/décoché une case.
-  if (!seededCompare && dashboard?.evaluations[0]) {
-    setComparedEvaluationIds(new Set([dashboard.evaluations[0].id]));
+  const coachEvaluations = dashboard?.evaluations.filter((evaluation) => evaluation.source !== "player") ?? [];
+  const selfEvaluations = dashboard?.evaluations.filter((evaluation) => evaluation.source === "player") ?? [];
+  const latest = coachEvaluations[0];
+
+  if (!seededCompare && latest) {
+    setComparedEvaluationIds(new Set([latest.id]));
     setSeededCompare(true);
   }
-
-  const latest = dashboard?.evaluations[0];
 
   function toggleCompare(evaluationId: string) {
     setComparedEvaluationIds((current) => {
@@ -83,6 +86,8 @@ export function PlayerSpaceView() {
               </div>
             </section>
 
+            <SelfEvaluation coachEvaluation={latest} initialSelfEvaluation={selfEvaluations[0]} />
+
             <section className="player-space-block">
               <h2>Ma progression</h2>
               {latest ? (
@@ -94,12 +99,12 @@ export function PlayerSpaceView() {
                     size={300}
                     series={
                       comparedEvaluationIds.size > 0
-                        ? dashboard.evaluations
+                        ? coachEvaluations
                             .filter((evaluation) => comparedEvaluationIds.has(evaluation.id))
                             .map((evaluation) => ({
                               key: evaluation.id,
                               label: formatDate(evaluation.createdAt),
-                              color: colorForEvaluation(evaluation.id, dashboard.evaluations),
+                              color: colorForEvaluation(evaluation.id, coachEvaluations),
                               scores: evaluation.scores,
                             }))
                         : undefined
@@ -110,9 +115,9 @@ export function PlayerSpaceView() {
                     {comparedEvaluationIds.size === 0 && (
                       <p className="player-space-caption">Dernière évaluation · {formatDate(latest.createdAt)}</p>
                     )}
-                    {dashboard.evaluations.length > 1 && (
+                    {coachEvaluations.length > 1 && (
                       <ul className="player-space-history">
-                        {dashboard.evaluations.map((evaluation) => {
+                        {coachEvaluations.map((evaluation) => {
                           const total = playerEvaluationAspects.reduce((sum, aspect) => sum + evaluation.scores[aspect], 0);
                           const average = Math.round((total / playerEvaluationAspects.length) * 10) / 10;
                           const compared = comparedEvaluationIds.has(evaluation.id);
@@ -123,7 +128,7 @@ export function PlayerSpaceView() {
                                 <span
                                   aria-hidden="true"
                                   className="radar-chart-legend-dot"
-                                  style={{ background: compared ? colorForEvaluation(evaluation.id, dashboard.evaluations) : "transparent" }}
+                                  style={{ background: compared ? colorForEvaluation(evaluation.id, coachEvaluations) : "transparent" }}
                                 />
                               </label>
                               {formatDate(evaluation.createdAt)} · moyenne {average}/{playerEvaluationMaxScore}

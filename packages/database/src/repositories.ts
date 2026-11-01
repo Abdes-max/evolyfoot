@@ -455,14 +455,22 @@ export interface PersistedPlayerEvaluation {
   educatorId: string;
   playerId: string;
   scores: PlayerEvaluationScores;
+  source: PlayerEvaluationSource;
   createdAt: Date;
 }
+
+export type PlayerEvaluationSource = "coach" | "player";
 
 export interface PlayerEvaluationRepository {
   listByEducator(educatorId: string): Promise<PersistedPlayerEvaluation[]>;
   listByPlayer(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation[]>;
-  countByPlayer(playerId: string, educatorId: string): Promise<number>;
-  create(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation>;
+  countByPlayer(playerId: string, educatorId: string, source?: PlayerEvaluationSource): Promise<number>;
+  create(
+    educatorId: string,
+    playerId: string,
+    scores: PlayerEvaluationScores,
+    source?: PlayerEvaluationSource,
+  ): Promise<PersistedPlayerEvaluation>;
   // `undefined` = champ non touché ; jamais retiré une fois posé, mêmes conventions que
   // MatchRepository.update ci-dessus. `createdAt` sert de date d'évaluation modifiable (voir
   // PlayerEvaluationService.update) -- pas une simple trace d'audit dans ce contexte.

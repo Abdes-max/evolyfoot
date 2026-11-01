@@ -35,6 +35,19 @@ describe("PostgreSQL player evaluation persistence", () => {
   afterEach(removeTestEducators);
   afterAll(() => database.disconnect());
 
+  it("separates self-evaluations from the coach's quota and protects them from edits", async () => {
+    const educator = await createEducator("self");
+    const player = await playerRepository.create(educator.id, "Lina");
+    const scores = createEmptyPlayerEvaluationScores();
+
+    const self = await playerEvaluationRepository.create(educator.id, player.id, scores, "player");
+
+    expect(self.source).toBe("player");
+    expect(await playerEvaluationRepository.countByPlayer(player.id, educator.id)).toBe(0);
+    expect(await playerEvaluationRepository.countByPlayer(player.id, educator.id, "player")).toBe(1);
+    await expect(service.update(educator.id, self.id, { scores })).rejects.toBeInstanceOf(PlayerEvaluationNotFoundError);
+  });
+
   it("keeps a dated history of several evaluations per player, newest first", async () => {
     const educator = await createEducator("history");
     const player = await playerRepository.create(educator.id, "Kylian");

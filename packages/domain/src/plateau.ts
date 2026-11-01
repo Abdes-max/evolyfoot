@@ -1,4 +1,4 @@
-// Un plateau (rassemblement U6–U11 : plusieurs équipes, matchs courts en rotation) est une fiche
+// Un plateau (rassemblement de jeunes joueurs : plusieurs équipes, matchs courts en rotation) est une fiche
 // aussi simple qu'un tournoi -- nom, date, bilan en quelques mots -- comptée à part des matchs et
 // des tournois dans les statistiques. Même forme que TournamentInput, dupliquée volontairement
 // pour que les deux concepts restent indépendants côté domaine.

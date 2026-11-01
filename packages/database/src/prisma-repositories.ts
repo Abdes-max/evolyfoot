@@ -66,6 +66,7 @@ import type {
   PlateauRepository,
   PlayerDetailsPatch,
   PlayerEvaluationRepository,
+  PlayerEvaluationSource,
   PlayerRepository,
   PlayerInviteRecord,
   PlayerInviteRepository,
@@ -826,14 +827,19 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
     return records.map(toPersistedPlayerEvaluation);
   }
 
-  async countByPlayer(playerId: string, educatorId: string): Promise<number> {
-    return this.prisma.playerEvaluationRecord.count({ where: { playerId, educatorId } });
+  async countByPlayer(playerId: string, educatorId: string, source: PlayerEvaluationSource = "coach"): Promise<number> {
+    return this.prisma.playerEvaluationRecord.count({ where: { playerId, educatorId, source } });
   }
 
-  async create(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation> {
+  async create(
+    educatorId: string,
+    playerId: string,
+    scores: PlayerEvaluationScores,
+    source: PlayerEvaluationSource = "coach",
+  ): Promise<PersistedPlayerEvaluation> {
     try {
       const record = await this.prisma.playerEvaluationRecord.create({
-        data: { educatorId, playerId, scores: scores as unknown as Prisma.InputJsonValue },
+        data: { educatorId, playerId, scores: scores as unknown as Prisma.InputJsonValue, source },
       });
       return toPersistedPlayerEvaluation(record);
     } catch (error) {
@@ -849,8 +855,9 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
     educatorId: string,
     input: { scores?: PlayerEvaluationScores; createdAt?: Date },
   ): Promise<PersistedPlayerEvaluation> {
+    // L'éducateur ne réécrit jamais ce que le joueur a déclaré de lui-même.
     const { count } = await this.prisma.playerEvaluationRecord.updateMany({
-      where: { id, educatorId },
+      where: { id, educatorId, source: "coach" },
       data: {
         ...(input.scores !== undefined ? { scores: input.scores as unknown as Prisma.InputJsonValue } : {}),
         ...(input.createdAt !== undefined ? { createdAt: input.createdAt } : {}),
