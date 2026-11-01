@@ -1,6 +1,6 @@
 import type { TrainingActivity } from "@evolyfoot/domain";
 import type { ReactNode } from "react";
-import { TacticalDiagramView } from "./tactical-diagram";
+import { TacticalPlayer } from "./tactical-player";
 
 interface ExerciseSheetProps {
   activity: TrainingActivity;
@@ -37,7 +37,7 @@ export function ExerciseSheet({ activity, durationMinutes, playerCount, children
           // eslint-disable-next-line @next/next/no-img-element
           <img alt={`Schéma de ${activity.title}`} className="sheet-photo" src={activity.photo} />
         ) : (
-          <TacticalDiagramView diagram={activity.diagram} live />
+          <TacticalPlayer diagram={activity.diagram} seed={activity.id} />
         )}
         {activity.equipment.length > 0 && (
           <p className="sheet-equipment">

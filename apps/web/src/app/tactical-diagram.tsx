@@ -6,17 +6,15 @@ import { useId } from "react";
 interface TacticalDiagramViewProps {
   diagram: TacticalDiagram;
   caption?: string;
-  // Fiche d'exercice : flèches en mouvement et ballon qui suit les trajets.
-  live?: boolean;
 }
 
 const tokenRadius: Record<string, number> = { attacker: 13, defender: 13, goalkeeper: 12 };
 
-export function TacticalDiagramView({ diagram, caption, live = false }: TacticalDiagramViewProps) {
+export function TacticalDiagramView({ diagram, caption }: TacticalDiagramViewProps) {
   const arrowheadId = `tactical-diagram-arrowhead-${useId()}`;
 
   return (
-    <div className={live ? "tactical-diagram live" : "tactical-diagram"}>
+    <div className="tactical-diagram">
       {caption && <div className="tactical-diagram-caption">{caption}</div>}
       <svg
         aria-label={caption ? `Schéma tactique : ${caption}` : "Schéma tactique"}
@@ -49,15 +47,6 @@ export function TacticalDiagramView({ diagram, caption, live = false }: Tactical
             </text>
           </g>
         ))}
-        {live && diagram.arrows.length > 0 && (
-          <circle className="tactical-diagram-ball" r="5">
-            <animateMotion
-              dur={`${diagram.arrows.length * 2}s`}
-              path={diagram.arrows.map((arrow) => `M${arrow.x1} ${arrow.y1} L${arrow.x2} ${arrow.y2}`).join(" ")}
-              repeatCount="indefinite"
-            />
-          </circle>
-        )}
       </svg>
     </div>
   );

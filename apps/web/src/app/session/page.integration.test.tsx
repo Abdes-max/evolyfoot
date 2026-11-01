@@ -86,6 +86,10 @@ describe("session builder", () => {
     expect(screen.getByText("Jeu 5 contre 5 avec deux zones de marque.")).toBeVisible();
     expect(screen.getByRole("link", { name: /voir dans la bibliothèque/i })).toHaveAttribute("href", expect.stringContaining("/bibliotheque/main-"));
 
+    fireEvent.click(screen.getByRole("button", { name: "Étape suivante" }));
+    expect(screen.getByRole("button", { name: "Lire l’animation" })).toBeVisible();
+    expect(screen.getByRole("img", { name: /étape 2/i })).toBeVisible();
+
     fireEvent.click(screen.getByRole("button", { name: "Exercice suivant" }));
     expect(screen.getByText("Exercice 4 sur 4")).toBeVisible();
 
