@@ -325,6 +325,8 @@ export function toEducatorProfile(educator: Educator): EducatorProfile {
     phone: educator.phone,
     diploma: educator.diploma,
     seasonFormat: educator.seasonFormat,
+    playStyle: educator.playStyle,
+    preferredFormation: educator.preferredFormation,
     createdAt: educator.createdAt,
   });
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { allFormationIds, playStyles } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -14,10 +15,12 @@ interface Profile {
   phone: string | null;
   diploma: string | null;
   seasonFormat: string | null;
+  playStyle: string | null;
+  preferredFormation: string | null;
   createdAt: string;
 }
 
-type EditableKey = "displayName" | "birthDate" | "club" | "country" | "address" | "phone" | "diploma" | "seasonFormat";
+type EditableKey = "displayName" | "birthDate" | "club" | "country" | "address" | "phone" | "diploma" | "seasonFormat" | "playStyle" | "preferredFormation";
 
 // Purement déclaratif côté client (le serveur accepte toute chaîne courte) : sert juste à proposer
 // des valeurs cohérentes.
@@ -33,6 +36,8 @@ const fields: ReadonlyArray<{ key: EditableKey; label: string; type: "text" | "d
   { key: "phone", label: "Numéro de téléphone", type: "tel" },
   { key: "diploma", label: "Diplôme", type: "text", options: diplomaOptions },
   { key: "seasonFormat", label: "Format de saison", type: "text", options: seasonFormatOptions },
+  { key: "playStyle", label: "Style de jeu", type: "text", options: [...playStyles] },
+  { key: "preferredFormation", label: "Formation préférée", type: "text", options: [...allFormationIds] },
 ];
 
 function initials(displayName: string): string {
@@ -69,6 +74,8 @@ function toForm(profile: Profile): FormState {
     phone: profile.phone ?? "",
     diploma: profile.diploma ?? "",
     seasonFormat: profile.seasonFormat ?? "",
+    playStyle: profile.playStyle ?? "",
+    preferredFormation: profile.preferredFormation ?? "",
   };
 }
 
@@ -359,6 +366,14 @@ export function ProfilView() {
                   <div>
                     <dt>Format de saison</dt>
                     <dd>{seasonLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>Style de jeu</dt>
+                    <dd className={profile.playStyle ? "" : "profil-todo"}>{profile.playStyle ?? "À définir"}</dd>
+                  </div>
+                  <div>
+                    <dt>Formation préférée</dt>
+                    <dd className={profile.preferredFormation ? "" : "profil-todo"}>{profile.preferredFormation ?? "À définir"}</dd>
                   </div>
                 </dl>
               )}

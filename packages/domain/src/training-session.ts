@@ -1,3 +1,4 @@
+import { playStyleNote } from "./coach-style";
 import type { DevelopmentWeek } from "./development-plan";
 import type { AgeGroup, DevelopmentTheme } from "./index";
 import { extraActivitySets } from "./training-activities-extra";
@@ -244,6 +245,7 @@ export function generateTrainingSession(
 
 export interface SessionExplanation {
   readonly summary: string;
+  readonly styleNote: string | null;
   readonly blocks: ReadonlyArray<{ readonly blockId: string; readonly reason: string }>;
 }
 
@@ -269,8 +271,9 @@ function groupHint(kind: TrainingBlockKind, playerCount: number): string {
 }
 
 // Explication pure, recalculée à l'affichage : rien de plus à enregistrer avec la séance.
-export function explainTrainingSession(session: TrainingSession, week: DevelopmentWeek): SessionExplanation {
+export function explainTrainingSession(session: TrainingSession, week: DevelopmentWeek, playStyle?: string | null): SessionExplanation {
   return {
+    styleNote: playStyleNote(playStyle),
     summary: `Semaine ${week.week}, phase « ${week.phase} » : cette séance ${phaseReasons[week.phase]}. Le thème « ${session.theme} » vient de ton diagnostic. Repère de la semaine : ${week.observable}`,
     blocks: session.blocks.map((block) => ({
       blockId: block.id,

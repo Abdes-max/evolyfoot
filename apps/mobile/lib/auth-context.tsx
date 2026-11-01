@@ -69,6 +69,7 @@ export interface AuthContextValue {
   saveTrainingSession(session: TrainingSession, slotInput: SessionSlotInput): Promise<AuthResult>;
   listSessions(): Promise<readonly SavedTrainingSession[]>;
   listPersonalExercises(): Promise<readonly PersonalExercise[]>;
+  getPlayStyle(): Promise<string | null>;
   saveObservation(draft: ObservationDraft, matchId?: string): Promise<AuthResult>;
   addPlayer(firstName: string, lastName: string): Promise<AuthResult>;
   renamePlayer(id: string, firstName: string, lastName: string): Promise<AuthResult>;
@@ -307,6 +308,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return body.sessions ?? [];
   }, [sessionToken]);
 
+  const getPlayStyle = useCallback(async (): Promise<string | null> => {
+    const response = await apiFetch("/api/profile", { sessionToken }).catch(() => null);
+    const body = await response?.json().catch(() => null);
+    return body?.profile?.playStyle ?? null;
+  }, [sessionToken]);
+
   const listPersonalExercises = useCallback(async (): Promise<readonly PersonalExercise[]> => {
     if (!sessionToken) {
       return [];
@@ -498,6 +505,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveTrainingSession,
       listSessions,
       listPersonalExercises,
+      getPlayStyle,
       saveObservation,
       addPlayer,
       renamePlayer,

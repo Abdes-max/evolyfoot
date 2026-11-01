@@ -123,6 +123,8 @@ export {
   setCaptain,
   validateMatchPlan,
 } from "./match";
+export { allFormationIds, playStyleNote, playStyles } from "./coach-style";
+export type { PlayStyle } from "./coach-style";
 export { matchResultMaxGoals, playerSeasonTotals, validateMatchResult } from "./match-result";
 export type { MatchPlayerStat, MatchResult, PlayerSeasonTotals } from "./match-result";
 export type {

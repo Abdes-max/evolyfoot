@@ -1,3 +1,4 @@
+import { allFormationIds, playStyles } from "@evolyfoot/domain";
 import { EducatorNotFoundError, InvalidCredentialsError, ValidationError } from "./errors";
 import { hashPassword, validatePassword, verifyPassword } from "./password";
 import type { EducatorProfile, EducatorProfilePatch, EducatorProfileRepository } from "./repositories";
@@ -61,6 +62,22 @@ function buildPatch(input: EducatorProfileInput): EducatorProfilePatch {
     }
   }
 
+  const playStyle = normalizeOptional(input.playStyle);
+  if (playStyle !== undefined) {
+    if (playStyle !== null && !(playStyles as readonly string[]).includes(playStyle)) {
+      throw new ValidationError(`Choisis un style parmi : ${playStyles.join(", ")}.`);
+    }
+    patch.playStyle = playStyle;
+  }
+
+  const preferredFormation = normalizeOptional(input.preferredFormation);
+  if (preferredFormation !== undefined) {
+    if (preferredFormation !== null && !allFormationIds.includes(preferredFormation)) {
+      throw new ValidationError("Cette formation n’existe pas.");
+    }
+    patch.preferredFormation = preferredFormation;
+  }
+
   return patch;
 }
 
@@ -73,6 +90,8 @@ export interface EducatorProfileInput {
   phone?: string | null;
   diploma?: string | null;
   seasonFormat?: string | null;
+  playStyle?: string | null;
+  preferredFormation?: string | null;
 }
 
 export class EducatorProfileService {

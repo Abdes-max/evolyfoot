@@ -47,6 +47,7 @@ interface SessionViewProps {
 }
 
 export function SessionView({ weekNumber, slot }: SessionViewProps) {
+  const [playStyle, setPlayStyle] = useState<string | null>(null);
   const [session, setSession] = useState<TrainingSession>(() =>
     buildSessionForWeek(demoScores, demoTeam.ageGroup, demoTeam.playerCount, weekNumber, slot),
   );
@@ -56,7 +57,7 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
   const [meetingAt, setMeetingAt] = useState<string | null>(null);
   const [variant, setVariant] = useState(0);
   const [personalExercises, setPersonalExercises] = useState<readonly PersonalExercise[]>([]);
-  const explanation = explainTrainingSession(session, planWeek(scores, weekNumber));
+  const explanation = explainTrainingSession(session, planWeek(scores, weekNumber), playStyle);
 
   function proposeAnotherSession() {
     const nextVariant = variant + 1;
@@ -80,18 +81,20 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
           return;
         }
 
-        const [teamResponse, diagnosticResponse, rosterResponse, sessionsResponse, personalResponse] = await Promise.all([
+        const [teamResponse, diagnosticResponse, rosterResponse, sessionsResponse, personalResponse, profileResponse] = await Promise.all([
           fetch("/api/team"),
           fetch("/api/diagnostic"),
           fetch("/api/roster"),
           fetch("/api/sessions"),
           fetch("/api/personal-exercises"),
+          fetch("/api/profile"),
         ]);
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
         const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
         const sessionsBody = await sessionsResponse.json().catch(() => ({ sessions: [] }));
         const personalBody = await personalResponse.json().catch(() => ({ exercises: [] }));
+        const profileBody = await profileResponse.json().catch(() => ({ profile: null }));
         if (cancelled) {
           return;
         }
@@ -105,6 +108,7 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
         setSession(buildSessionForWeek(savedScores, ageGroup, playerCount, weekNumber, slot));
         setRoster(rosterBody.players ?? []);
         setPersonalExercises(personalBody.exercises ?? []);
+        setPlayStyle(profileBody.profile?.playStyle ?? null);
         setMeetingAt(suggestedMeetingAt(trainingDays[slot], weekNumber, activeWeek, new Date()));
       } catch {
         // Reste sur la séance de démonstration.
@@ -132,6 +136,7 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
         <div>
           <h2 id="session-why-title">Pourquoi cette séance</h2>
           <p>{explanation.summary}</p>
+          {explanation.styleNote && <p className="session-style-note">{explanation.styleNote}</p>}
         </div>
         <button onClick={proposeAnotherSession} type="button">
           Proposer une autre séance

@@ -75,3 +75,5 @@ main > :nth-child(3) { animation-delay: 100ms; }
 .page-header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), var(--volt), var(--accent), transparent); }
 .page-header h1 { text-shadow: 0 0 18px rgba(47, 212, 255, 0.55); }
 .focus-card { box-shadow: 0 0 26px rgba(47, 212, 255, 0.16); border-color: rgba(47, 212, 255, 0.4); }
+
+.session-style-note { margin-top: 8px; color: var(--volt); font-weight: 700; }

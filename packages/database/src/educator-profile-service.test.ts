@@ -20,6 +20,8 @@ class InMemoryEducatorProfileRepository implements EducatorProfileRepository {
       phone: null,
       diploma: null,
       seasonFormat: null,
+      playStyle: null,
+      preferredFormation: null,
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
     };
   }

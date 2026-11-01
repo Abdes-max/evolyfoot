@@ -84,6 +84,9 @@ model Educator {
   phone             String?
   diploma           String?
   seasonFormat      String?                  @map("season_format")
+  // Profil de coach : valeurs contrôlées par EducatorProfileService (playStyles côté domaine).
+  playStyle         String?                  @map("play_style")
+  preferredFormation String?                 @map("preferred_formation")
   team              Team?
   diagnostic        Diagnostic?
   sessions          Session[]

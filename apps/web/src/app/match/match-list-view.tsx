@@ -70,13 +70,19 @@ export function MatchListView() {
           return;
         }
 
-        const [matchesResponse, teamResponse] = await Promise.all([fetch("/api/matches"), fetch("/api/team")]);
+        const [matchesResponse, teamResponse, profileResponse] = await Promise.all([
+          fetch("/api/matches"),
+          fetch("/api/team"),
+          fetch("/api/profile"),
+        ]);
         const matchesBody = await matchesResponse.json().catch(() => ({ matches: [] }));
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
+        const profileBody = await profileResponse.json().catch(() => ({ profile: null }));
         if (cancelled) {
           return;
         }
         setMatches(matchesBody.matches ?? []);
+        setSelectedFormationId(profileBody.profile?.preferredFormation ?? null);
         const team: TeamSummary | null = teamBody.profile ?? null;
         if (team && gameFormats.includes(team.gameFormat as GameFormat)) {
           setGameFormat(team.gameFormat as GameFormat);
