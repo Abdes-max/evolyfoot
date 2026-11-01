@@ -52,5 +52,12 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           timeout: 30s
+          # Le site peut mettre quelques secondes à répondre après le redémarrage des conteneurs.
           script: |
-            curl -sf "https://${{ secrets.DEPLOY_DOMAIN }}/api/health/database" | grep -q '"status":"ok"'
+            for attempt in $(seq 1 24); do
+              if curl -sf "https://${{ secrets.DEPLOY_DOMAIN }}/api/health/database" | grep -q '"status":"ok"'; then
+                exit 0
+              fi
+              sleep 5
+            done
+            exit 1
