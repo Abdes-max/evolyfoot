@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./marketing.css";
+import "./marketing-impact.css";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
 
