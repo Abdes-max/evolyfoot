@@ -23,7 +23,6 @@ const free = [
 const premium = [
   "Plusieurs équipes sur un même compte",
   "Partage entre éducateurs d’un même club",
-  "Export des bilans en PDF",
   "Historique de progression sur plusieurs saisons",
 ];
 

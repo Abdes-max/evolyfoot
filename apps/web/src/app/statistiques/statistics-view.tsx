@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BarChart, DonutChart } from "../charts";
+import { PrintButton } from "../print-button";
 
 interface TeamStats {
   trainingCount: number;
@@ -104,6 +105,7 @@ export function StatisticsView() {
             Les chiffres de la saison, en diagrammes et en une synthèse.
           </p>
         </div>
+        {authenticated && <PrintButton label="Exporter le rapport en PDF" />}
       </header>
 
       {authenticated && stats && (

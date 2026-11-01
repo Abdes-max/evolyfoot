@@ -19,6 +19,7 @@ import { colorForEvaluation, defaultComparedEvaluationIds, evaluationLabel } fro
 import { resizeImageToDataUrl } from "../../image-resize";
 import { MessagingThread } from "../../messaging-thread";
 import { PlayerCard } from "../../player-card";
+import { PrintButton } from "../../print-button";
 
 interface Player {
   id: string;
@@ -386,9 +387,12 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
           <h1 title={player?.name ?? "Joueur"}>{player?.name ?? "Joueur"}</h1>
           <p title="Profil, coordonnées et suivi de progression.">Profil, coordonnées et suivi de progression.</p>
         </div>
-        <Link className="player-back" href="/equipe">
-          ← Effectif
-        </Link>
+        <div className="player-header-actions">
+          <Link className="player-back" href="/equipe">
+            ← Effectif
+          </Link>
+          {status === "ready" && <PrintButton label="Exporter le bilan en PDF" />}
+        </div>
       </header>
 
       <section className="player-content">
@@ -621,7 +625,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                 </div>
 
                 <div className="player-evaluation-columns">
-                <div>
+                <div className="print-hidden">
                   <h3>{editingEvaluationId ? "Modifier l’évaluation" : "Nouvelle évaluation"}</h3>
                   <form className="player-evaluation-form" onSubmit={saveEvaluation}>
                     <label className="player-evaluation-date">
@@ -713,7 +717,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
               </div>
             </div>
 
-            <div className="player-block">
+            <div className="player-block print-hidden">
               <div className="player-block-head">
                 <h2>Messages</h2>
               </div>
@@ -721,7 +725,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
               <MessagingThread fetchUrl={`/api/roster/${playerId}/messages`} sendUrl={`/api/roster/${playerId}/messages`} viewerRole="coach" />
             </div>
 
-            <div className="player-block">
+            <div className="player-block print-hidden">
               <div className="player-block-head">
                 <h2>Accès tuteur / joueur</h2>
               </div>
