@@ -79,12 +79,12 @@ main > :nth-child(3) { animation-delay: 100ms; }
 .session-style-note { margin-top: 8px; color: var(--volt); font-weight: 700; }
 
 /* Monogramme EV : le texte reste pour les lecteurs d'écran, le tracé vient d'icon.svg. */
-.brand-mark { position: relative; font-size: 0; background: linear-gradient(135deg, var(--accent), var(--volt)); }
+.brand-mark { position: relative; font-size: 0; background: linear-gradient(90deg, #12a8f0, #5fd62f); }
 .brand-mark::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23062330' d='M5 9h9.5v3.2H5zM5 14.4h7.5v3.2H5zM5 19.8h9.5V23H5z'/%3E%3Cpath fill='%23062330' d='M16.4 9h3.5l2 8.2 2-8.2h3.5l-4 14h-3z'/%3E%3C/svg%3E") center / 100% no-repeat;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cg transform='translate(39 39) scale(.86)' fill='%23fff'%3E%3Cpath d='M52 198A66 66 0 0 1 118 132H266A66 66 0 0 1 200 198ZM142 289A66 66 0 0 1 208 223H266A66 66 0 0 1 200 289ZM52 380A66 66 0 0 1 118 314H266A66 66 0 0 1 200 380Z'/%3E%3Ccircle cx='96' cy='256' r='33'/%3E%3Cpath d='M286 132H352L392 300L424 198A66 66 0 0 1 487 132H500L432 380H366A30 30 0 0 1 338 358Z'/%3E%3C/g%3E%3C/svg%3E") center / 100% no-repeat;
 }
 
 .session-print { min-height: 40px; margin-bottom: 12px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); color: var(--ink); font-size: 12px; font-weight: 800; }
