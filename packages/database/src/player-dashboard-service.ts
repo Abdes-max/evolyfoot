@@ -1,6 +1,6 @@
-import { attendanceStatusOf, summarizeAttendance } from "@evolyfoot/domain";
+import { attendanceStatusOf, playerSeasonTotals, summarizeAttendance } from "@evolyfoot/domain";
 import { playerEvaluationMaxPerSeason, validatePlayerEvaluationScores } from "@evolyfoot/domain";
-import type { AttendanceEntry, AttendanceStatus, AttendanceSummary, PlayerEvaluationScores, TrainingDay } from "@evolyfoot/domain";
+import type { AttendanceEntry, AttendanceStatus, AttendanceSummary, PlayerEvaluationScores, PlayerSeasonTotals, TrainingDay } from "@evolyfoot/domain";
 import { EducatorNotFoundError, ValidationError } from "./errors";
 import { matchKickoffTime, matchMeetingTime } from "./match-time";
 import type {
@@ -75,7 +75,15 @@ export interface PlayerDashboardCompetition {
 }
 
 export interface PlayerDashboard {
-  player: { id: string; name: string; photo: string | null };
+  player: {
+    id: string;
+    name: string;
+    photo: string | null;
+    position: string | null;
+    jerseyNumber: string | null;
+    preferredFoot: string | null;
+  };
+  season: PlayerSeasonTotals;
   team: { name: string; ageGroup: string; trainingDays: readonly TrainingDay[] } | null;
   evaluations: PlayerDashboardEvaluation[];
   trainingAttendance: AttendanceSummary;
@@ -188,7 +196,15 @@ export class PlayerDashboardService {
       });
 
     return {
-      player: { id: owned.id, name: owned.name, photo: owned.photo },
+      player: {
+        id: owned.id,
+        name: owned.name,
+        photo: owned.photo,
+        position: owned.position,
+        jerseyNumber: owned.jerseyNumber,
+        preferredFoot: owned.preferredFoot,
+      },
+      season: playerSeasonTotals(matches, playerId),
       team: team ? { name: team.profile.name, ageGroup: team.profile.ageGroup, trainingDays: team.profile.trainingDays } : null,
       evaluations: evaluations.map((evaluation) => ({
         id: evaluation.id,

@@ -29,6 +29,7 @@ on:
     branches: [master]
     paths:
       - "apps/mobile/**"
+      - "apps/mobile-player/**"
       - "packages/domain/**"
       - "packages/design-tokens/**"
       - "pnpm-lock.yaml"
@@ -37,9 +38,13 @@ on:
 
 jobs:
   build-and-submit:
-    name: Builder et soumettre (EAS)
+    name: Builder et soumettre (${{ matrix.app }})
     runs-on: ubuntu-latest
     environment: production
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [mobile, mobile-player]
     steps:
       # Garde d'entrée : tant que EXPO_TOKEN/GOOGLE_SERVICE_ACCOUNT_JSON ne sont pas configurés
       # (voir la checklist en en-tête de ce fichier), le job se termine ici, VERT, avec un
@@ -86,7 +91,7 @@ jobs:
 
       - name: Écrire le compte de service Google Play
         if: steps.secrets-check.outputs.ready == 'true'
-        working-directory: apps/mobile
+        working-directory: apps/${{ matrix.app }}
         run: echo "$GOOGLE_SERVICE_ACCOUNT_JSON" > google-service-account.json
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
@@ -100,7 +105,7 @@ jobs:
 
       - name: Builder et soumettre (iOS + Android, profil production)
         if: steps.secrets-check.outputs.ready == 'true'
-        working-directory: apps/mobile
+        working-directory: apps/${{ matrix.app }}
         # --auto-submit enchaîne la soumission TestFlight/piste interne Google Play dès que le
         # build correspondant réussit, sans étape séparée à orchestrer ni polling à écrire ici.
         run: eas build --platform all --profile production --non-interactive --auto-submit
@@ -109,5 +114,5 @@ jobs:
 
       - name: Nettoyer le compte de service Google Play
         if: always() && steps.secrets-check.outputs.ready == 'true'
-        working-directory: apps/mobile
+        working-directory: apps/${{ matrix.app }}
         run: rm -f google-service-account.json

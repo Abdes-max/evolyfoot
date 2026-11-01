@@ -138,6 +138,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { ok: false, error: await readErrorMessage(response) };
       }
       const body = await response.json();
+      const session = await apiFetch("/api/auth/session", { sessionToken: body.sessionToken }).catch(() => null);
+      const sessionBody = await session?.json().catch(() => null);
+      if (sessionBody?.role === "player") {
+        await apiFetch("/api/auth/logout", { method: "POST", sessionToken: body.sessionToken }).catch(() => undefined);
+        return { ok: false, error: "Ce compte est un compte joueur : connecte-toi sur EvolyFoot Player." };
+      }
       setEducator(body.educator);
       setSessionToken(body.sessionToken);
       await writeSessionToken(body.sessionToken);

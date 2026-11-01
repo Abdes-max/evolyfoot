@@ -17,7 +17,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 | Saison | Vue mois par mois ; un seul cycle de 4 semaines à la fois |
 | Vitrine | Pages en ligne ; contenu légal à compléter |
 | E-mails en production | Code prêt ; configuration Brevo du VPS à confirmer |
-| Mobile | Accueil, séances, présences, observation, matchs, effectif ; non testé sur téléphone réel |
+| Mobile | Deux applications iOS et Android non publiées : EvolyFoot Coach (`apps/mobile`) et EvolyFoot Player (`apps/mobile-player`) ; non testées sur téléphone réel |
 
 ## Reste à faire
 
@@ -29,9 +29,8 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 ### Mobile
 
 - [ ] Tester l'application sur un téléphone réel (voir la limite Expo Go en bas de ce fichier).
-- [ ] Ajouter icônes et écran de démarrage, absents d'`app.json`.
-- [ ] Créer les comptes Expo, Apple Developer et Google Play Console, puis publier en TestFlight et en piste interne.
-- [ ] Porter sur mobile ce qui n'existe que sur le web : espace joueur, statistiques, historique des observations, profil, bibliothèque, vue saison.
+- [ ] Créer les comptes Expo, Apple Developer et Google Play Console, puis publier les deux applications en TestFlight et en piste interne.
+- [ ] Porter sur EvolyFoot Coach ce qui n'existe que sur le web : statistiques, historique des observations, profil, bibliothèque, vue saison.
 
 ### Produit
 

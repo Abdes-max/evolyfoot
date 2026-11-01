@@ -137,6 +137,15 @@ Les sauvegardes automatisées de PostgreSQL et la supervision de l'application r
 
 ## Déploiement mobile (EAS)
 
+Deux applications, chacune avec son projet EAS et ses fiches sur les stores :
+
+| Application | Dossier | Identifiant iOS et Android | Comptes |
+| --- | --- | --- | --- |
+| EvolyFoot Coach | `apps/mobile` | `com.evolyfoot.coach` | Éducateurs |
+| EvolyFoot Player | `apps/mobile-player` | `com.evolyfoot.player` | Joueurs et tuteurs, sur invitation de l'éducateur |
+
+Les étapes ci-dessous sont à faire une fois pour chaque dossier ; `eas.json` y est identique.
+
 `apps/mobile/eas.json` définit trois profils :
 
 - **`development`** — client de développement, distribution interne.
