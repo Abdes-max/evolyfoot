@@ -306,7 +306,9 @@ test("l’éducateur ouvre la fiche d’un joueur et enregistre une évaluation 
 
   // Comparer plusieurs évaluations sur le graphe : la case cochée affiche la légende associée.
   await page.locator(".player-evaluation-compare input").check();
-  await expect(page.locator(".radar-chart-legend")).toBeVisible();
+  await expect(page.locator(".player-space-progress .radar-chart-legend")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mon auto-évaluation" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enregistrer mon auto-évaluation" })).toBeVisible();
 });
 
 test("l’éducateur enregistre un tournoi et un plateau depuis Matchs & compétitions", async ({ page }) => {
@@ -792,5 +794,7 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect(page.getByRole("heading", { name: "Ma progression" })).toBeVisible();
   await expect(page.getByRole("button", { name: /modifier|retirer/i })).toHaveCount(0);
   await page.locator(".player-space-history .player-evaluation-compare input").last().check();
-  await expect(page.locator(".radar-chart-legend")).toBeVisible();
+  await expect(page.locator(".player-space-progress .radar-chart-legend")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mon auto-évaluation" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enregistrer mon auto-évaluation" })).toBeVisible();
 });
