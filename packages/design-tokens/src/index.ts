@@ -1,10 +1,10 @@
 export const colors = {
   ink: "#f4f6f9",
   muted: "#8b96a8",
-  paper: "#0a0e15",
-  surface: "#121924",
+  paper: "#070b12",
+  surface: "#101722",
   line: "#232c3c",
-  primary: "#3ec6f5",
+  primary: "#2fd4ff",
   primaryDark: "#123349",
   primarySoft: "#0f2233",
   primaryInk: "#062330",
@@ -12,7 +12,7 @@ export const colors = {
   warnSoft: "#3a2416",
   danger: "#ff8fa3",
   dangerSoft: "#3a1a20",
-  lime: "#3ec6f5",
+  lime: "#c6ff3d",
   orange: "#ffb073",
   blue: "#7c9cff",
 } as const;

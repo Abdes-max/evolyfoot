@@ -1,0 +1,68 @@
+/* Couche visuelle de l'application : titres condensés, relief et micro-interactions. Chargée en
+   dernier ; ne change aucune mise en page. */
+:root {
+  --paper: #070b12;
+  --surface: #101722;
+  --surface-2: #172131;
+  --line: #243044;
+  --accent: #2fd4ff;
+  --accent-dark: #86e8ff;
+  --volt: #c6ff3d;
+}
+
+body { background: radial-gradient(900px 480px at 85% -10%, rgba(47, 212, 255, 0.1), transparent 70%), var(--paper); }
+
+.page-header h1,
+.session-header h1,
+.onboarding-intro h1,
+.player-space-hero h1 {
+  font-family: var(--font-display), "Arial Narrow", sans-serif;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.page-header h1 { font-size: clamp(28px, 3vw, 38px); line-height: 1.05; }
+.session-header h1 { font-size: clamp(36px, 4vw, 48px); }
+
+.brand-mark { background: linear-gradient(135deg, var(--accent), var(--volt)); color: #062330; }
+
+.nav-item { transition: background 160ms ease, color 160ms ease, transform 160ms ease; }
+.nav-item:hover { color: var(--ink); background: var(--surface-2); }
+.nav-item.active, .nav-item.active:hover { color: var(--accent-ink); background: linear-gradient(120deg, var(--accent), var(--accent-dark)); box-shadow: 0 8px 22px rgba(47, 212, 255, 0.25); }
+
+.continue-button,
+.seances-create {
+  background: linear-gradient(120deg, var(--accent), var(--accent-dark));
+  box-shadow: 0 10px 26px rgba(47, 212, 255, 0.24);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.continue-button:hover:not(:disabled), .seances-create:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(47, 212, 255, 0.36); }
+.continue-button:active:not(:disabled), .seances-create:active { transform: scale(0.98); }
+
+.focus-card, .session-card, .week-card, .insight-card, .development-week, .seances-week, .seances-slot-card, .season-month, .session-block article, .personal-exercise-list li {
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.focus-card:hover, .session-card:hover, .week-card:hover, .insight-card:hover, .seances-slot-card:hover, .season-month:hover, .personal-exercise-list li:hover {
+  transform: translateY(-2px);
+  border-color: rgba(47, 212, 255, 0.45);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+}
+.focus-card { background: radial-gradient(420px 200px at 100% 0, rgba(198, 255, 61, 0.12), transparent 70%), linear-gradient(155deg, #123349, #0c1a26); }
+.seances-slot-card.generated { border-color: rgba(198, 255, 61, 0.4); }
+.eyebrow.light { color: var(--volt); }
+
+:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
+
+main > * { animation: app-rise 320ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+main > :nth-child(2) { animation-delay: 50ms; }
+main > :nth-child(3) { animation-delay: 100ms; }
+
+@keyframes app-rise { from { opacity: 0; transform: translateY(10px); } }
+
+/* La vitrine a ses propres entrées, voir marketing-impact.css. */
+.marketing-page main > * { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
