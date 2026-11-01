@@ -1,3 +1,4 @@
+import { SidebarNav } from "../sidebar-nav";
 import { SessionView } from "./session-view";
 import { trainingCycleWeekCount } from "./cycle";
 
@@ -17,5 +18,10 @@ export default async function SessionPage({
   searchParams: Promise<{ week?: string; slot?: string }>;
 }) {
   const { week, slot } = await searchParams;
-  return <SessionView slot={parseSlot(slot)} weekNumber={parseWeek(week)} />;
+  return (
+    <>
+      <SidebarNav />
+      <SessionView slot={parseSlot(slot)} weekNumber={parseWeek(week)} />
+    </>
+  );
 }

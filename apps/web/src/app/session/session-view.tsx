@@ -119,8 +119,8 @@ export function SessionView({ weekNumber, slot }: SessionViewProps) {
   return (
     <main className="session-shell">
       <header className="session-header">
-        <Link className="onboarding-brand" href="/app">
-          <span className="brand-mark">E</span> EvolyFoot
+        <Link className="session-back" href="/seances">
+          ← Mes séances
         </Link>
         <span className="eyebrow light">
           {cycleWeekLabel(weekNumber)} · Séance {slot + 1}
