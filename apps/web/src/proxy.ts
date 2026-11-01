@@ -17,9 +17,18 @@ const SESSION_COOKIE_NAME = "evolyfoot_session";
 // session). Tout le reste de l'application web (le tableau de bord vit sur /app) est protégé au
 // même niveau que le mobile (AuthGate dans apps/mobile/app/_layout.tsx).
 const AUTH_PATHS = ["/connexion", "/inscription"];
+// Largement au-dessus d'une photo de schéma ou de joueur, redimensionnée côté client.
+const MAX_API_BODY_BYTES = 3_000_000;
 
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
+  if (pathname.startsWith("/api/")) {
+    const contentLength = Number(request.headers.get("content-length") ?? 0);
+    return contentLength > MAX_API_BODY_BYTES
+      ? NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 })
+      : NextResponse.next();
+  }
+
   if (isMarketingPath(pathname) || AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
     return NextResponse.next();
   }
@@ -36,10 +45,9 @@ export function proxy(request: NextRequest): NextResponse {
 
 export const config = {
   matcher: [
-    // Tout sauf les routes API (chacune vérifie déjà sa propre session et renvoie 401/403 --
-    // /api/auth/* doit d'ailleurs rester joignable pour pouvoir se connecter), les fichiers
-    // statiques Next.js, le favicon, et les fichiers SEO générés (sitemap.xml, robots.txt) qui
+    // Tout sauf les fichiers statiques Next.js. Les routes API passent ici pour le seul contrôle
+    // de taille : chacune vérifie déjà sa propre session et renvoie 401/403. Restent exclus le favicon, et les fichiers SEO générés (sitemap.xml, robots.txt) qui
     // doivent rester publics pour les moteurs.
-    "/((?!api|_next/static|_next/image|favicon.ico|icon.svg|sitemap.xml|robots.txt).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|sitemap.xml|robots.txt).*)",
   ],
 };

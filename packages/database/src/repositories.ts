@@ -192,6 +192,7 @@ export interface SessionRepository {
   create(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<SessionRecord>;
   findValidByTokenHash(tokenHash: string): Promise<SessionRecord | null>;
   deleteByTokenHash(tokenHash: string): Promise<void>;
+  deleteOthers(educatorId: string, keptTokenHash: string | null): Promise<void>;
 }
 
 // Historique des séances validées (contrairement à Team/Diagnostic, plusieurs par éducateur).

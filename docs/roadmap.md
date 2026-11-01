@@ -49,7 +49,6 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 
 - [ ] Activer le contrôle Prettier dans la CI.
 - [ ] Revenir à `--frozen-lockfile` en CI et épingler les dépendances déclarées en `latest`.
-- [ ] Ajouter une limite de tentatives sur la connexion et une limite par adresse IP sur le mot de passe oublié.
 - [ ] Lire automatiquement les photos de schéma, si cela reste souhaité : elles sont aujourd’hui stockées et affichées seulement.
 - [ ] Multilingue : non commencé.
 

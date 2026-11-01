@@ -1,7 +1,7 @@
-import { createAuthGateway, readSessionToken, type PublicEducator } from "@/server/auth";
+import { createAuthGateway, readSessionToken, type PublicAccount } from "@/server/auth";
 import { createMetricsGateway, createMetricsHandler } from "@/server/metrics";
 
-async function resolveEducator(request: Request): Promise<PublicEducator | null> {
+async function resolveEducator(request: Request): Promise<PublicAccount | null> {
   const token = readSessionToken(request);
   if (!token) {
     return null;
@@ -9,7 +9,8 @@ async function resolveEducator(request: Request): Promise<PublicEducator | null>
 
   const { gateway, disconnect } = await createAuthGateway();
   try {
-    return await gateway.getEducatorForSession(token);
+    const account = await gateway.getAccountForSession(token);
+    return account?.role === "player" ? null : account;
   } finally {
     await disconnect();
   }

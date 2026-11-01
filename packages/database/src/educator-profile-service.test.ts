@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { hashSessionToken } from "./session-token";
 import { EducatorProfileService } from "./educator-profile-service";
 import { EducatorNotFoundError, InvalidCredentialsError, ValidationError } from "./errors";
 import { hashPassword } from "./password";
@@ -57,6 +58,17 @@ class InMemoryEducatorProfileRepository implements EducatorProfileRepository {
 }
 
 describe("EducatorProfileService", () => {
+  it("ferme les autres sessions après un changement de mot de passe, sauf la session en cours", async () => {
+    const repository = new InMemoryEducatorProfileRepository("educator-1");
+    repository.passwordHash = await hashPassword("current-password");
+    const deleteOthers = vi.fn(async () => undefined);
+    const service = new EducatorProfileService(repository, { deleteOthers });
+
+    await service.changePassword("educator-1", "current-password", "a-brand-new-password", "jeton-en-cours");
+
+    expect(deleteOthers).toHaveBeenCalledWith("educator-1", hashSessionToken("jeton-en-cours"));
+  });
+
   it("returns the profile of an existing educator", async () => {
     const repository = new InMemoryEducatorProfileRepository("educator-1");
     const service = new EducatorProfileService(repository);

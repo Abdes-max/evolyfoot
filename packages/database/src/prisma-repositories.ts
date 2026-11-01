@@ -297,6 +297,12 @@ export class PrismaSessionRepository implements SessionRepository {
   async deleteByTokenHash(tokenHash: string): Promise<void> {
     await this.prisma.session.deleteMany({ where: { tokenHash } });
   }
+
+  async deleteOthers(educatorId: string, keptTokenHash: string | null): Promise<void> {
+    await this.prisma.session.deleteMany({
+      where: { educatorId, ...(keptTokenHash ? { tokenHash: { not: keptTokenHash } } : {}) },
+    });
+  }
 }
 
 export class PrismaPlayerInviteRepository implements PlayerInviteRepository {

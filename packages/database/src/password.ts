@@ -4,10 +4,16 @@ import { promisify } from "node:util";
 const scrypt = promisify(scryptCallback);
 const KEY_LENGTH = 64;
 const MIN_PASSWORD_LENGTH = 10;
+// Au-delà, le calcul scrypt d'un texte énorme pourrait servir à saturer le serveur.
+export const MAX_PASSWORD_LENGTH = 128;
 
 export function validatePassword(password: string): string {
   if (password.length < MIN_PASSWORD_LENGTH) {
     throw new Error("Le mot de passe doit contenir au moins 10 caractères.");
+  }
+
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    throw new Error(`Le mot de passe ne doit pas dépasser ${MAX_PASSWORD_LENGTH} caractères.`);
   }
 
   return password;

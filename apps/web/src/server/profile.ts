@@ -1,6 +1,6 @@
 import { EducatorNotFoundError, InvalidCredentialsError, ValidationError } from "@evolyfoot/database";
 import type { EducatorProfileInput } from "@evolyfoot/database";
-import type { PublicEducator } from "./auth";
+import { readSessionToken, type PublicEducator } from "./auth";
 
 export interface ProfileSummary {
   id: string;
@@ -21,7 +21,7 @@ export interface ProfileSummary {
 export interface ProfileGateway {
   get(educatorId: string): Promise<ProfileSummary>;
   update(educatorId: string, input: EducatorProfileInput): Promise<ProfileSummary>;
-  changePassword(educatorId: string, currentPassword: string, newPassword: string): Promise<void>;
+  changePassword(educatorId: string, currentPassword: string, newPassword: string, currentSessionToken?: string | null): Promise<void>;
 }
 
 // Champs texte optionnels de la fiche : présents dans le corps => `string | null` accepté (null
@@ -140,7 +140,7 @@ export function createChangePasswordHandler(
       return Response.json({ error: "Mot de passe actuel et nouveau mot de passe sont requis." }, { status: 400 });
     }
     try {
-      await profile.changePassword(educator.id, currentPassword, newPassword);
+      await profile.changePassword(educator.id, currentPassword, newPassword, readSessionToken(request));
       return Response.json({ status: "ok" });
     } catch (error) {
       return errorResponse(error, log);
@@ -149,9 +149,9 @@ export function createChangePasswordHandler(
 }
 
 export async function createProfileGateway(): Promise<{ gateway: ProfileGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, EducatorProfileService, PrismaEducatorRepository } = await import("@evolyfoot/database");
+  const { createDatabaseClient, EducatorProfileService, PrismaEducatorRepository, PrismaSessionRepository } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const service = new EducatorProfileService(new PrismaEducatorRepository(database.prisma));
+  const service = new EducatorProfileService(new PrismaEducatorRepository(database.prisma), new PrismaSessionRepository(database.prisma));
 
   function toSummary(profile: Awaited<ReturnType<typeof service.get>>): ProfileSummary {
     return {
