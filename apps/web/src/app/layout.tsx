@@ -18,6 +18,7 @@ import "./messaging.css";
 // Chargé en dernier : n'ajoute qu'un `background-image` discret par-dessus le fond déjà posé
 // par chaque page (voir page-backgrounds.css).
 import "./page-backgrounds.css";
+import "./exercise-sheet.css";
 import "./design-impact.css";
 import { AuthGate } from "./auth-gate";
 

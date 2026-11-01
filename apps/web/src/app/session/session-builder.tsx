@@ -15,8 +15,10 @@ import {
   type TrainingSession,
 } from "@evolyfoot/domain";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { parseDatetimeInputValue, toDatetimeInputValue } from "../date-format";
+import { ExerciseSheet } from "../exercise-sheet";
 import { TacticalDiagramView } from "../tactical-diagram";
 
 interface RosterPlayer {
@@ -84,7 +86,21 @@ export function SessionBuilder({
   // que de tout cocher) -- et ça évite de devoir recopier `roster` dans un état local via un
   // useEffect à chaque fois qu'il arrive du parent (voir sidebar-nav.tsx pour le même correctif).
   const [absentPlayerIds, setAbsentPlayerIds] = useState<ReadonlySet<string>>(new Set());
+  // Exercice ouvert, par identifiant de bloc : il reste le bon si l'ordre de la séance change.
+  const [openBlockId, setOpenBlockId] = useState<string | null>(null);
+  const [printing, setPrinting] = useState(false);
+  const exerciseRef = useRef<HTMLElement>(null);
+  const openIndex = session.blocks.findIndex((block) => block.id === openBlockId);
+  const openBlock = openIndex >= 0 ? session.blocks[openIndex] : undefined;
+  const openReason = blockReasons.find((candidate) => candidate.blockId === openBlockId)?.reason;
   const duration = getSessionDuration(session);
+
+  // La liste et la fiche n'ont pas la même hauteur : on repart du haut de l'exercice ouvert.
+  useEffect(() => {
+    if (openBlockId) {
+      exerciseRef.current?.scrollIntoView?.({ block: "start" });
+    }
+  }, [openBlockId]);
   const meetingAtDate = parseDatetimeInputValue(meetingAtInput);
   const isValid = canValidateSession(session) && meetingAtDate !== null;
 
@@ -92,6 +108,13 @@ export function SessionBuilder({
     onChange(nextSession);
     setValidationStatus("");
     setSaveState("idle");
+  }
+
+  // Le PDF contient toutes les fiches : on les rend le temps de l'impression, qui bloque la page.
+  function exportPdf() {
+    flushSync(() => setPrinting(true));
+    window.print();
+    setPrinting(false);
   }
 
   function toggleAttendance(playerId: string) {
@@ -166,80 +189,116 @@ export function SessionBuilder({
         <strong aria-atomic="true" aria-label={`Durée totale : ${duration} minutes`} aria-live="polite">{duration} min</strong>
       </div>
 
-      <button className="session-print" onClick={() => window.print()} type="button">
+      <button className="session-print" onClick={exportPdf} type="button">
         Exporter en PDF
       </button>
-      <ol className="session-block-list" aria-label="Les quatre temps de la séance">
-        {session.blocks.map((block, index) => {
-          const canReplace = canReplaceSessionActivity(session, index);
-          const replacementHintId = `${block.id}-replacement-hint`;
-          const reason = blockReasons.find((candidate) => candidate.blockId === block.id)?.reason;
-          return (
-          <li className="session-block" key={block.id}>
-            <span className="session-block-number">{index + 1}</span>
-            <article>
-              <div className="session-block-heading">
-                <div>
-                  <span className="session-block-kind">{kindLabels[block.activity.kind]}</span>
-                  <h3>{block.activity.title}</h3>
-                </div>
-                <strong>{block.durationMinutes} min</strong>
-              </div>
-              <div className="session-block-body">
-                <div className="session-block-diagram">
+
+      {printing ? (
+        session.blocks.map((block) => (
+          <article className="session-print-sheet" key={block.id}>
+            <span className="session-exercise-kind">{kindLabels[block.activity.kind]}</span>
+            <h2 className="session-exercise-title">{block.activity.title}</h2>
+            <ExerciseSheet activity={block.activity} durationMinutes={block.durationMinutes} playerCount={session.playerCount} />
+          </article>
+        ))
+      ) : openBlock ? (
+        <section aria-label={`Exercice ${openIndex! + 1} sur ${session.blocks.length}`} className="session-exercise" ref={exerciseRef}>
+          <div className="session-exercise-bar">
+            <button onClick={() => setOpenBlockId(null)} type="button">
+              ← Toute la séance
+            </button>
+            <div className="session-exercise-pager">
+              <button aria-label="Exercice précédent" disabled={openIndex === 0} onClick={() => setOpenBlockId(session.blocks[openIndex! - 1]!.id)} type="button">
+                ←
+              </button>
+              <span>
+                Exercice {openIndex! + 1} sur {session.blocks.length}
+              </span>
+              <button
+                aria-label="Exercice suivant"
+                disabled={openIndex === session.blocks.length - 1}
+                onClick={() => setOpenBlockId(session.blocks[openIndex! + 1]!.id)}
+                type="button"
+              >
+                →
+              </button>
+            </div>
+          </div>
+          <span className="session-exercise-kind">
+            {kindLabels[openBlock.activity.kind]} · {openBlock.durationMinutes} min
+          </span>
+          <h2 className="session-exercise-title">{openBlock.activity.title}</h2>
+          {openReason && <p className="session-exercise-reason">{openReason}</p>}
+          <ExerciseSheet activity={openBlock.activity} durationMinutes={openBlock.durationMinutes} playerCount={session.playerCount}>
+            {!isPersonalActivityId(openBlock.activity.id) && (
+              <Link className="session-exercise-library" href={`/bibliotheque/${openBlock.activity.id}`}>
+                Voir dans la bibliothèque →
+              </Link>
+            )}
+          </ExerciseSheet>
+        </section>
+      ) : (
+        <ol className="session-run" aria-label="Les temps de la séance">
+          {session.blocks.map((block, index) => {
+            const canReplace = canReplaceSessionActivity(session, index);
+            const replacementHintId = `${block.id}-replacement-hint`;
+            return (
+              <li className="session-run-item" key={block.id}>
+                <div className="session-run-thumb">
                   {block.activity.photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img alt={`Schéma de ${block.activity.title}`} className="personal-exercise-photo" src={block.activity.photo} />
+                    <img alt={`Schéma de ${block.activity.title}`} src={block.activity.photo} />
                   ) : (
                     <TacticalDiagramView diagram={block.activity.diagram} />
                   )}
-                  {!isPersonalActivityId(block.activity.id) && (
-                    <Link className="inline-cta" href={`/bibliotheque/${block.activity.id}`}>Voir le détail →</Link>
+                </div>
+                <div className="session-run-body">
+                  <span className="session-run-kind">
+                    <strong>{kindLabels[block.activity.kind]}</strong> · {block.durationMinutes} min
+                  </span>
+                  <h3>
+                    <button className="session-run-open" onClick={() => setOpenBlockId(block.id)} type="button">
+                      {block.activity.title}
+                    </button>
+                  </h3>
+                </div>
+                <span aria-hidden="true" className="session-run-chevron">
+                  ›
+                </span>
+                <div className="session-run-actions">
+                  <button aria-label="Retirer 5 minutes" onClick={() => editSession(adjustBlockDuration(session, index, -5))} type="button">− 5 min</button>
+                  <button aria-label="Ajouter 5 minutes" onClick={() => editSession(adjustBlockDuration(session, index, 5))} type="button">+ 5 min</button>
+                  <button aria-label="Monter" disabled={index === 0} onClick={() => editSession(moveSessionBlock(session, index, index - 1))} type="button">↑</button>
+                  <button aria-label="Descendre" disabled={index === session.blocks.length - 1} onClick={() => editSession(moveSessionBlock(session, index, index + 1))} type="button">↓</button>
+                  <button aria-describedby={!canReplace ? replacementHintId : undefined} aria-label="Remplacer la situation" disabled={!canReplace} onClick={() => editSession(replaceSessionActivity(session, index))} type="button">Remplacer</button>
+                  {personalExercises.some((exercise) => exercise.kind === block.activity.kind) && (
+                    <select
+                      aria-label="Utiliser un de mes exercices"
+                      onChange={(event) => {
+                        const exercise = personalExercises.find((candidate) => candidate.id === event.target.value);
+                        if (exercise) {
+                          editSession(replaceBlockActivity(session, index, personalExerciseToActivity(exercise)));
+                        }
+                      }}
+                      value=""
+                    >
+                      <option value="">Mes exercices…</option>
+                      {personalExercises
+                        .filter((exercise) => exercise.kind === block.activity.kind)
+                        .map((exercise) => (
+                          <option key={exercise.id} value={exercise.id}>
+                            {exercise.title}
+                          </option>
+                        ))}
+                    </select>
                   )}
+                  {!canReplace && <span className="visually-hidden" id={replacementHintId}>Aucune autre situation compatible pour ce bloc.</span>}
                 </div>
-                <div className="session-block-text">
-                  <p>{block.activity.objective}</p>
-                  {reason && <p className="session-block-reason">{reason}</p>}
-                  <dl className="session-block-details">
-                    <div><dt>Organisation</dt><dd>{block.activity.organization}</dd></div>
-                    <div><dt>Consigne</dt><dd>{block.activity.instruction}</dd></div>
-                    <div><dt>À observer</dt><dd>{block.activity.observable}</dd></div>
-                  </dl>
-                </div>
-              </div>
-              <div className="session-block-actions">
-                <button aria-label="Retirer 5 minutes" onClick={() => editSession(adjustBlockDuration(session, index, -5))} type="button">− 5 min</button>
-                <button aria-label="Ajouter 5 minutes" onClick={() => editSession(adjustBlockDuration(session, index, 5))} type="button">+ 5 min</button>
-                <button aria-label="Monter" disabled={index === 0} onClick={() => editSession(moveSessionBlock(session, index, index - 1))} type="button">Monter</button>
-                <button aria-label="Descendre" disabled={index === session.blocks.length - 1} onClick={() => editSession(moveSessionBlock(session, index, index + 1))} type="button">Descendre</button>
-                <button aria-describedby={!canReplace ? replacementHintId : undefined} aria-label="Remplacer la situation" disabled={!canReplace} onClick={() => editSession(replaceSessionActivity(session, index))} type="button">Remplacer</button>
-                {personalExercises.some((exercise) => exercise.kind === block.activity.kind) && (
-                  <select
-                    aria-label="Utiliser un de mes exercices"
-                    onChange={(event) => {
-                      const exercise = personalExercises.find((candidate) => candidate.id === event.target.value);
-                      if (exercise) {
-                        editSession(replaceBlockActivity(session, index, personalExerciseToActivity(exercise)));
-                      }
-                    }}
-                    value=""
-                  >
-                    <option value="">Mes exercices…</option>
-                    {personalExercises
-                      .filter((exercise) => exercise.kind === block.activity.kind)
-                      .map((exercise) => (
-                        <option key={exercise.id} value={exercise.id}>
-                          {exercise.title}
-                        </option>
-                      ))}
-                  </select>
-                )}
-                {!canReplace && <span className="visually-hidden" id={replacementHintId}>Aucune autre situation compatible pour ce bloc.</span>}
-              </div>
-            </article>
-          </li>
-        );})}
-      </ol>
+              </li>
+            );
+          })}
+        </ol>
+      )}
 
       <label className="session-meeting-at">
         <span>Rendez-vous (date et heure)</span>

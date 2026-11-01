@@ -9,7 +9,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 | Domaine | État |
 | --- | --- |
 | Boucle produit (diagnostic, plan, séance, observation, ajustement) | Livrée, web et mobile |
-| Séances | Génération variée et expliquée, 100 exercices, exercices personnels |
+| Séances | Génération variée et expliquée, 100 exercices, exercices personnels, fiche d'exercice animée, export PDF |
 | Matchs et compétitions | Composition, convocations, présences, score, buteurs et passeurs, tournois, plateaux |
 | Profil de coach | Style de jeu et formation préférée : règle de match dans chaque séance, formation pré-sélectionnée |
 | Suivi joueur | Carte joueur, profil sportif, évaluations datées, auto-évaluation comparée, buts et passes de la saison |
