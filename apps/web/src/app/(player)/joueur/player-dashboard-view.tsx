@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import { DonutChart, RadarChart } from "../../charts";
 import { colorForEvaluation } from "../../evaluation-colors";
+import { PlayerCard } from "../../player-card";
 import { SelfEvaluation } from "./self-evaluation";
 import { PlayerSpaceHeader } from "../player-space-header";
 import { usePlayerDashboard } from "./use-player-dashboard";
@@ -85,6 +86,19 @@ export function PlayerSpaceView() {
                 )}
               </div>
             </section>
+
+            <div className="player-space-card">
+              <PlayerCard
+                jerseyNumber={dashboard.player.jerseyNumber}
+                name={dashboard.player.name}
+                photo={dashboard.player.photo}
+                position={dashboard.player.position}
+                preferredFoot={dashboard.player.preferredFoot}
+                previousScores={coachEvaluations[1]?.scores ?? null}
+                scores={latest?.scores ?? null}
+                season={dashboard.season}
+              />
+            </div>
 
             <SelfEvaluation coachEvaluation={latest} initialSelfEvaluation={selfEvaluations[0]} />
 

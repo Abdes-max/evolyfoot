@@ -88,6 +88,7 @@
 .player-card-season dt{color:#c9d7e4;font-size:10.5px;font-weight:800}
 .player-card-empty{margin:12px 0 0;color:#c9d7e4;font-size:12px;line-height:1.45;text-align:center}
 .player-card-trend{margin:8px 0 0;color:var(--volt);font-size:11px;font-weight:800;text-align:center}
+.player-space-card{display:grid;justify-items:center;padding:6px 0 10px}
 .player-photo-actions{display:flex;gap:6px;justify-content:center}
 .player-photo-actions button{min-height:36px;border:1px solid var(--line);border-radius:8px;padding:6px 12px;background:var(--surface-2);color:var(--ink);font-size:11px;font-weight:800}
 @keyframes player-card-in{from{opacity:0;transform:translateY(18px) scale(.97)}}

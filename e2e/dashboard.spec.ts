@@ -639,7 +639,8 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
     route.fulfill({
       json: {
         dashboard: {
-          player: { id: "player-1", name: "Kylian", photo: null },
+          player: { id: "player-1", name: "Kylian", photo: null, position: "Attaquant", jerseyNumber: "10", preferredFoot: "Droit" },
+          season: { matches: 3, goals: 2, assists: 1 },
           team: { name: "FC Horizon", ageGroup: "U12", trainingDays: ["Mardi"] },
           evaluations: [
             {

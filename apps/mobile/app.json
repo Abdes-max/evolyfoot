@@ -1,15 +1,35 @@
 {
   "expo": {
-    "name": "EvolyFoot",
-    "slug": "evolyfoot",
+    "name": "EvolyFoot Coach",
+    "slug": "evolyfoot-coach",
     "version": "0.1.0",
     "orientation": "portrait",
-    "scheme": "evolyfoot",
-    "userInterfaceStyle": "light",
+    "scheme": "evolyfoot-coach",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#070b12"
+    },
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "plugins": ["expo-router", "expo-secure-store"],
-    "experiments": { "typedRoutes": true },
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.evolyfoot.app" },
-    "android": { "package": "com.evolyfoot.app", "adaptiveIcon": { "backgroundColor": "#17643d" } }
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.evolyfoot.coach"
+    },
+    "android": {
+      "package": "com.evolyfoot.coach",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#070b12"
+      }
+    }
   }
 }

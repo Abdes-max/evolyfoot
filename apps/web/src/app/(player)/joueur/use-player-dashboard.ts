@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { AttendanceStatus, PlayerEvaluationScores } from "@evolyfoot/domain";
+import type { AttendanceStatus, PlayerEvaluationScores, PlayerSeasonTotals } from "@evolyfoot/domain";
 
 export interface Evaluation {
   id: string;
@@ -46,7 +46,15 @@ export interface Competition {
 }
 
 export interface Dashboard {
-  player: { id: string; name: string; photo: string | null };
+  player: {
+    id: string;
+    name: string;
+    photo: string | null;
+    position: string | null;
+    jerseyNumber: string | null;
+    preferredFoot: string | null;
+  };
+  season: PlayerSeasonTotals;
   team: { name: string; ageGroup: string; trainingDays: string[] } | null;
   evaluations: Evaluation[];
   trainingAttendance: { present: number; absent: number; total: number; rate: number };
