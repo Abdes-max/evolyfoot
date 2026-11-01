@@ -386,6 +386,8 @@ model MatchRecord {
   attendance      Json?
   // Résultat saisi après le match : nuls tant qu'il n'est pas renseigné. `playerStats` suit
   // MatchPlayerStat côté domaine, noms dupliqués comme dans `lineup`.
+  // Système supposé de l'adversaire, pour l'analyse d'avant-match. Facultatif.
+  opponentFormationId String?         @map("opponent_formation_id")
   goalsFor        Int?                @map("goals_for")
   goalsAgainst    Int?                @map("goals_against")
   playerStats     Json?               @map("player_stats")

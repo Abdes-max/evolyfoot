@@ -182,10 +182,15 @@ export class MatchService {
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
+      opponentFormationId?: string | null;
     },
   ): Promise<PersistedMatch> {
-    await this.get(educatorId, matchId);
+    const match = await this.get(educatorId, matchId);
+    if (input.opponentFormationId && !listFormations(match.gameFormat).some((formation) => formation.id === input.opponentFormationId)) {
+      throw new ValidationError("Ce système n’existe pas pour ce format de jeu.");
+    }
     return this.matchRepository.update(matchId, educatorId, {
+      ...(input.opponentFormationId !== undefined ? { opponentFormationId: input.opponentFormationId } : {}),
       ...(input.date !== undefined ? { date: input.date } : {}),
       ...(input.meetingOffsetMinutes !== undefined ? { meetingOffsetMinutes: normalizeMeetingOffset(input.meetingOffsetMinutes) } : {}),
       ...(input.meetingTime !== undefined ? { meetingTime: normalizeOptionalText(input.meetingTime) } : {}),

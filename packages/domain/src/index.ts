@@ -125,6 +125,8 @@ export {
 } from "./match";
 export { buildDiagramAnimation, diagramAnimationStepCount } from "./diagram-animation";
 export type { AnimationPass, AnimationPoint, AnimationStep } from "./diagram-animation";
+export { analyzeMatchup } from "./tactical-analysis";
+export type { LineBalance, MatchupAnalysis, MatchupLine } from "./tactical-analysis";
 export { allFormationIds, playStyleNote, playStyles } from "./coach-style";
 export type { PlayStyle } from "./coach-style";
 export { matchResultMaxGoals, playerSeasonTotals, validateMatchResult } from "./match-result";

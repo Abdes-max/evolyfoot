@@ -397,6 +397,7 @@ export interface PersistedMatch {
   // Sur le banc, sans poste. Toujours un tableau concret : `undefined` en base (match préparé
   // avant l'introduction du banc) résolu en `[]` par le mapper, comme `formationId`.
   substitutePlayerIds: readonly string[];
+  opponentFormationId: string | null;
   // `null` tant que l'éducateur n'a pas saisi le résultat.
   goalsFor: number | null;
   goalsAgainst: number | null;
@@ -442,6 +443,7 @@ export interface MatchRepository {
       captainPlayerId?: string | null;
       substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
+      opponentFormationId?: string | null;
       goalsFor?: number;
       goalsAgainst?: number;
       playerStats?: readonly MatchPlayerStat[];
