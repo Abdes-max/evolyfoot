@@ -1,4 +1,6 @@
+import { findTrainingActivity } from "@evolyfoot/domain";
 import Link from "next/link";
+import { TacticalDiagramView } from "../tactical-diagram";
 import { AuthedRedirect } from "./authed-redirect";
 
 const loop = [
@@ -23,30 +25,46 @@ const faq = [
   { q: "Mes données sont-elles à moi ?", a: "Oui. Ton effectif, tes séances et tes observations t’appartiennent et restent privés." },
   { q: "Web ou mobile ?", a: "Les deux. L’application web pour préparer, l’application mobile pour le bord du terrain." },
   { q: "Combien de temps pour démarrer ?", a: "Le diagnostic et le premier cycle se font en quelques minutes, avant ta prochaine séance." },
-  { q: "C’est vraiment gratuit ?", a: "Le plan gratuit couvre le diagnostic, le plan, une équipe et des séances illimitées." },
+  { q: "C’est vraiment gratuit ?", a: "Oui. Le plan gratuit couvre aujourd’hui toutes les fonctionnalités disponibles pour une équipe, sans limite de séances." },
 ];
+
+// Un vrai exercice du catalogue, pas une maquette : le hero montre ce que l'éducateur obtient.
+const heroActivity = findTrainingActivity("activation-conserver");
 
 export default function MarketingHome() {
   return (
     <main>
       <AuthedRedirect to="/app" />
 
-      <section className="m-section m-hero">
-        <span className="m-eyebrow">Éducateurs U10–U13</span>
-        <h1>Prépare des séances qui font progresser, sans y passer tes soirées.</h1>
-        <p>
-          EvolyFoot transforme ton diagnostic d’équipe en un cycle de 4 semaines, des séances prêtes à l’emploi et des
-          ajustements expliqués après chaque match.
-        </p>
-        <div className="m-hero-actions">
-          <Link className="m-btn m-btn-primary" href="/inscription">
-            Essayer gratuitement
-          </Link>
-          <Link className="m-btn m-btn-ghost" href="/methode">
-            Voir la méthode
-          </Link>
+      <section className="m-section m-hero m-hero-split">
+        <div>
+          <span className="m-eyebrow">Éducateurs U10–U13</span>
+          <h1>Prépare des séances qui font progresser, sans y passer tes soirées.</h1>
+          <p>
+            EvolyFoot transforme ton diagnostic d’équipe en un cycle de 4 semaines, des séances prêtes à l’emploi et des
+            ajustements expliqués après chaque match.
+          </p>
+          <div className="m-hero-actions">
+            <Link className="m-btn m-btn-primary" href="/inscription">
+              Essayer gratuitement
+            </Link>
+            <Link className="m-btn m-btn-ghost" href="/methode">
+              Voir la méthode
+            </Link>
+          </div>
+          <p className="m-hero-note">Sans carte bancaire · Web et mobile</p>
         </div>
-        <p className="m-hero-note">Sans carte bancaire · Web et mobile</p>
+        {heroActivity && (
+          <article className="m-hero-card">
+            <span className="m-hero-card-tag">Exercice de la bibliothèque</span>
+            <h2>{heroActivity.title}</h2>
+            <p>{heroActivity.organization}</p>
+            <TacticalDiagramView diagram={heroActivity.diagram} />
+            <p className="m-hero-card-why">
+              <strong>À observer :</strong> {heroActivity.observable}
+            </p>
+          </article>
+        )}
       </section>
 
       <div className="m-band">

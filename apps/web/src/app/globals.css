@@ -4,7 +4,7 @@
 
 html { scroll-behavior:smooth; }
 
-body { margin:0; background:var(--paper); color:var(--ink); font-family:Manrope, Inter, "Segoe UI", Arial, sans-serif; }
+body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-manrope), Inter, "Segoe UI", Arial, sans-serif; }
 
 button,a { font:inherit; }
 

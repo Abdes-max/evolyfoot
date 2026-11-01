@@ -494,7 +494,7 @@ test("un visiteur non connecté découvre la vitrine sur la page d'accueil", asy
   // masqué sous 820px en attendant un menu mobile dédié).
   await page.locator(".m-footer").getByRole("link", { name: "Tarifs" }).click();
   await expect(page).toHaveURL(/\/tarifs$/);
-  await expect(page.getByRole("heading", { name: /gratuit pour planifier/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /tout ce qui existe aujourd’hui est gratuit/i })).toBeVisible();
 });
 
 test("le visiteur compare les fréquences de paiement Premium sur /tarifs", async ({ page }) => {
