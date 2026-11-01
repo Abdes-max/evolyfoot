@@ -25,7 +25,6 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 
 - [ ] Renseigner Brevo dans le `.env` du VPS, authentifier le domaine d'envoi, puis tester un vrai e-mail (voir docs/delivery.md).
 - [ ] Compléter les mentions légales, les CGU et la politique de confidentialité : identité de l'éditeur, hébergeur, dates. Les pages affichent encore des champs `[à compléter]`.
-- [ ] Décider du sort de la PR #69 (format de jeu modifiable, prénom et nom des joueurs) : elle est ouverte depuis septembre et n'a pas été revérifiée sur le `master` actuel.
 
 ### Mobile
 
