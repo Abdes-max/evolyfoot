@@ -21,7 +21,7 @@ import type {
   MatchPlayerStat,
 } from "@evolyfoot/domain";
 
-export type AccountRole = "coach" | "player";
+export type AccountRole = "coach" | "player" | "assistant";
 
 export interface EducatorRecord {
   id: string;
@@ -31,6 +31,8 @@ export interface EducatorRecord {
   // tuteur/joueur, `linkedPlayerId` renseigné, ne voit que le suivi de ce joueur.
   role?: AccountRole;
   linkedPlayerId?: string | null;
+  // Compte "assistant" : l'éducateur dont il partage l'équipe.
+  ownerEducatorId?: string | null;
   // Rempli une fois le lien de confirmation (envoyé à l'inscription) cliqué. Optionnel comme
   // `role`/`linkedPlayerId` : absent = compte créé avant cette fonctionnalité, traité comme non
   // confirmé côté affichage sans casser les faux de test existants.
@@ -136,6 +138,30 @@ export interface PersistedTeamProfile {
   updatedAt: Date;
 }
 
+export interface StaffMember {
+  id: string;
+  displayName: string;
+  email: string;
+  createdAt: Date;
+}
+
+export interface StaffInviteRecord {
+  id: string;
+  educatorId: string;
+  tokenHash: string;
+  expiresAt: Date;
+  consumedAt: Date | null;
+}
+
+export interface StaffRepository {
+  listMembers(ownerId: string): Promise<StaffMember[]>;
+  createInvite(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<void>;
+  findInviteByTokenHash(tokenHash: string): Promise<StaffInviteRecord | null>;
+  // `false` si l'invitation a déjà servi : à appeler avant de créer le compte.
+  consumeInvite(id: string): Promise<boolean>;
+  removeMember(ownerId: string, memberId: string): Promise<boolean>;
+}
+
 export interface EducatorRepository {
   create(input: {
     email: string;
@@ -143,6 +169,7 @@ export interface EducatorRepository {
     passwordHash: string;
     role?: AccountRole;
     linkedPlayerId?: string;
+    ownerEducatorId?: string;
   }): Promise<EducatorRecord>;
   existsById(id: string): Promise<boolean>;
   findById(id: string): Promise<EducatorRecord | null>;

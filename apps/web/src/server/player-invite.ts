@@ -156,7 +156,7 @@ export async function createPlayerInviteGateway(): Promise<{
             id: session.educator.id,
             email: session.educator.email,
             displayName: session.educator.displayName,
-            role: session.educator.role === "player" ? "player" : "coach",
+            role: session.educator.role ?? "coach",
             linkedPlayerId: session.educator.linkedPlayerId ?? null,
             // Pas de boucle de confirmation par e-mail pour les comptes tuteur/joueur (créés via
             // un lien d'invitation, déjà vérifié par construction) -- jamais de bannière ici.

@@ -3,6 +3,7 @@ import { AuthService } from "./auth-service";
 import { InvalidCredentialsError, ValidationError } from "./errors";
 import { hashSessionToken } from "./session-token";
 import type {
+  AccountRole,
   EducatorAuthRecord,
   EducatorRecord,
   EducatorRepository,
@@ -16,7 +17,7 @@ class InMemoryEducatorRepository implements EducatorRepository {
   private readonly byId = new Map<string, EducatorAuthRecord>();
   private nextId = 1;
 
-  async create(input: { email: string; displayName: string; passwordHash: string }): Promise<EducatorRecord> {
+  async create(input: { email: string; displayName: string; passwordHash: string; role?: AccountRole; ownerEducatorId?: string }): Promise<EducatorRecord> {
     if ([...this.byId.values()].some((educator) => educator.email === input.email)) {
       throw new Error("Cette adresse e-mail est déjà utilisée.");
     }
@@ -26,6 +27,8 @@ class InMemoryEducatorRepository implements EducatorRepository {
       email: input.email,
       displayName: input.displayName,
       passwordHash: input.passwordHash,
+      role: input.role,
+      ownerEducatorId: input.ownerEducatorId,
       createdAt: FIXED_DATE,
       updatedAt: FIXED_DATE,
     };
@@ -209,6 +212,26 @@ describe("AuthService.getEducatorForSession", () => {
     });
 
     await expect(service.getEducatorForSession(sessionToken)).resolves.toBeNull();
+  });
+});
+
+describe("AuthService.getEducatorForSession pour un adjoint", () => {
+  it("donne accès au compte de l'éducateur, pas au sien", async () => {
+    const { service, educatorRepository } = createService();
+    const owner = await service.register({ email: "titulaire@example.test", password: "motdepasse1", displayName: "Titulaire" });
+    const adjoint = await educatorRepository.create({ email: "adjoint@example.test", displayName: "Adjoint", passwordHash: "x", role: "assistant", ownerEducatorId: owner.educator.id });
+    const { sessionToken } = await service.openSession(adjoint);
+
+    expect((await service.getEducatorForSession(sessionToken))?.id).toBe(owner.educator.id);
+    expect((await service.getAccountForSession(sessionToken))?.id).toBe(adjoint.id);
+  });
+
+  it("ne donne aucun accès à un adjoint sans éducateur", async () => {
+    const { service, educatorRepository } = createService();
+    const adjoint = await educatorRepository.create({ email: "seul@example.test", displayName: "Seul", passwordHash: "x", role: "assistant" });
+    const { sessionToken } = await service.openSession(adjoint);
+
+    expect(await service.getEducatorForSession(sessionToken)).toBeNull();
   });
 });
 

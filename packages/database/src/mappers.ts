@@ -275,8 +275,9 @@ export function toEducatorRecord(educator: Educator): EducatorRecord {
     displayName: educator.displayName,
     // `role` est un texte libre en base (voir schema.prisma) : on retombe sur "coach" pour toute
     // valeur inattendue, jamais "player" par erreur.
-    role: educator.role === "player" ? "player" : "coach",
+    role: educator.role === "player" || educator.role === "assistant" ? educator.role : "coach",
     linkedPlayerId: educator.linkedPlayerId,
+    ownerEducatorId: educator.ownerEducatorId,
     emailVerifiedAt: educator.emailVerifiedAt,
     createdAt: educator.createdAt,
     updatedAt: educator.updatedAt,
