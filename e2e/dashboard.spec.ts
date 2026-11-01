@@ -129,7 +129,7 @@ test("le coach personnalise, valide puis observe sa séance", async ({ page }) =
   await expect(page).toHaveURL(/\/session$/);
 
   await expect(page.getByText("75 min")).toBeVisible();
-  await expect(page.getByText("14 joueurs")).toBeVisible();
+  await expect(page.getByText("14 joueurs", { exact: true })).toBeVisible();
   await expect(page.getByText("Organisation", { exact: true }).first()).toBeVisible();
   await page.getByRole("button", { name: "Ajouter 5 minutes" }).first().click();
   await expect(page.getByText("80 min")).toBeVisible();
@@ -499,7 +499,7 @@ test("un visiteur non connecté découvre la vitrine sur la page d'accueil", asy
   // masqué sous 820px en attendant un menu mobile dédié).
   await page.locator(".m-footer").getByRole("link", { name: "Tarifs" }).click();
   await expect(page).toHaveURL(/\/tarifs$/);
-  await expect(page.getByRole("heading", { name: /gratuit pour planifier/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /tout ce qui existe aujourd’hui est gratuit/i })).toBeVisible();
 });
 
 test("le visiteur compare les fréquences de paiement Premium sur /tarifs", async ({ page }) => {
@@ -797,5 +797,7 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   await expect(page.getByRole("heading", { name: "Ma progression" })).toBeVisible();
   await expect(page.getByRole("button", { name: /modifier|retirer/i })).toHaveCount(0);
   await page.locator(".player-space-history .player-evaluation-compare input").last().check();
-  await expect(page.locator(".radar-chart-legend")).toBeVisible();
+  await expect(page.locator(".player-space-progress .radar-chart-legend")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mon auto-évaluation" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enregistrer mon auto-évaluation" })).toBeVisible();
 });

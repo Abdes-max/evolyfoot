@@ -8,3 +8,25 @@ export function colorForEvaluation(evaluationId: string, evaluations: ReadonlyAr
   const index = evaluations.findIndex((evaluation) => evaluation.id === evaluationId);
   return compareColors[Math.max(index, 0) % compareColors.length]!;
 }
+
+interface SourcedEvaluation {
+  id: string;
+  source?: "coach" | "player";
+}
+
+function isSelfEvaluation(evaluation: SourcedEvaluation): boolean {
+  return evaluation.source === "player";
+}
+
+// Le radar s'ouvre sur la dernière note de l'éducateur et la dernière auto-évaluation : c'est leur
+// écart qui intéresse, pas simplement l'entrée la plus récente de l'historique (liste la plus
+// récente d'abord).
+export function defaultComparedEvaluationIds(evaluations: readonly SourcedEvaluation[]): ReadonlySet<string> {
+  const latestCoach = evaluations.find((evaluation) => !isSelfEvaluation(evaluation));
+  const latestSelf = evaluations.find(isSelfEvaluation);
+  return new Set([latestCoach, latestSelf].flatMap((evaluation) => (evaluation ? [evaluation.id] : [])));
+}
+
+export function evaluationLabel(evaluation: SourcedEvaluation, dateLabel: string): string {
+  return isSelfEvaluation(evaluation) ? `Auto-évaluation · ${dateLabel}` : `Éducateur · ${dateLabel}`;
+}

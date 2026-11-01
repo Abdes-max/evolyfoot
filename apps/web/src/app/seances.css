@@ -34,3 +34,24 @@
 @media (max-width: 950px) {
   .seances-shell { padding-left: 0; padding-bottom: 90px; }
 }
+
+.season-months { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.season-month { padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.season-month.current { border-color: var(--accent); }
+.season-month h2 { margin: 0 0 8px; font-size: 13.5px; }
+.season-month > p { margin: 0; font-size: 12px; color: var(--muted); }
+.season-month ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.season-event { display: grid; grid-template-columns: 56px 1fr auto; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 10px; border-left: 3px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 12px; text-decoration: none; }
+.season-event.session { border-left-color: var(--accent); }
+.season-event.match { border-left-color: #ffb073; }
+.season-event.tournament, .season-event.plateau { border-left-color: #7c9cff; }
+.season-event span, .season-event small { color: var(--muted); font-size: 10.5px; }
+
+/* Pages de séance : même décalage que les autres pages à menu latéral, barre du bas sur mobile. */
+.session-shell { padding-left: 264px; }
+.session-header { padding-left: max(25px, calc((100% - 920px) / 2)); padding-right: max(25px, calc((100% - 920px) / 2)); }
+.session-back { display: flex; width: fit-content; align-items: center; min-height: 40px; margin-bottom: 10px; color: var(--accent); font-size: 13px; font-weight: 800; text-decoration: none; }
+.session-back:hover { color: var(--ink); }
+@media (max-width: 950px) {
+  .session-shell { padding-left: 0; padding-bottom: 90px; }
+}

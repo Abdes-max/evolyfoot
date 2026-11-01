@@ -13,6 +13,8 @@ import type {
   ObservationReportRating,
   ObservationReportSummary,
   PlayerEvaluationScores,
+  PersonalExercise,
+  PersonalExerciseInput,
   PlayerReference,
   PlayerSignal,
   TeamProfile,
@@ -67,6 +69,23 @@ export interface EmailVerificationRecord {
   expiresAt: Date;
   consumedAt: Date | null;
   createdAt: Date;
+}
+
+export interface PasswordResetRecord {
+  id: string;
+  educatorId: string;
+  expiresAt: Date;
+  consumedAt: Date | null;
+}
+
+export interface PasswordResetRepository {
+  countCreatedSince(educatorId: string, since: Date): Promise<number>;
+  // Crée le lien et annule ceux encore valides pour ce compte.
+  replaceForEducator(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<void>;
+  findByTokenHash(tokenHash: string): Promise<PasswordResetRecord | null>;
+  // Atomique : consomme le lien, change le mot de passe et ferme les sessions. `false` si le lien
+  // a déjà été consommé entre-temps.
+  apply(id: string, educatorId: string, passwordHash: string): Promise<boolean>;
 }
 
 export interface EmailVerificationRepository {
@@ -468,14 +487,22 @@ export interface PersistedPlayerEvaluation {
   educatorId: string;
   playerId: string;
   scores: PlayerEvaluationScores;
+  source: PlayerEvaluationSource;
   createdAt: Date;
 }
+
+export type PlayerEvaluationSource = "coach" | "player";
 
 export interface PlayerEvaluationRepository {
   listByEducator(educatorId: string): Promise<PersistedPlayerEvaluation[]>;
   listByPlayer(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation[]>;
-  countByPlayer(playerId: string, educatorId: string): Promise<number>;
-  create(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation>;
+  countByPlayer(playerId: string, educatorId: string, source?: PlayerEvaluationSource): Promise<number>;
+  create(
+    educatorId: string,
+    playerId: string,
+    scores: PlayerEvaluationScores,
+    source?: PlayerEvaluationSource,
+  ): Promise<PersistedPlayerEvaluation>;
   // `undefined` = champ non touché ; jamais retiré une fois posé, mêmes conventions que
   // MatchRepository.update ci-dessus. `createdAt` sert de date d'évaluation modifiable (voir
   // PlayerEvaluationService.update) -- pas une simple trace d'audit dans ce contexte.
@@ -484,6 +511,12 @@ export interface PlayerEvaluationRepository {
     educatorId: string,
     input: { scores?: PlayerEvaluationScores; createdAt?: Date },
   ): Promise<PersistedPlayerEvaluation>;
+  remove(id: string, educatorId: string): Promise<void>;
+}
+
+export interface PersonalExerciseRepository {
+  listByEducator(educatorId: string): Promise<PersonalExercise[]>;
+  create(educatorId: string, input: PersonalExerciseInput): Promise<PersonalExercise>;
   remove(id: string, educatorId: string): Promise<void>;
 }
 

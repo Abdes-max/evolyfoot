@@ -226,12 +226,13 @@ export async function createTrainingSessionGateway(): Promise<{
   gateway: TrainingSessionGateway;
   disconnect: () => Promise<void>;
 }> {
-  const { createDatabaseClient, TrainingSessionService, PrismaEducatorRepository, PrismaTrainingSessionRepository } =
+  const { createDatabaseClient, TrainingSessionService, PrismaEducatorRepository, PrismaPersonalExerciseRepository, PrismaTrainingSessionRepository } =
     await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new TrainingSessionService(
     new PrismaEducatorRepository(database.prisma),
     new PrismaTrainingSessionRepository(database.prisma),
+    new PrismaPersonalExerciseRepository(database.prisma),
   );
 
   const toSummary = (session: Awaited<ReturnType<typeof service.save>>): PersistedTrainingSession => ({

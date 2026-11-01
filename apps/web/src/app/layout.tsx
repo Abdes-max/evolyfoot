@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import "./observation.css";
 import "./session-builder.css";
@@ -19,6 +20,8 @@ import "./messaging.css";
 import "./page-backgrounds.css";
 import { AuthGate } from "./auth-gate";
 
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://evolyfoot.com";
 
 export const metadata: Metadata = {
@@ -29,7 +32,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr">
+    <html className={manrope.variable} lang="fr">
       <body>
         <AuthGate>{children}</AuthGate>
       </body>

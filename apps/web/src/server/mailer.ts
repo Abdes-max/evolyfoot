@@ -46,6 +46,11 @@ export interface MailInput {
 // les autres handlers de ce dossier (voir errorResponse ailleurs) plutôt qu'un console.error en
 // dur, pour rester testable.
 export async function sendMail(input: MailInput, log: (error: unknown) => void = console.error): Promise<void> {
+  // Sans relais, le repli Mailhog est injoignable en production : autant le dire clairement.
+  if (process.env.NODE_ENV === "production" && !process.env.SMTP_HOST) {
+    log(new Error("SMTP_HOST manquant : e-mail non envoyé. Voir docs/delivery.md (Brevo)."));
+    return;
+  }
   try {
     await getTransporter().sendMail({
       from: process.env.SMTP_FROM || "EvolyFoot <no-reply@evolyfoot.com>",
@@ -59,12 +64,23 @@ export async function sendMail(input: MailInput, log: (error: unknown) => void =
   }
 }
 
-// Gabarit unique (un seul e-mail transactionnel existe pour l'instant) : thème sombre aligné sur
-// la vitrine, mais en HTML e-mail simple (tableaux/styles en ligne uniquement -- pas de flexbox
-// ni de variables CSS, peu fiables dans les clients mail).
-export function renderVerificationEmail(displayName: string, verifyUrl: string): { subject: string; html: string; text: string } {
-  const subject = "Confirme ton adresse e-mail — EvolyFoot";
-  const html = `<!doctype html>
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+interface EmailContent {
+  displayName: string;
+  message: string;
+  actionLabel: string;
+  actionUrl: string;
+  footnote?: string;
+}
+
+// Gabarit commun : thème sombre aligné sur la vitrine, mais en HTML e-mail simple (tableaux/styles
+// en ligne uniquement -- pas de flexbox ni de variables CSS, peu fiables dans les clients mail).
+function renderEmailHtml({ displayName, message, actionLabel, actionUrl, footnote }: EmailContent): string {
+  const url = escapeHtml(actionUrl);
+  return `<!doctype html>
 <html lang="fr">
   <body style="margin:0;padding:32px 16px;background:#0a0e15;font-family:Arial,Helvetica,sans-serif;">
     <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#151d2b;border:1px solid #232c3c;border-radius:16px;">
@@ -72,21 +88,37 @@ export function renderVerificationEmail(displayName: string, verifyUrl: string):
         <td style="padding:32px 28px;color:#f4f6f9;">
           <div style="display:inline-block;width:32px;height:32px;line-height:32px;text-align:center;border-radius:9px;background:#3ec6f5;color:#062330;font-weight:bold;font-size:16px;">E</div>
           <span style="font-weight:bold;font-size:18px;margin-left:8px;">EvolyFoot</span>
-          <h1 style="font-size:20px;margin:24px 0 12px;">Bonjour ${displayName},</h1>
-          <p style="font-size:14px;line-height:1.6;color:#97a3b6;margin:0 0 24px;">
-            Confirme ton adresse e-mail pour finaliser la création de ton compte EvolyFoot. Ce lien est valable 48 heures.
-          </p>
-          <a href="${verifyUrl}" style="display:inline-block;padding:12px 24px;border-radius:10px;background:#3ec6f5;color:#062330;text-decoration:none;font-weight:bold;font-size:14px;">
-            Confirmer mon e-mail
+          <h1 style="font-size:20px;margin:24px 0 12px;">Bonjour ${escapeHtml(displayName)},</h1>
+          <p style="font-size:14px;line-height:1.6;color:#97a3b6;margin:0 0 24px;">${escapeHtml(message)}</p>
+          <a href="${url}" style="display:inline-block;padding:12px 24px;border-radius:10px;background:#3ec6f5;color:#062330;text-decoration:none;font-weight:bold;font-size:14px;">
+            ${escapeHtml(actionLabel)}
           </a>
           <p style="font-size:12px;line-height:1.6;color:#97a3b6;margin:24px 0 0;">
-            Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur : ${verifyUrl}
-          </p>
+            Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur : ${url}
+          </p>${footnote ? `
+          <p style="font-size:12px;line-height:1.6;color:#97a3b6;margin:12px 0 0;">${escapeHtml(footnote)}</p>` : ""}
         </td>
       </tr>
     </table>
   </body>
 </html>`;
-  const text = `Bonjour ${displayName},\n\nConfirme ton adresse e-mail pour finaliser la création de ton compte EvolyFoot (lien valable 48 heures) :\n${verifyUrl}`;
-  return { subject, html, text };
+}
+
+export function renderVerificationEmail(displayName: string, verifyUrl: string): { subject: string; html: string; text: string } {
+  const message = "Confirme ton adresse e-mail pour finaliser la création de ton compte EvolyFoot. Ce lien est valable 48 heures.";
+  return {
+    subject: "Confirme ton adresse e-mail — EvolyFoot",
+    html: renderEmailHtml({ displayName, message, actionLabel: "Confirmer mon e-mail", actionUrl: verifyUrl }),
+    text: `Bonjour ${displayName},\n\n${message}\n${verifyUrl}`,
+  };
+}
+
+export function renderPasswordResetEmail(displayName: string, resetUrl: string): { subject: string; html: string; text: string } {
+  const message = "Tu as demandé à changer ton mot de passe EvolyFoot. Ce lien est valable 1 heure et ne sert qu’une fois.";
+  const footnote = "Si tu n’es pas à l’origine de cette demande, ignore cet e-mail : ton mot de passe ne change pas.";
+  return {
+    subject: "Réinitialise ton mot de passe — EvolyFoot",
+    html: renderEmailHtml({ displayName, message, actionLabel: "Choisir un nouveau mot de passe", actionUrl: resetUrl, footnote }),
+    text: `Bonjour ${displayName},\n\n${message}\n${resetUrl}\n\n${footnote}`,
+  };
 }

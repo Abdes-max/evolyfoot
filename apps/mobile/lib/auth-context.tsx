@@ -1,15 +1,19 @@
 import type {
+  AttendanceEntry,
   DiagnosticScores,
   MatchLineupAssignment,
   MatchStatus,
   MatchVenue,
   ObservationDraft,
+  PersonalExercise,
   PlayerReference,
+  SavedTrainingSession,
   TeamProfile,
   TrainingSession,
 } from "@evolyfoot/domain";
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "./api";
+import { clearSessionToken, readSessionToken, writeSessionToken } from "./session-storage";
 
 export interface Educator {
   id: string;
@@ -42,8 +46,18 @@ export type AuthResult = { ok: true } | { ok: false; error: string };
 export type MatchResult = { ok: true; match: MobileMatch } | { ok: false; error: string };
 export type MatchListResult = { ok: true; matches: MobileMatch[] } | { ok: false; error: string };
 
+// Créneau du cycle et rendez-vous, exigés par `POST /api/sessions`.
+export interface SessionSlotInput {
+  weekNumber: number;
+  slot: number;
+  meetingAt: string;
+  attendance?: readonly AttendanceEntry[];
+}
+
 export interface AuthContextValue {
   educator: Educator | null;
+  // Vrai le temps de relire la session enregistrée au lancement de l'app.
+  restoring: boolean;
   team: TeamProfile | null;
   diagnosticScores: DiagnosticScores | null;
   roster: readonly RosterPlayer[];
@@ -52,7 +66,9 @@ export interface AuthContextValue {
   logout(): Promise<void>;
   saveTeam(profile: TeamProfile): Promise<AuthResult>;
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
-  saveTrainingSession(session: TrainingSession): Promise<AuthResult>;
+  saveTrainingSession(session: TrainingSession, slotInput: SessionSlotInput): Promise<AuthResult>;
+  listSessions(): Promise<readonly SavedTrainingSession[]>;
+  listPersonalExercises(): Promise<readonly PersonalExercise[]>;
   saveObservation(draft: ObservationDraft, matchId?: string): Promise<AuthResult>;
   addPlayer(firstName: string, lastName: string): Promise<AuthResult>;
   renamePlayer(id: string, firstName: string, lastName: string): Promise<AuthResult>;
@@ -80,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [diagnosticScores, setDiagnosticScores] = useState<DiagnosticScores | null>(null);
   const [roster, setRoster] = useState<readonly RosterPlayer[]>([]);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(true);
 
   const fetchTeam = useCallback(async (token: string) => {
     try {
@@ -123,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const body = await response.json();
       setEducator(body.educator);
       setSessionToken(body.sessionToken);
+      await writeSessionToken(body.sessionToken);
       await Promise.all([fetchTeam(body.sessionToken), fetchDiagnostic(body.sessionToken), fetchRoster(body.sessionToken)]);
       return { ok: true };
     },
@@ -141,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const body = await response.json();
       setEducator(body.educator);
       setSessionToken(body.sessionToken);
+      await writeSessionToken(body.sessionToken);
       setTeam(null);
       setDiagnosticScores(null);
       setRoster([]);
@@ -158,7 +177,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setDiagnosticScores(null);
     setRoster([]);
     setSessionToken(null);
+    await clearSessionToken();
   }, [sessionToken]);
+
+  // Reprend la session enregistrée au lancement. Un jeton refusé est effacé ; une panne réseau le
+  // conserve, pour ne pas déconnecter l'éducateur parce que le terrain n'a pas de réseau.
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const token = await readSessionToken();
+      if (!token) {
+        return;
+      }
+      const response = await apiFetch("/api/auth/session", { sessionToken: token }).catch(() => null);
+      if (!response || response.status >= 500) {
+        return;
+      }
+      const body = await response.json().catch(() => ({ educator: null }));
+      if (!body.educator) {
+        await clearSessionToken();
+        return;
+      }
+      if (cancelled) {
+        return;
+      }
+      setEducator(body.educator);
+      setSessionToken(token);
+      await Promise.all([fetchTeam(token), fetchDiagnostic(token), fetchRoster(token)]);
+    })().finally(() => {
+      if (!cancelled) {
+        setRestoring(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchTeam, fetchDiagnostic, fetchRoster]);
 
   const saveTeam = useCallback(
     async (profile: TeamProfile): Promise<AuthResult> => {
@@ -201,7 +257,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const saveTrainingSession = useCallback(
-    async (session: TrainingSession): Promise<AuthResult> => {
+    async (session: TrainingSession, slotInput: SessionSlotInput): Promise<AuthResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour enregistrer cette séance." };
       }
@@ -219,6 +275,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             activityId: block.activity.id,
             durationMinutes: block.durationMinutes,
           })),
+          weekNumber: slotInput.weekNumber,
+          slot: slotInput.slot,
+          meetingAt: slotInput.meetingAt,
+          ...(slotInput.attendance && slotInput.attendance.length > 0 ? { attendance: slotInput.attendance } : {}),
         }),
       });
       if (!response.ok) {
@@ -228,6 +288,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [sessionToken],
   );
+
+  const listSessions = useCallback(async (): Promise<readonly SavedTrainingSession[]> => {
+    if (!sessionToken) {
+      return [];
+    }
+    const response = await apiFetch("/api/sessions", { sessionToken }).catch(() => null);
+    if (!response?.ok) {
+      return [];
+    }
+    const body = await response.json().catch(() => ({ sessions: [] }));
+    return body.sessions ?? [];
+  }, [sessionToken]);
+
+  const listPersonalExercises = useCallback(async (): Promise<readonly PersonalExercise[]> => {
+    if (!sessionToken) {
+      return [];
+    }
+    const response = await apiFetch("/api/personal-exercises", { sessionToken }).catch(() => null);
+    if (!response?.ok) {
+      return [];
+    }
+    const body = await response.json().catch(() => ({ exercises: [] }));
+    return body.exercises ?? [];
+  }, [sessionToken]);
 
   const saveObservation = useCallback(
     async (draft: ObservationDraft, matchId?: string): Promise<AuthResult> => {
@@ -396,6 +480,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       educator,
+      restoring,
       team,
       diagnosticScores,
       roster,
@@ -405,6 +490,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveTeam,
       saveDiagnostic,
       saveTrainingSession,
+      listSessions,
+      listPersonalExercises,
       saveObservation,
       addPlayer,
       renamePlayer,
@@ -418,6 +505,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }),
     [
       educator,
+      restoring,
       team,
       diagnosticScores,
       roster,
@@ -427,6 +515,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveTeam,
       saveDiagnostic,
       saveTrainingSession,
+      listSessions,
+      listPersonalExercises,
       saveObservation,
       addPlayer,
       renamePlayer,

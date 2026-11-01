@@ -6,6 +6,7 @@ import type { AttendanceStatus, PlayerEvaluationScores } from "@evolyfoot/domain
 export interface Evaluation {
   id: string;
   scores: PlayerEvaluationScores;
+  source?: "coach" | "player";
   createdAt: string;
 }
 

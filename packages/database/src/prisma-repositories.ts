@@ -1,4 +1,5 @@
 import { Prisma } from "./generated/prisma/client";
+import type { PersonalExercise, PersonalExerciseInput } from "@evolyfoot/domain";
 import type { PrismaClient } from "./generated/prisma/client";
 import {
   DiagnosticNotFoundError,
@@ -49,6 +50,8 @@ import type {
   EducatorRepository,
   EmailVerificationRecord,
   EmailVerificationRepository,
+  PasswordResetRecord,
+  PasswordResetRepository,
   MatchRepository,
   MessageRepository,
   ObservationRepository,
@@ -66,6 +69,8 @@ import type {
   PlateauRepository,
   PlayerDetailsPatch,
   PlayerEvaluationRepository,
+  PersonalExerciseRepository,
+  PlayerEvaluationSource,
   PlayerRepository,
   PlayerInviteRecord,
   PlayerInviteRepository,
@@ -225,6 +230,46 @@ export class PrismaEmailVerificationRepository implements EmailVerificationRepos
 
   async markConsumed(id: string): Promise<void> {
     await this.prisma.emailVerification.update({ where: { id }, data: { consumedAt: new Date() } });
+  }
+}
+
+export class PrismaPasswordResetRepository implements PasswordResetRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async countCreatedSince(educatorId: string, since: Date): Promise<number> {
+    return this.prisma.passwordReset.count({ where: { educatorId, createdAt: { gte: since } } });
+  }
+
+  async replaceForEducator(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.passwordReset.updateMany({
+        where: { educatorId: input.educatorId, consumedAt: null },
+        data: { consumedAt: new Date() },
+      }),
+      this.prisma.passwordReset.create({ data: input }),
+    ]);
+  }
+
+  async findByTokenHash(tokenHash: string): Promise<PasswordResetRecord | null> {
+    const reset = await this.prisma.passwordReset.findUnique({ where: { tokenHash } });
+    return reset === null
+      ? null
+      : { id: reset.id, educatorId: reset.educatorId, expiresAt: reset.expiresAt, consumedAt: reset.consumedAt };
+  }
+
+  async apply(id: string, educatorId: string, passwordHash: string): Promise<boolean> {
+    return this.prisma.$transaction(async (transaction) => {
+      const { count } = await transaction.passwordReset.updateMany({
+        where: { id, consumedAt: null },
+        data: { consumedAt: new Date() },
+      });
+      if (count === 0) {
+        return false;
+      }
+      await transaction.educator.update({ where: { id: educatorId }, data: { passwordHash } });
+      await transaction.session.deleteMany({ where: { educatorId } });
+      return true;
+    });
   }
 }
 
@@ -809,6 +854,48 @@ export class PrismaContactMessageRepository implements ContactMessageRepository 
   }
 }
 
+function toPersonalExercise(record: {
+  id: string;
+  kind: string;
+  theme: string;
+  title: string;
+  objective: string;
+  organization: string;
+  instruction: string;
+  observable: string;
+  photo: string | null;
+}): PersonalExercise {
+  return {
+    id: record.id,
+    // Valeurs contrôlées par validatePersonalExercise avant toute écriture.
+    kind: record.kind as PersonalExercise["kind"],
+    theme: record.theme as PersonalExercise["theme"],
+    title: record.title,
+    objective: record.objective,
+    organization: record.organization,
+    instruction: record.instruction,
+    observable: record.observable,
+    photo: record.photo,
+  };
+}
+
+export class PrismaPersonalExerciseRepository implements PersonalExerciseRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async listByEducator(educatorId: string): Promise<PersonalExercise[]> {
+    const records = await this.prisma.personalExerciseRecord.findMany({ where: { educatorId }, orderBy: { createdAt: "desc" } });
+    return records.map(toPersonalExercise);
+  }
+
+  async create(educatorId: string, input: PersonalExerciseInput): Promise<PersonalExercise> {
+    return toPersonalExercise(await this.prisma.personalExerciseRecord.create({ data: { educatorId, ...input } }));
+  }
+
+  async remove(id: string, educatorId: string): Promise<void> {
+    await this.prisma.personalExerciseRecord.deleteMany({ where: { id, educatorId } });
+  }
+}
+
 export class PrismaPlayerEvaluationRepository implements PlayerEvaluationRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -828,14 +915,19 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
     return records.map(toPersistedPlayerEvaluation);
   }
 
-  async countByPlayer(playerId: string, educatorId: string): Promise<number> {
-    return this.prisma.playerEvaluationRecord.count({ where: { playerId, educatorId } });
+  async countByPlayer(playerId: string, educatorId: string, source: PlayerEvaluationSource = "coach"): Promise<number> {
+    return this.prisma.playerEvaluationRecord.count({ where: { playerId, educatorId, source } });
   }
 
-  async create(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation> {
+  async create(
+    educatorId: string,
+    playerId: string,
+    scores: PlayerEvaluationScores,
+    source: PlayerEvaluationSource = "coach",
+  ): Promise<PersistedPlayerEvaluation> {
     try {
       const record = await this.prisma.playerEvaluationRecord.create({
-        data: { educatorId, playerId, scores: scores as unknown as Prisma.InputJsonValue },
+        data: { educatorId, playerId, scores: scores as unknown as Prisma.InputJsonValue, source },
       });
       return toPersistedPlayerEvaluation(record);
     } catch (error) {
@@ -851,8 +943,9 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
     educatorId: string,
     input: { scores?: PlayerEvaluationScores; createdAt?: Date },
   ): Promise<PersistedPlayerEvaluation> {
+    // L'éducateur ne réécrit jamais ce que le joueur a déclaré de lui-même.
     const { count } = await this.prisma.playerEvaluationRecord.updateMany({
-      where: { id, educatorId },
+      where: { id, educatorId, source: "coach" },
       data: {
         ...(input.scores !== undefined ? { scores: input.scores as unknown as Prisma.InputJsonValue } : {}),
         ...(input.createdAt !== undefined ? { createdAt: input.createdAt } : {}),

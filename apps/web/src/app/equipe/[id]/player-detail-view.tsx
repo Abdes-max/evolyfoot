@@ -11,7 +11,8 @@ import {
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { RadarChart } from "../../charts";
-import { colorForEvaluation } from "../../evaluation-colors";
+import { colorForEvaluation, defaultComparedEvaluationIds, evaluationLabel } from "../../evaluation-colors";
+import { resizeImageToDataUrl } from "../../image-resize";
 import { MessagingThread } from "../../messaging-thread";
 
 interface Player {
@@ -26,6 +27,7 @@ interface Player {
 }
 
 interface Evaluation {
+  source?: "coach" | "player";
   id: string;
   playerId: string;
   scores: PlayerEvaluationScores;
@@ -56,34 +58,7 @@ function formatBirthDate(value: string | null): string {
     : parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
-// Redimensionne l'image choisie à 320px de côté max et la renvoie en data URL JPEG compacte --
-// le stockage se fait tel quel en base (pas de service d'objets), inutile d'y mettre l'original.
-function resizeToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("lecture impossible"));
-    reader.onload = () => {
-      const image = new Image();
-      image.onerror = () => reject(new Error("image invalide"));
-      image.onload = () => {
-        const maxSide = 320;
-        const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(image.width * scale);
-        canvas.height = Math.round(image.height * scale);
-        const context = canvas.getContext("2d");
-        if (!context) {
-          reject(new Error("canvas indisponible"));
-          return;
-        }
-        context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
-      };
-      image.src = String(reader.result);
-    };
-    reader.readAsDataURL(file);
-  });
-}
+const playerPhotoMaxSide = 320;
 
 type DetailForm = { firstName: string; lastName: string; birthDate: string; phone: string; email: string };
 
@@ -106,7 +81,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [editingEvaluationId, setEditingEvaluationId] = useState<string | null>(null);
   const [addingEvaluation, setAddingEvaluation] = useState(false);
   const [evaluationError, setEvaluationError] = useState("");
-  // Évaluations superposées sur le radar (voir RadarChart.series) -- la plus récente y est déjà
+  // Évaluations superposées sur le radar (voir RadarChart.series) -- les dernières de chaque source y sont
   // par défaut, comparer les autres est un choix explicite plutôt qu'un graphe surchargé d'emblée.
   const [comparedEvaluationIds, setComparedEvaluationIds] = useState<ReadonlySet<string>>(new Set());
 
@@ -146,7 +121,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
         setPlayer(found);
         const loadedEvaluations: Evaluation[] = evaluationsResponse.ok ? (evaluationsBody.evaluations ?? []) : [];
         setEvaluations(loadedEvaluations);
-        setComparedEvaluationIds(loadedEvaluations[0] ? new Set([loadedEvaluations[0].id]) : new Set());
+        setComparedEvaluationIds(defaultComparedEvaluationIds(loadedEvaluations));
         setStatus("ready");
       } catch {
         if (!cancelled) {
@@ -220,7 +195,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
     setPhotoBusy(true);
     setDetailsError("");
     try {
-      const dataUrl = await resizeToDataUrl(file);
+      const dataUrl = await resizeImageToDataUrl(file, playerPhotoMaxSide);
       await patchPlayer({ photo: dataUrl });
     } catch {
       setDetailsError("Impossible de traiter cette image.");
@@ -497,7 +472,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
               <div className="player-block-head">
                 <h2>Évaluation</h2>
                 <span className="player-count">
-                  {evaluations.length}/{playerEvaluationMaxPerSeason}
+                  {evaluations.filter((evaluation) => evaluation.source !== "player").length}/{playerEvaluationMaxPerSeason}
                 </span>
               </div>
 
@@ -514,7 +489,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                             .filter((evaluation) => comparedEvaluationIds.has(evaluation.id))
                             .map((evaluation) => ({
                               key: evaluation.id,
-                              label: formatDate(evaluation.createdAt),
+                              label: evaluationLabel(evaluation, formatDate(evaluation.createdAt)),
                               color: colorForEvaluation(evaluation.id, evaluations),
                               scores: evaluation.scores,
                             }))
@@ -524,7 +499,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                   />
                   {comparedEvaluationIds.size === 0 && (
                     <p className="player-radar-caption">
-                      {latest ? `Dernière évaluation · ${formatDate(latest.createdAt)}` : "Aperçu de la note en cours de saisie"}
+                      {latest ? evaluationLabel(latest, formatDate(latest.createdAt)) : "Aperçu de la note en cours de saisie"}
                     </p>
                   )}
                 </div>
@@ -592,13 +567,18 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                               />
                             </label>
                             <div>
-                              <strong>{formatDate(evaluation.createdAt)}</strong>
+                              <strong>
+                                {evaluation.source === "player" ? "Auto-évaluation · " : ""}
+                                {formatDate(evaluation.createdAt)}
+                              </strong>
                               <span>Moyenne {average}/{playerEvaluationMaxScore}</span>
                             </div>
                             <div className="player-evaluation-history-actions">
-                              <button onClick={() => startEditingEvaluation(evaluation)} type="button">
-                                Modifier
-                              </button>
+                              {evaluation.source !== "player" && (
+                                <button onClick={() => startEditingEvaluation(evaluation)} type="button">
+                                  Modifier
+                                </button>
+                              )}
                               <button
                                 aria-label={`Retirer l’évaluation du ${formatDate(evaluation.createdAt)}`}
                                 onClick={() => removeEvaluation(evaluation.id)}

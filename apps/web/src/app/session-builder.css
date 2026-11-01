@@ -167,3 +167,9 @@
   .session-block-body { flex-direction: column; }
   .session-block-diagram { flex-basis: auto; width: 100%; }
 }
+
+.session-why { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 16px 18px; margin: 0 auto 14px; max-width: 980px; border: 1px solid var(--accent-dark); border-radius: 14px; background: var(--surface); }
+.session-why h2 { margin: 0 0 4px; font-size: 14px; }
+.session-why p { margin: 0; max-width: 640px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.session-why button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--ink); font-size: 12px; font-weight: 800; cursor: pointer; }
+.session-block-reason { color: var(--accent) !important; font-size: 12px; font-weight: 650; }

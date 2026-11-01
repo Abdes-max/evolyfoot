@@ -5,6 +5,7 @@ import {
   canReplaceSessionActivity,
   canValidateSession,
   findTrainingActivity,
+  explainTrainingSession,
   generateTrainingSession,
   getSessionDuration,
   moveSessionBlock,
@@ -62,6 +63,34 @@ describe("training session generation", () => {
   });
 });
 
+describe("variété et explication des séances générées", () => {
+  const conserverWeek = { ...developmentWeek, theme: "Conserver le ballon" as const };
+  const titles = (generated: ReturnType<typeof generateTrainingSession>) => generated.blocks.map((block) => block.activity.title);
+
+  it("varie le déroulé entre deux créneaux d'une même semaine", () => {
+    expect(titles(generateTrainingSession(conserverWeek, "U12", 14, 0))).not.toEqual(titles(generateTrainingSession(conserverWeek, "U12", 14, 1)));
+  });
+
+  it("propose une autre séance sur le même créneau avec un identifiant distinct", () => {
+    const first = generateTrainingSession(conserverWeek, "U12", 14, 0);
+    const other = generateTrainingSession(conserverWeek, "U12", 14, 0, 1);
+
+    expect(titles(other)).not.toEqual(titles(first));
+    expect(other.id).not.toBe(first.id);
+    expect(generateTrainingSession(conserverWeek, "U12", 14, 0, 1)).toEqual(other);
+  });
+
+  it("explique la séance et chaque bloc", () => {
+    const generated = generateTrainingSession(conserverWeek, "U12", 15, 0);
+    const explanation = explainTrainingSession(generated, conserverWeek);
+
+    expect(explanation.summary).toContain("Découvrir");
+    expect(explanation.summary).toContain("Conserver le ballon");
+    expect(explanation.blocks.map((block) => block.blockId)).toEqual(generated.blocks.map((block) => block.id));
+    expect(explanation.blocks[2]?.reason).toContain("deux groupes de 7 et 8");
+  });
+});
+
 const session = generateTrainingSession(developmentWeek, "U12", 14);
 
 describe("training session editing", () => {
@@ -91,8 +120,8 @@ describe("training session editing", () => {
     expect(replacement.blocks[2].activity.compatibleThemes).toContain(session.theme);
     expect(replacement.blocks[2].id).toBe(session.blocks[2].id);
     expect(canReplaceSessionActivity(session, 2)).toBe(true);
-    expect(canReplaceSessionActivity(session, 0)).toBe(false);
-    expect(replaceSessionActivity(session, 0)).toBe(session);
+    expect(canReplaceSessionActivity(session, 0)).toBe(true);
+    expect(replaceSessionActivity(session, 0).blocks[0].activity.id).not.toBe(session.blocks[0].activity.id);
   });
 
   it("valide uniquement une durée totale entre 60 et 90 minutes", () => {
@@ -112,7 +141,9 @@ describe("training session editing", () => {
 
 describe("bibliothèque d'exercices", () => {
   it("expose vingt activités, chacune avec un schéma tactique et un contenu de coaching complet", () => {
-    expect(trainingActivityCatalogue).toHaveLength(20);
+    expect(trainingActivityCatalogue).toHaveLength(100);
+    expect(new Set(trainingActivityCatalogue.map((activity) => activity.id)).size).toBe(100);
+    expect(new Set(trainingActivityCatalogue.map((activity) => activity.title)).size).toBe(100);
 
     for (const activity of trainingActivityCatalogue) {
       expect(activity.rules.length).toBeGreaterThan(0);

@@ -1,4 +1,5 @@
 import { BibliothequeBrowser } from "./bibliotheque-browser";
+import { PersonalExercises } from "./personal-exercises";
 import { SidebarNav } from "../sidebar-nav";
 
 export default function BibliothequePage() {
@@ -15,6 +16,7 @@ export default function BibliothequePage() {
             </p>
           </div>
         </header>
+        <PersonalExercises />
         <BibliothequeBrowser />
       </main>
     </>

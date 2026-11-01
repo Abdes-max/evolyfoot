@@ -23,7 +23,9 @@ export {
   PrismaObservationRepository,
   PrismaContactMessageRepository,
   PrismaEmailVerificationRepository,
+  PrismaPasswordResetRepository,
   PrismaPlateauRepository,
+  PrismaPersonalExerciseRepository,
   PrismaPlayerEvaluationRepository,
   PrismaPlayerInviteRepository,
   PrismaPlayerRepository,
@@ -42,6 +44,7 @@ export { MessagingService } from "./messaging-service";
 export { MetricsService } from "./metrics-service";
 export { ObservationService } from "./observation-service";
 export { ContactMessageService } from "./contact-message-service";
+export { PasswordResetInvalidError, PasswordResetService } from "./password-reset-service";
 export { EmailVerificationService, VerificationInvalidError } from "./email-verification-service";
 export { PlateauService } from "./plateau-service";
 export { PlayerDashboardService } from "./player-dashboard-service";
@@ -65,6 +68,7 @@ export type { FunnelStep, MvpMetrics, WeeklyActivityPoint } from "./metrics-serv
 export type {
   PlayerDashboard,
   PlayerDashboardCompetition,
+  PlayerDashboardEvaluation,
   PlayerDashboardMatch,
   PlayerDashboardTrainingSession,
   PlayerDashboardTrainingSlot,
@@ -73,6 +77,7 @@ export type { CreatedInvite, InvitePreview } from "./player-invite-service";
 export type { PlayerDetailsInput } from "./roster-service";
 export type { TeamStats } from "./stats-service";
 export type { TrainingSessionInput } from "./training-session-service";
+export { PersonalExerciseService } from "./personal-exercise-service";
 export type {
   AccountRole,
   DiagnosticRepository,

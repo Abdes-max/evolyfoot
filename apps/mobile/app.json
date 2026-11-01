@@ -7,7 +7,7 @@
     "scheme": "evolyfoot",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "plugins": ["expo-router"],
+    "plugins": ["expo-router", "expo-secure-store"],
     "experiments": { "typedRoutes": true },
     "ios": { "supportsTablet": true, "bundleIdentifier": "com.evolyfoot.app" },
     "android": { "package": "com.evolyfoot.app", "adaptiveIcon": { "backgroundColor": "#17643d" } }

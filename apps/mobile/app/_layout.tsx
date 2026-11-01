@@ -6,16 +6,16 @@ import { AuthProvider, useAuth } from "../lib/auth-context";
 const PUBLIC_ROUTES = ["/connexion", "/inscription"];
 
 function AuthGate({ children }: { children: ReactNode }) {
-  const { educator } = useAuth();
+  const { educator, restoring } = useAuth();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!educator && !PUBLIC_ROUTES.includes(pathname)) {
+    if (!restoring && !educator && !PUBLIC_ROUTES.includes(pathname)) {
       router.replace("/connexion");
     }
-  }, [educator, pathname]);
+  }, [educator, pathname, restoring]);
 
-  return <>{children}</>;
+  return <>{restoring ? null : children}</>;
 }
 
 export default function RootLayout() {

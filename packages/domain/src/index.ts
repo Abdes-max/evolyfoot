@@ -55,6 +55,25 @@ export { suggestAdjustment } from "./progression";
 export type { ObservationSummary } from "./progression";
 export { suggestAdjustmentFromObservation } from "./adjustment";
 export type { AdjustmentAction, AdjustmentSuggestion } from "./adjustment";
+export { buildSeasonCalendar, seasonStartYear } from "./season";
+export type { SeasonCalendar, SeasonEvent, SeasonEventInput, SeasonEventType, SeasonMonth } from "./season";
+export {
+  isPersonalActivityId,
+  parseExerciseText,
+  personalActivityPrefix,
+  personalExerciseMaxPerEducator,
+  personalExerciseToActivity,
+  validatePersonalExercise,
+} from "./personal-exercise";
+export type { ImportedExerciseText, PersonalExercise, PersonalExerciseInput } from "./personal-exercise";
+export {
+  currentCycleWeek,
+  firstFreeCycleSlot,
+  rehydrateTrainingSession,
+  suggestedMeetingAt,
+  trainingCycleWeekCount,
+} from "./training-calendar";
+export type { SavedTrainingSession } from "./training-calendar";
 export { ageGroups, createTeamProfile, gameFormats, sortTrainingDays, validateTeamProfile } from "./team";
 export type { GameFormat, TeamProfile, TeamProfileErrors, TrainingDay } from "./team";
 export { diagnosticCriteria, summarizeDiagnostic } from "./diagnostic";
@@ -66,7 +85,9 @@ export {
   canReplaceSessionActivity,
   canValidateSession,
   findTrainingActivity,
+  explainTrainingSession,
   generateTrainingSession,
+  replaceBlockActivity,
   getSessionDuration,
   moveSessionBlock,
   replaceSessionActivity,
