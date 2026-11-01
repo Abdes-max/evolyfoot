@@ -1,3 +1,4 @@
+export { AccountService } from "./account-service";
 export { createDatabaseClient } from "./client";
 export { normalizeEducatorEmail } from "./email";
 export {
@@ -16,6 +17,7 @@ export {
   ValidationError,
 } from "./errors";
 export {
+  PrismaAccountRepository,
   PrismaDiagnosticRepository,
   PrismaEducatorRepository,
   PrismaMatchRepository,

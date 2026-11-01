@@ -239,6 +239,21 @@ function toPublicAccount(account: {
 }
 
 // Résout le compte "player" lié à la session, ou null (jeton absent, invalide, ou compte coach).
+// Compte connecté, quel que soit son rôle.
+export async function resolveAccountFromRequest(request: Request): Promise<PublicAccount | null> {
+  const token = readSessionToken(request);
+  if (!token) {
+    return null;
+  }
+
+  const { gateway, disconnect } = await createAuthGateway();
+  try {
+    return await gateway.getAccountForSession(token);
+  } finally {
+    await disconnect();
+  }
+}
+
 export async function resolvePlayerAccountFromRequest(request: Request): Promise<PublicAccount | null> {
   const token = readSessionToken(request);
   if (!token) {

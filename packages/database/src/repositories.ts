@@ -188,6 +188,12 @@ export interface SessionRecord {
   createdAt: Date;
 }
 
+export interface AccountRepository {
+  exportData(id: string): Promise<Record<string, unknown> | null>;
+  findPasswordHash(id: string): Promise<string | null>;
+  delete(id: string): Promise<void>;
+}
+
 export interface SessionRepository {
   create(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<SessionRecord>;
   findValidByTokenHash(tokenHash: string): Promise<SessionRecord | null>;

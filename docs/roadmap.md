@@ -25,6 +25,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 ### Bloquant avant une ouverture publique (à faire par le porteur du projet)
 
 - [ ] Renseigner Brevo dans le `.env` du VPS, authentifier le domaine d'envoi, puis tester un vrai e-mail (voir docs/delivery.md).
+- [ ] Ajouter la suppression de compte dans les applications mobiles, exigée par l'App Store : elle n'existe aujourd'hui que sur le web.
 - [ ] Compléter les mentions légales, les CGU et la politique de confidentialité : identité de l'éditeur, hébergeur, dates. Les pages affichent encore des champs `[à compléter]`.
 
 ### Mobile
