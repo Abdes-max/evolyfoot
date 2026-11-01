@@ -378,6 +378,11 @@ model MatchRecord {
   // joueur peut être prévu dans la composition et ne pas s'être présenté, ou inversement.
   // Nullable pour la même raison que TrainingSessionRecord.attendance ci-dessus.
   attendance      Json?
+  // Résultat saisi après le match : nuls tant qu'il n'est pas renseigné. `playerStats` suit
+  // MatchPlayerStat côté domaine, noms dupliqués comme dans `lineup`.
+  goalsFor        Int?                @map("goals_for")
+  goalsAgainst    Int?                @map("goals_against")
+  playerStats     Json?               @map("player_stats")
   observations    ObservationRecord[]
   createdAt       DateTime            @default(now()) @map("created_at")
   updatedAt       DateTime            @updatedAt @map("updated_at")

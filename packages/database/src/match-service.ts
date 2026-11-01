@@ -1,5 +1,5 @@
-import { defaultFormationId, formationSlots, gameFormats, listFormations, maxSubstitutes, validateMatchPlan } from "@evolyfoot/domain";
-import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchVenue } from "@evolyfoot/domain";
+import { defaultFormationId, formationSlots, gameFormats, listFormations, maxSubstitutes, validateMatchPlan, validateMatchResult } from "@evolyfoot/domain";
+import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchResult, MatchVenue } from "@evolyfoot/domain";
 import { EducatorNotFoundError, MatchNotFoundError, ValidationError } from "./errors";
 import type { EducatorRepository, MatchRepository, PersistedMatch } from "./repositories";
 
@@ -259,6 +259,22 @@ export class MatchService {
     return this.matchRepository.update(matchId, educatorId, {
       status: "played",
       ...(attendance ? { attendance } : {}),
+    });
+  }
+
+  async saveResult(educatorId: string, matchId: string, result: MatchResult): Promise<PersistedMatch> {
+    const match = await this.get(educatorId, matchId);
+    if (match.status !== "played") {
+      throw new ValidationError("Le résultat se saisit une fois le match joué.");
+    }
+    const error = validateMatchResult(result);
+    if (error) {
+      throw new ValidationError(error);
+    }
+    return this.matchRepository.update(matchId, educatorId, {
+      goalsFor: result.goalsFor,
+      goalsAgainst: result.goalsAgainst,
+      playerStats: result.playerStats.filter((stat) => stat.goals > 0 || stat.assists > 0),
     });
   }
 

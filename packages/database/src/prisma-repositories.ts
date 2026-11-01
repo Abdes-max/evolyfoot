@@ -1,5 +1,5 @@
 import { Prisma } from "./generated/prisma/client";
-import type { PersonalExercise, PersonalExerciseInput } from "@evolyfoot/domain";
+import type { MatchPlayerStat, PersonalExercise, PersonalExerciseInput } from "@evolyfoot/domain";
 import type { PrismaClient } from "./generated/prisma/client";
 import {
   DiagnosticNotFoundError,
@@ -691,6 +691,9 @@ export class PrismaMatchRepository implements MatchRepository {
       captainPlayerId?: string | null;
       substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
+      goalsFor?: number;
+      goalsAgainst?: number;
+      playerStats?: readonly MatchPlayerStat[];
       meetingOffsetMinutes?: number | null;
       meetingTime?: string | null;
       location?: string | null;
@@ -717,6 +720,9 @@ export class PrismaMatchRepository implements MatchRepository {
           ? { substitutePlayerIds: input.substitutePlayerIds as unknown as Prisma.InputJsonValue }
           : {}),
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
+        ...(input.goalsFor !== undefined ? { goalsFor: input.goalsFor } : {}),
+        ...(input.goalsAgainst !== undefined ? { goalsAgainst: input.goalsAgainst } : {}),
+        ...(input.playerStats !== undefined ? { playerStats: input.playerStats as unknown as Prisma.InputJsonValue } : {}),
       },
     });
     if (count === 0) {

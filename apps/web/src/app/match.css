@@ -105,6 +105,20 @@
 .match-captain-row span { color: var(--ink); font-size: 11.5px; font-weight: 800; }
 .match-captain-row select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; color: var(--ink); font-size: 12px; }
 
+.match-result { margin-bottom: 18px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.match-result h2 { margin: 0 0 12px; font-family: var(--font-display), "Arial Narrow", sans-serif; font-size: 26px; font-weight: 800; text-transform: uppercase; }
+.match-result form { display: grid; gap: 14px; justify-items: start; }
+.match-result form > p { margin: 0; color: var(--accent-dark); font-size: 12px; font-weight: 700; }
+.match-result form > p.field-error { color: var(--warn); }
+.match-result-score { display: flex; align-items: flex-end; gap: 12px; }
+.match-result-score > span { padding-bottom: 8px; font-size: 26px; font-weight: 800; }
+.match-result-score label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; font-weight: 800; }
+.match-result-score input { width: 86px; min-height: 58px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--ink); font-family: var(--font-display), "Arial Narrow", sans-serif; font-size: 34px; font-weight: 800; text-align: center; }
+.match-result-players { width: 100%; border-collapse: collapse; }
+.match-result-players th { padding: 6px 8px; color: var(--ink); font-size: 12px; font-weight: 700; text-align: left; }
+.match-result-players thead th { color: var(--muted); font-size: 11px; font-weight: 800; }
+.match-result-players td { width: 76px; padding: 4px; }
+.match-result-players input { width: 100%; min-height: 40px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--ink); text-align: center; }
 .match-attendance { margin-bottom: 18px; padding: 15px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 .match-attendance h2 { margin: 0 0 3px; font-size: 12.5px; }
 .match-attendance > p { margin: 0 0 11px; color: var(--muted); font-size: 10.5px; }

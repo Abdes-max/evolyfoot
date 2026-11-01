@@ -1,5 +1,5 @@
 import { EducatorNotFoundError, MatchNotFoundError } from "@evolyfoot/database";
-import type { AttendanceEntry, MatchLineupAssignment, MatchStatus, MatchVenue } from "@evolyfoot/domain";
+import type { AttendanceEntry, MatchLineupAssignment, MatchPlayerStat, MatchResult, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface MatchSummary {
@@ -26,6 +26,9 @@ export interface MatchSummary {
   captainPlayerId: string | null;
   substitutePlayerIds: readonly string[];
   attendance?: readonly AttendanceEntry[];
+  goalsFor: number | null;
+  goalsAgainst: number | null;
+  playerStats: readonly MatchPlayerStat[];
 }
 
 export interface MatchGateway {
@@ -72,6 +75,7 @@ export interface MatchGateway {
     input: { formationId: string; gameFormat?: number },
   ): Promise<MatchSummary>;
   markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<MatchSummary>;
+  saveResult(educatorId: string, matchId: string, result: MatchResult): Promise<MatchSummary>;
   remove(educatorId: string, matchId: string): Promise<void>;
 }
 
@@ -326,6 +330,48 @@ export function createMarkPlayedHandler(
   };
 }
 
+function isPlayerStatShaped(value: unknown): value is MatchPlayerStat {
+  const stat = value as Partial<MatchPlayerStat> | null;
+  return (
+    typeof stat === "object" &&
+    stat !== null &&
+    typeof stat.playerId === "string" &&
+    typeof stat.playerName === "string" &&
+    typeof stat.goals === "number" &&
+    typeof stat.assists === "number"
+  );
+}
+
+export function createSaveMatchResultHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  matches: Pick<MatchGateway, "saveResult">,
+  log: (error: unknown) => void,
+): (request: Request, matchId: string) => Promise<Response> {
+  return async (request, matchId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+
+    const body = await readJsonBody(request);
+    const { goalsFor, goalsAgainst, playerStats } = body ?? {};
+    if (
+      typeof goalsFor !== "number" ||
+      typeof goalsAgainst !== "number" ||
+      !Array.isArray(playerStats) ||
+      !playerStats.every(isPlayerStatShaped)
+    ) {
+      return Response.json({ error: "Le résultat est invalide." }, { status: 400 });
+    }
+
+    try {
+      return Response.json({ match: await matches.saveResult(educator.id, matchId, { goalsFor, goalsAgainst, playerStats }) });
+    } catch (error) {
+      return errorResponse(error, log);
+    }
+  };
+}
+
 export function createRemoveMatchHandler(
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
   matches: Pick<MatchGateway, "remove">,
@@ -371,6 +417,9 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       captainPlayerId: match.captainPlayerId,
       substitutePlayerIds: match.substitutePlayerIds,
       ...(match.attendance ? { attendance: match.attendance } : {}),
+      goalsFor: match.goalsFor,
+      goalsAgainst: match.goalsAgainst,
+      playerStats: match.playerStats,
     };
   }
 
@@ -400,6 +449,9 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       },
       async changeFormation(educatorId, matchId, input) {
         return toSummary(await service.changeFormation(educatorId, matchId, input));
+      },
+      async saveResult(educatorId, matchId, result) {
+        return toSummary(await service.saveResult(educatorId, matchId, result));
       },
       async markPlayed(educatorId, matchId, attendance) {
         return toSummary(await service.markPlayed(educatorId, matchId, attendance));
