@@ -13,6 +13,12 @@ on:
     branches: [master]
   workflow_dispatch:
 
+# Un seul déploiement à la fois : plusieurs merges rapprochés lançaient des builds simultanés sur
+# le VPS, qui finissaient en timeout SSH ou de commande. Les suivants attendent leur tour.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: Déployer sur le VPS
@@ -29,6 +35,8 @@ jobs:
           # Généreux plutôt que d'investiguer une cause réseau précise -- même rationale que
           # le déploiement d'arena-pulse sur ce même hôte.
           timeout: 90s
+          # La limite par défaut de 10 minutes coupait le déploiement juste après le build.
+          command_timeout: 25m
           script: |
             set -euo pipefail
             cd "${{ secrets.DEPLOY_PATH }}"
