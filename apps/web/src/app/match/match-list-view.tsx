@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { frenchDateLabel, parseDatetimeInputValue, sortChronologically } from "../date-format";
+import { CalendarImport } from "./calendar-import";
 import { CompetitionsPanel } from "./competitions-panel";
 
 interface MatchSummary {
@@ -22,6 +23,7 @@ interface MatchSummary {
 }
 
 interface TeamSummary {
+  name: string;
   gameFormat: number;
 }
 
@@ -37,6 +39,7 @@ export function MatchListView() {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState<boolean | undefined>(undefined);
   const [matches, setMatches] = useState<MatchSummary[]>([]);
+  const [teamName, setTeamName] = useState("");
   const [creating, setCreating] = useState(false);
   const [opponent, setOpponent] = useState("");
   // "YYYY-MM-DDTHH:mm" (valeur brute d'un <input type="datetime-local">) -- dateLabel ("Samedi 12
@@ -84,6 +87,7 @@ export function MatchListView() {
         setMatches(matchesBody.matches ?? []);
         setSelectedFormationId(profileBody.profile?.preferredFormation ?? null);
         const team: TeamSummary | null = teamBody.profile ?? null;
+        setTeamName(team?.name ?? "");
         if (team && gameFormats.includes(team.gameFormat as GameFormat)) {
           setGameFormat(team.gameFormat as GameFormat);
         }
@@ -256,6 +260,14 @@ export function MatchListView() {
               ))}
             </ul>
           )}
+
+          <CalendarImport<MatchSummary>
+            existing={matches}
+            formationId={formationId}
+            gameFormat={gameFormat}
+            onImported={(created) => setMatches((current) => [...created, ...current])}
+            teamName={teamName}
+          />
 
           <CompetitionsPanel
             detailBasePath="/match/tournois"
