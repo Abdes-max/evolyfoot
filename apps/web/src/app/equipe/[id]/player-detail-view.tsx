@@ -24,6 +24,7 @@ interface Player {
 }
 
 interface Evaluation {
+  source?: "coach" | "player";
   id: string;
   playerId: string;
   scores: PlayerEvaluationScores;
@@ -489,7 +490,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
               <div className="player-block-head">
                 <h2>Évaluation</h2>
                 <span className="player-count">
-                  {evaluations.length}/{playerEvaluationMaxPerSeason}
+                  {evaluations.filter((evaluation) => evaluation.source !== "player").length}/{playerEvaluationMaxPerSeason}
                 </span>
               </div>
 
@@ -584,13 +585,18 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                               />
                             </label>
                             <div>
-                              <strong>{formatDate(evaluation.createdAt)}</strong>
+                              <strong>
+                                {evaluation.source === "player" ? "Auto-évaluation · " : ""}
+                                {formatDate(evaluation.createdAt)}
+                              </strong>
                               <span>Moyenne {average}/{playerEvaluationMaxScore}</span>
                             </div>
                             <div className="player-evaluation-history-actions">
-                              <button onClick={() => startEditingEvaluation(evaluation)} type="button">
-                                Modifier
-                              </button>
+                              {evaluation.source !== "player" && (
+                                <button onClick={() => startEditingEvaluation(evaluation)} type="button">
+                                  Modifier
+                                </button>
+                              )}
                               <button
                                 aria-label={`Retirer l’évaluation du ${formatDate(evaluation.createdAt)}`}
                                 onClick={() => removeEvaluation(evaluation.id)}

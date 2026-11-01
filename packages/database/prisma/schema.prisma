@@ -428,6 +428,8 @@ model PlayerEvaluationRecord {
   playerId   String   @db.Uuid @map("player_id")
   player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
   scores     Json
+  // "coach" | "player" : une auto-évaluation reste rattachée à l'éducateur propriétaire du joueur.
+  source     String   @default("coach")
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([educatorId])

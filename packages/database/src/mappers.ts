@@ -457,6 +457,7 @@ export function toPersistedPlayerEvaluation(record: PrismaPlayerEvaluationRecord
     // `scores` est un Json Prisma : on fait confiance à sa forme, seul ce paquet l'écrit (voir
     // PlayerEvaluationService.save, qui valide les scores avant d'appeler ce dépôt).
     scores: record.scores as unknown as PlayerEvaluationScores,
+    source: record.source === "player" ? "player" : "coach",
     createdAt: record.createdAt,
   });
 }

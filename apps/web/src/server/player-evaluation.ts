@@ -7,6 +7,7 @@ export interface PlayerEvaluationSummary {
   id: string;
   playerId: string;
   scores: PlayerEvaluationScores;
+  source: "coach" | "player";
   createdAt: string;
 }
 
@@ -168,6 +169,7 @@ export async function createPlayerEvaluationGateway(): Promise<{
       id: evaluation.id,
       playerId: evaluation.playerId,
       scores: evaluation.scores,
+      source: evaluation.source,
       createdAt: evaluation.createdAt.toISOString(),
     };
   }

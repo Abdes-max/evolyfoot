@@ -65,6 +65,7 @@ export type { FunnelStep, MvpMetrics, WeeklyActivityPoint } from "./metrics-serv
 export type {
   PlayerDashboard,
   PlayerDashboardCompetition,
+  PlayerDashboardEvaluation,
   PlayerDashboardMatch,
   PlayerDashboardTrainingSession,
   PlayerDashboardTrainingSlot,
