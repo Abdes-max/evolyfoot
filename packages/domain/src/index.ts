@@ -55,6 +55,8 @@ export { suggestAdjustment } from "./progression";
 export type { ObservationSummary } from "./progression";
 export { suggestAdjustmentFromObservation } from "./adjustment";
 export type { AdjustmentAction, AdjustmentSuggestion } from "./adjustment";
+export { buildSeasonCalendar, seasonStartYear } from "./season";
+export type { SeasonCalendar, SeasonEvent, SeasonEventInput, SeasonEventType, SeasonMonth } from "./season";
 export {
   isPersonalActivityId,
   parseExerciseText,

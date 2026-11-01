@@ -102,6 +102,9 @@ export function SeancesView() {
         <Link className="seances-library-link" href="/bibliotheque">
           Parcourir la bibliothèque d’exercices →
         </Link>
+        <Link className="seances-library-link" href="/saison">
+          Voir toute la saison →
+        </Link>
 
         {authenticated === false && (
           <p className="seances-auth">

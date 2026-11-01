@@ -1,6 +1,6 @@
 # Plan et avancement
 
-Dernière mise à jour : 10 septembre 2026 (préparation de match, historique des observations, en-têtes homogènes, navigation mobile corrigée).
+Dernière mise à jour : 1er novembre 2026 (génération de séance, catalogue de 100 exercices, mobile de bord de terrain, bibliothèque personnelle, auto-évaluation, vue saison).
 
 ## Phase 0 — Fondation
 
@@ -77,4 +77,5 @@ Dernière mise à jour : 10 septembre 2026 (préparation de match, historique de
   - `/inscription` : accroche commerciale honnête (reprend l'indicateur déjà documenté ci-dessus « première séance en moins de 10 minutes » plutôt qu'une statistique inventée), schéma tactique existant en toile de fond, boucle produit à 4 temps en repère visuel.
   - Navigation mobile totalement invisible en dessous de 950px de large (`.sidebar nav{display:none}`) : Plan/Séances/Observations/Équipe étaient injoignables depuis un téléphone. Remplacée par une barre d'onglets fixe en bas d'écran (icônes seules, libellés conservés pour les lecteurs d'écran).
   - Grille de priorités (« Ce qui mérite ton attention ») empilée en une seule colonne sur mobile alors que la largeur le permettait : passée en 2 colonnes (repli en 1 colonne sous 380px), avec une variante de carte compacte adaptée.
+- [x] Plan issu de la comparaison avec Nextrainers, hors offre club — 1er novembre 2026 : vitrine (menu, police, hero, tarifs alignés sur l'existant), séance générée variée et expliquée, catalogue de 100 exercices filtrable par thème, session mobile persistante, accueil et séances mobiles sur données réelles avec présences, auto-évaluation du joueur, bibliothèque personnelle avec import par texte et photo de schéma, vue saison `/saison`. Reste hors périmètre : multi-équipes et offre club, cycles enchaînés sur l'année, lecture automatique des photos de schéma, paiement Premium, publication sur les stores.
 - [ ] Test sur téléphone réel via Expo Go — bloqué en l'état : le mode tunnel (fonctionne sur n'importe quel réseau) nécessite l'installation de `@expo/ngrok`, impossible depuis ce poste sans VPN d'entreprise actif (registre npm interne uniquement) ; le mode LAN fonctionne (serveur vérifié joignable) mais suppose que le téléphone soit sur le même Wi-Fi que le poste de développement, non confirmé.
