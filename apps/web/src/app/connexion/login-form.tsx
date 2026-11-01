@@ -83,6 +83,9 @@ export function LoginForm() {
       <button className="continue-button" disabled={submitting} type="submit">
         {submitting ? "Connexion…" : "Se connecter"} <span>→</span>
       </button>
+      <Link className="back-link" href="/mot-de-passe-oublie">
+        Mot de passe oublié ?
+      </Link>
       <Link className="back-link" href="/inscription">
         Pas encore de compte ? Créer un compte
       </Link>

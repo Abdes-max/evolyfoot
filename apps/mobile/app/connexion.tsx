@@ -1,7 +1,8 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { Link, router } from "expo-router";
 import { useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, Linking } from "react-native";
+import { apiBaseUrl } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 
 export default function ConnexionScreen() {
@@ -53,6 +54,9 @@ export default function ConnexionScreen() {
         <TouchableOpacity disabled={submitting} onPress={submit} style={styles.button}>
           <Text style={styles.buttonText}>{submitting ? "Connexion…" : "Se connecter"}</Text>
           <Text style={styles.buttonText}>→</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => Linking.openURL(`${apiBaseUrl()}/mot-de-passe-oublie`)} style={styles.linkButton}>
+          <Text style={styles.linkText}>Mot de passe oublié ?</Text>
         </TouchableOpacity>
         <Link asChild href="/inscription">
           <TouchableOpacity style={styles.linkButton}>

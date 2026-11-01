@@ -105,7 +105,10 @@ docker exec evolyfoot-web wget -qO- http://127.0.0.1:3000/api/health/database   
 
 Piège rencontré et corrigé : la branche par défaut du dépôt GitHub était restée sur une ancienne branche de travail (`agent/initialize-platform`) plutôt que `master`, donc un `git clone` nu atterrissait sur cette branche obsolète — sans `Dockerfile` ni `.env.production.example`. Corrigé une fois pour toutes (Settings → General → Default branch → `master`) ; un `git clone` nu suffit désormais.
 
-**E-mail transactionnel (SMTP) — pas encore configuré.** `.env.production.example` ne portait pas encore les variables `SMTP_*` au moment de ce bootstrap : le `.env` du VPS ne les a donc probablement pas non plus, et `mailer.ts` retombe silencieusement sur ses valeurs par défaut (Mailhog local, injoignable en prod) — l'envoi échoue, juste journalisé, sans casser l'inscription. Pour l'activer : ajouter `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` (identifiants d'un relais comme Brevo — génération hors périmètre d'un agent) au `.env` du VPS, puis `docker compose up -d --build` (ou attendre le prochain merge sur `master`, qui le refait déjà).
+**E-mail transactionnel.** Inscription, confirmation d'adresse et mot de passe oublié passent par `apps/web/src/server/mailer.ts`.
+
+- **En local : MailHog.** `docker start evolyfoot-mailhog` (ou `docker run -d --name evolyfoot-mailhog -p 1025:1025 -p 8025:8025 mailhog/mailhog`), messages visibles sur http://localhost:8025. Aucune variable à définir : le mailer vise `127.0.0.1:1025` par défaut.
+- **En production : Brevo.** Renseigner dans le `.env` du VPS, jamais dans le dépôt : `SMTP_HOST=smtp-relay.brevo.com`, `SMTP_PORT=587`, `SMTP_USER` (identifiant SMTP du compte Brevo), `SMTP_PASSWORD` (clé SMTP Brevo, pas le mot de passe du compte) et `SMTP_FROM` (expéditeur dont le domaine est authentifié dans Brevo, par exemple `EvolyFoot <no-reply@evolyfoot.com>`). Puis `docker compose up -d` pour recharger l'environnement. Sans `SMTP_HOST`, l'envoi est abandonné et l'erreur `SMTP_HOST manquant` apparaît dans les journaux du conteneur `web`.
 
 ### Secrets GitHub (déjà configurés)
 

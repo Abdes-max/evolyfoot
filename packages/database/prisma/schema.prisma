@@ -68,6 +68,7 @@ model Educator {
   // EmailVerificationService -- mais l'appli affiche un rappel tant que c'est vide).
   emailVerifiedAt   DateTime?                @map("email_verified_at")
   emailVerifications EmailVerification[]
+  passwordResets    PasswordReset[]
   // Renseigné uniquement pour un compte "player" : le joueur suivi (dans l'effectif d'un coach).
   linkedPlayerId    String?                  @unique @db.Uuid @map("linked_player_id")
   linkedPlayer      Player?                  @relation("PlayerFollowers", fields: [linkedPlayerId], references: [id], onDelete: Cascade)
@@ -311,6 +312,20 @@ model EmailVerification {
 // dupliqué (jamais de clé étrangère vers `Player`), même principe que ObservationRecord.players
 // -- un joueur renommé ou retiré de l'effectif après coup ne doit pas modifier une composition
 // déjà préparée ou jouée.
+// Lien de réinitialisation de mot de passe : seul le hash du jeton est stocké.
+model PasswordReset {
+  id         String    @id @default(uuid()) @db.Uuid
+  educatorId String    @db.Uuid @map("educator_id")
+  educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([educatorId])
+  @@map("password_resets")
+}
+
 model MatchRecord {
   id              String              @id @default(uuid()) @db.Uuid
   educatorId      String              @db.Uuid @map("educator_id")

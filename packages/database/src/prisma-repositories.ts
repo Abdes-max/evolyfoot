@@ -50,6 +50,8 @@ import type {
   EducatorRepository,
   EmailVerificationRecord,
   EmailVerificationRepository,
+  PasswordResetRecord,
+  PasswordResetRepository,
   MatchRepository,
   MessageRepository,
   ObservationRepository,
@@ -228,6 +230,46 @@ export class PrismaEmailVerificationRepository implements EmailVerificationRepos
 
   async markConsumed(id: string): Promise<void> {
     await this.prisma.emailVerification.update({ where: { id }, data: { consumedAt: new Date() } });
+  }
+}
+
+export class PrismaPasswordResetRepository implements PasswordResetRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async countCreatedSince(educatorId: string, since: Date): Promise<number> {
+    return this.prisma.passwordReset.count({ where: { educatorId, createdAt: { gte: since } } });
+  }
+
+  async replaceForEducator(input: { educatorId: string; tokenHash: string; expiresAt: Date }): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.passwordReset.updateMany({
+        where: { educatorId: input.educatorId, consumedAt: null },
+        data: { consumedAt: new Date() },
+      }),
+      this.prisma.passwordReset.create({ data: input }),
+    ]);
+  }
+
+  async findByTokenHash(tokenHash: string): Promise<PasswordResetRecord | null> {
+    const reset = await this.prisma.passwordReset.findUnique({ where: { tokenHash } });
+    return reset === null
+      ? null
+      : { id: reset.id, educatorId: reset.educatorId, expiresAt: reset.expiresAt, consumedAt: reset.consumedAt };
+  }
+
+  async apply(id: string, educatorId: string, passwordHash: string): Promise<boolean> {
+    return this.prisma.$transaction(async (transaction) => {
+      const { count } = await transaction.passwordReset.updateMany({
+        where: { id, consumedAt: null },
+        data: { consumedAt: new Date() },
+      });
+      if (count === 0) {
+        return false;
+      }
+      await transaction.educator.update({ where: { id: educatorId }, data: { passwordHash } });
+      await transaction.session.deleteMany({ where: { educatorId } });
+      return true;
+    });
   }
 }
 
