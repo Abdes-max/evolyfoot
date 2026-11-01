@@ -18,6 +18,7 @@ import type {
   PlayerReference,
   PlayerSignal,
   TeamProfile,
+  MatchPlayerStat,
 } from "@evolyfoot/domain";
 
 export type AccountRole = "coach" | "player";
@@ -380,6 +381,10 @@ export interface PersistedMatch {
   // Sur le banc, sans poste. Toujours un tableau concret : `undefined` en base (match préparé
   // avant l'introduction du banc) résolu en `[]` par le mapper, comme `formationId`.
   substitutePlayerIds: readonly string[];
+  // `null` tant que l'éducateur n'a pas saisi le résultat.
+  goalsFor: number | null;
+  goalsAgainst: number | null;
+  playerStats: readonly MatchPlayerStat[];
   // Distincte de `lineup` (qui est *prévu* à quel poste) : un joueur prévu peut ne pas s'être
   // présenté, et inversement. Même convention `undefined`/tableau vide que
   // PersistedTrainingSession.attendance ci-dessus.
@@ -421,6 +426,9 @@ export interface MatchRepository {
       captainPlayerId?: string | null;
       substitutePlayerIds?: readonly string[];
       attendance?: readonly AttendanceEntry[];
+      goalsFor?: number;
+      goalsAgainst?: number;
+      playerStats?: readonly MatchPlayerStat[];
       meetingOffsetMinutes?: number | null;
       meetingTime?: string | null;
       location?: string | null;

@@ -7,6 +7,7 @@ import {
   createListMatchesHandler,
   createMarkPlayedHandler,
   createRemoveMatchHandler,
+  createSaveMatchResultHandler,
   createUpdateLineupHandler,
   createUpdateMatchDetailsHandler,
   type MatchGateway,
@@ -31,6 +32,9 @@ const match: MatchSummary = {
   lineup: [],
   captainPlayerId: null,
   substitutePlayerIds: [],
+  goalsFor: null,
+  goalsAgainst: null,
+  playerStats: [],
 };
 
 function jsonRequest(method: string, body?: unknown): Request {
@@ -278,6 +282,38 @@ describe("createChangeFormationHandler", () => {
     const response = await handler(jsonRequest("PUT", { formationId: "4-3-3" }), "match-1");
 
     expect(response.status).toBe(400);
+  });
+});
+
+describe("createSaveMatchResultHandler", () => {
+  it("enregistre le résultat d'un match", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<MatchGateway, "saveResult"> = {
+      saveResult: async (_educatorId, _matchId, result) => {
+        received.push(result);
+        return { ...match, status: "played", goalsFor: result.goalsFor, goalsAgainst: result.goalsAgainst };
+      },
+    };
+    const handler = createSaveMatchResultHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(jsonRequest("PUT", { goalsFor: 2, goalsAgainst: 1, playerStats: [] }), "match-1");
+
+    expect(response.status).toBe(200);
+    expect(received).toEqual([{ goalsFor: 2, goalsAgainst: 1, playerStats: [] }]);
+  });
+
+  it("refuse un corps mal formé sans appeler le service", async () => {
+    const gateway: Pick<MatchGateway, "saveResult"> = {
+      saveResult: async () => {
+        throw new Error("ne doit pas être appelé");
+      },
+    };
+    const handler = createSaveMatchResultHandler(authenticated, gateway, () => undefined);
+
+    const response = await handler(jsonRequest("PUT", { goalsFor: "2", goalsAgainst: 1, playerStats: [] }), "match-1");
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Le résultat est invalide." });
   });
 });
 

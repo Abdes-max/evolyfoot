@@ -13,12 +13,13 @@ import {
   maxSubstitutes,
   removeSubstitute,
 } from "@evolyfoot/domain";
-import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchStatus, MatchVenue } from "@evolyfoot/domain";
+import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchPlayerStat, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { parseDatetimeInputValue, toDatetimeInputValue } from "../../date-format";
 import { initials, MatchPitch } from "../match-pitch";
+import { MatchResultForm } from "./match-result-form";
 
 interface MatchRecord {
   id: string;
@@ -38,6 +39,9 @@ interface MatchRecord {
   captainPlayerId: string | null;
   substitutePlayerIds: string[];
   attendance?: AttendanceEntry[];
+  goalsFor?: number | null;
+  goalsAgainst?: number | null;
+  playerStats?: MatchPlayerStat[];
 }
 
 interface RosterPlayer {
@@ -608,6 +612,21 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             <button className="continue-button" disabled={!canFinalize || finalizing} onClick={finalize} type="button">
               {finalizing ? "…" : "Marquer comme joué & observer"} <span aria-hidden="true">→</span>
             </button>
+          )}
+          {readOnly && (
+            <MatchResultForm
+              goalsAgainst={match.goalsAgainst ?? null}
+              goalsFor={match.goalsFor ?? null}
+              matchId={matchId}
+              playerStats={match.playerStats ?? []}
+              players={[
+                ...match.lineup.map((assignment) => ({ id: assignment.playerId, name: assignment.playerName })),
+                ...match.substitutePlayerIds.flatMap((playerId) => {
+                  const player = roster.find((candidate) => candidate.id === playerId);
+                  return player ? [{ id: player.id, name: player.name }] : [];
+                }),
+              ]}
+            />
           )}
           {readOnly && (
             <Link className="continue-button" href={`/observation?type=match&matchId=${matchId}`}>

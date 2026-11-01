@@ -10,6 +10,7 @@ import type {
   MessageAuthorRole as DomainMessageAuthorRole,
   ObservationEventType as DomainObservationEventType,
   ObservationReportRating,
+  MatchPlayerStat,
   ObservationReportSummary,
   PlayerEvaluationScores,
   PlayerReference,
@@ -416,6 +417,9 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     captainPlayerId: record.captainPlayerId,
     substitutePlayerIds: (record.substitutePlayerIds as unknown as readonly string[] | null) ?? [],
     attendance: toAttendanceEntries(record.attendance),
+    goalsFor: record.goalsFor,
+    goalsAgainst: record.goalsAgainst,
+    playerStats: (record.playerStats as unknown as readonly MatchPlayerStat[] | null) ?? [],
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   });

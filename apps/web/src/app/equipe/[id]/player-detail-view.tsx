@@ -8,7 +8,9 @@ import {
   playerEvaluationMinScore,
   playerFeet,
   playerPositions,
+  playerSeasonTotals,
   type PlayerEvaluationScores,
+  type PlayerSeasonTotals,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
@@ -98,6 +100,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [status, setStatus] = useState<"loading" | "ready" | "not-found" | "unauthenticated">("loading");
   const [player, setPlayer] = useState<Player | null>(null);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [season, setSeason] = useState<PlayerSeasonTotals>({ matches: 0, goals: 0, assists: 0 });
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<DetailForm>(emptyDetailForm);
@@ -136,12 +139,14 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
           setStatus("unauthenticated");
           return;
         }
-        const [rosterResponse, evaluationsResponse] = await Promise.all([
+        const [rosterResponse, evaluationsResponse, matchesResponse] = await Promise.all([
           fetch("/api/roster"),
           fetch(`/api/player-evaluations?playerId=${encodeURIComponent(playerId)}`),
+          fetch("/api/matches"),
         ]);
         const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
         const evaluationsBody = await evaluationsResponse.json().catch(() => ({ evaluations: [] }));
+        const matchesBody = await matchesResponse.json().catch(() => ({ matches: [] }));
         if (cancelled) {
           return;
         }
@@ -151,6 +156,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
           return;
         }
         setPlayer(found);
+        setSeason(playerSeasonTotals(matchesBody.matches ?? [], playerId));
         const loadedEvaluations: Evaluation[] = evaluationsResponse.ok ? (evaluationsBody.evaluations ?? []) : [];
         setEvaluations(loadedEvaluations);
         setComparedEvaluationIds(defaultComparedEvaluationIds(loadedEvaluations));
@@ -410,6 +416,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                   preferredFoot={player.preferredFoot}
                   previousScores={coachEvaluations[1]?.scores ?? null}
                   scores={coachEvaluations[0]?.scores ?? null}
+                  season={season}
                 />
                 <div className="player-photo-actions">
                   <button disabled={photoBusy} onClick={() => fileInputRef.current?.click()} type="button">

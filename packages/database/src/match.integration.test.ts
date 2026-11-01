@@ -249,6 +249,27 @@ describe("PostgreSQL match persistence", () => {
     expect(afterPlayed.location).toBe("Stade Marius Requier");
   });
 
+  it("enregistre le résultat d'un match joué et retire les lignes vides", async () => {
+    const educator = await createEducator("result");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+    const result = {
+      goalsFor: 2,
+      goalsAgainst: 1,
+      playerStats: [
+        { playerId: "a", playerName: "Yanis", goals: 2, assists: 0 },
+        { playerId: "b", playerName: "Lina", goals: 0, assists: 0 },
+      ],
+    };
+
+    await expect(service.saveResult(educator.id, match.id, result)).rejects.toThrow(/une fois le match joué/);
+
+    await database.prisma.matchRecord.update({ where: { id: match.id }, data: { status: "played" } });
+    const saved = await service.saveResult(educator.id, match.id, result);
+
+    expect(saved).toMatchObject({ goalsFor: 2, goalsAgainst: 1 });
+    expect(saved.playerStats.map((stat) => stat.playerName)).toEqual(["Yanis"]);
+  });
+
   it("efface un champ de détail avec une chaîne vide ou null", async () => {
     const educator = await createEducator("details-clear");
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8, location: "Stade X" });

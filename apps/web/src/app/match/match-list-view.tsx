@@ -17,6 +17,8 @@ interface MatchSummary {
   gameFormat: number;
   status: MatchStatus;
   lineup: ReadonlyArray<unknown>;
+  goalsFor?: number | null;
+  goalsAgainst?: number | null;
 }
 
 interface TeamSummary {
@@ -236,7 +238,9 @@ export function MatchListView() {
                       {match.dateLabel} · {venueLabel[match.venue]}
                     </p>
                     <p aria-hidden="true" className="match-card-lineup">
-                      {match.lineup.length}/{match.gameFormat} postes pourvus
+                      {typeof match.goalsFor === "number"
+                        ? `Score : ${match.goalsFor} – ${match.goalsAgainst}`
+                        : `${match.lineup.length}/${match.gameFormat} postes pourvus`}
                     </p>
                     <span aria-hidden="true" className="match-card-link card-cta">
                       {match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}
