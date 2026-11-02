@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MatchAnalysis } from "../../components/match-analysis";
 import { useAuth, type MobileMatch } from "../../lib/auth-context";
 
 const venueLabel: Record<MatchVenue, string> = { home: "Domicile", away: "Extérieur" };
@@ -241,6 +242,8 @@ export default function MatchDetailScreen() {
         </TouchableOpacity>
 
         {saveError ? <Text style={styles.fieldError}>{saveError}</Text> : null}
+
+        <MatchAnalysis formationId={match.formationId} gameFormat={gameFormat} matchId={match.id} opponentFormationId={match.opponentFormationId ?? null} />
 
         {!readOnly ? (
           <TouchableOpacity
