@@ -5,6 +5,7 @@ import { MapEmbed } from "./map-embed";
 
 const searchDelayMs = 300;
 const minQueryLength = 3;
+const mapDelayMs = 600;
 
 interface PlaceInputProps {
   value: string;
@@ -19,6 +20,15 @@ export function PlaceInput({ value, onChange, disabled = false }: PlaceInputProp
   const [places, setPlaces] = useState<readonly string[]>([]);
   const [typing, setTyping] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
+  // Adresse de l’aperçu, posée un instant après la dernière frappe : la carte apparaît pendant que
+  // le champ a encore le focus, et non au blur -- sinon elle décale la page sous le clic qui suit
+  // (le bouton visé glisse et le clic est perdu).
+  const [mapAddress, setMapAddress] = useState(value.trim());
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMapAddress(value.trim()), mapDelayMs);
+    return () => clearTimeout(timer);
+  }, [value]);
 
   useEffect(() => {
     if (!typing || value.trim().length < minQueryLength) {
@@ -104,7 +114,7 @@ export function PlaceInput({ value, onChange, disabled = false }: PlaceInputProp
           ))}
         </ul>
       )}
-      {!typing && value.trim() && <MapEmbed address={value.trim()} compact />}
+      {mapAddress && <MapEmbed address={mapAddress} compact />}
     </div>
   );
 }

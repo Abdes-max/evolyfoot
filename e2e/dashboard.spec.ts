@@ -489,7 +489,10 @@ test("l’éducateur envoie la convocation depuis la fiche d’une séance, à t
   expect(convokeRequests).toBe(0);
 
   // Le lieu saisi mais pas encore enregistré part avec la convocation.
-  await page.getByRole("combobox", { name: "Lieu" }).fill("Stade Marius Requier");
+  await page.getByRole("combobox", { name: /^Lieu/ }).fill("Stade Marius Requier");
+  await expect(page.getByText(/Lieu indiqué : Stade Marius Requier/)).toBeVisible();
+  // L’aperçu de carte s’affiche une fois la saisie posée, avant que l’éducateur n’atteigne le bouton.
+  await expect(page.getByRole("button", { name: "Afficher les cartes" })).toBeVisible();
   await page.getByRole("button", { name: "Envoyer la convocation" }).click();
   await expect(page.getByText("Convocation envoyée à 2 joueurs.")).toBeVisible();
   expect(detailsBodies).toEqual([{ location: "Stade Marius Requier", description: null }]);
