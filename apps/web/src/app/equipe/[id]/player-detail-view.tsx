@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { RadarChart } from "../../charts";
 import { colorForEvaluation, defaultComparedEvaluationIds, evaluationLabel } from "../../evaluation-colors";
+import { EvaluationSeasonsTable } from "../../evaluation-seasons-table";
 import { resizeImageToDataUrl } from "../../image-resize";
 import { MessagingThread } from "../../messaging-thread";
 import { PlayerCard } from "../../player-card";
@@ -729,43 +730,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                   <h2>Progression par saison</h2>
                 </div>
                 <p className="player-invite-lead">Moyenne des évaluations de l’éducateur, aspect par aspect, de la plus récente à la plus ancienne saison.</p>
-                <div className="player-seasons-scroll">
-                  <table className="player-seasons">
-                    <thead>
-                      <tr>
-                        <th scope="col">Saison</th>
-                        {playerEvaluationAspects.map((aspect) => (
-                          <th key={aspect} scope="col">
-                            {playerEvaluationAspectLabels[aspect]}
-                          </th>
-                        ))}
-                        <th scope="col">Moyenne</th>
-                        <th scope="col">Écart</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {evaluationSeasons.map((season) => (
-                        <tr key={season.startYear}>
-                          <th scope="row">
-                            {season.label}
-                            <small>
-                              {season.count} évaluation{season.count > 1 ? "s" : ""}
-                            </small>
-                          </th>
-                          {playerEvaluationAspects.map((aspect) => (
-                            <td key={aspect}>{season.averages[aspect].toLocaleString("fr-FR")}</td>
-                          ))}
-                          <td>
-                            <strong>{season.overall.toLocaleString("fr-FR")}</strong>
-                          </td>
-                          <td className={season.deltaFromPrevious === null ? "" : season.deltaFromPrevious >= 0 ? "player-seasons-up" : "player-seasons-down"}>
-                            {season.deltaFromPrevious === null ? "—" : `${season.deltaFromPrevious > 0 ? "+" : ""}${season.deltaFromPrevious.toLocaleString("fr-FR")}`}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <EvaluationSeasonsTable seasons={evaluationSeasons} />
               </div>
             )}
 
