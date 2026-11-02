@@ -318,6 +318,13 @@ export default function PlayerScreen() {
               )}
             </View>
 
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => router.push({ pathname: "/messages/[id]", params: { id: player.id, name: player.name } })}
+              style={styles.primary}
+            >
+              <Text style={styles.primaryText}>Messages avec le joueur ou son tuteur</Text>
+            </TouchableOpacity>
             <TouchableOpacity accessibilityRole="button" onPress={exportReport} style={styles.outline}>
               <Text style={styles.link}>Exporter le bilan en PDF</Text>
             </TouchableOpacity>
