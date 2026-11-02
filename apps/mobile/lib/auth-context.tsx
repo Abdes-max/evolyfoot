@@ -14,6 +14,7 @@ import type {
   SavedTrainingSession,
   SeasonEventInput,
   TeamProfile,
+  TeamStats,
   TrainingSession,
 } from "@evolyfoot/domain";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
@@ -105,6 +106,8 @@ export interface AuthContextValue {
   startNextCycle(): Promise<AuthResult>;
   saveObservation(draft: ObservationDraft, matchId?: string): Promise<AuthResult>;
   listObservations(): Promise<readonly ObservationListItem[]>;
+  // `null` si les chiffres n'ont pas pu être lus.
+  getTeamStats(): Promise<TeamStats | null>;
   getObservation(id: string): Promise<{ ok: true; observation: ObservationDetail } | { ok: false; error: string }>;
   addPlayer(firstName: string, lastName: string): Promise<AuthResult>;
   renamePlayer(id: string, firstName: string, lastName: string): Promise<AuthResult>;
@@ -389,6 +392,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [sessionToken]);
 
+  const getTeamStats = useCallback(async (): Promise<TeamStats | null> => {
+    const response = await apiFetch("/api/stats", { sessionToken }).catch(() => null);
+    const body = response?.ok ? await response.json().catch(() => null) : null;
+    return body?.stats ?? null;
+  }, [sessionToken]);
+
   const listObservations = useCallback(async (): Promise<readonly ObservationListItem[]> => {
     const response = await apiFetch("/api/observations", { sessionToken }).catch(() => null);
     const body = response?.ok ? await response.json().catch(() => null) : null;
@@ -622,6 +631,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveObservation,
       listObservations,
       getObservation,
+      getTeamStats,
       addPlayer,
       renamePlayer,
       removePlayer,
@@ -651,6 +661,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveObservation,
       listObservations,
       getObservation,
+      getTeamStats,
       addPlayer,
       renamePlayer,
       removePlayer,

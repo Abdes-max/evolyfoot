@@ -1,50 +1,10 @@
 "use client";
 
+import { buildTeamStatsReport as buildReport, pluralize as plural, type TeamStats } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BarChart, DonutChart } from "../charts";
 import { PrintButton } from "../print-button";
-
-interface TeamStats {
-  trainingCount: number;
-  matchCount: number;
-  matchesPlayed: number;
-  matchesScheduled: number;
-  tournamentCount: number;
-  plateauCount: number;
-  trainingAttendance: { present: number; absent: number; total: number; rate: number };
-  matchAttendance: { present: number; absent: number; total: number; rate: number };
-}
-
-function plural(count: number, singular: string, plural = `${singular}s`): string {
-  return `${count} ${count > 1 ? plural : singular}`;
-}
-
-// Rapport = synthèse purement factuelle des chiffres ci-dessus, pas d'analyse « intelligente ».
-function buildReport(stats: TeamStats): string[] {
-  const lines: string[] = [];
-  lines.push(
-    `Depuis le début de la saison : ${plural(stats.trainingCount, "séance")} et ${plural(
-      stats.matchCount,
-      "match",
-      "matchs",
-    )} (${plural(stats.matchesPlayed, "joué", "joués")}, ${stats.matchesScheduled} à venir).`,
-  );
-  if (stats.tournamentCount > 0 || stats.plateauCount > 0) {
-    lines.push(`${plural(stats.tournamentCount, "tournoi")} et ${plural(stats.plateauCount, "plateau", "plateaux")}.`);
-  }
-  if (stats.trainingAttendance.total > 0) {
-    lines.push(
-      `Présence moyenne à l’entraînement : ${stats.trainingAttendance.rate}% (${stats.trainingAttendance.present} présences sur ${stats.trainingAttendance.total} relevées).`,
-    );
-  } else {
-    lines.push("Aucune présence n’a encore été relevée à l’entraînement (elle se saisit à la préparation d’une séance).");
-  }
-  if (stats.matchAttendance.total > 0) {
-    lines.push(`Présence moyenne en match : ${stats.matchAttendance.rate}%.`);
-  }
-  return lines;
-}
 
 export function StatisticsView() {
   const [authenticated, setAuthenticated] = useState<boolean | undefined>(undefined);

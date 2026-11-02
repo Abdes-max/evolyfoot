@@ -32,7 +32,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 
 - [ ] Tester l'application sur un téléphone réel (voir la limite Expo Go en bas de ce fichier).
 - [ ] Créer les comptes Expo, Apple Developer et Google Play Console, puis publier les deux applications en TestFlight et en piste interne.
-- [ ] Porter sur EvolyFoot Coach ce qui n'existe que sur le web : statistiques, profil, bibliothèque. La vue saison et l’historique des observations y sont depuis le 2 novembre 2026.
+- [ ] Porter sur EvolyFoot Coach ce qui n’existe que sur le web : profil, bibliothèque. La vue saison, l’historique des observations et les statistiques y sont depuis le 2 novembre 2026.
 
 ### Produit
 

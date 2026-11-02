@@ -180,3 +180,5 @@ export {
 export type { AttendanceEntry, AttendanceStatus, AttendanceSummary } from "./attendance";
 export { messageMaxLength, validateMessageText } from "./message";
 export type { Message, MessageAuthorRole } from "./message";
+export { buildTeamStatsReport, pluralize } from "./team-stats-report";
+export type { AttendanceStats, TeamStats } from "./team-stats-report";
