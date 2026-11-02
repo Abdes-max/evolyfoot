@@ -5,6 +5,10 @@ import type {
   MatchStatus,
   MatchVenue,
   ObservationDraft,
+  ObservationEventType,
+  ObservationReportRating,
+  ObservationReportSummary,
+  PlayerSignal,
   PersonalExercise,
   PlayerReference,
   SavedTrainingSession,
@@ -64,6 +68,22 @@ export interface SeasonData {
   failed: boolean;
 }
 
+export interface ObservationListItem {
+  id: string;
+  eventType: ObservationEventType;
+  title: string;
+  dateLabel: string;
+  summary: ObservationReportSummary;
+}
+
+export interface ObservationDetail extends ObservationListItem {
+  players: readonly PlayerReference[];
+  ratings: readonly ObservationReportRating[];
+  signals: readonly PlayerSignal[];
+  note?: string;
+  matchId?: string;
+}
+
 export interface AuthContextValue {
   educator: Educator | null;
   // Vrai le temps de relire la session enregistrée au lancement de l'app.
@@ -84,6 +104,8 @@ export interface AuthContextValue {
   getPlayStyle(): Promise<string | null>;
   startNextCycle(): Promise<AuthResult>;
   saveObservation(draft: ObservationDraft, matchId?: string): Promise<AuthResult>;
+  listObservations(): Promise<readonly ObservationListItem[]>;
+  getObservation(id: string): Promise<{ ok: true; observation: ObservationDetail } | { ok: false; error: string }>;
   addPlayer(firstName: string, lastName: string): Promise<AuthResult>;
   renamePlayer(id: string, firstName: string, lastName: string): Promise<AuthResult>;
   removePlayer(id: string): Promise<AuthResult>;
@@ -367,6 +389,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [sessionToken]);
 
+  const listObservations = useCallback(async (): Promise<readonly ObservationListItem[]> => {
+    const response = await apiFetch("/api/observations", { sessionToken }).catch(() => null);
+    const body = response?.ok ? await response.json().catch(() => null) : null;
+    return body?.observations ?? [];
+  }, [sessionToken]);
+
+  const getObservation = useCallback(
+    async (id: string): Promise<{ ok: true; observation: ObservationDetail } | { ok: false; error: string }> => {
+      const response = await apiFetch(`/api/observations/${encodeURIComponent(id)}`, { sessionToken }).catch(() => null);
+      if (!response) {
+        return { ok: false, error: GENERIC_ERROR };
+      }
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json().catch(() => null);
+      return body?.observation ? { ok: true, observation: body.observation } : { ok: false, error: GENERIC_ERROR };
+    },
+    [sessionToken],
+  );
+
   const startNextCycle = useCallback(async (): Promise<AuthResult> => {
     const response = await apiFetch("/api/cycles/next", { method: "POST", sessionToken }).catch(() => null);
     if (!response) {
@@ -577,6 +620,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       getPlayStyle,
       startNextCycle,
       saveObservation,
+      listObservations,
+      getObservation,
       addPlayer,
       renamePlayer,
       removePlayer,
@@ -604,6 +649,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loadSeason,
       listPersonalExercises,
       saveObservation,
+      listObservations,
+      getObservation,
       addPlayer,
       renamePlayer,
       removePlayer,
