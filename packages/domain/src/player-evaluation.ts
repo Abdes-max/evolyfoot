@@ -1,3 +1,5 @@
+import { seasonLabel, seasonStartYear } from "./season";
+
 // Évaluation d'un joueur sur les aspects les plus importants pour un jeune joueur de foot
 // (U10-U13), affichée en toile d'araignée sur la page statistiques. Distincte des 4 critères du
 // diagnostic (`diagnosticCriteria`) : ceux-ci portent sur des comportements collectifs observés en
@@ -30,8 +32,55 @@ export const playerEvaluationMinScore = 0;
 export const playerEvaluationMaxScore = 10;
 
 // Une évaluation est une photo à un instant donné ; on en garde un historique borné par saison
-// pour suivre la progression sans laisser la liste enfler indéfiniment.
+// (août à juin) pour suivre la progression sans laisser la liste enfler. Les saisons passées
+// restent consultables et ne comptent plus dans la limite.
 export const playerEvaluationMaxPerSeason = 10;
+
+// Bilan d'une saison : moyenne des évaluations de l'éducateur, aspect par aspect, et écart avec la
+// saison précédente pour lire la progression d'une année sur l'autre.
+export interface PlayerEvaluationSeason {
+  startYear: number;
+  label: string;
+  count: number;
+  averages: Readonly<Record<PlayerEvaluationAspect, number>>;
+  overall: number;
+  // `null` pour la plus ancienne saison connue.
+  deltaFromPrevious: number | null;
+}
+
+const roundTenth = (value: number): number => Math.round(value * 10) / 10;
+
+export function buildPlayerEvaluationSeasons(
+  evaluations: ReadonlyArray<{ scores: PlayerEvaluationScores; createdAt: string | Date; source?: string }>,
+): PlayerEvaluationSeason[] {
+  const bySeason = new Map<number, PlayerEvaluationScores[]>();
+  for (const evaluation of evaluations) {
+    const date = new Date(evaluation.createdAt);
+    if (evaluation.source === "player" || Number.isNaN(date.getTime())) {
+      continue;
+    }
+    const startYear = seasonStartYear(date);
+    bySeason.set(startYear, [...(bySeason.get(startYear) ?? []), evaluation.scores]);
+  }
+  const ascending = [...bySeason.entries()].sort(([a], [b]) => a - b);
+  const seasons: PlayerEvaluationSeason[] = [];
+  for (const [startYear, list] of ascending) {
+    const averages = Object.fromEntries(
+      playerEvaluationAspects.map((aspect) => [aspect, roundTenth(list.reduce((sum, scores) => sum + scores[aspect], 0) / list.length)]),
+    ) as Record<PlayerEvaluationAspect, number>;
+    const overall = roundTenth(playerEvaluationAspects.reduce((sum, aspect) => sum + averages[aspect], 0) / playerEvaluationAspects.length);
+    const previous = seasons[seasons.length - 1];
+    seasons.push({
+      startYear,
+      label: seasonLabel(startYear),
+      count: list.length,
+      averages,
+      overall,
+      deltaFromPrevious: previous ? roundTenth(overall - previous.overall) : null,
+    });
+  }
+  return seasons.reverse();
+}
 
 export function isPlayerEvaluationAspect(value: string): value is PlayerEvaluationAspect {
   return (playerEvaluationAspects as readonly string[]).includes(value);

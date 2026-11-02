@@ -1,4 +1,4 @@
-import { playerEvaluationMaxPerSeason, validatePlayerEvaluationScores } from "@evolyfoot/domain";
+import { playerEvaluationMaxPerSeason, seasonStartDate, validatePlayerEvaluationScores } from "@evolyfoot/domain";
 import type { PlayerEvaluationScores } from "@evolyfoot/domain";
 import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "./errors";
 import type {
@@ -26,8 +26,8 @@ export class PlayerEvaluationService {
     return this.playerEvaluationRepository.listByPlayer(playerId, educatorId);
   }
 
-  // Ajoute une évaluation datée. Historique borné (voir playerEvaluationMaxPerSeason) : au-delà,
-  // il faut d'abord en retirer une -- plutôt qu'écraser silencieusement la plus ancienne.
+  // Ajoute une évaluation datée. Historique borné par saison (voir playerEvaluationMaxPerSeason) :
+  // au-delà, il faut d'abord en retirer une -- plutôt qu'écraser silencieusement la plus ancienne.
   async add(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PersistedPlayerEvaluation> {
     const error = validatePlayerEvaluationScores(scores);
     if (error) {
@@ -40,10 +40,10 @@ export class PlayerEvaluationService {
     if (!(await this.playerRepository.findById(playerId, educatorId))) {
       throw new PlayerNotFoundError();
     }
-    const existing = await this.playerEvaluationRepository.countByPlayer(playerId, educatorId);
+    const existing = await this.playerEvaluationRepository.countByPlayer(playerId, educatorId, "coach", seasonStartDate(new Date()));
     if (existing >= playerEvaluationMaxPerSeason) {
       throw new ValidationError(
-        `Ce joueur a déjà ${playerEvaluationMaxPerSeason} évaluations. Retires-en une pour en ajouter une nouvelle.`,
+        `Ce joueur a déjà ${playerEvaluationMaxPerSeason} évaluations cette saison. Retires-en une pour en ajouter une nouvelle.`,
       );
     }
     return this.playerEvaluationRepository.create(educatorId, playerId, scores);

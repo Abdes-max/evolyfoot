@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  buildPlayerEvaluationSeasons,
   playerEvaluationAspectLabels,
   playerEvaluationAspects,
   playerEvaluationMaxPerSeason,
@@ -9,6 +10,7 @@ import {
   playerFeet,
   playerPositions,
   playerSeasonTotals,
+  seasonStartDate,
   type PlayerEvaluationScores,
   type PlayerSeasonTotals,
 } from "@evolyfoot/domain";
@@ -378,6 +380,10 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
 
   const latest = evaluations[0];
   const coachEvaluations = evaluations.filter((evaluation) => evaluation.source !== "player");
+  // La limite d'historique est par saison : les évaluations des saisons passées ne comptent plus.
+  const currentSeasonStart = seasonStartDate(new Date()).getTime();
+  const currentSeasonCount = coachEvaluations.filter((evaluation) => new Date(evaluation.createdAt).getTime() >= currentSeasonStart).length;
+  const evaluationSeasons = buildPlayerEvaluationSeasons(evaluations);
 
   return (
     <main className="player-shell">
@@ -592,7 +598,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
               <div className="player-block-head">
                 <h2>Évaluation</h2>
                 <span className="player-count">
-                  {coachEvaluations.length}/{playerEvaluationMaxPerSeason}
+                  {currentSeasonCount}/{playerEvaluationMaxPerSeason} cette saison
                 </span>
               </div>
 
@@ -716,6 +722,52 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                 </div>
               </div>
             </div>
+
+            {evaluationSeasons.length > 0 && (
+              <div className="player-block">
+                <div className="player-block-head">
+                  <h2>Progression par saison</h2>
+                </div>
+                <p className="player-invite-lead">Moyenne des évaluations de l’éducateur, aspect par aspect, de la plus récente à la plus ancienne saison.</p>
+                <div className="player-seasons-scroll">
+                  <table className="player-seasons">
+                    <thead>
+                      <tr>
+                        <th scope="col">Saison</th>
+                        {playerEvaluationAspects.map((aspect) => (
+                          <th key={aspect} scope="col">
+                            {playerEvaluationAspectLabels[aspect]}
+                          </th>
+                        ))}
+                        <th scope="col">Moyenne</th>
+                        <th scope="col">Écart</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {evaluationSeasons.map((season) => (
+                        <tr key={season.startYear}>
+                          <th scope="row">
+                            {season.label}
+                            <small>
+                              {season.count} évaluation{season.count > 1 ? "s" : ""}
+                            </small>
+                          </th>
+                          {playerEvaluationAspects.map((aspect) => (
+                            <td key={aspect}>{season.averages[aspect].toLocaleString("fr-FR")}</td>
+                          ))}
+                          <td>
+                            <strong>{season.overall.toLocaleString("fr-FR")}</strong>
+                          </td>
+                          <td className={season.deltaFromPrevious === null ? "" : season.deltaFromPrevious >= 0 ? "player-seasons-up" : "player-seasons-down"}>
+                            {season.deltaFromPrevious === null ? "—" : `${season.deltaFromPrevious > 0 ? "+" : ""}${season.deltaFromPrevious.toLocaleString("fr-FR")}`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             <div className="player-block print-hidden">
               <div className="player-block-head">

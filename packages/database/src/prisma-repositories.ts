@@ -1024,8 +1024,8 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
     return records.map(toPersistedPlayerEvaluation);
   }
 
-  async countByPlayer(playerId: string, educatorId: string, source: PlayerEvaluationSource = "coach"): Promise<number> {
-    return this.prisma.playerEvaluationRecord.count({ where: { playerId, educatorId, source } });
+  async countByPlayer(playerId: string, educatorId: string, source: PlayerEvaluationSource = "coach", since?: Date): Promise<number> {
+    return this.prisma.playerEvaluationRecord.count({ where: { playerId, educatorId, source, ...(since ? { createdAt: { gte: since } } : {}) } });
   }
 
   async create(

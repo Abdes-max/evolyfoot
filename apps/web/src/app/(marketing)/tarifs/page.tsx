@@ -16,6 +16,8 @@ const free = [
   "Préparation de match : composition, capitaine, formation",
   "Présences et rapport de saison",
   "Accès joueur / tuteur en lecture seule, sur invitation",
+  "Adjoints invités sur l’équipe",
+  "Progression de chaque joueur d’une saison à l’autre",
 ];
 
 // Rien de cette liste n'existe encore dans l'app : ne rien y ajouter avant que ce soit livré sans
@@ -23,7 +25,6 @@ const free = [
 const premium = [
   "Plusieurs équipes sur un même compte",
   "Partage entre éducateurs d’un même club",
-  "Historique de progression sur plusieurs saisons",
 ];
 
 export default function TarifsPage() {

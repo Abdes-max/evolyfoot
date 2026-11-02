@@ -1,5 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import {
+  buildPlayerEvaluationSeasons,
   playerEvaluationAspectLabels,
   playerEvaluationAspects,
   playerEvaluationMaxScore,
@@ -83,6 +84,7 @@ export default function PlayerScreen() {
   const coachEvaluations = evaluations.filter((evaluation) => evaluation.source !== "player");
   const latestCoach = coachEvaluations[0]?.scores ?? null;
   const latestSelf = evaluations.find((evaluation) => evaluation.source === "player")?.scores ?? null;
+  const seasons = buildPlayerEvaluationSeasons(evaluations);
 
   function adjust(aspect: keyof PlayerEvaluationScores, delta: number) {
     setScores((current) =>
@@ -318,6 +320,40 @@ export default function PlayerScreen() {
               )}
             </View>
 
+            {seasons.length > 0 && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Progression par saison</Text>
+                <Text style={styles.muted}>Moyenne des évaluations de l’éducateur.</Text>
+                {seasons.map((season) => (
+                  <View key={season.startYear} style={styles.season}>
+                    <View style={styles.seasonHead}>
+                      <Text style={styles.seasonLabel}>{season.label}</Text>
+                      <Text style={styles.seasonOverall}>
+                        {season.overall.toLocaleString("fr-FR")}/{playerEvaluationMaxScore}
+                        {season.deltaFromPrevious === null ? "" : (
+                          <Text style={season.deltaFromPrevious >= 0 ? styles.up : styles.down}>
+                            {`  ${season.deltaFromPrevious > 0 ? "+" : ""}${season.deltaFromPrevious.toLocaleString("fr-FR")}`}
+                          </Text>
+                        )}
+                      </Text>
+                    </View>
+                    <Text style={styles.muted}>
+                      {season.count} évaluation{season.count > 1 ? "s" : ""}
+                    </Text>
+                    {playerEvaluationAspects.map((aspect) => (
+                      <View key={aspect} style={styles.barRow}>
+                        <Text style={styles.barLabel}>{playerEvaluationAspectLabels[aspect]}</Text>
+                        <View style={styles.barTrack}>
+                          <View style={[styles.barFill, { width: `${(season.averages[aspect] / playerEvaluationMaxScore) * 100}%` }]} />
+                        </View>
+                        <Text style={styles.barValue}>{season.averages[aspect].toLocaleString("fr-FR")}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            )}
+
             <TouchableOpacity
               accessibilityRole="button"
               onPress={() => router.push({ pathname: "/messages/[id]", params: { id: player.id, name: player.name } })}
@@ -369,6 +405,17 @@ const styles = StyleSheet.create({
   label: { fontSize: 10, fontWeight: "800", color: colors.muted, marginTop: 6 },
   text: { fontSize: 13, lineHeight: 19, color: colors.ink, marginTop: 2 },
   legend: { flexDirection: "row", justifyContent: "center", gap: 16 },
+  season: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.line },
+  seasonHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
+  seasonLabel: { fontSize: 14, fontWeight: "800", color: colors.ink },
+  seasonOverall: { fontSize: 13, fontWeight: "800", color: colors.ink },
+  up: { color: colors.lime },
+  down: { color: colors.danger },
+  barRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 5 },
+  barLabel: { width: 74, fontSize: 11, fontWeight: "700", color: colors.muted },
+  barTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.line, overflow: "hidden" },
+  barFill: { height: "100%", borderRadius: 3, backgroundColor: colors.primary },
+  barValue: { width: 30, textAlign: "right", fontSize: 11, fontWeight: "800", color: colors.ink },
   legendItem: { fontSize: 11, fontWeight: "800" },
   scoreRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.line },
   scoreLabel: { flex: 1, fontSize: 13, fontWeight: "700", color: colors.ink },

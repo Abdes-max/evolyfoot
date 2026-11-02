@@ -37,7 +37,7 @@ export { suggestAdjustment } from "./progression";
 export type { ObservationSummary } from "./progression";
 export { suggestAdjustmentFromObservation } from "./adjustment";
 export type { AdjustmentAction, AdjustmentSuggestion } from "./adjustment";
-export { buildSeasonCalendar, seasonStartYear } from "./season";
+export { buildSeasonCalendar, seasonLabel, seasonStartDate, seasonStartYear } from "./season";
 export type { SeasonCalendar, SeasonEvent, SeasonEventInput, SeasonEventType, SeasonMonth } from "./season";
 export {
   isPersonalActivityId,
@@ -146,6 +146,7 @@ export type {
   MatchVenue,
 } from "./match";
 export {
+  buildPlayerEvaluationSeasons,
   createEmptyPlayerEvaluationScores,
   isPlayerEvaluationAspect,
   playerEvaluationAspectLabels,
@@ -155,7 +156,7 @@ export {
   playerEvaluationMinScore,
   validatePlayerEvaluationScores,
 } from "./player-evaluation";
-export type { PlayerEvaluationAspect, PlayerEvaluationScores } from "./player-evaluation";
+export type { PlayerEvaluationAspect, PlayerEvaluationScores, PlayerEvaluationSeason } from "./player-evaluation";
 export {
   isValidJerseyNumber,
   playerAspectCodes,

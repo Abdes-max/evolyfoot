@@ -43,7 +43,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 ### Offre payante et clubs (non commencé)
 
 - [ ] Paiement Premium : tarifs seulement proposés, aucun contrôle d'accès ni facturation.
-- [ ] Fonctions annoncées « à venir » sur la page Tarifs : plusieurs équipes, partage entre éducateurs, historique multi-saisons.
+- [ ] Fonctions annoncées « à venir » sur la page Tarifs : plusieurs équipes, partage entre éducateurs d’un même club. L’historique multi-saisons est livré le 2 novembre 2026 (limite de 10 évaluations par saison et non plus à vie, progression par saison sur le web et Coach) et la page Tarifs le range dans le plan gratuit, avec les adjoints.
 - [ ] Offre club, écartée pour l'instant. Plusieurs équipes par compte demande de revoir le modèle de données (un éducateur n'a aujourd'hui qu'une équipe).
 
 ### Technique

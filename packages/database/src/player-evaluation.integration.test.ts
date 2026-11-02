@@ -79,6 +79,23 @@ describe("PostgreSQL player evaluation persistence", () => {
     });
   });
 
+  it("only counts the current season's evaluations against the cap", async () => {
+    const educator = await createEducator("seasons");
+    const player = await playerRepository.create(educator.id, "Kylian");
+
+    for (let index = 0; index < 10; index += 1) {
+      await service.add(educator.id, player.id, createEmptyPlayerEvaluationScores());
+    }
+    const [oldest] = (await service.listByPlayer(educator.id, player.id)).slice(-1);
+    const lastSeason = new Date(new Date().getFullYear() - 1, 0, 15);
+    await service.update(educator.id, oldest!.id, { date: lastSeason });
+
+    await expect(service.add(educator.id, player.id, createEmptyPlayerEvaluationScores())).resolves.toMatchObject({
+      playerId: player.id,
+    });
+    expect(await service.listByPlayer(educator.id, player.id)).toHaveLength(11);
+  });
+
   it("rejects a score outside the 0-10 range", async () => {
     const educator = await createEducator("invalid");
     const player = await playerRepository.create(educator.id, "Kylian");
