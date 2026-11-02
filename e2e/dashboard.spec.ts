@@ -301,7 +301,7 @@ test("l’éducateur ouvre la fiche d’un joueur et enregistre une évaluation 
   await expect(page.getByText("Pas de souci, à tout à l'heure !")).toBeVisible();
 
   await page.getByRole("button", { name: "Enregistrer cette évaluation" }).click();
-  await expect(page.locator(".player-count")).toHaveText("1/10");
+  await expect(page.locator(".player-count")).toHaveText("1/10 cette saison");
   await expect(page.getByRole("button", { name: /retirer l’évaluation/i })).toBeVisible();
 
   // Modifier une évaluation existante (date + note) plutôt que d'en recréer une.
