@@ -167,6 +167,13 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Link>
 
+        <Link href="/statistiques" asChild>
+          <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
+            <Text style={styles.observationText}>Statistiques</Text>
+            <Text style={styles.observationText}>→</Text>
+          </TouchableOpacity>
+        </Link>
+
         <Link href="/match" asChild>
           <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
             <Text style={styles.observationText}>Préparer un match</Text>
