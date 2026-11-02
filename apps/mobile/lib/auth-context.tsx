@@ -40,6 +40,7 @@ export interface MobileMatch {
   lineup: MatchLineupAssignment[];
   captainPlayerId: string | null;
   substitutePlayerIds: string[];
+  opponentFormationId?: string | null;
 }
 
 // `PlayerReference` (domaine) reste { id, name } -- générique, utilisé aussi pour les signaux
