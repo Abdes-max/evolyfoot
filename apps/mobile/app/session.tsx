@@ -21,6 +21,7 @@ import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { TacticalDiagramView } from "../components/tactical-diagram";
+import { TacticalPlayer } from "../components/tactical-player";
 import { useAuth } from "../lib/auth-context";
 import { sessionHtml, sharePdf } from "../lib/pdf-export";
 
@@ -59,6 +60,8 @@ export default function SessionScreen() {
   const plan = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores));
   const week = plan.weeks[weekNumber - 1] ?? plan.weeks[0];
   const [variant, setVariant] = useState(0);
+  // Un seul schéma animé à la fois, pour ne pas faire tourner une animation par exercice.
+  const [animatedBlockId, setAnimatedBlockId] = useState<string | null>(null);
   const [playStyle, setPlayStyle] = useState<string | null>(null);
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [meetingAt, setMeetingAt] = useState(tomorrowEvening);
@@ -201,7 +204,16 @@ export default function SessionScreen() {
               <Text style={styles.blockDuration}>{block.durationMinutes} min</Text>
             </View>
             <Text style={styles.objective}>{block.activity.objective}</Text>
-            {block.activity.photo ? null : <TacticalDiagramView diagram={block.activity.diagram} label={`Schéma tactique : ${block.activity.title}`} />}
+            {block.activity.photo ? null : animatedBlockId === block.id ? (
+              <TacticalPlayer diagram={block.activity.diagram} label={`Schéma tactique animé : ${block.activity.title}`} seed={block.activity.id} />
+            ) : (
+              <TacticalDiagramView diagram={block.activity.diagram} label={`Schéma tactique : ${block.activity.title}`} />
+            )}
+            {block.activity.photo ? null : (
+              <TouchableOpacity accessibilityRole="button" hitSlop={6} onPress={() => setAnimatedBlockId(animatedBlockId === block.id ? null : block.id)}>
+                <Text style={styles.animateLink}>{animatedBlockId === block.id ? "Revenir au schéma fixe" : "▶ Animer le schéma"}</Text>
+              </TouchableOpacity>
+            )}
             <View style={styles.details}>
               <Text style={styles.detailLabel}>ORGANISATION</Text><Text style={styles.detailText}>{block.activity.organization}</Text>
               <Text style={styles.detailLabel}>CONSIGNE</Text><Text style={styles.detailText}>{block.activity.instruction}</Text>
@@ -335,6 +347,7 @@ export default function SessionScreen() {
 }
 
 const styles = StyleSheet.create({
+  animateLink: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 10 },
   safe: { flex: 1, backgroundColor: colors.paper },
   page: { padding: spacing.lg, paddingBottom: 50 },
   why: { gap: 8, padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.primary, marginBottom: 16 },
