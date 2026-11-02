@@ -25,6 +25,8 @@ export interface Educator {
   id: string;
   email: string;
   displayName: string;
+  // "assistant" : adjoint qui travaille sur l'équipe d'un autre éducateur.
+  role?: "coach" | "assistant";
 }
 
 export interface MobileMatch {
@@ -108,6 +110,8 @@ export interface AuthContextValue {
   listObservations(): Promise<readonly ObservationListItem[]>;
   // `null` si les chiffres n'ont pas pu être lus.
   getTeamStats(): Promise<TeamStats | null>;
+  // Appel authentifié brut, `null` sans réseau : pour les écrans qui lisent eux-mêmes la réponse.
+  apiRequest(path: string, init?: Omit<RequestInit, "headers">): Promise<Response | null>;
   getObservation(id: string): Promise<{ ok: true; observation: ObservationDetail } | { ok: false; error: string }>;
   addPlayer(firstName: string, lastName: string): Promise<AuthResult>;
   renamePlayer(id: string, firstName: string, lastName: string): Promise<AuthResult>;
@@ -183,7 +187,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await apiFetch("/api/auth/logout", { method: "POST", sessionToken: body.sessionToken }).catch(() => undefined);
         return { ok: false, error: "Ce compte est un compte joueur : connecte-toi sur EvolyFoot Player." };
       }
-      setEducator(body.educator);
+      // La session porte le rôle (éducateur ou adjoint), absent de la réponse de connexion.
+      setEducator(sessionBody?.educator ?? body.educator);
       setSessionToken(body.sessionToken);
       await writeSessionToken(body.sessionToken);
       await Promise.all([fetchTeam(body.sessionToken), fetchDiagnostic(body.sessionToken), fetchRoster(body.sessionToken)]);
@@ -391,6 +396,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       failed,
     };
   }, [sessionToken]);
+
+  const apiRequest = useCallback(
+    (path: string, init: Omit<RequestInit, "headers"> = {}): Promise<Response | null> => apiFetch(path, { ...init, sessionToken }).catch(() => null),
+    [sessionToken],
+  );
 
   const getTeamStats = useCallback(async (): Promise<TeamStats | null> => {
     const response = await apiFetch("/api/stats", { sessionToken }).catch(() => null);
@@ -632,6 +642,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       listObservations,
       getObservation,
       getTeamStats,
+      apiRequest,
       addPlayer,
       renamePlayer,
       removePlayer,
@@ -662,6 +673,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       listObservations,
       getObservation,
       getTeamStats,
+      apiRequest,
       addPlayer,
       renamePlayer,
       removePlayer,

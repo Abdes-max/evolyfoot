@@ -5,7 +5,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity
 import { useAuth } from "../lib/auth-context";
 
 export default function AccountScreen() {
-  const { deleteAccount } = useAuth();
+  const { deleteAccount, educator } = useAuth();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -25,7 +25,9 @@ export default function AccountScreen() {
       <ScrollView contentContainerStyle={styles.page}>
         <Text style={styles.title}>Supprimer mon compte</Text>
         <Text style={styles.body}>
-          Cette action est définitive : ton équipe, tes joueurs, tes séances, tes matchs et les comptes tuteur liés seront supprimés.
+          {educator?.role === "assistant"
+            ? "Cette action est définitive : ton accès sera supprimé. L’équipe reste chez l’éducateur."
+            : "Cette action est définitive : ton équipe, tes joueurs, tes séances, tes matchs, tes adjoints et les comptes tuteur liés seront supprimés."}
         </Text>
         <Text style={styles.label}>Confirme avec ton mot de passe</Text>
         <TextInput autoComplete="current-password" onChangeText={setPassword} secureTextEntry style={styles.input} value={password} />
