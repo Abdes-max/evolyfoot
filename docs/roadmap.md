@@ -32,7 +32,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 
 - [ ] Tester l'application sur un téléphone réel (voir la limite Expo Go en bas de ce fichier).
 - [ ] Créer les comptes Expo, Apple Developer et Google Play Console, puis publier les deux applications en TestFlight et en piste interne.
-- [x] Porter sur EvolyFoot Coach les écrans du web — 2 novembre 2026 : vue saison, historique des observations, statistiques, profil (avec la gestion du staff) et bibliothèque, analyse de l’adversaire sur la fiche match, import de calendrier .ics. Les schémas tactiques fixes s’affichent aussi dans la bibliothèque et les séances. Export PDF de la séance et du rapport de saison par la feuille de partage. Restent web seulement : l’animation des schémas et le bilan PDF d’un joueur (Coach n’a pas encore de fiche joueur).
+- [x] Porter sur EvolyFoot Coach les écrans du web — 2 novembre 2026 : vue saison, historique des observations, statistiques, profil (avec la gestion du staff) et bibliothèque, analyse de l’adversaire sur la fiche match, import de calendrier .ics. Les schémas tactiques fixes s’affichent aussi dans la bibliothèque et les séances. Export PDF de la séance et du rapport de saison par la feuille de partage. Fiche joueur avec matchs, buts, passes, évaluation (toile, nouvelle note), bilan PDF et invitation du tuteur. Restent web seulement : l’animation des schémas, la modification des coordonnées et de la photo du joueur, la messagerie.
 
 ### Produit
 
