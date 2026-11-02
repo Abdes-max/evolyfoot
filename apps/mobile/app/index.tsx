@@ -146,6 +146,13 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Link>
 
+        <Link href="/observations" asChild>
+          <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
+            <Text style={styles.observationText}>Mes observations</Text>
+            <Text style={styles.observationText}>→</Text>
+          </TouchableOpacity>
+        </Link>
+
         <Link href="/seances" asChild>
           <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
             <Text style={styles.observationText}>Toutes mes séances</Text>
