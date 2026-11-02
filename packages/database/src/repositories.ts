@@ -559,7 +559,8 @@ export type PlayerEvaluationSource = "coach" | "player";
 export interface PlayerEvaluationRepository {
   listByEducator(educatorId: string): Promise<PersistedPlayerEvaluation[]>;
   listByPlayer(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation[]>;
-  countByPlayer(playerId: string, educatorId: string, source?: PlayerEvaluationSource): Promise<number>;
+  // `since` limite le décompte à une période (la saison en cours pour la limite d'historique).
+  countByPlayer(playerId: string, educatorId: string, source?: PlayerEvaluationSource, since?: Date): Promise<number>;
   create(
     educatorId: string,
     playerId: string,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSeasonCalendar, seasonStartYear } from "./season";
+import { buildSeasonCalendar, seasonLabel, seasonStartDate, seasonStartYear } from "./season";
 
 describe("buildSeasonCalendar", () => {
   const now = new Date(2026, 10, 1);
@@ -32,5 +32,11 @@ describe("buildSeasonCalendar", () => {
 
     expect(calendar.months[3]?.events.map((event) => event.id)).toEqual(["a", "b"]);
     expect(calendar.undatedCount).toBe(1);
+  });
+
+  it("fait commencer la saison le 1er juillet, comme seasonStartYear", () => {
+    expect(seasonStartDate(new Date(2027, 5, 30))).toEqual(new Date(2026, 6, 1));
+    expect(seasonStartDate(new Date(2027, 6, 1))).toEqual(new Date(2027, 6, 1));
+    expect(seasonLabel(2027)).toBe("2027-2028");
   });
 });

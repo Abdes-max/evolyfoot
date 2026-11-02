@@ -1,5 +1,5 @@
 import { attendanceStatusOf, playerSeasonTotals, summarizeAttendance } from "@evolyfoot/domain";
-import { playerEvaluationMaxPerSeason, validatePlayerEvaluationScores } from "@evolyfoot/domain";
+import { playerEvaluationMaxPerSeason, seasonStartDate, validatePlayerEvaluationScores } from "@evolyfoot/domain";
 import type { AttendanceEntry, AttendanceStatus, AttendanceSummary, PlayerEvaluationScores, PlayerSeasonTotals, TrainingDay } from "@evolyfoot/domain";
 import { EducatorNotFoundError, ValidationError } from "./errors";
 import { matchKickoffTime, matchMeetingTime } from "./match-time";
@@ -147,7 +147,7 @@ export class PlayerDashboardService {
       throw new ValidationError(error);
     }
     const owned = await this.resolveOwnedPlayer(playerAccountId);
-    const existing = await this.playerEvaluationRepository.countByPlayer(owned.id, owned.educatorId, "player");
+    const existing = await this.playerEvaluationRepository.countByPlayer(owned.id, owned.educatorId, "player", seasonStartDate(new Date()));
     if (existing >= playerEvaluationMaxPerSeason) {
       throw new ValidationError(`Tu as déjà ${playerEvaluationMaxPerSeason} auto-évaluations cette saison.`);
     }
