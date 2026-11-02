@@ -20,6 +20,8 @@
     "@evolyfoot/domain": "workspace:*",
     "expo": "~57.0.9",
     "expo-constants": "~57.0.8",
+    "expo-document-picker": "~57.0.3",
+    "expo-file-system": "~57.0.4",
     "expo-linking": "~57.0.4",
     "expo-router": "~57.0.9",
     "expo-secure-store": "~57.0.4",

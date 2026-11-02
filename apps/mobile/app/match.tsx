@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CalendarImport } from "../components/calendar-import";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
 
 const statusLabel: Record<MatchStatus, string> = { scheduled: "À venir", played: "Joué" };
@@ -58,9 +59,12 @@ export default function MatchListScreen() {
         <Text style={styles.body}>Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire.</Text>
 
         {!creating ? (
+          <>
           <TouchableOpacity accessibilityRole="button" onPress={() => setCreating(true)} style={styles.newButton}>
             <Text style={styles.newButtonText}>+ Nouveau match</Text>
           </TouchableOpacity>
+          <CalendarImport existing={matches} formationId={formationId} gameFormat={gameFormat} onImported={(created) => setMatches((current) => [...current, ...created])} teamName={team?.name ?? ""} />
+          </>
         ) : (
           <View style={styles.createForm}>
             <Text style={styles.label}>Équipe adverse</Text>
