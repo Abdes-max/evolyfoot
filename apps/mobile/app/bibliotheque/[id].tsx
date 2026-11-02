@@ -3,6 +3,7 @@ import { findTrainingActivity, type PersonalExercise, type TrainingActivity } fr
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { TacticalDiagramView } from "../../components/tactical-diagram";
 import { useAuth } from "../../lib/auth-context";
 import { kindLabels } from "../../lib/exercise-labels";
 
@@ -75,6 +76,7 @@ export default function ExerciseScreen() {
             ) : (
               <Text style={styles.muted}>Mon exercice · {personal?.theme}</Text>
             )}
+            {activity && <TacticalDiagramView diagram={activity.diagram} label={`Schéma tactique : ${activity.title}`} />}
             {personal?.photo ? <Image accessibilityLabel="Schéma de l’exercice" resizeMode="contain" source={{ uri: personal.photo }} style={styles.photo} /> : null}
             <Block text={exercise.objective} title="But" />
             <Block text={exercise.organization} title="Organisation" />
