@@ -20,6 +20,7 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { TacticalDiagramView } from "../components/tactical-diagram";
 import { useAuth } from "../lib/auth-context";
 
 const kindLabels = { welcome: "Accueil", activation: "Activation", main: "Situation principale", game: "Jeu" } as const;
@@ -199,6 +200,7 @@ export default function SessionScreen() {
               <Text style={styles.blockDuration}>{block.durationMinutes} min</Text>
             </View>
             <Text style={styles.objective}>{block.activity.objective}</Text>
+            {block.activity.photo ? null : <TacticalDiagramView diagram={block.activity.diagram} label={`Schéma tactique : ${block.activity.title}`} />}
             <View style={styles.details}>
               <Text style={styles.detailLabel}>ORGANISATION</Text><Text style={styles.detailText}>{block.activity.organization}</Text>
               <Text style={styles.detailLabel}>CONSIGNE</Text><Text style={styles.detailText}>{block.activity.instruction}</Text>
