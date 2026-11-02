@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  buildPlayerEvaluationSeasons,
   playerEvaluationAspectLabels,
   playerEvaluationAspects,
   playerEvaluationMaxScore,
@@ -9,6 +10,7 @@ import {
 import { useState } from "react";
 import { DonutChart, RadarChart } from "../../charts";
 import { colorForEvaluation } from "../../evaluation-colors";
+import { EvaluationSeasonsTable } from "../../evaluation-seasons-table";
 import { AccountPrivacy } from "../../account-privacy";
 import { PlayerCard } from "../../player-card";
 import { SelfEvaluation } from "./self-evaluation";
@@ -40,6 +42,7 @@ export function PlayerSpaceView() {
   // chaque re-rendu une fois que l'utilisateur a lui-même coché/décoché une case.
   const coachEvaluations = dashboard?.evaluations.filter((evaluation) => evaluation.source !== "player") ?? [];
   const selfEvaluations = dashboard?.evaluations.filter((evaluation) => evaluation.source === "player") ?? [];
+  const seasons = buildPlayerEvaluationSeasons(coachEvaluations);
   const latest = coachEvaluations[0];
 
   if (!seededCompare && latest) {
@@ -158,6 +161,14 @@ export function PlayerSpaceView() {
                 <p className="player-space-empty">Aucune évaluation pour l’instant.</p>
               )}
             </section>
+
+            {seasons.length > 0 && (
+              <section className="player-space-block">
+                <h2>Mes saisons</h2>
+                <p className="player-space-caption">Moyenne des évaluations de ton éducateur, saison par saison.</p>
+                <EvaluationSeasonsTable seasons={seasons} />
+              </section>
+            )}
 
             <div className="player-space-grid">
               <section className="player-space-block">

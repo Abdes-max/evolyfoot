@@ -1,5 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import {
+  buildPlayerEvaluationSeasons,
   playerEvaluationAspectLabels,
   playerEvaluationAspects,
   playerEvaluationMaxScore,
@@ -65,6 +66,7 @@ export default function ProgressionScreen() {
 
   const coach = dashboard?.evaluations.find((evaluation) => evaluation.source !== "player")?.scores ?? null;
   const self = dashboard?.evaluations.find((evaluation) => evaluation.source === "player")?.scores ?? null;
+  const seasons = buildPlayerEvaluationSeasons(dashboard?.evaluations ?? []);
 
   function adjust(aspect: keyof PlayerEvaluationScores, delta: number) {
     setFeedback("");
@@ -117,6 +119,36 @@ export default function ProgressionScreen() {
             <Text style={styles.note}>Pas encore d’évaluation.</Text>
           )}
 
+          {seasons.length > 0 ? (
+            <>
+              <Text style={styles.section}>Mes saisons</Text>
+              {seasons.map((season) => (
+                <View key={season.startYear} style={styles.season}>
+                  <View style={styles.seasonHead}>
+                    <Text style={styles.seasonLabel}>{season.label}</Text>
+                    <Text style={styles.seasonOverall}>
+                      {season.overall.toLocaleString("fr-FR")}/{playerEvaluationMaxScore}
+                      {season.deltaFromPrevious === null ? "" : (
+                        <Text style={season.deltaFromPrevious >= 0 ? styles.up : styles.down}>
+                          {`  ${season.deltaFromPrevious > 0 ? "+" : ""}${season.deltaFromPrevious.toLocaleString("fr-FR")}`}
+                        </Text>
+                      )}
+                    </Text>
+                  </View>
+                  {playerEvaluationAspects.map((aspect) => (
+                    <View key={aspect} style={styles.barRow}>
+                      <Text style={styles.barLabel}>{playerEvaluationAspectLabels[aspect]}</Text>
+                      <View style={styles.barTrack}>
+                        <View style={[styles.barFill, { width: `${(season.averages[aspect] / playerEvaluationMaxScore) * 100}%` }]} />
+                      </View>
+                      <Text style={styles.barValue}>{season.averages[aspect].toLocaleString("fr-FR")}</Text>
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </>
+          ) : null}
+
           <Text style={styles.section}>Je m’évalue</Text>
           {playerEvaluationAspects.map((aspect) => (
             <View key={aspect} style={styles.row}>
@@ -149,6 +181,17 @@ const styles = StyleSheet.create({
   radar: { alignSelf: "center" },
   legend: { flexDirection: "row", justifyContent: "center", gap: spacing.md },
   legendText: { fontSize: 12, fontWeight: "800" },
+  season: { padding: spacing.md, marginBottom: spacing.sm, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primaryDark, backgroundColor: colors.surface },
+  seasonHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 },
+  seasonLabel: { color: colors.ink, fontSize: 16, fontWeight: "900" },
+  seasonOverall: { color: colors.ink, fontSize: 14, fontWeight: "800" },
+  up: { color: colors.lime },
+  down: { color: colors.danger },
+  barRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 5 },
+  barLabel: { width: 74, color: colors.muted, fontSize: 11, fontWeight: "700" },
+  barTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.line, overflow: "hidden" },
+  barFill: { height: "100%", borderRadius: 3, backgroundColor: colors.primary },
+  barValue: { width: 30, color: colors.ink, fontSize: 11, fontWeight: "800", textAlign: "right" },
   section: { color: colors.ink, fontSize: 22, fontWeight: "900", textTransform: "uppercase", marginTop: spacing.lg, marginBottom: spacing.sm },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
   rowLabel: { flex: 1, color: colors.ink, fontSize: 14, fontWeight: "700" },
