@@ -10,10 +10,12 @@ import {
 } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, SafeAreaView, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { EvaluationRadar } from "../../components/evaluation-radar";
+import { PlayerDetailsForm } from "../../components/player-details-form";
 import { useAuth } from "../../lib/auth-context";
 import { playerReportHtml, sharePdf, type ReportPlayer } from "../../lib/pdf-export";
+import { birthDateFromIso, pickPlayerPhoto } from "../../lib/player-photo";
 
 interface Evaluation {
   id: string;
@@ -46,6 +48,8 @@ export default function PlayerScreen() {
   const [scores, setScores] = useState<PlayerEvaluationScores | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +108,57 @@ export default function PlayerScreen() {
     setMessage("Évaluation enregistrée.");
   }
 
+  async function patchPlayer(patch: Record<string, string | null>): Promise<string | null> {
+    const response = await apiRequest(`/api/roster/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(patch) });
+    if (!response?.ok) {
+      return errorOf(response, "L’enregistrement a échoué.");
+    }
+    const body = await response.json();
+    setPlayer(body.player);
+    return null;
+  }
+
+  async function saveDetails(patch: Record<string, string | null>): Promise<string | null> {
+    const failure = await patchPlayer(patch);
+    if (!failure) {
+      setEditing(false);
+    }
+    return failure;
+  }
+
+  async function changePhoto() {
+    setPhotoBusy(true);
+    try {
+      const photo = await pickPlayerPhoto();
+      const failure = photo ? await patchPlayer({ photo }) : null;
+      if (failure) {
+        Alert.alert(failure);
+      }
+    } catch {
+      Alert.alert("Impossible de traiter cette image.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  function removePhoto() {
+    Alert.alert("Retirer la photo ?", undefined, [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Retirer",
+        style: "destructive",
+        onPress: async () => {
+          setPhotoBusy(true);
+          const failure = await patchPlayer({ photo: null });
+          setPhotoBusy(false);
+          if (failure) {
+            Alert.alert(failure);
+          }
+        },
+      },
+    ]);
+  }
+
   async function inviteTutor() {
     const response = await apiRequest("/api/invites", { method: "POST", body: JSON.stringify({ playerId: id }) });
     if (!response?.ok) {
@@ -134,8 +189,30 @@ export default function PlayerScreen() {
         {status === "missing" && <Text style={styles.error}>Ce joueur est introuvable.</Text>}
         {player && (
           <>
-            <Text style={styles.step}>{[player.position, player.jerseyNumber ? `N° ${player.jerseyNumber}` : null].filter(Boolean).join(" · ").toUpperCase() || "JOUEUR"}</Text>
-            <Text style={styles.title}>{player.name}</Text>
+            <View style={styles.header}>
+              <View style={styles.avatar}>
+                {player.photo ? (
+                  <Image accessibilityLabel={`Photo de ${player.name}`} source={{ uri: player.photo }} style={styles.avatarImage} />
+                ) : (
+                  <Text style={styles.avatarInitials}>{`${player.firstName[0] ?? ""}${player.lastName[0] ?? ""}`.toUpperCase()}</Text>
+                )}
+                {photoBusy && <ActivityIndicator color={colors.primary} style={StyleSheet.absoluteFill} />}
+              </View>
+              <View style={styles.headerText}>
+                <Text style={styles.step}>{[player.position, player.jerseyNumber ? `N° ${player.jerseyNumber}` : null].filter(Boolean).join(" · ").toUpperCase() || "JOUEUR"}</Text>
+                <Text style={styles.title}>{player.name}</Text>
+                <View style={styles.photoActions}>
+                  <TouchableOpacity accessibilityRole="button" disabled={photoBusy} hitSlop={6} onPress={changePhoto}>
+                    <Text style={styles.link}>{player.photo ? "Changer la photo" : "Ajouter une photo"}</Text>
+                  </TouchableOpacity>
+                  {player.photo && (
+                    <TouchableOpacity accessibilityRole="button" disabled={photoBusy} hitSlop={6} onPress={removePhoto}>
+                      <Text style={styles.mutedLink}>Retirer</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            </View>
 
             <View style={styles.totals}>
               {(
@@ -152,9 +229,33 @@ export default function PlayerScreen() {
               ))}
             </View>
 
-            {(player.strengths || player.workAreas) && (
-              <View style={styles.card}>
-                {player.strengths ? (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Fiche</Text>
+                {!editing && (
+                  <TouchableOpacity accessibilityRole="button" hitSlop={8} onPress={() => setEditing(true)}>
+                    <Text style={styles.link}>Modifier</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              {editing ? (
+                <PlayerDetailsForm onCancel={() => setEditing(false)} onSave={saveDetails} player={player} />
+              ) : (
+                <>
+                  {(
+                    [
+                      ["Date de naissance", birthDateFromIso(player.birthDate)],
+                      ["Pied fort", player.preferredFoot],
+                      ["Téléphone", player.phone],
+                      ["E-mail", player.email],
+                    ] as const
+                  ).map(([label, value]) => (
+                    <View key={label} style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>{label}</Text>
+                      <Text style={value ? styles.detailValue : styles.detailEmpty}>{value || "Non renseigné"}</Text>
+                    </View>
+                  ))}
+                  {player.strengths ? (
                   <>
                     <Text style={styles.label}>Points forts</Text>
                     <Text style={styles.text}>{player.strengths}</Text>
@@ -166,8 +267,9 @@ export default function PlayerScreen() {
                     <Text style={styles.text}>{player.workAreas}</Text>
                   </>
                 ) : null}
-              </View>
-            )}
+                </>
+              )}
+            </View>
 
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Évaluation</Text>
@@ -235,7 +337,19 @@ const styles = StyleSheet.create({
   page: { padding: spacing.lg, paddingBottom: 48 },
   back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
   step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 16 },
+  title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 4 },
+  header: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 16 },
+  headerText: { flex: 1 },
+  avatar: { width: 76, height: 76, borderRadius: 38, borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  avatarImage: { width: "100%", height: "100%" },
+  avatarInitials: { fontSize: 24, fontWeight: "800", color: colors.primary },
+  photoActions: { flexDirection: "row", gap: 16, marginTop: 6 },
+  mutedLink: { fontSize: 13, fontWeight: "800", color: colors.muted },
+  cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  detailRow: { flexDirection: "row", justifyContent: "space-between", gap: 12, paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.line },
+  detailLabel: { fontSize: 12, fontWeight: "700", color: colors.muted },
+  detailValue: { flexShrink: 1, fontSize: 12, fontWeight: "700", color: colors.ink, textAlign: "right" },
+  detailEmpty: { fontSize: 12, color: colors.muted, fontStyle: "italic" },
   muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 6 },
   error: { fontSize: 12, fontWeight: "700", color: colors.danger, marginTop: 6 },
   success: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 6 },

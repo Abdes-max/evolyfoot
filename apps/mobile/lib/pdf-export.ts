@@ -96,6 +96,10 @@ export interface ReportPlayer {
   firstName: string;
   lastName: string;
   name: string;
+  photo: string | null;
+  birthDate: string | null;
+  phone: string | null;
+  email: string | null;
   position: string | null;
   jerseyNumber: string | null;
   preferredFoot: string | null;
@@ -118,7 +122,7 @@ export function playerReportHtml(player: ReportPlayer, teamName: string, season:
     : "";
   return page(
     `Bilan de ${player.name}`,
-    `<h1>Bilan de ${escapeHtml(player.name)}</h1><p class="muted">${identity}</p>
+    `${player.photo?.startsWith("data:image/") ? `<img alt="" src="${escapeHtml(player.photo)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;float:right">` : ""}<h1>Bilan de ${escapeHtml(player.name)}</h1><p class="muted">${identity}</p>
     <section class="block"><dl><dt>Matchs joués</dt><dd>${season.matches}</dd><dt>Buts</dt><dd>${season.goals}</dd><dt>Passes décisives</dt><dd>${season.assists}</dd></dl></section>
     <h2>Dernière évaluation de l’éducateur</h2>${scores ? `<table>${bars}</table><p class="muted">${evaluationCount} évaluation${evaluationCount > 1 ? "s" : ""} enregistrée${evaluationCount > 1 ? "s" : ""}.</p>` : "<p class=\"muted\">Pas encore d’évaluation.</p>"}
     ${player.strengths ? `<h2>Points forts</h2><p>${escapeHtml(player.strengths)}</p>` : ""}
