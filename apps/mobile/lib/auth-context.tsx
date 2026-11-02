@@ -8,6 +8,7 @@ import type {
   PersonalExercise,
   PlayerReference,
   SavedTrainingSession,
+  SeasonEventInput,
   TeamProfile,
   TrainingSession,
 } from "@evolyfoot/domain";
@@ -54,6 +55,15 @@ export interface SessionSlotInput {
   attendance?: readonly AttendanceEntry[];
 }
 
+export interface SeasonData {
+  events: SeasonEventInput[];
+  cycleNumber: number;
+  // Séances du cycle en cours, pour situer la semaine active.
+  cycleSessions: readonly SavedTrainingSession[];
+  // Vrai si une des listes n'a pas pu être lue : le calendrier affiché est alors incomplet.
+  failed: boolean;
+}
+
 export interface AuthContextValue {
   educator: Educator | null;
   // Vrai le temps de relire la session enregistrée au lancement de l'app.
@@ -69,6 +79,7 @@ export interface AuthContextValue {
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
   saveTrainingSession(session: TrainingSession, slotInput: SessionSlotInput): Promise<AuthResult>;
   listSessions(): Promise<readonly SavedTrainingSession[]>;
+  loadSeason(): Promise<SeasonData>;
   listPersonalExercises(): Promise<readonly PersonalExercise[]>;
   getPlayStyle(): Promise<string | null>;
   startNextCycle(): Promise<AuthResult>;
@@ -325,6 +336,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return body.sessions ?? [];
   }, [sessionToken]);
 
+  const loadSeason = useCallback(async (): Promise<SeasonData> => {
+    let failed = false;
+    const read = async <Item,>(path: string, key: string): Promise<{ items: Item[]; body: Record<string, unknown> }> => {
+      const response = await apiFetch(path, { sessionToken }).catch(() => null);
+      const body = response?.ok ? await response.json().catch(() => null) : null;
+      if (!body) {
+        failed = true;
+        return { items: [], body: {} };
+      }
+      return { items: (body[key] as Item[]) ?? [], body };
+    };
+    const [season, cycle, matches, tournaments, plateaux] = await Promise.all([
+      read<{ id: string; title: string; meetingAt: string | null }>("/api/sessions?scope=season", "sessions"),
+      read<SavedTrainingSession>("/api/sessions", "sessions"),
+      read<{ id: string; opponent: string; date: string | null }>("/api/matches", "matches"),
+      read<{ id: string; name: string; date: string | null }>("/api/tournaments", "tournaments"),
+      read<{ id: string; name: string; date: string | null }>("/api/plateaux", "plateaux"),
+    ]);
+    return {
+      events: [
+        ...season.items.map((session) => ({ id: session.id, type: "session" as const, title: session.title, date: session.meetingAt })),
+        ...matches.items.map((match) => ({ id: match.id, type: "match" as const, title: `Contre ${match.opponent}`, date: match.date })),
+        ...tournaments.items.map((tournament) => ({ id: tournament.id, type: "tournament" as const, title: tournament.name, date: tournament.date })),
+        ...plateaux.items.map((plateau) => ({ id: plateau.id, type: "plateau" as const, title: plateau.name, date: plateau.date })),
+      ],
+      cycleNumber: typeof cycle.body.cycleNumber === "number" ? cycle.body.cycleNumber : 1,
+      cycleSessions: cycle.items,
+      failed,
+    };
+  }, [sessionToken]);
+
   const startNextCycle = useCallback(async (): Promise<AuthResult> => {
     const response = await apiFetch("/api/cycles/next", { method: "POST", sessionToken }).catch(() => null);
     if (!response) {
@@ -530,6 +572,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveDiagnostic,
       saveTrainingSession,
       listSessions,
+      loadSeason,
       listPersonalExercises,
       getPlayStyle,
       startNextCycle,
@@ -558,6 +601,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveDiagnostic,
       saveTrainingSession,
       listSessions,
+      loadSeason,
       listPersonalExercises,
       saveObservation,
       addPlayer,

@@ -153,6 +153,13 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Link>
 
+        <Link href="/saison" asChild>
+          <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
+            <Text style={styles.observationText}>Ma saison</Text>
+            <Text style={styles.observationText}>→</Text>
+          </TouchableOpacity>
+        </Link>
+
         <Link href="/match" asChild>
           <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
             <Text style={styles.observationText}>Préparer un match</Text>
