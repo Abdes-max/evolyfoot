@@ -54,6 +54,7 @@ export interface RosterPlayer extends PlayerReference {
 }
 
 export type AuthResult = { ok: true } | { ok: false; error: string };
+export type SaveSessionResult = { ok: true; id: string } | { ok: false; error: string };
 export type MatchResult = { ok: true; match: MobileMatch } | { ok: false; error: string };
 export type MatchListResult = { ok: true; matches: MobileMatch[] } | { ok: false; error: string };
 
@@ -103,7 +104,7 @@ export interface AuthContextValue {
   deleteAccount(password: string): Promise<AuthResult>;
   saveTeam(profile: TeamProfile): Promise<AuthResult>;
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
-  saveTrainingSession(session: TrainingSession, slotInput: SessionSlotInput): Promise<AuthResult>;
+  saveTrainingSession(session: TrainingSession, slotInput: SessionSlotInput): Promise<SaveSessionResult>;
   listSessions(): Promise<readonly SavedTrainingSession[]>;
   loadSeason(): Promise<SeasonData>;
   listPersonalExercises(): Promise<readonly PersonalExercise[]>;
@@ -325,7 +326,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const saveTrainingSession = useCallback(
-    async (session: TrainingSession, slotInput: SessionSlotInput): Promise<AuthResult> => {
+    async (session: TrainingSession, slotInput: SessionSlotInput): Promise<SaveSessionResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour enregistrer cette séance." };
       }
@@ -352,7 +353,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         return { ok: false, error: await readErrorMessage(response) };
       }
-      return { ok: true };
+      const body = await response.json().catch(() => null);
+      return typeof body?.session?.id === "string" ? { ok: true, id: body.session.id } : { ok: false, error: "La séance n’a pas pu être enregistrée." };
     },
     [sessionToken],
   );

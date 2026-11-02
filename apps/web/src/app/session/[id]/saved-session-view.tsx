@@ -30,10 +30,15 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
   const [personalExercises, setPersonalExercises] = useState<readonly PersonalExercise[]>([]);
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
+  // Valeurs enregistrées : la convocation reprend celles-ci, la saisie est donc enregistrée avant
+  // chaque envoi.
+  const [savedDetails, setSavedDetails] = useState({ location: "", description: "" });
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [sendingConvocation, setSendingConvocation] = useState(false);
   const [convocationFeedback, setConvocationFeedback] = useState<string | null>(null);
+  // Sans lieu, un premier clic prévient ; le second envoie quand même.
+  const [confirmingNoLocation, setConfirmingNoLocation] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +90,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
         setPersonalExercises(personalBody.exercises ?? []);
         setRecordMeetingAt(record.meetingAt ?? null);
         setLocation(record.location ?? "");
+        setSavedDetails({ location: record.location ?? "", description: record.description ?? "" });
         setDescription(record.description ?? "");
         setState({ status: "ready", session: rehydrated, weekNumber: record.weekNumber, slot: record.slot });
       } catch {
@@ -117,6 +123,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
         setDetailsError(typeof body.error === "string" ? body.error : "Une erreur est survenue.");
         return;
       }
+      setSavedDetails({ location: location.trim(), description: description.trim() });
     } catch {
       setDetailsError("Une erreur est survenue.");
     } finally {
@@ -126,10 +133,39 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
 
   // Envoie un message de convocation (via la messagerie) à tout l'effectif -- une séance n'a pas
   // de composition retenue, voir ConvocationService côté base.
+  async function persistDetails(): Promise<string | null> {
+    const next = { location: location.trim(), description: description.trim() };
+    if (next.location === savedDetails.location.trim() && next.description === savedDetails.description.trim()) {
+      return null;
+    }
+    const response = await fetch(`/api/sessions/${sessionId}/details`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ location: next.location || null, description: next.description || null }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      return typeof body.error === "string" ? body.error : "Le lieu n’a pas été enregistré.";
+    }
+    setSavedDetails(next);
+    return null;
+  }
+
   async function sendConvocation() {
+    if (!location.trim() && !confirmingNoLocation) {
+      setConfirmingNoLocation(true);
+      setConvocationFeedback("Aucun lieu renseigné : ajoutez-le dans « Détails » ou envoyez sans lieu.");
+      return;
+    }
+    setConfirmingNoLocation(false);
     setSendingConvocation(true);
     setConvocationFeedback(null);
     try {
+      const detailsFailure = await persistDetails();
+      if (detailsFailure) {
+        setConvocationFeedback(detailsFailure);
+        return;
+      }
       const response = await fetch(`/api/sessions/${sessionId}/convoke`, { method: "POST" });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
@@ -227,9 +263,12 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
 
           <div className="match-convocation">
             <button className="match-convocation-send" disabled={sendingConvocation} onClick={sendConvocation} type="button">
-              {sendingConvocation ? "Envoi…" : "Envoyer la convocation"}
+              {sendingConvocation ? "Envoi…" : confirmingNoLocation && !location.trim() ? "Envoyer sans lieu" : "Envoyer la convocation"}
             </button>
-            <p className="match-slot-hint">Envoyée à tout l’effectif -- une séance n’a pas de composition retenue.</p>
+            <p className="match-slot-hint">
+              {location.trim() ? `Lieu indiqué : ${location.trim()}.` : "Aucun lieu renseigné : ajoutez-le ci-dessus pour qu’il figure dans la convocation."} Envoyée
+              à tout l’effectif -- une séance n’a pas de composition retenue.
+            </p>
             {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
           </div>
         </>

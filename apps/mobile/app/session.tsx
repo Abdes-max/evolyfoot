@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { TacticalDiagramView } from "../components/tactical-diagram";
 import { TacticalPlayer } from "../components/tactical-player";
+import { PlaceInput } from "../components/place-input";
 import { useAuth } from "../lib/auth-context";
 import { sessionHtml, sharePdf } from "../lib/pdf-export";
 
@@ -53,7 +54,7 @@ function shiftMeeting(iso: string, minutes: number): string {
 }
 
 export default function SessionScreen() {
-  const { team, diagnosticScores, roster, saveTrainingSession, listSessions, listPersonalExercises, getPlayStyle } = useAuth();
+  const { team, diagnosticScores, roster, saveTrainingSession, listSessions, listPersonalExercises, getPlayStyle, apiRequest } = useAuth();
   const params = useLocalSearchParams<{ week?: string; slot?: string }>();
   const weekNumber = clampSearchNumber(params.week, 1, 4);
   const slot = clampSearchNumber(params.slot, 0, 4);
@@ -66,6 +67,13 @@ export default function SessionScreen() {
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [meetingAt, setMeetingAt] = useState(tomorrowEvening);
   const [absentPlayerIds, setAbsentPlayerIds] = useState<ReadonlySet<string>>(new Set());
+  // Lieu tel que saisi, et tel qu'enregistré : la convocation reprend le lieu enregistré, on
+  // enregistre donc la saisie avant chaque envoi.
+  const [location, setLocation] = useState("");
+  const [savedLocation, setSavedLocation] = useState("");
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [convoking, setConvoking] = useState(false);
+  const [convocationStatus, setConvocationStatus] = useState("");
   // Le diagnostic et l'équipe déjà enregistrés (s'ils existent) sont résolus avant que cet écran
   // ne soit atteignable -- voir AuthContext.login -- donc un état paresseux suffit, comme pour le
   // diagnostic dans diagnostic.tsx.
@@ -101,6 +109,9 @@ export default function SessionScreen() {
       if (saved && restored) {
         setSession(restored);
         setAlreadySaved(true);
+        setSavedId(saved.id);
+        setLocation(saved.location ?? "");
+        setSavedLocation(saved.location ?? "");
         if (saved.meetingAt) {
           setMeetingAt(saved.meetingAt);
         }
@@ -154,12 +165,66 @@ export default function SessionScreen() {
       ? roster.map((player) => ({ playerId: player.id, playerName: player.name, present: !absentPlayerIds.has(player.id) }))
       : [];
     const result = await saveTrainingSession(session, { weekNumber, slot, meetingAt, attendance });
+    if (result.ok) {
+      setSavedId(result.id);
+    }
+    const locationError = result.ok ? await saveLocation(result.id) : null;
     setSaving(false);
     if (!result.ok) {
       setSaveError(result.error);
       return;
     }
+    if (locationError) {
+      setSaveError(locationError);
+    }
     setValidationStatus("Séance prête");
+  }
+
+  // `null` si le lieu est enregistré (ou inchangé), sinon le message d'erreur.
+  async function saveLocation(id: string): Promise<string | null> {
+    const next = location.trim();
+    if (next === savedLocation.trim()) {
+      return null;
+    }
+    const response = await apiRequest(`/api/sessions/${encodeURIComponent(id)}/details`, { method: "PATCH", body: JSON.stringify({ location: next || null }) });
+    if (!response?.ok) {
+      return "Le lieu n’a pas été enregistré.";
+    }
+    setSavedLocation(next);
+    return null;
+  }
+
+  async function sendConvocation() {
+    if (!savedId) {
+      return;
+    }
+    setConvoking(true);
+    setConvocationStatus("");
+    const locationError = await saveLocation(savedId);
+    if (locationError) {
+      setConvoking(false);
+      setConvocationStatus(locationError);
+      return;
+    }
+    const response = await apiRequest(`/api/sessions/${encodeURIComponent(savedId)}/convoke`, { method: "POST" });
+    const body = await response?.json().catch(() => null);
+    setConvoking(false);
+    if (!response?.ok) {
+      setConvocationStatus(typeof body?.error === "string" ? body.error : "La convocation n’est pas partie, réessayez.");
+      return;
+    }
+    setConvocationStatus(`Convocation envoyée à ${body.sentCount} joueur${body.sentCount > 1 ? "s" : ""}.`);
+  }
+
+  function confirmConvocation() {
+    if (location.trim()) {
+      void sendConvocation();
+      return;
+    }
+    Alert.alert("Aucun lieu renseigné", "La convocation partira sans lieu. Envoyer quand même ?", [
+      { text: "Ajouter le lieu", style: "cancel" },
+      { text: "Envoyer", onPress: () => void sendConvocation() },
+    ]);
   }
 
   return (
@@ -287,6 +352,11 @@ export default function SessionScreen() {
           </View>
         </View>
 
+        <View style={styles.card}>
+          <Text style={styles.summaryLabel}>LIEU</Text>
+          <PlaceInput onChange={setLocation} value={location} />
+        </View>
+
         {capturesAttendance && (
           <View style={styles.card}>
             <Text style={styles.summaryLabel}>PRÉSENCE · TOUCHE LES ABSENTS</Text>
@@ -334,6 +404,19 @@ export default function SessionScreen() {
           <Text style={styles.validateText}>{saving ? "Enregistrement…" : "Valider cette séance →"}</Text>
         </TouchableOpacity>
         <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.status}>{validationStatus}</Text>
+        {savedId && (
+          <View style={styles.card}>
+            <Text style={styles.summaryLabel}>CONVOCATION</Text>
+            <Text style={styles.detailText}>
+              {[meetingLabel(meetingAt), location.trim() || null].filter(Boolean).join(" — ")}
+            </Text>
+            <TouchableOpacity accessibilityRole="button" disabled={convoking} onPress={confirmConvocation} style={[styles.validate, convoking && styles.validateDisabled]}>
+              <Text style={styles.validateText}>{convoking ? "Envoi…" : "Envoyer la convocation"}</Text>
+            </TouchableOpacity>
+            <Text style={styles.detailText}>Envoyée à tout l’effectif dans la messagerie, avec le rendez-vous et le lieu.</Text>
+            {convocationStatus ? <Text accessibilityLiveRegion="polite" style={styles.status}>{convocationStatus}</Text> : null}
+          </View>
+        )}
         {validationStatus && (
           <Link href={`/observation?type=training&week=${weekNumber}`} asChild>
             <TouchableOpacity accessibilityRole="button" style={styles.observationLink}>
