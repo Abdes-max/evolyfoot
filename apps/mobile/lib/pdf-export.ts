@@ -1,4 +1,15 @@
-import { buildTeamStatsReport, type DiagramTokenRole, type TacticalDiagram, type TeamStats, type TrainingSession } from "@evolyfoot/domain";
+import {
+  buildTeamStatsReport,
+  playerEvaluationAspectLabels,
+  playerEvaluationAspects,
+  playerEvaluationMaxScore,
+  type DiagramTokenRole,
+  type PlayerEvaluationScores,
+  type PlayerSeasonTotals,
+  type TacticalDiagram,
+  type TeamStats,
+  type TrainingSession,
+} from "@evolyfoot/domain";
 import { printToFileAsync } from "expo-print";
 import { isAvailableAsync, shareAsync } from "expo-sharing";
 import { kindLabels } from "./exercise-labels";
@@ -76,6 +87,42 @@ export function statsHtml(stats: TeamStats, teamName: string): string {
     <h2>Synthèse</h2><ul>${buildTeamStatsReport(stats)
       .map((line) => `<li>${escapeHtml(line)}</li>`)
       .join("")}</ul>`,
+  );
+}
+
+// Joueur tel que renvoyé par `GET /api/roster`.
+export interface ReportPlayer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  position: string | null;
+  jerseyNumber: string | null;
+  preferredFoot: string | null;
+  strengths: string | null;
+  workAreas: string | null;
+}
+
+export function playerReportHtml(player: ReportPlayer, teamName: string, season: PlayerSeasonTotals, scores: PlayerEvaluationScores | null, evaluationCount: number): string {
+  const identity = [player.position, player.jerseyNumber ? `N° ${player.jerseyNumber}` : null, player.preferredFoot ? `Pied ${player.preferredFoot}` : null, teamName]
+    .filter(Boolean)
+    .map((part) => escapeHtml(String(part)))
+    .join(" · ");
+  const bars = scores
+    ? playerEvaluationAspects
+        .map(
+          (aspect) =>
+            `<tr><td>${escapeHtml(playerEvaluationAspectLabels[aspect])}</td><td><div style="background:#e6eaf0;border-radius:4px;height:8px;width:220px"><div style="background:#2fd4ff;border-radius:4px;height:8px;width:${(scores[aspect] / playerEvaluationMaxScore) * 220}px"></div></div></td><td><strong>${scores[aspect]}</strong>/${playerEvaluationMaxScore}</td></tr>`,
+        )
+        .join("")
+    : "";
+  return page(
+    `Bilan de ${player.name}`,
+    `<h1>Bilan de ${escapeHtml(player.name)}</h1><p class="muted">${identity}</p>
+    <section class="block"><dl><dt>Matchs joués</dt><dd>${season.matches}</dd><dt>Buts</dt><dd>${season.goals}</dd><dt>Passes décisives</dt><dd>${season.assists}</dd></dl></section>
+    <h2>Dernière évaluation de l’éducateur</h2>${scores ? `<table>${bars}</table><p class="muted">${evaluationCount} évaluation${evaluationCount > 1 ? "s" : ""} enregistrée${evaluationCount > 1 ? "s" : ""}.</p>` : "<p class=\"muted\">Pas encore d’évaluation.</p>"}
+    ${player.strengths ? `<h2>Points forts</h2><p>${escapeHtml(player.strengths)}</p>` : ""}
+    ${player.workAreas ? `<h2>Axes de travail</h2><p>${escapeHtml(player.workAreas)}</p>` : ""}`,
   );
 }
 

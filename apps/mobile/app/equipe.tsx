@@ -1,5 +1,5 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
@@ -128,7 +128,9 @@ export default function EquipeScreen() {
               </>
             ) : (
               <>
-                <Text style={styles.rowName}>{player.name}</Text>
+                <TouchableOpacity accessibilityHint="Ouvre la fiche du joueur" accessibilityRole="link" onPress={() => router.push(`/equipe/${player.id}`)} style={styles.rowNameLink}>
+                  <Text style={styles.rowName}>{player.name} ›</Text>
+                </TouchableOpacity>
                 <View style={styles.rowActions}>
                   <TouchableOpacity
                     accessibilityLabel={`Renommer ${player.name}`}
@@ -172,6 +174,7 @@ const styles = StyleSheet.create({
   addButtonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
   fieldError: { color: colors.danger, fontSize: 10, marginTop: 6 },
   row: { marginTop: 10, padding: 14, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.surface, flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10 },
+  rowNameLink: { flex: 1 },
   rowName: { fontSize: 13, fontWeight: "800", color: colors.ink },
   rowInput: { flex: 1, minWidth: 120, backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 9, color: colors.ink },
   rowActions: { flexDirection: "row", gap: 7 },
