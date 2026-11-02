@@ -41,6 +41,8 @@ export interface MobileMatch {
   captainPlayerId: string | null;
   substitutePlayerIds: string[];
   opponentFormationId?: string | null;
+  // ISO, absent pour un match sans date réelle.
+  date?: string | null;
 }
 
 // `PlayerReference` (domaine) reste { id, name } -- générique, utilisé aussi pour les signaux
@@ -119,7 +121,7 @@ export interface AuthContextValue {
   removePlayer(id: string): Promise<AuthResult>;
   listMatches(): Promise<MatchListResult>;
   getMatch(id: string): Promise<MatchResult>;
-  createMatch(input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string }): Promise<MatchResult>;
+  createMatch(input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string; date?: string | null; location?: string }): Promise<MatchResult>;
   updateMatchLineup(id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null): Promise<MatchResult>;
   changeMatchFormation(id: string, formationId: string): Promise<MatchResult>;
   markMatchPlayed(id: string): Promise<MatchResult>;
@@ -553,7 +555,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const createMatch = useCallback(
-    async (input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string }): Promise<MatchResult> => {
+    async (input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string; date?: string | null; location?: string }): Promise<MatchResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour préparer un match." };
       }
