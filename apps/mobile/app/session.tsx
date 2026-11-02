@@ -19,9 +19,10 @@ import {
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { TacticalDiagramView } from "../components/tactical-diagram";
 import { useAuth } from "../lib/auth-context";
+import { sessionHtml, sharePdf } from "../lib/pdf-export";
 
 const kindLabels = { welcome: "Accueil", activation: "Activation", main: "Situation principale", game: "Jeu" } as const;
 
@@ -295,6 +296,20 @@ export default function SessionScreen() {
             })}
           </View>
         )}
+
+        <TouchableOpacity
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={async () => {
+            const result = await sharePdf(sessionHtml(session, meetingLabel(meetingAt)), session.title);
+            if (!result.ok) {
+              Alert.alert(result.error);
+            }
+          }}
+          style={styles.action}
+        >
+          <Text style={styles.actionText}>Exporter la séance en PDF</Text>
+        </TouchableOpacity>
 
         {!canValidate && <Text style={styles.warning}>La séance doit durer entre 60 et 90 minutes.</Text>}
         {saveError ? <Text style={styles.warning}>{saveError}</Text> : null}

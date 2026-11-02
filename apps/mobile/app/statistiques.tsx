@@ -2,8 +2,9 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { buildTeamStatsReport, pluralize, type AttendanceStats, type TeamStats } from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { sharePdf, statsHtml } from "../lib/pdf-export";
 
 function ActivityBars({ stats }: { stats: TeamStats }) {
   const data = [
@@ -51,7 +52,17 @@ function Attendance({ title, attendance }: { title: string; attendance: Attendan
 }
 
 export default function StatistiquesScreen() {
-  const { getTeamStats } = useAuth();
+  const { getTeamStats, team } = useAuth();
+  const [exporting, setExporting] = useState(false);
+
+  async function exportPdf(current: TeamStats) {
+    setExporting(true);
+    const result = await sharePdf(statsHtml(current, team?.name ?? ""), "Rapport de saison");
+    setExporting(false);
+    if (!result.ok) {
+      Alert.alert(result.error);
+    }
+  }
   const [stats, setStats] = useState<TeamStats | null | undefined>(undefined);
 
   useFocusEffect(
@@ -97,6 +108,9 @@ export default function StatistiquesScreen() {
                 </Text>
               ))}
             </View>
+            <TouchableOpacity accessibilityRole="button" disabled={exporting} onPress={() => exportPdf(stats)} style={[styles.pdf, exporting && styles.disabled]}>
+              <Text style={styles.pdfText}>{exporting ? "Création du PDF…" : "Exporter le rapport en PDF"}</Text>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>
@@ -123,5 +137,8 @@ const styles = StyleSheet.create({
   split: { flexDirection: "row", height: 10, borderRadius: 5, overflow: "hidden", marginTop: 8, backgroundColor: colors.line },
   present: { backgroundColor: colors.primary },
   absent: { backgroundColor: colors.danger },
+  pdf: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primary },
+  pdfText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+  disabled: { opacity: 0.5 },
   reportLine: { fontSize: 12, lineHeight: 18, color: colors.ink, marginBottom: 4 },
 });
