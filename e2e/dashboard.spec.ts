@@ -474,11 +474,28 @@ test("l’éducateur envoie la convocation depuis la fiche d’une séance, à t
     convokeRequests += 1;
     return route.fulfill({ json: { sentCount: 2 } });
   });
+  const detailsBodies: unknown[] = [];
+  await page.route("**/api/sessions/session-1/details", (route) => {
+    detailsBodies.push(route.request().postDataJSON());
+    return route.fulfill({ json: { session: {} } });
+  });
+  await page.route("**/api/places**", (route) => route.fulfill({ json: { places: [] } }));
 
   await page.goto("/session/session-1");
   await expect(page.getByRole("heading", { name: "Ajuste ta séance." })).toBeVisible();
+  // Sans lieu, le premier clic prévient au lieu d'envoyer.
+  await page.getByRole("button", { name: "Envoyer la convocation" }).click();
+  await expect(page.getByText(/Aucun lieu renseigné/).first()).toBeVisible();
+  expect(convokeRequests).toBe(0);
+
+  // Le lieu saisi mais pas encore enregistré part avec la convocation.
+  await page.getByRole("combobox", { name: /^Lieu/ }).fill("Stade Marius Requier");
+  await expect(page.getByText(/Lieu indiqué : Stade Marius Requier/)).toBeVisible();
+  // L’aperçu de carte s’affiche une fois la saisie posée, avant que l’éducateur n’atteigne le bouton.
+  await expect(page.getByRole("button", { name: "Afficher les cartes" })).toBeVisible();
   await page.getByRole("button", { name: "Envoyer la convocation" }).click();
   await expect(page.getByText("Convocation envoyée à 2 joueurs.")).toBeVisible();
+  expect(detailsBodies).toEqual([{ location: "Stade Marius Requier", description: null }]);
   expect(convokeRequests).toBe(1);
 });
 
