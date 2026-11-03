@@ -122,7 +122,15 @@ export interface AuthContextValue {
   removePlayer(id: string): Promise<AuthResult>;
   listMatches(): Promise<MatchListResult>;
   getMatch(id: string): Promise<MatchResult>;
-  createMatch(input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string; date?: string | null; location?: string }): Promise<MatchResult>;
+  createMatch(input: {
+    opponent: string;
+    dateLabel: string;
+    venue: MatchVenue;
+    gameFormat: number;
+    formationId?: string;
+    date?: string | null;
+    location?: string;
+  }): Promise<MatchResult>;
   updateMatchLineup(id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null): Promise<MatchResult>;
   changeMatchFormation(id: string, formationId: string): Promise<MatchResult>;
   markMatchPlayed(id: string): Promise<MatchResult>;
@@ -201,26 +209,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [fetchTeam, fetchDiagnostic, fetchRoster],
   );
 
-  const register = useCallback(
-    async (email: string, password: string, displayName: string): Promise<AuthResult> => {
-      const response = await apiFetch("/api/auth/register", {
-        method: "POST",
-        body: JSON.stringify({ email, password, displayName }),
-      });
-      if (!response.ok) {
-        return { ok: false, error: await readErrorMessage(response) };
-      }
-      const body = await response.json();
-      setEducator(body.educator);
-      setSessionToken(body.sessionToken);
-      await writeSessionToken(body.sessionToken);
-      setTeam(null);
-      setDiagnosticScores(null);
-      setRoster([]);
-      return { ok: true };
-    },
-    [],
-  );
+  const register = useCallback(async (email: string, password: string, displayName: string): Promise<AuthResult> => {
+    const response = await apiFetch("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email, password, displayName }),
+    });
+    if (!response.ok) {
+      return { ok: false, error: await readErrorMessage(response) };
+    }
+    const body = await response.json();
+    setEducator(body.educator);
+    setSessionToken(body.sessionToken);
+    await writeSessionToken(body.sessionToken);
+    setTeam(null);
+    setDiagnosticScores(null);
+    setRoster([]);
+    return { ok: true };
+  }, []);
 
   const logout = useCallback(async () => {
     if (sessionToken) {
@@ -557,7 +562,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const createMatch = useCallback(
-    async (input: { opponent: string; dateLabel: string; venue: MatchVenue; gameFormat: number; formationId?: string; date?: string | null; location?: string }): Promise<MatchResult> => {
+    async (input: {
+      opponent: string;
+      dateLabel: string;
+      venue: MatchVenue;
+      gameFormat: number;
+      formationId?: string;
+      date?: string | null;
+      location?: string;
+    }): Promise<MatchResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour préparer un match." };
       }

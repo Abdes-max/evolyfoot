@@ -44,10 +44,7 @@ export function clientAddress(request: Request): string {
 }
 
 function tooManyRequests(retryAfter: number): Response {
-  return Response.json(
-    { error: "Trop de tentatives. Réessaie dans quelques minutes." },
-    { status: 429, headers: { "Retry-After": String(retryAfter) } },
-  );
+  return Response.json({ error: "Trop de tentatives. Réessaie dans quelques minutes." }, { status: 429, headers: { "Retry-After": String(retryAfter) } });
 }
 
 export function limitByAddress(request: Request, scope: string, limit: number, windowMs: number): Response | null {
@@ -59,7 +56,10 @@ export function limitByAddress(request: Request, scope: string, limit: number, w
 // compte sans permettre à un tiers de bloquer ce compte depuis une autre adresse.
 export async function limitLogin(request: Request): Promise<Response | null> {
   const address = clientAddress(request);
-  const body: unknown = await request.clone().json().catch(() => null);
+  const body: unknown = await request
+    .clone()
+    .json()
+    .catch(() => null);
   const rawEmail = (body as { email?: unknown } | null)?.email;
   const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
   const retryAfter = hitRateLimit(`login:${address}`, 50, 15 * minute) ?? hitRateLimit(`login:${address}:${email}`, 10, 15 * minute);

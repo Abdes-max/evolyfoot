@@ -1,11 +1,6 @@
 import { InviteInvalidError, PlayerAccountExistsError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
-import {
-  createConsumeInviteHandler,
-  createCreateInviteHandler,
-  createPreviewInviteHandler,
-  type PlayerInviteGateway,
-} from "./player-invite";
+import { createConsumeInviteHandler, createCreateInviteHandler, createPreviewInviteHandler, type PlayerInviteGateway } from "./player-invite";
 
 const educator = { id: "educator-1", email: "coach@example.test", displayName: "Coach" };
 const authenticated = async () => educator;
@@ -21,10 +16,26 @@ function request(method: string, url: string, body?: unknown): Request {
 
 describe("createCreateInviteHandler", () => {
   it("requires an authenticated coach and a playerId", async () => {
-    const anon = createCreateInviteHandler(anonymous, { create: async () => { throw new Error("nope"); } }, () => undefined);
+    const anon = createCreateInviteHandler(
+      anonymous,
+      {
+        create: async () => {
+          throw new Error("nope");
+        },
+      },
+      () => undefined,
+    );
     expect((await anon(request("POST", "https://evolyfoot.test/api/invites", { playerId: "p1" }))).status).toBe(401);
 
-    const noPlayer = createCreateInviteHandler(authenticated, { create: async () => { throw new Error("nope"); } }, () => undefined);
+    const noPlayer = createCreateInviteHandler(
+      authenticated,
+      {
+        create: async () => {
+          throw new Error("nope");
+        },
+      },
+      () => undefined,
+    );
     expect((await noPlayer(request("POST", "https://evolyfoot.test/api/invites", {}))).status).toBe(400);
   });
 
@@ -55,7 +66,11 @@ describe("createCreateInviteHandler", () => {
   it("maps 'account already exists' to 409", async () => {
     const handler = createCreateInviteHandler(
       authenticated,
-      { create: async () => { throw new PlayerAccountExistsError(); } },
+      {
+        create: async () => {
+          throw new PlayerAccountExistsError();
+        },
+      },
       () => undefined,
     );
     expect((await handler(request("POST", "https://evolyfoot.test/api/invites", { playerId: "p1" }))).status).toBe(409);
@@ -64,10 +79,7 @@ describe("createCreateInviteHandler", () => {
 
 describe("createPreviewInviteHandler", () => {
   it("returns the preview or 404 for an invalid token", async () => {
-    const ok = createPreviewInviteHandler(
-      { preview: async () => ({ playerName: "Kylian", teamName: "FC Horizon", coachName: "Coach" }) },
-      () => undefined,
-    );
+    const ok = createPreviewInviteHandler({ preview: async () => ({ playerName: "Kylian", teamName: "FC Horizon", coachName: "Coach" }) }, () => undefined);
     const response = await ok(request("GET", "https://evolyfoot.test/api/invites/abc"), "abc");
     expect(response.status).toBe(200);
     expect((await response.json()).invite.playerName).toBe("Kylian");
@@ -80,12 +92,14 @@ describe("createPreviewInviteHandler", () => {
 describe("createConsumeInviteHandler", () => {
   it("requires all fields", async () => {
     const handler = createConsumeInviteHandler(
-      { consume: async () => { throw new Error("nope"); } } as Pick<PlayerInviteGateway, "consume">,
+      {
+        consume: async () => {
+          throw new Error("nope");
+        },
+      } as Pick<PlayerInviteGateway, "consume">,
       () => undefined,
     );
-    expect(
-      (await handler(request("POST", "https://evolyfoot.test/api/auth/register-player", { token: "t", email: "e@x.t" }))).status,
-    ).toBe(400);
+    expect((await handler(request("POST", "https://evolyfoot.test/api/auth/register-player", { token: "t", email: "e@x.t" }))).status).toBe(400);
   });
 
   it("sets a session cookie and returns the account on success", async () => {
@@ -121,7 +135,11 @@ describe("createConsumeInviteHandler", () => {
 
   it("maps an invalid/expired invite to 410", async () => {
     const handler = createConsumeInviteHandler(
-      { consume: async () => { throw new InviteInvalidError(); } },
+      {
+        consume: async () => {
+          throw new InviteInvalidError();
+        },
+      },
       () => undefined,
     );
     const response = await handler(

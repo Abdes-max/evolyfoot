@@ -1,12 +1,7 @@
 import { playerEvaluationMaxPerSeason, seasonStartDate, validatePlayerEvaluationScores } from "@evolyfoot/domain";
 import type { PlayerEvaluationScores } from "@evolyfoot/domain";
 import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "./errors";
-import type {
-  EducatorRepository,
-  PersistedPlayerEvaluation,
-  PlayerEvaluationRepository,
-  PlayerRepository,
-} from "./repositories";
+import type { EducatorRepository, PersistedPlayerEvaluation, PlayerEvaluationRepository, PlayerRepository } from "./repositories";
 
 export class PlayerEvaluationService {
   constructor(
@@ -42,20 +37,14 @@ export class PlayerEvaluationService {
     }
     const existing = await this.playerEvaluationRepository.countByPlayer(playerId, educatorId, "coach", seasonStartDate(new Date()));
     if (existing >= playerEvaluationMaxPerSeason) {
-      throw new ValidationError(
-        `Ce joueur a déjà ${playerEvaluationMaxPerSeason} évaluations cette saison. Retires-en une pour en ajouter une nouvelle.`,
-      );
+      throw new ValidationError(`Ce joueur a déjà ${playerEvaluationMaxPerSeason} évaluations cette saison. Retires-en une pour en ajouter une nouvelle.`);
     }
     return this.playerEvaluationRepository.create(educatorId, playerId, scores);
   }
 
   // Modifie une évaluation existante -- note et/ou date. `date` reste optionnelle : une
   // correction de note seule n'a pas besoin de retoucher la date, et inversement.
-  async update(
-    educatorId: string,
-    evaluationId: string,
-    input: { scores?: PlayerEvaluationScores; date?: Date },
-  ): Promise<PersistedPlayerEvaluation> {
+  async update(educatorId: string, evaluationId: string, input: { scores?: PlayerEvaluationScores; date?: Date }): Promise<PersistedPlayerEvaluation> {
     if (input.scores !== undefined) {
       const error = validatePlayerEvaluationScores(input.scores);
       if (error) {

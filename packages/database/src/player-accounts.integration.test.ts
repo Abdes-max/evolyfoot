@@ -39,13 +39,7 @@ const plateauRepository = new PrismaPlateauRepository(database.prisma);
 const tournamentRepository = new PrismaTournamentRepository(database.prisma);
 
 const authService = new AuthService(educatorRepository, sessionRepository);
-const inviteService = new PlayerInviteService(
-  educatorRepository,
-  playerRepository,
-  playerInviteRepository,
-  teamRepository,
-  authService,
-);
+const inviteService = new PlayerInviteService(educatorRepository, playerRepository, playerInviteRepository, teamRepository, authService);
 const dashboardService = new PlayerDashboardService(
   educatorRepository,
   playerRepository,
@@ -121,9 +115,9 @@ describe("PostgreSQL player accounts", () => {
       displayName: "Tuteur",
     });
 
-    await expect(
-      inviteService.consume(token, { email: `${testRun}-x@example.test`, password: "x-password", displayName: "X" }),
-    ).rejects.toBeInstanceOf(InviteInvalidError);
+    await expect(inviteService.consume(token, { email: `${testRun}-x@example.test`, password: "x-password", displayName: "X" })).rejects.toBeInstanceOf(
+      InviteInvalidError,
+    );
     expect(await inviteService.preview("not-a-real-token")).toBeNull();
   });
 

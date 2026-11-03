@@ -24,9 +24,7 @@ export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
   if (pathname.startsWith("/api/")) {
     const contentLength = Number(request.headers.get("content-length") ?? 0);
-    return contentLength > MAX_API_BODY_BYTES
-      ? NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 })
-      : NextResponse.next();
+    return contentLength > MAX_API_BODY_BYTES ? NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 }) : NextResponse.next();
   }
 
   if (isMarketingPath(pathname) || AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {

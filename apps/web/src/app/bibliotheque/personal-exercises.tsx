@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  parseExerciseText,
-  type DevelopmentTheme,
-  type PersonalExercise,
-  type PersonalExerciseInput,
-  type TrainingBlockKind,
-} from "@evolyfoot/domain";
+import { parseExerciseText, type DevelopmentTheme, type PersonalExercise, type PersonalExerciseInput, type TrainingBlockKind } from "@evolyfoot/domain";
 import { useEffect, useState, type FormEvent } from "react";
 import { resizeImageToDataUrl } from "../image-resize";
 

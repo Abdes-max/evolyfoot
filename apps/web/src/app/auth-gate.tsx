@@ -33,8 +33,7 @@ type SessionCheck = {
 export function AuthGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isPublicPath =
-    isMarketingPath(pathname) || AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const isPublicPath = isMarketingPath(pathname) || AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const [sessionCheck, setSessionCheck] = useState<SessionCheck | null>(null);
 
   useEffect(() => {

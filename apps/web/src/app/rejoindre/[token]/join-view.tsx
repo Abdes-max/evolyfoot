@@ -114,23 +114,11 @@ export function JoinView({ token }: { token: string }) {
             </label>
             <label>
               Adresse e-mail
-              <input
-                autoComplete="email"
-                onChange={(event) => setEmail(event.target.value)}
-                required
-                type="email"
-                value={email}
-              />
+              <input autoComplete="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
             </label>
             <label>
               Mot de passe (10 caractères minimum)
-              <input
-                autoComplete="new-password"
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                type="password"
-                value={password}
-              />
+              <input autoComplete="new-password" onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
             </label>
             {error && (
               <p className="field-error" role="alert">

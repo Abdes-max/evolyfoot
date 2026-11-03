@@ -77,7 +77,10 @@ export type ImportedExerciseText = Pick<PersonalExerciseInput, "title" | "object
 // Pré-remplit la fiche depuis un texte collé : première ligne en titre, lignes « Objectif : ... »
 // reconnues, le reste rejoint l'organisation. L'éducateur relit toujours avant d'enregistrer.
 export function parseExerciseText(text: string): ImportedExerciseText {
-  const [title = "", ...lines] = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const [title = "", ...lines] = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   const result: ImportedExerciseText = { title, objective: "", organization: "", instruction: "", observable: "" };
   let current: keyof ImportedExerciseText = "organization";
   for (const line of lines) {

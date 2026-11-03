@@ -50,23 +50,11 @@ export function LoginForm() {
       </header>
       <label>
         Adresse e-mail
-        <input
-          autoComplete="email"
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          type="email"
-          value={email}
-        />
+        <input autoComplete="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
       </label>
       <label>
         Mot de passe
-        <input
-          autoComplete="current-password"
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          type="password"
-          value={password}
-        />
+        <input autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
       </label>
       {error && (
         <p className="field-error" role="alert">

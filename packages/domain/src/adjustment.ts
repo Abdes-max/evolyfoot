@@ -30,10 +30,7 @@ function validateRatings(report: ObservationReport): void {
 
   const criteria = report.ratings.map((rating) => rating?.criterion);
   const canonicalCriteria = diagnosticCriteria.map((criterion) => criterion.id);
-  if (
-    new Set(criteria).size !== canonicalCriteria.length ||
-    criteria.some((criterion) => !canonicalCriteria.includes(criterion as DiagnosticCriterion))
-  ) {
+  if (new Set(criteria).size !== canonicalCriteria.length || criteria.some((criterion) => !canonicalCriteria.includes(criterion as DiagnosticCriterion))) {
     invalidReport("les quatre critères diagnostiques doivent être présents une seule fois chacun.");
   }
 
@@ -92,19 +89,14 @@ function suggestionFor(
   };
 }
 
-export function suggestAdjustmentFromObservation(
-  report: ObservationReport,
-  currentWeek: DevelopmentWeek,
-): AdjustmentSuggestion {
+export function suggestAdjustmentFromObservation(report: ObservationReport, currentWeek: DevelopmentWeek): AdjustmentSuggestion {
   validateRatings(report);
 
   const orderedRatings = diagnosticCriteria.map((criterion) => ({
     criterion,
     score: report.ratings.find((rating) => rating.criterion === criterion.id)?.score as number,
   }));
-  const weakest = orderedRatings.reduce((best, candidate) =>
-    candidate.score < best.score ? candidate : best,
-  );
+  const weakest = orderedRatings.reduce((best, candidate) => (candidate.score < best.score ? candidate : best));
   const averageScore = orderedRatings.reduce((sum, rating) => sum + rating.score, 0) / orderedRatings.length;
 
   return Object.freeze(suggestionFor(report, currentWeek, weakest, averageScore));

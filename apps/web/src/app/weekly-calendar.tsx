@@ -59,11 +59,7 @@ export function WeeklyCalendar() {
           return;
         }
 
-        const [teamResponse, matchesResponse, sessionsResponse] = await Promise.all([
-          fetch("/api/team"),
-          fetch("/api/matches"),
-          fetch("/api/sessions"),
-        ]);
+        const [teamResponse, matchesResponse, sessionsResponse] = await Promise.all([fetch("/api/team"), fetch("/api/matches"), fetch("/api/sessions")]);
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const matchesBody = await matchesResponse.json().catch(() => ({ matches: [] }));
         const sessionsBody = await sessionsResponse.json().catch(() => ({ sessions: [] }));

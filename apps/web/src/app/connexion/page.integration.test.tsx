@@ -57,9 +57,7 @@ describe("connexion", () => {
   });
 
   it("affiche l’erreur renvoyée par l’API en cas d’échec", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ error: "Adresse e-mail ou mot de passe incorrect." }), { status: 401 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error: "Adresse e-mail ou mot de passe incorrect." }), { status: 401 }));
     render(<ConnexionPage />);
 
     fireEvent.change(screen.getByLabelText("Adresse e-mail"), { target: { value: "coach@example.test" } });

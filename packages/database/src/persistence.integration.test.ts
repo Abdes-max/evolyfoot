@@ -48,9 +48,7 @@ describe("PostgreSQL persistence", () => {
   it("rejects emails that collide after normalization", async () => {
     await createEducator("normalized-first", "Coach@Example.fr");
 
-    await expect(
-      createEducator("normalized-second", " coach@example.fr "),
-    ).rejects.toBeInstanceOf(DuplicateEducatorEmailError);
+    await expect(createEducator("normalized-second", " coach@example.fr ")).rejects.toBeInstanceOf(DuplicateEducatorEmailError);
   });
 
   it("creates then idempotently updates the educator single team", async () => {

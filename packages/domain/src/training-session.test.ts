@@ -25,12 +25,7 @@ describe("training session generation", () => {
   it("génère quatre blocs totalisant 75 minutes", () => {
     const session = generateTrainingSession(developmentWeek, "U12", 14);
 
-    expect(session.blocks.map((block) => block.activity.kind)).toEqual([
-      "welcome",
-      "activation",
-      "main",
-      "game",
-    ]);
+    expect(session.blocks.map((block) => block.activity.kind)).toEqual(["welcome", "activation", "main", "game"]);
     expect(getSessionDuration(session)).toBe(75);
     expect(generateTrainingSession(developmentWeek, "U12", 14)).toEqual(session);
   });
@@ -103,12 +98,9 @@ describe("training session editing", () => {
     expect(adjustBlockDuration(session, 0, -15).blocks[0].durationMinutes).toBe(5);
   });
 
-  it.each([0, 4, 2.5, Number.NaN, Number.POSITIVE_INFINITY])(
-    "ignore un ajustement invalide de %s minute(s)",
-    (delta) => {
-      expect(adjustBlockDuration(session, 0, delta)).toBe(session);
-    },
-  );
+  it.each([0, 4, 2.5, Number.NaN, Number.POSITIVE_INFINITY])("ignore un ajustement invalide de %s minute(s)", (delta) => {
+    expect(adjustBlockDuration(session, 0, delta)).toBe(session);
+  });
 
   it("réordonne et remplace avec une activité compatible", () => {
     expect(moveSessionBlock(session, 0, 1).blocks[1].activity.kind).toBe("welcome");

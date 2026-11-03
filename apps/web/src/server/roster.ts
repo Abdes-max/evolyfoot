@@ -40,7 +40,6 @@ async function readJsonBody(request: Request): Promise<Record<string, unknown> |
   }
 }
 
-
 export function createListRosterHandler(
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
   roster: Pick<RosterGateway, "list">,
@@ -180,9 +179,7 @@ export function createRemovePlayerHandler(
 }
 
 export async function createRosterGateway(): Promise<{ gateway: RosterGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, RosterService, PrismaEducatorRepository, PrismaPlayerRepository } = await import(
-    "@evolyfoot/database"
-  );
+  const { createDatabaseClient, RosterService, PrismaEducatorRepository, PrismaPlayerRepository } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new RosterService(new PrismaEducatorRepository(database.prisma), new PrismaPlayerRepository(database.prisma));
 

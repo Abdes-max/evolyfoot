@@ -48,9 +48,7 @@ describe("PostgreSQL plateau persistence", () => {
   it("rejects a plateau without a name", async () => {
     const educator = await createEducator("invalid");
 
-    await expect(service.create(educator.id, { name: "  ", dateLabel: "14 septembre 2026" })).rejects.toBeInstanceOf(
-      ValidationError,
-    );
+    await expect(service.create(educator.id, { name: "  ", dateLabel: "14 septembre 2026" })).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("removes a plateau only for its owning educator, silently no-ops otherwise", async () => {
@@ -106,11 +104,9 @@ describe("PostgreSQL plateau persistence", () => {
     const stranger = await createEducator("details-stranger");
     const plateau = await service.create(owner.id, { name: "Plateau", dateLabel: "14 septembre 2026" });
 
-    await expect(service.updateDetails(stranger.id, plateau.id, { location: "Ailleurs" })).rejects.toBeInstanceOf(
+    await expect(service.updateDetails(stranger.id, plateau.id, { location: "Ailleurs" })).rejects.toBeInstanceOf(PlateauNotFoundError);
+    await expect(service.updateDetails(owner.id, "00000000-0000-0000-0000-000000000000", { location: "Ailleurs" })).rejects.toBeInstanceOf(
       PlateauNotFoundError,
     );
-    await expect(
-      service.updateDetails(owner.id, "00000000-0000-0000-0000-000000000000", { location: "Ailleurs" }),
-    ).rejects.toBeInstanceOf(PlateauNotFoundError);
   });
 });

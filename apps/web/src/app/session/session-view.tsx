@@ -48,9 +48,7 @@ interface SessionViewProps {
 
 export function SessionView({ weekNumber, slot }: SessionViewProps) {
   const [playStyle, setPlayStyle] = useState<string | null>(null);
-  const [session, setSession] = useState<TrainingSession>(() =>
-    buildSessionForWeek(demoScores, demoTeam.ageGroup, demoTeam.playerCount, weekNumber, slot),
-  );
+  const [session, setSession] = useState<TrainingSession>(() => buildSessionForWeek(demoScores, demoTeam.ageGroup, demoTeam.playerCount, weekNumber, slot));
   const [authenticated, setAuthenticated] = useState(false);
   const [roster, setRoster] = useState<RosterPlayer[]>([]);
   const [scores, setScores] = useState<DiagnosticScores>(demoScores);

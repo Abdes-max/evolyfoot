@@ -81,7 +81,7 @@ describe("EducatorProfileService", () => {
     const repository = new InMemoryEducatorProfileRepository("educator-1");
     const service = new EducatorProfileService(repository);
 
-    const updated = await service.update("educator-1", { club: "  FC Horizon  ", phone: "" , country: "France" });
+    const updated = await service.update("educator-1", { club: "  FC Horizon  ", phone: "", country: "France" });
 
     expect(updated.club).toBe("FC Horizon");
     expect(updated.phone).toBeNull();
@@ -105,9 +105,7 @@ describe("EducatorProfileService", () => {
     repository.passwordHash = await hashPassword("current-password");
     const service = new EducatorProfileService(repository);
 
-    await expect(service.changePassword("educator-1", "wrong-password", "another-strong-one")).rejects.toBeInstanceOf(
-      InvalidCredentialsError,
-    );
+    await expect(service.changePassword("educator-1", "wrong-password", "another-strong-one")).rejects.toBeInstanceOf(InvalidCredentialsError);
     await expect(service.changePassword("educator-1", "current-password", "short")).rejects.toBeInstanceOf(ValidationError);
 
     await service.changePassword("educator-1", "current-password", "a-brand-new-password");

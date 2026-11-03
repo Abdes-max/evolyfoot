@@ -4,15 +4,7 @@ import { seasonLabel, seasonStartYear } from "./season";
 // (U10-U13), affichée en toile d'araignée sur la page statistiques. Distincte des 4 critères du
 // diagnostic (`diagnosticCriteria`) : ceux-ci portent sur des comportements collectifs observés en
 // situation de jeu, ceux-ci sur des qualités individuelles notées au ressenti par l'éducateur.
-export const playerEvaluationAspects = [
-  "technique",
-  "passe",
-  "vitesse",
-  "physique",
-  "tactique",
-  "mental",
-  "tir",
-] as const;
+export const playerEvaluationAspects = ["technique", "passe", "vitesse", "physique", "tactique", "mental", "tir"] as const;
 
 export type PlayerEvaluationAspect = (typeof playerEvaluationAspects)[number];
 
@@ -101,7 +93,5 @@ export function validatePlayerEvaluationScores(scores: PlayerEvaluationScores): 
 
 export function createEmptyPlayerEvaluationScores(): PlayerEvaluationScores {
   const midpoint = Math.round((playerEvaluationMinScore + playerEvaluationMaxScore) / 2);
-  return Object.freeze(
-    Object.fromEntries(playerEvaluationAspects.map((aspect) => [aspect, midpoint])) as Record<PlayerEvaluationAspect, number>,
-  );
+  return Object.freeze(Object.fromEntries(playerEvaluationAspects.map((aspect) => [aspect, midpoint])) as Record<PlayerEvaluationAspect, number>);
 }

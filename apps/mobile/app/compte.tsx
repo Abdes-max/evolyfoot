@@ -32,7 +32,12 @@ export default function AccountScreen() {
         <Text style={styles.label}>Confirme avec ton mot de passe</Text>
         <TextInput autoComplete="current-password" onChangeText={setPassword} secureTextEntry style={styles.input} value={password} />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <TouchableOpacity accessibilityRole="button" disabled={deleting || !password} onPress={confirm} style={[styles.delete, (deleting || !password) && styles.disabled]}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          disabled={deleting || !password}
+          onPress={confirm}
+          style={[styles.delete, (deleting || !password) && styles.disabled]}
+        >
           <Text style={styles.deleteText}>{deleting ? "Suppression…" : "Supprimer définitivement"}</Text>
         </TouchableOpacity>
         <TouchableOpacity accessibilityRole="button" onPress={() => router.back()} style={styles.cancel}>

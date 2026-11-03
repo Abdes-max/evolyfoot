@@ -46,11 +46,7 @@ export function SeancesView() {
         }
         setAuthenticated(true);
 
-        const [teamResponse, diagnosticResponse, sessionsResponse] = await Promise.all([
-          fetch("/api/team"),
-          fetch("/api/diagnostic"),
-          fetch("/api/sessions"),
-        ]);
+        const [teamResponse, diagnosticResponse, sessionsResponse] = await Promise.all([fetch("/api/team"), fetch("/api/diagnostic"), fetch("/api/sessions")]);
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
         const sessionsBody = await sessionsResponse.json().catch(() => ({ sessions: [] }));
@@ -77,8 +73,7 @@ export function SeancesView() {
   const slotLabels = trainingDays.length > 0 ? trainingDays : fallbackSlotLabels;
   const activeWeek = currentCycleWeek(sessions, slotLabels.length);
 
-  const sessionAt = (weekNumber: number, slot: number) =>
-    sessions.find((session) => session.weekNumber === weekNumber && session.slot === slot);
+  const sessionAt = (weekNumber: number, slot: number) => sessions.find((session) => session.weekNumber === weekNumber && session.slot === slot);
 
   // Premier créneau libre du cycle ; le premier créneau de la semaine en cours si tout est généré.
   const nextSlot = firstFreeCycleSlot(sessions, slotLabels.length) ?? { weekNumber: activeWeek, slot: 0 };
@@ -121,10 +116,7 @@ export function SeancesView() {
         {plan.weeks.map((week) => {
           const weekNumber = week.week;
           return (
-            <article
-              className={weekNumber === activeWeek ? "seances-week active" : "seances-week"}
-              key={weekNumber}
-            >
+            <article className={weekNumber === activeWeek ? "seances-week active" : "seances-week"} key={weekNumber}>
               <header className="seances-week-head">
                 <div>
                   <span className="seances-week-number">S{weekNumber}</span>
@@ -152,10 +144,7 @@ export function SeancesView() {
                           <span className="seances-slot-cta">Ouvrir la séance →</span>
                         </Link>
                       ) : (
-                        <Link
-                          className="seances-slot-card pending"
-                          href={`/session?week=${weekNumber}&slot=${slot}`}
-                        >
+                        <Link className="seances-slot-card pending" href={`/session?week=${weekNumber}&slot=${slot}`}>
                           <strong>Séance non générée</strong>
                           <span>À partir du plan de la semaine {weekNumber}</span>
                           <span className="seances-slot-cta">Générer cette séance →</span>

@@ -68,9 +68,7 @@ describe("PostgreSQL training session persistence", () => {
     await service.save(educator.id, { ...validInput, weekNumber: 1, slot: 0 });
     await service.save(educator.id, { ...validInput, weekNumber: 1, slot: 1 });
 
-    await expect(
-      database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } }),
-    ).resolves.toBe(2);
+    await expect(database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } })).resolves.toBe(2);
   });
 
   it("replaces (upserts) the session already stored for a cycle slot", async () => {
@@ -80,9 +78,7 @@ describe("PostgreSQL training session persistence", () => {
 
     expect(second.id).toBe(first.id);
     expect(second.title).toBe("Séance B");
-    await expect(
-      database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } }),
-    ).resolves.toBe(1);
+    await expect(database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } })).resolves.toBe(1);
   });
 
   it("fetches a saved session by id, scoped to its educator", async () => {
@@ -109,9 +105,7 @@ describe("PostgreSQL training session persistence", () => {
 
     await database.prisma.educator.delete({ where: { id: educator.id } });
 
-    await expect(
-      database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } }),
-    ).resolves.toBe(0);
+    await expect(database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } })).resolves.toBe(0);
   });
 
   it("does not create a record for a session outside 60-90 minutes", async () => {
@@ -121,12 +115,8 @@ describe("PostgreSQL training session persistence", () => {
       blocks: validInput.blocks.map((block) => ({ ...block, durationMinutes: 5 })),
     };
 
-    await expect(service.save(educator.id, tooShort)).rejects.toThrow(
-      "La séance doit durer entre 60 et 90 minutes.",
-    );
-    await expect(
-      database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } }),
-    ).resolves.toBe(0);
+    await expect(service.save(educator.id, tooShort)).rejects.toThrow("La séance doit durer entre 60 et 90 minutes.");
+    await expect(database.prisma.trainingSessionRecord.count({ where: { educatorId: educator.id } })).resolves.toBe(0);
   });
 
   it("enregistre le rendez-vous obligatoire dès la création, sans lieu/description par défaut", async () => {
@@ -141,9 +131,9 @@ describe("PostgreSQL training session persistence", () => {
   it("rejette une séance sans rendez-vous", async () => {
     const educator = await createEducator("no-meeting-at");
 
-    await expect(
-      service.save(educator.id, { ...validInput, meetingAt: undefined as unknown as Date }),
-    ).rejects.toThrow("Indique la date et l’heure de la séance.");
+    await expect(service.save(educator.id, { ...validInput, meetingAt: undefined as unknown as Date })).rejects.toThrow(
+      "Indique la date et l’heure de la séance.",
+    );
   });
 
   it("modifie rendez-vous/lieu/description indépendamment du contenu pédagogique", async () => {
@@ -176,8 +166,6 @@ describe("PostgreSQL training session persistence", () => {
     const stranger = await createEducator("details-stranger");
     const saved = await service.save(owner.id, validInput);
 
-    await expect(
-      service.updateDetails(stranger.id, saved.id, { location: "Ailleurs" }),
-    ).rejects.toBeInstanceOf(TrainingSessionNotFoundError);
+    await expect(service.updateDetails(stranger.id, saved.id, { location: "Ailleurs" })).rejects.toBeInstanceOf(TrainingSessionNotFoundError);
   });
 });

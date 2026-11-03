@@ -66,9 +66,7 @@ export function buildSeasonCalendar(events: readonly SeasonEventInput[], now: Da
       undatedCount += 1;
       continue;
     }
-    months
-      .find((month) => month.year === date.getFullYear() && month.month === date.getMonth())
-      ?.events.push({ ...event, date: event.date as string });
+    months.find((month) => month.year === date.getFullYear() && month.month === date.getMonth())?.events.push({ ...event, date: event.date as string });
   }
   for (const month of months) {
     month.events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

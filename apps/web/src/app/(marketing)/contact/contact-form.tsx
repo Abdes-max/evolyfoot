@@ -39,33 +39,15 @@ export function ContactForm() {
     <form className="m-form" onSubmit={submit} noValidate>
       <div className="m-field">
         <label htmlFor="contact-name">Ton nom</label>
-        <input
-          autoComplete="name"
-          id="contact-name"
-          onChange={(event) => setName(event.target.value)}
-          required
-          value={name}
-        />
+        <input autoComplete="name" id="contact-name" onChange={(event) => setName(event.target.value)} required value={name} />
       </div>
       <div className="m-field">
         <label htmlFor="contact-email">Adresse e-mail</label>
-        <input
-          autoComplete="email"
-          id="contact-email"
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          type="email"
-          value={email}
-        />
+        <input autoComplete="email" id="contact-email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
       </div>
       <div className="m-field">
         <label htmlFor="contact-message">Ton message</label>
-        <textarea
-          id="contact-message"
-          onChange={(event) => setMessage(event.target.value)}
-          required
-          value={message}
-        />
+        <textarea id="contact-message" onChange={(event) => setMessage(event.target.value)} required value={message} />
       </div>
       {status === "error" && (
         <p className="m-form-status is-error" role="alert">

@@ -85,13 +85,9 @@ export function createSaveTeamHandler(
 }
 
 export async function createTeamGateway(): Promise<{ gateway: TeamGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, TeamProfileService, PrismaEducatorRepository, PrismaTeamRepository, TeamNotFoundError } =
-    await import("@evolyfoot/database");
+  const { createDatabaseClient, TeamProfileService, PrismaEducatorRepository, PrismaTeamRepository, TeamNotFoundError } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const service = new TeamProfileService(
-    new PrismaEducatorRepository(database.prisma),
-    new PrismaTeamRepository(database.prisma),
-  );
+  const service = new TeamProfileService(new PrismaEducatorRepository(database.prisma), new PrismaTeamRepository(database.prisma));
 
   return {
     gateway: {

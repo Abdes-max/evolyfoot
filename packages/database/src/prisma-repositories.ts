@@ -259,9 +259,7 @@ export class PrismaPasswordResetRepository implements PasswordResetRepository {
 
   async findByTokenHash(tokenHash: string): Promise<PasswordResetRecord | null> {
     const reset = await this.prisma.passwordReset.findUnique({ where: { tokenHash } });
-    return reset === null
-      ? null
-      : { id: reset.id, educatorId: reset.educatorId, expiresAt: reset.expiresAt, consumedAt: reset.consumedAt };
+    return reset === null ? null : { id: reset.id, educatorId: reset.educatorId, expiresAt: reset.expiresAt, consumedAt: reset.consumedAt };
   }
 
   async apply(id: string, educatorId: string, passwordHash: string): Promise<boolean> {
@@ -818,9 +816,7 @@ export class PrismaMatchRepository implements MatchRepository {
         ...(input.status !== undefined ? { status: toPrismaMatchStatus(input.status) } : {}),
         ...(input.lineup !== undefined ? { lineup: input.lineup as unknown as Prisma.InputJsonValue } : {}),
         ...(input.captainPlayerId !== undefined ? { captainPlayerId: input.captainPlayerId } : {}),
-        ...(input.substitutePlayerIds !== undefined
-          ? { substitutePlayerIds: input.substitutePlayerIds as unknown as Prisma.InputJsonValue }
-          : {}),
+        ...(input.substitutePlayerIds !== undefined ? { substitutePlayerIds: input.substitutePlayerIds as unknown as Prisma.InputJsonValue } : {}),
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
         ...(input.opponentFormationId !== undefined ? { opponentFormationId: input.opponentFormationId } : {}),
         ...(input.goalsFor !== undefined ? { goalsFor: input.goalsFor } : {}),
@@ -1047,11 +1043,7 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
     }
   }
 
-  async update(
-    id: string,
-    educatorId: string,
-    input: { scores?: PlayerEvaluationScores; createdAt?: Date },
-  ): Promise<PersistedPlayerEvaluation> {
+  async update(id: string, educatorId: string, input: { scores?: PlayerEvaluationScores; createdAt?: Date }): Promise<PersistedPlayerEvaluation> {
     // L'éducateur ne réécrit jamais ce que le joueur a déclaré de lui-même.
     const { count } = await this.prisma.playerEvaluationRecord.updateMany({
       where: { id, educatorId, source: "coach" },

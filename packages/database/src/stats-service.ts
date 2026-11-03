@@ -1,11 +1,6 @@
 import { summarizeAttendance } from "@evolyfoot/domain";
 import type { AttendanceEntry, AttendanceSummary } from "@evolyfoot/domain";
-import type {
-  MatchRepository,
-  PlateauRepository,
-  TournamentRepository,
-  TrainingSessionRepository,
-} from "./repositories";
+import type { MatchRepository, PlateauRepository, TournamentRepository, TrainingSessionRepository } from "./repositories";
 
 export interface TeamStats {
   trainingCount: number;

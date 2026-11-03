@@ -23,8 +23,5 @@ const PUBLIC_PREFIXES = ["/rejoindre/", "/verifier-email/", "/mot-de-passe-oubli
 // `true` si le chemin est public : une page vitrine (correspondance exacte -- `/` ne doit surtout
 // pas se comporter comme un préfixe) ou un chemin sous un préfixe public.
 export function isMarketingPath(pathname: string): boolean {
-  return (
-    (MARKETING_PATHS as readonly string[]).includes(pathname) ||
-    PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
-  );
+  return (MARKETING_PATHS as readonly string[]).includes(pathname) || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }

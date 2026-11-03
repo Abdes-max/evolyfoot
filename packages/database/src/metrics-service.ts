@@ -31,15 +31,14 @@ export class MetricsService {
   constructor(private readonly prisma: PrismaClient) {}
 
   async get(): Promise<MvpMetrics> {
-    const [totalEducators, educatorsWithTeam, educatorsWithDiagnostic, sessionEducators, observationEducators, playerEducators] =
-      await Promise.all([
-        this.prisma.educator.count(),
-        this.prisma.team.count(),
-        this.prisma.diagnostic.count(),
-        this.prisma.trainingSessionRecord.groupBy({ by: ["educatorId"] }),
-        this.prisma.observationRecord.groupBy({ by: ["educatorId"] }),
-        this.prisma.player.groupBy({ by: ["educatorId"] }),
-      ]);
+    const [totalEducators, educatorsWithTeam, educatorsWithDiagnostic, sessionEducators, observationEducators, playerEducators] = await Promise.all([
+      this.prisma.educator.count(),
+      this.prisma.team.count(),
+      this.prisma.diagnostic.count(),
+      this.prisma.trainingSessionRecord.groupBy({ by: ["educatorId"] }),
+      this.prisma.observationRecord.groupBy({ by: ["educatorId"] }),
+      this.prisma.player.groupBy({ by: ["educatorId"] }),
+    ]);
 
     const funnel: FunnelStep[] = [
       { label: "Comptes créés", count: totalEducators },
@@ -66,9 +65,7 @@ export class MetricsService {
       order by 1
     `;
 
-    const retentionRows = await this.prisma.$queryRaw<
-      Array<{ retained_four_weeks: number; active_last_four_weeks: number }>
-    >`
+    const retentionRows = await this.prisma.$queryRaw<Array<{ retained_four_weeks: number; active_last_four_weeks: number }>>`
       with activity as (
         select educator_id, date_trunc('week', created_at)::date as week_start
         from training_sessions

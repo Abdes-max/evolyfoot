@@ -42,13 +42,26 @@ describe("tournament handlers", () => {
   });
 
   it("create rejects a missing name/date and never trusts a body educatorId", async () => {
-    const bad = createCreateTournamentHandler(authenticated, { create: async () => { throw new Error("not called"); } }, () => undefined);
+    const bad = createCreateTournamentHandler(
+      authenticated,
+      {
+        create: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await bad(request("POST", { name: "Tournoi" }))).status).toBe(400);
 
     const received: string[] = [];
     const ok = createCreateTournamentHandler(
       authenticated,
-      { create: async (id) => { received.push(id); return summary; } },
+      {
+        create: async (id) => {
+          received.push(id);
+          return summary;
+        },
+      },
       () => undefined,
     );
     const response = await ok(request("POST", { name: "Tournoi", dateLabel: "12 avril", educatorId: "attacker" }));
@@ -59,7 +72,11 @@ describe("tournament handlers", () => {
   it("maps a missing educator to a 401", async () => {
     const handler = createCreateTournamentHandler(
       authenticated,
-      { create: async () => { throw new EducatorNotFoundError(); } },
+      {
+        create: async () => {
+          throw new EducatorNotFoundError();
+        },
+      },
       () => undefined,
     );
     expect((await handler(request("POST", { name: "T", dateLabel: "d" }))).status).toBe(401);
@@ -88,7 +105,15 @@ describe("createGetTournamentHandler", () => {
 
 describe("createUpdateTournamentDetailsHandler", () => {
   it("requires authentication", async () => {
-    const handler = createUpdateTournamentDetailsHandler(anonymous, { updateDetails: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createUpdateTournamentDetailsHandler(
+      anonymous,
+      {
+        updateDetails: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await handler(request("PATCH", { location: "Stade X" }), "t1")).status).toBe(401);
   });
 

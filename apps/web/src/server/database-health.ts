@@ -1,7 +1,4 @@
-export function createDatabaseHealthHandler(
-  check: () => Promise<void>,
-  log: (error: unknown) => void,
-): () => Promise<Response> {
+export function createDatabaseHealthHandler(check: () => Promise<void>, log: (error: unknown) => void): () => Promise<Response> {
   return async () => {
     try {
       await check();

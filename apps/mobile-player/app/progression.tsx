@@ -128,7 +128,9 @@ export default function ProgressionScreen() {
                     <Text style={styles.seasonLabel}>{season.label}</Text>
                     <Text style={styles.seasonOverall}>
                       {season.overall.toLocaleString("fr-FR")}/{playerEvaluationMaxScore}
-                      {season.deltaFromPrevious === null ? "" : (
+                      {season.deltaFromPrevious === null ? (
+                        ""
+                      ) : (
                         <Text style={season.deltaFromPrevious >= 0 ? styles.up : styles.down}>
                           {`  ${season.deltaFromPrevious > 0 ? "+" : ""}${season.deltaFromPrevious.toLocaleString("fr-FR")}`}
                         </Text>
@@ -175,13 +177,28 @@ export default function ProgressionScreen() {
 const styles = StyleSheet.create({
   note: { color: colors.muted, fontSize: 14, lineHeight: 20, textAlign: "center", marginTop: spacing.sm },
   counters: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md },
-  counter: { flex: 1, padding: spacing.md, alignItems: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primaryDark, backgroundColor: colors.surface },
+  counter: {
+    flex: 1,
+    padding: spacing.md,
+    alignItems: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.primaryDark,
+    backgroundColor: colors.surface,
+  },
   counterValue: { color: colors.lime, fontSize: 28, fontWeight: "900" },
   counterLabel: { color: colors.muted, fontSize: 12, fontWeight: "700" },
   radar: { alignSelf: "center" },
   legend: { flexDirection: "row", justifyContent: "center", gap: spacing.md },
   legendText: { fontSize: 12, fontWeight: "800" },
-  season: { padding: spacing.md, marginBottom: spacing.sm, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primaryDark, backgroundColor: colors.surface },
+  season: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.primaryDark,
+    backgroundColor: colors.surface,
+  },
   seasonHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 },
   seasonLabel: { color: colors.ink, fontSize: 16, fontWeight: "900" },
   seasonOverall: { color: colors.ink, fontSize: 14, fontWeight: "800" },
@@ -196,7 +213,16 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
   rowLabel: { flex: 1, color: colors.ink, fontSize: 14, fontWeight: "700" },
   rowValue: { width: 28, color: colors.lime, fontSize: 18, fontWeight: "900", textAlign: "center" },
-  step: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+  step: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+  },
   stepText: { color: colors.primary, fontSize: 22, fontWeight: "800" },
   save: { minHeight: 48, marginTop: spacing.md, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
   saveText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },

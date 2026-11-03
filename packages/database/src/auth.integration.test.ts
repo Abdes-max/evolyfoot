@@ -45,9 +45,7 @@ describe("authentification éducateur", () => {
     const email = testEmail("duplicate");
     await service.register({ email, password: "motdepasse1", displayName: `${testRun}-duplicate-1` });
 
-    await expect(
-      service.register({ email: ` ${email.toUpperCase()} `, password: "autremotdepasse", displayName: `${testRun}-duplicate-2` }),
-    ).rejects.toThrow();
+    await expect(service.register({ email: ` ${email.toUpperCase()} `, password: "autremotdepasse", displayName: `${testRun}-duplicate-2` })).rejects.toThrow();
   });
 
   it("rejects a login with the wrong password", async () => {

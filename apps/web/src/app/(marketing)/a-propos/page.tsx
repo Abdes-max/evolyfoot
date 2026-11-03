@@ -3,8 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "À propos — EvolyFoot",
-  description:
-    "Pourquoi EvolyFoot existe : aider l’éducateur de foot U10–U13 à préparer des séances qui font progresser, sans y passer ses soirées.",
+  description: "Pourquoi EvolyFoot existe : aider l’éducateur de foot U10–U13 à préparer des séances qui font progresser, sans y passer ses soirées.",
 };
 
 const blocks = [
@@ -37,8 +36,7 @@ export default function AProposPage() {
         <span className="m-eyebrow">À propos</span>
         <h1>Prépare des séances qui font progresser, sans y passer tes soirées.</h1>
         <p>
-          EvolyFoot est né sur les bords de terrain U10–U13, du besoin d’un fil clair entre ce qu’on observe et ce qu’on
-          fait travailler la semaine suivante.
+          EvolyFoot est né sur les bords de terrain U10–U13, du besoin d’un fil clair entre ce qu’on observe et ce qu’on fait travailler la semaine suivante.
         </p>
       </section>
 

@@ -232,7 +232,9 @@ export default function SessionScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <Text style={styles.step}>SÉANCE {slot + 1} · SEMAINE {weekNumber}</Text>
+        <Text style={styles.step}>
+          SÉANCE {slot + 1} · SEMAINE {weekNumber}
+        </Text>
         <Text style={styles.title}>{alreadySaved ? "Ta séance." : "Prépare ta séance."}</Text>
         <Text style={styles.body}>{session.intention}</Text>
 
@@ -251,104 +253,136 @@ export default function SessionScreen() {
           <View>
             <Text style={styles.summaryLabel}>DÉROULÉ MODULABLE</Text>
             <Text style={styles.summaryTitle}>{session.title}</Text>
-            <Text style={styles.summaryTheme}>{session.theme} · {session.playerCount} joueurs</Text>
+            <Text style={styles.summaryTheme}>
+              {session.theme} · {session.playerCount} joueurs
+            </Text>
           </View>
-          <Text accessibilityLabel={`Durée totale : ${duration} minutes`} accessibilityLiveRegion="polite" style={styles.duration}>{duration} min</Text>
+          <Text accessibilityLabel={`Durée totale : ${duration} minutes`} accessibilityLiveRegion="polite" style={styles.duration}>
+            {duration} min
+          </Text>
         </View>
 
         {session.blocks.map((block, index) => {
           const canReplace = canReplaceSessionActivity(session, index);
           return (
-          <View style={styles.card} key={block.id}>
-            <View style={styles.cardHeading}>
-              <View style={styles.cardTitleWrap}>
-                <Text style={styles.blockNumber}>{index + 1}</Text>
-                <View style={styles.cardContent}>
-                  <Text style={styles.kind}>{kindLabels[block.activity.kind]}</Text>
-                  <Text style={styles.cardTitle}>{block.activity.title}</Text>
+            <View style={styles.card} key={block.id}>
+              <View style={styles.cardHeading}>
+                <View style={styles.cardTitleWrap}>
+                  <Text style={styles.blockNumber}>{index + 1}</Text>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.kind}>{kindLabels[block.activity.kind]}</Text>
+                    <Text style={styles.cardTitle}>{block.activity.title}</Text>
+                  </View>
                 </View>
+                <Text style={styles.blockDuration}>{block.durationMinutes} min</Text>
               </View>
-              <Text style={styles.blockDuration}>{block.durationMinutes} min</Text>
+              <Text style={styles.objective}>{block.activity.objective}</Text>
+              {block.activity.photo ? null : animatedBlockId === block.id ? (
+                <TacticalPlayer exercise={block.activity} label={`Schéma tactique animé : ${block.activity.title}`} seed={block.activity.id} />
+              ) : (
+                <TacticalDiagramView
+                  diagram={block.activity.diagram}
+                  targets={diagramTargets(block.activity)}
+                  label={`Schéma tactique : ${block.activity.title}`}
+                />
+              )}
+              {block.activity.photo ? null : (
+                <TouchableOpacity accessibilityRole="button" hitSlop={6} onPress={() => setAnimatedBlockId(animatedBlockId === block.id ? null : block.id)}>
+                  <Text style={styles.animateLink}>{animatedBlockId === block.id ? "Revenir au schéma fixe" : "▶ Animer le schéma"}</Text>
+                </TouchableOpacity>
+              )}
+              <View style={styles.details}>
+                <Text style={styles.detailLabel}>ORGANISATION</Text>
+                <Text style={styles.detailText}>{block.activity.organization}</Text>
+                <Text style={styles.detailLabel}>CONSIGNE</Text>
+                <Text style={styles.detailText}>{block.activity.instruction}</Text>
+                <Text style={styles.detailLabel}>À OBSERVER</Text>
+                <Text style={styles.detailText}>{block.activity.observable}</Text>
+              </View>
+              <View style={styles.actions}>
+                <TouchableOpacity
+                  accessibilityLabel="Retirer 5 minutes"
+                  hitSlop={8}
+                  onPress={() => editSession(adjustBlockDuration(session, index, -5))}
+                  style={styles.action}
+                >
+                  <Text style={styles.actionText}>− 5 min</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityLabel="Ajouter 5 minutes"
+                  hitSlop={8}
+                  onPress={() => editSession(adjustBlockDuration(session, index, 5))}
+                  style={styles.action}
+                >
+                  <Text style={styles.actionText}>+ 5 min</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityLabel="Monter"
+                  hitSlop={8}
+                  disabled={index === 0}
+                  onPress={() => editSession(moveSessionBlock(session, index, index - 1))}
+                  style={[styles.action, index === 0 && styles.actionDisabled]}
+                >
+                  <Text style={styles.actionText}>Monter</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityLabel="Descendre"
+                  hitSlop={8}
+                  disabled={index === session.blocks.length - 1}
+                  onPress={() => editSession(moveSessionBlock(session, index, index + 1))}
+                  style={[styles.action, index === session.blocks.length - 1 && styles.actionDisabled]}
+                >
+                  <Text style={styles.actionText}>Descendre</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityLabel="Remplacer la situation"
+                  accessibilityHint={canReplace ? "Affiche une autre situation compatible." : "Aucune autre situation compatible pour ce bloc."}
+                  disabled={!canReplace}
+                  hitSlop={8}
+                  onPress={() => editSession(replaceSessionActivity(session, index))}
+                  style={[styles.action, !canReplace && styles.actionDisabled]}
+                >
+                  <Text style={styles.actionText}>Remplacer</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <Text style={styles.objective}>{block.activity.objective}</Text>
-            {block.activity.photo ? null : animatedBlockId === block.id ? (
-              <TacticalPlayer exercise={block.activity} label={`Schéma tactique animé : ${block.activity.title}`} seed={block.activity.id} />
-            ) : (
-              <TacticalDiagramView diagram={block.activity.diagram} targets={diagramTargets(block.activity)} label={`Schéma tactique : ${block.activity.title}`} />
-            )}
-            {block.activity.photo ? null : (
-              <TouchableOpacity accessibilityRole="button" hitSlop={6} onPress={() => setAnimatedBlockId(animatedBlockId === block.id ? null : block.id)}>
-                <Text style={styles.animateLink}>{animatedBlockId === block.id ? "Revenir au schéma fixe" : "▶ Animer le schéma"}</Text>
-              </TouchableOpacity>
-            )}
-            <View style={styles.details}>
-              <Text style={styles.detailLabel}>ORGANISATION</Text><Text style={styles.detailText}>{block.activity.organization}</Text>
-              <Text style={styles.detailLabel}>CONSIGNE</Text><Text style={styles.detailText}>{block.activity.instruction}</Text>
-              <Text style={styles.detailLabel}>À OBSERVER</Text><Text style={styles.detailText}>{block.activity.observable}</Text>
-            </View>
-            <View style={styles.actions}>
-              <TouchableOpacity
-                accessibilityLabel="Retirer 5 minutes"
-                hitSlop={8}
-                onPress={() => editSession(adjustBlockDuration(session, index, -5))}
-                style={styles.action}
-              >
-                <Text style={styles.actionText}>− 5 min</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                accessibilityLabel="Ajouter 5 minutes"
-                hitSlop={8}
-                onPress={() => editSession(adjustBlockDuration(session, index, 5))}
-                style={styles.action}
-              >
-                <Text style={styles.actionText}>+ 5 min</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                accessibilityLabel="Monter"
-                hitSlop={8}
-                disabled={index === 0}
-                onPress={() => editSession(moveSessionBlock(session, index, index - 1))}
-                style={[styles.action, index === 0 && styles.actionDisabled]}
-              >
-                <Text style={styles.actionText}>Monter</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                accessibilityLabel="Descendre"
-                hitSlop={8}
-                disabled={index === session.blocks.length - 1}
-                onPress={() => editSession(moveSessionBlock(session, index, index + 1))}
-                style={[styles.action, index === session.blocks.length - 1 && styles.actionDisabled]}
-              >
-                <Text style={styles.actionText}>Descendre</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                accessibilityLabel="Remplacer la situation"
-                accessibilityHint={canReplace ? "Affiche une autre situation compatible." : "Aucune autre situation compatible pour ce bloc."}
-                disabled={!canReplace}
-                hitSlop={8}
-                onPress={() => editSession(replaceSessionActivity(session, index))}
-                style={[styles.action, !canReplace && styles.actionDisabled]}
-              >
-                <Text style={styles.actionText}>Remplacer</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        );})}
+          );
+        })}
 
         <View style={styles.card}>
           <Text style={styles.summaryLabel}>RENDEZ-VOUS</Text>
           <Text style={styles.cardTitle}>{meetingLabel(meetingAt)}</Text>
           <View style={styles.actions}>
-            <TouchableOpacity accessibilityLabel="Un jour plus tôt" hitSlop={8} onPress={() => setMeetingAt(shiftMeeting(meetingAt, -1440))} style={styles.action}>
+            <TouchableOpacity
+              accessibilityLabel="Un jour plus tôt"
+              hitSlop={8}
+              onPress={() => setMeetingAt(shiftMeeting(meetingAt, -1440))}
+              style={styles.action}
+            >
               <Text style={styles.actionText}>− 1 jour</Text>
             </TouchableOpacity>
-            <TouchableOpacity accessibilityLabel="Un jour plus tard" hitSlop={8} onPress={() => setMeetingAt(shiftMeeting(meetingAt, 1440))} style={styles.action}>
+            <TouchableOpacity
+              accessibilityLabel="Un jour plus tard"
+              hitSlop={8}
+              onPress={() => setMeetingAt(shiftMeeting(meetingAt, 1440))}
+              style={styles.action}
+            >
               <Text style={styles.actionText}>+ 1 jour</Text>
             </TouchableOpacity>
-            <TouchableOpacity accessibilityLabel="30 minutes plus tôt" hitSlop={8} onPress={() => setMeetingAt(shiftMeeting(meetingAt, -30))} style={styles.action}>
+            <TouchableOpacity
+              accessibilityLabel="30 minutes plus tôt"
+              hitSlop={8}
+              onPress={() => setMeetingAt(shiftMeeting(meetingAt, -30))}
+              style={styles.action}
+            >
               <Text style={styles.actionText}>− 30 min</Text>
             </TouchableOpacity>
-            <TouchableOpacity accessibilityLabel="30 minutes plus tard" hitSlop={8} onPress={() => setMeetingAt(shiftMeeting(meetingAt, 30))} style={styles.action}>
+            <TouchableOpacity
+              accessibilityLabel="30 minutes plus tard"
+              hitSlop={8}
+              onPress={() => setMeetingAt(shiftMeeting(meetingAt, 30))}
+              style={styles.action}
+            >
               <Text style={styles.actionText}>+ 30 min</Text>
             </TouchableOpacity>
           </View>
@@ -405,18 +439,27 @@ export default function SessionScreen() {
         >
           <Text style={styles.validateText}>{saving ? "Enregistrement…" : "Valider cette séance →"}</Text>
         </TouchableOpacity>
-        <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.status}>{validationStatus}</Text>
+        <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.status}>
+          {validationStatus}
+        </Text>
         {savedId && (
           <View style={styles.card}>
             <Text style={styles.summaryLabel}>CONVOCATION</Text>
-            <Text style={styles.detailText}>
-              {[meetingLabel(meetingAt), location.trim() || null].filter(Boolean).join(" — ")}
-            </Text>
-            <TouchableOpacity accessibilityRole="button" disabled={convoking} onPress={confirmConvocation} style={[styles.validate, convoking && styles.validateDisabled]}>
+            <Text style={styles.detailText}>{[meetingLabel(meetingAt), location.trim() || null].filter(Boolean).join(" — ")}</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              disabled={convoking}
+              onPress={confirmConvocation}
+              style={[styles.validate, convoking && styles.validateDisabled]}
+            >
               <Text style={styles.validateText}>{convoking ? "Envoi…" : "Envoyer la convocation"}</Text>
             </TouchableOpacity>
             <Text style={styles.detailText}>Envoyée à tout l’effectif dans la messagerie, avec le rendez-vous et le lieu.</Text>
-            {convocationStatus ? <Text accessibilityLiveRegion="polite" style={styles.status}>{convocationStatus}</Text> : null}
+            {convocationStatus ? (
+              <Text accessibilityLiveRegion="polite" style={styles.status}>
+                {convocationStatus}
+              </Text>
+            ) : null}
           </View>
         )}
         {validationStatus && (
@@ -436,11 +479,26 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   page: { padding: spacing.lg, paddingBottom: 50 },
   why: { gap: 8, padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.primary, marginBottom: 16 },
-  attendanceRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: 44, borderBottomWidth: 1, borderBottomColor: colors.line },
+  attendanceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    minHeight: 44,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
   step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
   title: { fontSize: 30, fontWeight: "800", color: colors.ink, marginTop: 10 },
   body: { fontSize: 13, lineHeight: 20, color: colors.muted, marginTop: 8, marginBottom: 24 },
-  summary: { flexDirection: "row", justifyContent: "space-between", gap: 16, padding: spacing.md, backgroundColor: colors.primarySoft, borderRadius: radii.md, marginBottom: 16 },
+  summary: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 16,
+    padding: spacing.md,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radii.md,
+    marginBottom: 16,
+  },
   summaryLabel: { fontSize: 9, letterSpacing: 1, fontWeight: "800", color: colors.primary },
   summaryTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginTop: 5 },
   summaryTheme: { fontSize: 11, color: colors.muted, marginTop: 4 },
@@ -448,7 +506,17 @@ const styles = StyleSheet.create({
   card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 10 },
   cardHeading: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
   cardTitleWrap: { flex: 1, flexDirection: "row", gap: 10 },
-  blockNumber: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.primarySoft, color: colors.primary, fontSize: 11, fontWeight: "800", textAlign: "center", textAlignVertical: "center" },
+  blockNumber: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.primarySoft,
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: "800",
+    textAlign: "center",
+    textAlignVertical: "center",
+  },
   cardContent: { flex: 1 },
   kind: { fontSize: 9, fontWeight: "800", color: colors.primary, textTransform: "uppercase" },
   cardTitle: { fontSize: 14, lineHeight: 19, fontWeight: "800", color: colors.ink, marginTop: 3 },
@@ -458,14 +526,43 @@ const styles = StyleSheet.create({
   detailLabel: { fontSize: 9, fontWeight: "800", color: colors.primary, marginTop: 6 },
   detailText: { fontSize: 10, lineHeight: 15, color: colors.muted, marginTop: 3 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
-  action: { minHeight: 44, minWidth: 44, justifyContent: "center", alignItems: "center", paddingHorizontal: 10, paddingVertical: 8, backgroundColor: colors.paper, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
+  action: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: colors.paper,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   actionDisabled: { opacity: 0.4 },
   actionText: { fontSize: 10, fontWeight: "800", color: colors.ink },
   warning: { fontSize: 12, lineHeight: 18, color: colors.danger, marginTop: 8, marginBottom: 12 },
-  validate: { minHeight: 44, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm, marginTop: 8, padding: 15 },
+  validate: {
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+    borderRadius: radii.sm,
+    marginTop: 8,
+    padding: 15,
+  },
   validateDisabled: { opacity: 0.45 },
   validateText: { fontSize: 12, fontWeight: "800", color: colors.primaryInk },
   status: { minHeight: 18, fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 12, textAlign: "center" },
-  observationLink: { minHeight: 44, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.primary, borderRadius: radii.sm, marginTop: 12, paddingHorizontal: 14, backgroundColor: colors.primarySoft },
+  observationLink: {
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radii.sm,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    backgroundColor: colors.primarySoft,
+  },
   observationLinkText: { fontSize: 12, fontWeight: "800", color: colors.primary },
 });

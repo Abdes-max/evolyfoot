@@ -25,9 +25,7 @@ describe("inscription", () => {
   });
 
   it("affiche l’erreur renvoyée par l’API quand l’e-mail est déjà utilisé", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ error: "Cette adresse e-mail est déjà utilisée." }), { status: 409 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error: "Cette adresse e-mail est déjà utilisée." }), { status: 409 }));
     render(<InscriptionPage />);
 
     fireEvent.change(screen.getByLabelText("Nom"), { target: { value: "Coach Test" } });

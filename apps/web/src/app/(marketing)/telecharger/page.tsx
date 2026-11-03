@@ -32,10 +32,7 @@ export default function TelechargerPage() {
       <section className="m-section m-hero">
         <span className="m-eyebrow">Télécharger</span>
         <h1>Commence dans le navigateur, l’app mobile arrive.</h1>
-        <p>
-          Tout EvolyFoot est déjà accessible en ligne. Les versions iOS et Android suivront, sans changer ta façon de
-          travailler ni tes données.
-        </p>
+        <p>Tout EvolyFoot est déjà accessible en ligne. Les versions iOS et Android suivront, sans changer ta façon de travailler ni tes données.</p>
       </section>
 
       <section className="m-section m-prose" style={{ paddingTop: 0 }}>

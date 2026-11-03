@@ -1,12 +1,6 @@
 import { EducatorNotFoundError, InvalidCredentialsError, ValidationError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
-import {
-  createChangePasswordHandler,
-  createGetProfileHandler,
-  createUpdateProfileHandler,
-  type ProfileGateway,
-  type ProfileSummary,
-} from "./profile";
+import { createChangePasswordHandler, createGetProfileHandler, createUpdateProfileHandler, type ProfileGateway, type ProfileSummary } from "./profile";
 
 const educator = { id: "educator-1", email: "coach@example.test", displayName: "Coach" };
 const authenticated = async () => educator;
@@ -69,7 +63,11 @@ describe("createUpdateProfileHandler", () => {
   it("rejects a wrongly typed field with a 400", async () => {
     const handler = createUpdateProfileHandler(
       authenticated,
-      { update: async () => { throw new Error("not called"); } },
+      {
+        update: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
     expect((await handler(request("PATCH", { club: 42 }))).status).toBe(400);
@@ -78,7 +76,11 @@ describe("createUpdateProfileHandler", () => {
   it("maps a domain validation error to a 400", async () => {
     const handler = createUpdateProfileHandler(
       authenticated,
-      { update: async () => { throw new ValidationError("Le nom ne peut pas être vide."); } },
+      {
+        update: async () => {
+          throw new ValidationError("Le nom ne peut pas être vide.");
+        },
+      },
       () => undefined,
     );
     const response = await handler(request("PATCH", { displayName: " " }));
@@ -91,7 +93,11 @@ describe("createChangePasswordHandler", () => {
   it("requires both passwords", async () => {
     const handler = createChangePasswordHandler(
       authenticated,
-      { changePassword: async () => { throw new Error("not called"); } },
+      {
+        changePassword: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
     expect((await handler(request("PATCH", { currentPassword: "only-one" }))).status).toBe(400);
@@ -100,7 +106,11 @@ describe("createChangePasswordHandler", () => {
   it("maps a wrong current password to a 403", async () => {
     const handler = createChangePasswordHandler(
       authenticated,
-      { changePassword: async () => { throw new InvalidCredentialsError(); } },
+      {
+        changePassword: async () => {
+          throw new InvalidCredentialsError();
+        },
+      },
       () => undefined,
     );
     expect((await handler(request("PATCH", { currentPassword: "x", newPassword: "a-strong-password" }))).status).toBe(403);
@@ -109,7 +119,11 @@ describe("createChangePasswordHandler", () => {
   it("maps a missing educator to a 401 and succeeds otherwise", async () => {
     const missing = createChangePasswordHandler(
       authenticated,
-      { changePassword: async () => { throw new EducatorNotFoundError(); } },
+      {
+        changePassword: async () => {
+          throw new EducatorNotFoundError();
+        },
+      },
       () => undefined,
     );
     expect((await missing(request("PATCH", { currentPassword: "x", newPassword: "a-strong-password" }))).status).toBe(401);

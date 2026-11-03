@@ -82,11 +82,7 @@ function copyDraft(draft: ObservationDraft, changes: Partial<ObservationDraft>):
   };
 }
 
-export function createObservationDraft(
-  eventType: ObservationEventType,
-  title: string,
-  players: ReadonlyArray<PlayerReference>,
-): ObservationDraft {
+export function createObservationDraft(eventType: ObservationEventType, title: string, players: ReadonlyArray<PlayerReference>): ObservationDraft {
   const now = new Date();
   return {
     id: `observation-${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -99,11 +95,7 @@ export function createObservationDraft(
   };
 }
 
-export function rateObservation(
-  draft: ObservationDraft,
-  criterion: DiagnosticCriterion,
-  level: ObservationLevel,
-): ObservationDraft {
+export function rateObservation(draft: ObservationDraft, criterion: DiagnosticCriterion, level: ObservationLevel): ObservationDraft {
   if (!isDiagnosticCriterion(criterion) || !isObservationLevel(level)) return draft;
   const index = [...draft.ratings].findIndex((rating) => rating.criterion === criterion);
   const rating = { criterion, level } satisfies ObservationRating;
@@ -113,11 +105,7 @@ export function rateObservation(
   return copyDraft(draft, { ratings });
 }
 
-export function togglePlayerSignal(
-  draft: ObservationDraft,
-  player: PlayerReference | string,
-  kind: PlayerSignalKind,
-): ObservationDraft {
+export function togglePlayerSignal(draft: ObservationDraft, player: PlayerReference | string, kind: PlayerSignalKind): ObservationDraft {
   if (kind !== "highlight" && kind !== "support") return draft;
   const playerId = typeof player === "string" ? player : player.id;
   const playerReference = [...draft.players].find((candidate) => candidate.id === playerId);
@@ -142,9 +130,7 @@ export function setObservationNote(draft: ObservationDraft, note: string): Obser
 }
 
 export function canCompleteObservation(draft: ObservationDraft): boolean {
-  return diagnosticCriteria.every((criterion) =>
-    [...draft.ratings].some((rating) => rating.criterion === criterion.id && isObservationLevel(rating.level)),
-  );
+  return diagnosticCriteria.every((criterion) => [...draft.ratings].some((rating) => rating.criterion === criterion.id && isObservationLevel(rating.level)));
 }
 
 function summaryTrend(averageScore: number): ObservationLevel {

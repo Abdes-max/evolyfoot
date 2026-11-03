@@ -2,13 +2,7 @@ import { generateTrainingSession } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
 import { TrainingSessionService, type TrainingSessionInput } from "./training-session-service";
 import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
-import type {
-  EducatorRecord,
-  EducatorRepository,
-  PersistedTrainingSession,
-  PersistedTrainingSessionBlock,
-  TrainingSessionRepository,
-} from "./repositories";
+import type { EducatorRecord, EducatorRepository, PersistedTrainingSession, PersistedTrainingSessionBlock, TrainingSessionRepository } from "./repositories";
 
 // Séance réelle du domaine (75 min, valide) réduite à la forme envoyée par le client -- évite
 // d'inventer des identifiants d'activité à la main.
@@ -161,10 +155,7 @@ describe("TrainingSessionService cycles", () => {
 describe("TrainingSessionService.save", () => {
   it("rejects an unknown activity id before writing anything", async () => {
     const trainingSessionRepository = new InMemoryTrainingSessionRepository();
-    const service = new TrainingSessionService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      trainingSessionRepository,
-    );
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), trainingSessionRepository);
 
     await expect(
       service.save("educator-1", { ...validInput, blocks: [{ id: "b1", activityId: "does-not-exist", durationMinutes: 20 }] }),
@@ -174,62 +165,45 @@ describe("TrainingSessionService.save", () => {
 
   it("rejects an unknown age group before writing anything", async () => {
     const trainingSessionRepository = new InMemoryTrainingSessionRepository();
-    const service = new TrainingSessionService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      trainingSessionRepository,
-    );
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), trainingSessionRepository);
 
-    await expect(
-      service.save("educator-1", { ...validInput, ageGroup: "U9" as unknown as TrainingSessionInput["ageGroup"] }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.save("educator-1", { ...validInput, ageGroup: "U9" as unknown as TrainingSessionInput["ageGroup"] })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
     expect(trainingSessionRepository.created).toHaveLength(0);
   });
 
   it("rejects an unknown theme before writing anything", async () => {
     const trainingSessionRepository = new InMemoryTrainingSessionRepository();
-    const service = new TrainingSessionService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      trainingSessionRepository,
-    );
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), trainingSessionRepository);
 
-    await expect(
-      service.save("educator-1", { ...validInput, theme: "Autre thème" as unknown as TrainingSessionInput["theme"] }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.save("educator-1", { ...validInput, theme: "Autre thème" as unknown as TrainingSessionInput["theme"] })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
     expect(trainingSessionRepository.created).toHaveLength(0);
   });
 
   it("rejects a session shorter than 60 minutes", async () => {
     const trainingSessionRepository = new InMemoryTrainingSessionRepository();
-    const service = new TrainingSessionService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      trainingSessionRepository,
-    );
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), trainingSessionRepository);
     const tooShort: TrainingSessionInput = {
       ...validInput,
       blocks: validInput.blocks.map((block) => ({ ...block, durationMinutes: 5 })),
     };
 
-    await expect(service.save("educator-1", tooShort)).rejects.toThrow(
-      "La séance doit durer entre 60 et 90 minutes.",
-    );
+    await expect(service.save("educator-1", tooShort)).rejects.toThrow("La séance doit durer entre 60 et 90 minutes.");
     expect(trainingSessionRepository.created).toHaveLength(0);
   });
 
   it("rejects saving a valid session for an educator that does not exist", async () => {
-    const service = new TrainingSessionService(
-      new InMemoryEducatorRepository([]),
-      new InMemoryTrainingSessionRepository(),
-    );
+    const service = new TrainingSessionService(new InMemoryEducatorRepository([]), new InMemoryTrainingSessionRepository());
 
     await expect(service.save("missing", validInput)).rejects.toBeInstanceOf(EducatorNotFoundError);
   });
 
   it("saves a valid session, storing only the activity id per block", async () => {
     const trainingSessionRepository = new InMemoryTrainingSessionRepository();
-    const service = new TrainingSessionService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      trainingSessionRepository,
-    );
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), trainingSessionRepository);
 
     const saved = await service.save("educator-1", validInput);
 
@@ -242,10 +216,7 @@ describe("TrainingSessionService.save", () => {
 
   it("rejects a cycle week outside 1..4", async () => {
     const trainingSessionRepository = new InMemoryTrainingSessionRepository();
-    const service = new TrainingSessionService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      trainingSessionRepository,
-    );
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), trainingSessionRepository);
 
     await expect(service.save("educator-1", { ...validInput, weekNumber: 5 })).rejects.toBeInstanceOf(ValidationError);
     await expect(service.save("educator-1", { ...validInput, slot: -1 })).rejects.toBeInstanceOf(ValidationError);
@@ -254,10 +225,7 @@ describe("TrainingSessionService.save", () => {
 
   it("replaces the session already stored for the same cycle slot", async () => {
     const trainingSessionRepository = new InMemoryTrainingSessionRepository();
-    const service = new TrainingSessionService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      trainingSessionRepository,
-    );
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), trainingSessionRepository);
 
     const first = await service.save("educator-1", { ...validInput, weekNumber: 2, slot: 1, title: "Séance A" });
     const second = await service.save("educator-1", { ...validInput, weekNumber: 2, slot: 1, title: "Séance B" });
@@ -269,10 +237,7 @@ describe("TrainingSessionService.save", () => {
 
   it("lists and fetches saved sessions by id", async () => {
     const trainingSessionRepository = new InMemoryTrainingSessionRepository();
-    const service = new TrainingSessionService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      trainingSessionRepository,
-    );
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), trainingSessionRepository);
 
     const saved = await service.save("educator-1", { ...validInput, weekNumber: 1, slot: 0 });
 

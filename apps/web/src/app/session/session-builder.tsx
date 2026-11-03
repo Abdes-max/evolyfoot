@@ -185,9 +185,13 @@ export function SessionBuilder({
         <div>
           <span className="eyebrow">DÉROULÉ MODULABLE</span>
           <h2 id="session-builder-title">{session.title}</h2>
-          <p>{session.theme} · <span>{`${session.playerCount} joueurs`}</span></p>
+          <p>
+            {session.theme} · <span>{`${session.playerCount} joueurs`}</span>
+          </p>
         </div>
-        <strong aria-atomic="true" aria-label={`Durée totale : ${duration} minutes`} aria-live="polite">{duration} min</strong>
+        <strong aria-atomic="true" aria-label={`Durée totale : ${duration} minutes`} aria-live="polite">
+          {duration} min
+        </strong>
       </div>
 
       <button className="session-print" onClick={exportPdf} type="button">
@@ -209,7 +213,12 @@ export function SessionBuilder({
               ← Toute la séance
             </button>
             <div className="session-exercise-pager">
-              <button aria-label="Exercice précédent" disabled={openIndex === 0} onClick={() => setOpenBlockId(session.blocks[openIndex! - 1]!.id)} type="button">
+              <button
+                aria-label="Exercice précédent"
+                disabled={openIndex === 0}
+                onClick={() => setOpenBlockId(session.blocks[openIndex! - 1]!.id)}
+                type="button"
+              >
                 ←
               </button>
               <span>
@@ -267,11 +276,32 @@ export function SessionBuilder({
                   ›
                 </span>
                 <div className="session-run-actions">
-                  <button aria-label="Retirer 5 minutes" onClick={() => editSession(adjustBlockDuration(session, index, -5))} type="button">− 5 min</button>
-                  <button aria-label="Ajouter 5 minutes" onClick={() => editSession(adjustBlockDuration(session, index, 5))} type="button">+ 5 min</button>
-                  <button aria-label="Monter" disabled={index === 0} onClick={() => editSession(moveSessionBlock(session, index, index - 1))} type="button">↑</button>
-                  <button aria-label="Descendre" disabled={index === session.blocks.length - 1} onClick={() => editSession(moveSessionBlock(session, index, index + 1))} type="button">↓</button>
-                  <button aria-describedby={!canReplace ? replacementHintId : undefined} aria-label="Remplacer la situation" disabled={!canReplace} onClick={() => editSession(replaceSessionActivity(session, index))} type="button">Remplacer</button>
+                  <button aria-label="Retirer 5 minutes" onClick={() => editSession(adjustBlockDuration(session, index, -5))} type="button">
+                    − 5 min
+                  </button>
+                  <button aria-label="Ajouter 5 minutes" onClick={() => editSession(adjustBlockDuration(session, index, 5))} type="button">
+                    + 5 min
+                  </button>
+                  <button aria-label="Monter" disabled={index === 0} onClick={() => editSession(moveSessionBlock(session, index, index - 1))} type="button">
+                    ↑
+                  </button>
+                  <button
+                    aria-label="Descendre"
+                    disabled={index === session.blocks.length - 1}
+                    onClick={() => editSession(moveSessionBlock(session, index, index + 1))}
+                    type="button"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    aria-describedby={!canReplace ? replacementHintId : undefined}
+                    aria-label="Remplacer la situation"
+                    disabled={!canReplace}
+                    onClick={() => editSession(replaceSessionActivity(session, index))}
+                    type="button"
+                  >
+                    Remplacer
+                  </button>
                   {personalExercises.some((exercise) => exercise.kind === block.activity.kind) && (
                     <select
                       aria-label="Utiliser un de mes exercices"
@@ -293,7 +323,11 @@ export function SessionBuilder({
                         ))}
                     </select>
                   )}
-                  {!canReplace && <span className="visually-hidden" id={replacementHintId}>Aucune autre situation compatible pour ce bloc.</span>}
+                  {!canReplace && (
+                    <span className="visually-hidden" id={replacementHintId}>
+                      Aucune autre situation compatible pour ce bloc.
+                    </span>
+                  )}
                 </div>
               </li>
             );
@@ -326,16 +360,37 @@ export function SessionBuilder({
         </section>
       )}
 
-      {!isValid && <p className="session-validation-error" role="alert">La séance doit durer entre 60 et 90 minutes.</p>}
+      {!isValid && (
+        <p className="session-validation-error" role="alert">
+          La séance doit durer entre 60 et 90 minutes.
+        </p>
+      )}
       <div className="session-validation">
-        <button className="continue-button" disabled={!isValid || saveState === "pending"} onClick={validateSession} type="button">Valider cette séance <span aria-hidden="true">→</span></button>
-        <p aria-live="polite" className="session-validation-status" role="status">{validationStatus}</p>
+        <button className="continue-button" disabled={!isValid || saveState === "pending"} onClick={validateSession} type="button">
+          Valider cette séance <span aria-hidden="true">→</span>
+        </button>
+        <p aria-live="polite" className="session-validation-status" role="status">
+          {validationStatus}
+        </p>
         {saveState === "auth-required" && (
-          <p className="field-error">Connecte-toi pour enregistrer cette séance. <Link className="inline-cta" href="/connexion">Se connecter →</Link></p>
+          <p className="field-error">
+            Connecte-toi pour enregistrer cette séance.{" "}
+            <Link className="inline-cta" href="/connexion">
+              Se connecter →
+            </Link>
+          </p>
         )}
         {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
-        {validationStatus && <Link className="observation-session-link" href="/observation?type=training">Observer cette séance →</Link>}
-        {validationStatus && <Link className="back-link" href="/seances">Voir toutes mes séances</Link>}
+        {validationStatus && (
+          <Link className="observation-session-link" href="/observation?type=training">
+            Observer cette séance →
+          </Link>
+        )}
+        {validationStatus && (
+          <Link className="back-link" href="/seances">
+            Voir toutes mes séances
+          </Link>
+        )}
       </div>
     </section>
   );

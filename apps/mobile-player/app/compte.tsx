@@ -24,13 +24,16 @@ export default function AccountScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
         <Text style={styles.title}>Supprimer mon compte</Text>
-        <Text style={styles.body}>
-          Cette action est définitive : ton compte sera supprimé. Le suivi du joueur reste chez l’éducateur.
-        </Text>
+        <Text style={styles.body}>Cette action est définitive : ton compte sera supprimé. Le suivi du joueur reste chez l’éducateur.</Text>
         <Text style={styles.label}>Confirme avec ton mot de passe</Text>
         <TextInput autoComplete="current-password" onChangeText={setPassword} secureTextEntry style={styles.input} value={password} />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <TouchableOpacity accessibilityRole="button" disabled={deleting || !password} onPress={confirm} style={[styles.delete, (deleting || !password) && styles.disabled]}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          disabled={deleting || !password}
+          onPress={confirm}
+          style={[styles.delete, (deleting || !password) && styles.disabled]}
+        >
           <Text style={styles.deleteText}>{deleting ? "Suppression…" : "Supprimer définitivement"}</Text>
         </TouchableOpacity>
         <TouchableOpacity accessibilityRole="button" onPress={() => router.back()} style={styles.cancel}>

@@ -30,13 +30,31 @@ export function TacticalDiagramView({
         </Defs>
         <Rect fill={pitch.fill} height={diagram.height - 8} rx={14} stroke={pitch.stroke} strokeWidth={2} width={diagram.width - 8} x={4} y={4} />
         {diagram.zones.map((zone, index) => (
-          <Rect fill="none" height={zone.height} key={index} rx={8} stroke={pitch.stroke} strokeDasharray="5 5" strokeWidth={1.5} width={zone.width} x={zone.x} y={zone.y} />
+          <Rect
+            fill="none"
+            height={zone.height}
+            key={index}
+            rx={8}
+            stroke={pitch.stroke}
+            strokeDasharray="5 5"
+            strokeWidth={1.5}
+            width={zone.width}
+            x={zone.x}
+            y={zone.y}
+          />
         ))}
         {targets.map((target, index) => (
           <DiagramTargetShape key={`t-${index}`} target={target} />
         ))}
         {diagram.arrows.map((arrow, index) => (
-          <Path d={`M${arrow.x1} ${arrow.y1} L${arrow.x2} ${arrow.y2}`} fill="none" key={index} markerEnd="url(#arrowhead)" stroke={colors.primary} strokeWidth={2.2} />
+          <Path
+            d={`M${arrow.x1} ${arrow.y1} L${arrow.x2} ${arrow.y2}`}
+            fill="none"
+            key={index}
+            markerEnd="url(#arrowhead)"
+            stroke={colors.primary}
+            strokeWidth={2.2}
+          />
         ))}
         {diagram.tokens.map((token) => (
           <Circle cx={token.x} cy={token.y} fill={tokenFill[token.role]} key={`c-${token.id}`} r={tokenRadius[token.role]} />

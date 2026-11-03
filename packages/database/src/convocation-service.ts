@@ -43,9 +43,7 @@ function trainingSessionDateLabel(session: PersistedTrainingSession): string {
 }
 
 function trainingSessionMeetingTime(session: PersistedTrainingSession): string | null {
-  return session.meetingAt
-    ? new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: clubTimeZone }).format(session.meetingAt)
-    : null;
+  return session.meetingAt ? new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: clubTimeZone }).format(session.meetingAt) : null;
 }
 
 function matchConvocationText(match: PersistedMatch): string {
@@ -80,10 +78,7 @@ export class ConvocationService {
   ) {}
 
   async sendForMatch(educatorId: string, matchId: string): Promise<ConvocationResult> {
-    const [educator, match] = await Promise.all([
-      this.educatorRepository.findById(educatorId),
-      this.matchRepository.findById(matchId, educatorId),
-    ]);
+    const [educator, match] = await Promise.all([this.educatorRepository.findById(educatorId), this.matchRepository.findById(matchId, educatorId)]);
     if (!educator) {
       throw new EducatorNotFoundError();
     }
@@ -96,9 +91,7 @@ export class ConvocationService {
     }
     const text = matchConvocationText(match);
     await Promise.all(
-      playerIds.map((playerId) =>
-        this.messageRepository.create({ educatorId, playerId, authorRole: "coach", authorName: educator.displayName, text }),
-      ),
+      playerIds.map((playerId) => this.messageRepository.create({ educatorId, playerId, authorRole: "coach", authorName: educator.displayName, text })),
     );
     const roster = await this.playerRepository.listByEducator(educatorId);
     const convoked = roster.filter((player) => playerIds.includes(player.id));
@@ -122,9 +115,7 @@ export class ConvocationService {
     }
     const text = trainingSessionConvocationText(session);
     await Promise.all(
-      roster.map((player) =>
-        this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text }),
-      ),
+      roster.map((player) => this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text })),
     );
     return { sentCount: roster.length, subject: `Convocation : séance « ${session.title} »`, text, recipients: await this.recipientsFor(roster) };
   }
@@ -134,7 +125,10 @@ export class ConvocationService {
     const byEmail = new Map<string, ConvocationRecipient>();
     players.forEach((player, index) => {
       const account = accounts[index];
-      for (const candidate of [account ? { email: account.email, name: account.displayName } : null, player.email ? { email: player.email, name: player.firstName } : null]) {
+      for (const candidate of [
+        account ? { email: account.email, name: account.displayName } : null,
+        player.email ? { email: player.email, name: player.firstName } : null,
+      ]) {
         const key = candidate?.email.trim().toLowerCase();
         if (candidate && key && key.includes("@") && !byEmail.has(key)) {
           byEmail.set(key, { email: candidate.email.trim(), name: candidate.name });

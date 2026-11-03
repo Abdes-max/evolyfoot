@@ -7,17 +7,7 @@ export interface LegalSection {
   paragraphs: string[];
 }
 
-export function LegalPage({
-  title,
-  updatedAt,
-  intro,
-  sections,
-}: {
-  title: string;
-  updatedAt: string;
-  intro: string;
-  sections: LegalSection[];
-}) {
+export function LegalPage({ title, updatedAt, intro, sections }: { title: string; updatedAt: string; intro: string; sections: LegalSection[] }) {
   return (
     <main>
       <section className="m-section m-hero m-legal-hero">
@@ -29,8 +19,8 @@ export function LegalPage({
 
       <section className="m-section m-legal">
         <p className="m-legal-notice" role="note">
-          Gabarit en attente de relecture juridique : les mentions entre crochets seront remplacées par les
-          informations définitives d’EvolyFoot avant mise en production.
+          Gabarit en attente de relecture juridique : les mentions entre crochets seront remplacées par les informations définitives d’EvolyFoot avant mise en
+          production.
         </p>
         {sections.map((section) => (
           <article className="m-legal-block" key={section.title}>

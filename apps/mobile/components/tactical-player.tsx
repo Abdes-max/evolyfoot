@@ -94,7 +94,18 @@ export function TacticalPlayer({ exercise, seed, label = "Schéma tactique anim�
         <Svg height="100%" preserveAspectRatio="xMidYMid meet" viewBox={`0 0 ${diagram.width} ${diagram.height}`} width="100%">
           <Rect fill={pitch.fill} height={diagram.height - 8} rx={14} stroke={pitch.stroke} strokeWidth={2} width={diagram.width - 8} x={4} y={4} />
           {diagram.zones.map((zone, index) => (
-            <Rect fill="none" height={zone.height} key={index} rx={8} stroke={pitch.stroke} strokeDasharray="5 5" strokeWidth={1.5} width={zone.width} x={zone.x} y={zone.y} />
+            <Rect
+              fill="none"
+              height={zone.height}
+              key={index}
+              rx={8}
+              stroke={pitch.stroke}
+              strokeDasharray="5 5"
+              strokeWidth={1.5}
+              width={zone.width}
+              x={zone.x}
+              y={zone.y}
+            />
           ))}
           {targets.map((target, index) => (
             <DiagramTargetShape key={`t-${index}`} target={target} />
@@ -102,7 +113,19 @@ export function TacticalPlayer({ exercise, seed, label = "Schéma tactique anim�
           {step.pressers.map((press) => {
             const from = at(press.id);
             const to = at(press.targetId);
-            return <Line key={`p-${press.id}`} opacity={0.8} stroke={pressColor} strokeDasharray="4 5" strokeWidth={1.4} x1={from.x} x2={to.x} y1={from.y} y2={to.y} />;
+            return (
+              <Line
+                key={`p-${press.id}`}
+                opacity={0.8}
+                stroke={pressColor}
+                strokeDasharray="4 5"
+                strokeWidth={1.4}
+                x1={from.x}
+                x2={to.x}
+                y1={from.y}
+                y2={to.y}
+              />
+            );
           })}
           {step.balls.map((ball) => {
             const { trail } = ballFrame(ball, at, passing);
@@ -158,13 +181,23 @@ export function TacticalPlayer({ exercise, seed, label = "Schéma tactique anim�
       </View>
       <Text style={styles.caption}>{step.caption}</Text>
       <View style={styles.controls}>
-        <TouchableOpacity accessibilityLabel={`Vitesse ${speed === 1 ? "normale" : "rapide"}, changer`} accessibilityRole="button" onPress={() => setSpeed(speed === 1 ? 2 : 1)} style={styles.control}>
+        <TouchableOpacity
+          accessibilityLabel={`Vitesse ${speed === 1 ? "normale" : "rapide"}, changer`}
+          accessibilityRole="button"
+          onPress={() => setSpeed(speed === 1 ? 2 : 1)}
+          style={styles.control}
+        >
           <Text style={styles.controlText}>{speed}×</Text>
         </TouchableOpacity>
         <TouchableOpacity accessibilityLabel="Étape précédente" accessibilityRole="button" onPress={() => goTo(stepIndex - 1)} style={styles.control}>
           <Text style={styles.controlText}>‹</Text>
         </TouchableOpacity>
-        <TouchableOpacity accessibilityLabel={playing ? "Mettre en pause" : "Lire l’animation"} accessibilityRole="button" onPress={() => setPlayChoice(!playing)} style={[styles.control, styles.play]}>
+        <TouchableOpacity
+          accessibilityLabel={playing ? "Mettre en pause" : "Lire l’animation"}
+          accessibilityRole="button"
+          onPress={() => setPlayChoice(!playing)}
+          style={[styles.control, styles.play]}
+        >
           <Text style={[styles.controlText, styles.playText]}>{playing ? "❚❚" : "▶"}</Text>
         </TouchableOpacity>
         <TouchableOpacity accessibilityLabel="Étape suivante" accessibilityRole="button" onPress={() => goTo(stepIndex + 1)} style={styles.control}>
@@ -183,7 +216,16 @@ const styles = StyleSheet.create({
   fill: { height: "100%", backgroundColor: colors.primary },
   caption: { minHeight: 22, marginTop: 8, color: colors.ink, fontSize: 14, fontWeight: "700", textAlign: "center" },
   controls: { flexDirection: "row", justifyContent: "center", gap: 10, marginTop: 6 },
-  control: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 22, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+  control: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+  },
   controlText: { fontSize: 16, fontWeight: "800", color: colors.ink },
   play: { width: 52, height: 52, borderRadius: 26, borderColor: colors.primary, backgroundColor: colors.primary },
   playText: { color: colors.primaryInk },

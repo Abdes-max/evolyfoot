@@ -21,9 +21,7 @@ const radarAxes = playerEvaluationAspects.map((aspect) => ({ key: aspect, label:
 
 function formatDate(iso: string): string {
   const parsed = new Date(iso);
-  return Number.isNaN(parsed.getTime())
-    ? iso
-    : parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  return Number.isNaN(parsed.getTime()) ? iso : parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
 // Onglet "Mon enfant" (voir player-tab-bar.tsx) : identité, évaluations et présence -- tout ce qui
@@ -130,9 +128,7 @@ export function PlayerSpaceView() {
                     scores={comparedEvaluationIds.size === 0 ? latest.scores : undefined}
                   />
                   <div>
-                    {comparedEvaluationIds.size === 0 && (
-                      <p className="player-space-caption">Dernière évaluation · {formatDate(latest.createdAt)}</p>
-                    )}
+                    {comparedEvaluationIds.size === 0 && <p className="player-space-caption">Dernière évaluation · {formatDate(latest.createdAt)}</p>}
                     {coachEvaluations.length > 1 && (
                       <ul className="player-space-history">
                         {coachEvaluations.map((evaluation) => {

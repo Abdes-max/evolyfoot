@@ -3,7 +3,17 @@
 // comme sur l'exemple fourni par l'utilisateur (app de club de référence).
 function IconBase({ children }: { children: React.ReactNode }) {
   return (
-    <svg aria-hidden="true" fill="none" height="15" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="15">
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height="15"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+      width="15"
+    >
       {children}
     </svg>
   );

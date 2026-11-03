@@ -1,11 +1,7 @@
 import { createTeamProfile } from "@evolyfoot/domain";
 import type { TeamProfile } from "@evolyfoot/domain";
 import { EducatorNotFoundError, TeamNotFoundError } from "./errors";
-import type {
-  EducatorRepository,
-  PersistedTeamProfile,
-  TeamRepository,
-} from "./repositories";
+import type { EducatorRepository, PersistedTeamProfile, TeamRepository } from "./repositories";
 
 export class TeamProfileService {
   constructor(

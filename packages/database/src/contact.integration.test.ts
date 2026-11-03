@@ -38,14 +38,10 @@ describe("PostgreSQL contact message persistence", () => {
   });
 
   it("rejects an invalid e-mail", async () => {
-    await expect(
-      service.submit({ name: `${testRun}-x`, email: "pas-un-email", message: "Coucou" }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.submit({ name: `${testRun}-x`, email: "pas-un-email", message: "Coucou" })).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("rejects an empty message", async () => {
-    await expect(
-      service.submit({ name: `${testRun}-y`, email: "y@example.test", message: "   " }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.submit({ name: `${testRun}-y`, email: "y@example.test", message: "   " })).rejects.toBeInstanceOf(ValidationError);
   });
 });

@@ -16,9 +16,7 @@ async function readJsonBody(request: Request): Promise<Record<string, unknown> |
   }
 }
 
-function isDiagnosticScoresShaped(
-  value: Record<string, unknown> | null,
-): value is Record<string, unknown> & DiagnosticScores {
+function isDiagnosticScoresShaped(value: Record<string, unknown> | null): value is Record<string, unknown> & DiagnosticScores {
   if (!value) {
     return false;
   }
@@ -88,18 +86,10 @@ export async function createDiagnosticGateway(): Promise<{
   gateway: DiagnosticGateway;
   disconnect: () => Promise<void>;
 }> {
-  const {
-    createDatabaseClient,
-    DiagnosticService,
-    DiagnosticNotFoundError,
-    PrismaEducatorRepository,
-    PrismaDiagnosticRepository,
-  } = await import("@evolyfoot/database");
+  const { createDatabaseClient, DiagnosticService, DiagnosticNotFoundError, PrismaEducatorRepository, PrismaDiagnosticRepository } =
+    await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const service = new DiagnosticService(
-    new PrismaEducatorRepository(database.prisma),
-    new PrismaDiagnosticRepository(database.prisma),
-  );
+  const service = new DiagnosticService(new PrismaEducatorRepository(database.prisma), new PrismaDiagnosticRepository(database.prisma));
 
   return {
     gateway: {

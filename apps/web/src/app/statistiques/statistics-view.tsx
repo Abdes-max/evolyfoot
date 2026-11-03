@@ -61,9 +61,7 @@ export function StatisticsView() {
         <div>
           <span className="eyebrow light">STATISTIQUES</span>
           <h1 title="Le suivi de ta saison.">Le suivi de ta saison.</h1>
-          <p title="Les chiffres de la saison, en diagrammes et en une synthèse.">
-            Les chiffres de la saison, en diagrammes et en une synthèse.
-          </p>
+          <p title="Les chiffres de la saison, en diagrammes et en une synthèse.">Les chiffres de la saison, en diagrammes et en une synthèse.</p>
         </div>
         {authenticated && <PrintButton label="Exporter le rapport en PDF" />}
       </header>
@@ -126,8 +124,15 @@ export function StatisticsView() {
               ))}
             </ul>
             <p className="statistics-hint">
-              Tournois et plateaux se gèrent depuis <Link className="inline-cta" href="/match">Matchs &amp; compétitions</Link> ·
-              l’évaluation individuelle est sur chaque <Link className="inline-cta" href="/equipe">fiche joueur</Link>.
+              Tournois et plateaux se gèrent depuis{" "}
+              <Link className="inline-cta" href="/match">
+                Matchs &amp; compétitions
+              </Link>{" "}
+              · l’évaluation individuelle est sur chaque{" "}
+              <Link className="inline-cta" href="/equipe">
+                fiche joueur
+              </Link>
+              .
             </p>
           </div>
 

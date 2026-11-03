@@ -15,7 +15,11 @@ function subscribeToMotion(onChange: () => void): () => void {
 
 // Côté serveur, l'animation reste à l'arrêt : le navigateur la lance à l'affichage.
 function useReducedMotion(): boolean {
-  return useSyncExternalStore(subscribeToMotion, () => window.matchMedia?.(reducedMotionQuery).matches ?? false, () => true);
+  return useSyncExternalStore(
+    subscribeToMotion,
+    () => window.matchMedia?.(reducedMotionQuery).matches ?? false,
+    () => true,
+  );
 }
 
 function easeInOut(value: number): number {
@@ -74,7 +78,12 @@ export function TacticalPlayer({ exercise, seed }: { exercise: AnimatedExercise;
   return (
     <div className="tactical-player">
       <div className="tactical-diagram">
-        <svg aria-label={`Schéma tactique animé, étape ${stepIndex + 1} : ${step.caption}`} preserveAspectRatio="xMidYMid meet" role="img" viewBox={`0 0 ${diagram.width} ${diagram.height}`}>
+        <svg
+          aria-label={`Schéma tactique animé, étape ${stepIndex + 1} : ${step.caption}`}
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          viewBox={`0 0 ${diagram.width} ${diagram.height}`}
+        >
           <rect className="tactical-diagram-pitch" height={diagram.height - 8} rx="14" width={diagram.width - 8} x="4" y="4" />
           {diagram.zones.map((zone, index) => (
             <rect className="tactical-diagram-zone" height={zone.height} key={index} rx="8" width={zone.width} x={zone.x} y={zone.y} />
@@ -89,12 +98,27 @@ export function TacticalPlayer({ exercise, seed }: { exercise: AnimatedExercise;
           })}
           {step.balls.map((ball) => {
             const { trail } = ballFrame(ball, at, passing);
-            return trail && <line className={`tactical-player-pass ${ball.kind}`} key={`${ball.kind}-${ball.fromId}`} x1={trail.from.x} x2={trail.to.x} y1={trail.from.y} y2={trail.to.y} />;
+            return (
+              trail && (
+                <line
+                  className={`tactical-player-pass ${ball.kind}`}
+                  key={`${ball.kind}-${ball.fromId}`}
+                  x1={trail.from.x}
+                  x2={trail.to.x}
+                  y1={trail.from.y}
+                  y2={trail.to.y}
+                />
+              )
+            );
           })}
           {diagram.tokens.map((token) => {
             const point = at(token.id);
             return (
-              <g className={active.has(token.id) ? "tactical-player-token" : "tactical-player-token idle"} key={token.id} transform={`translate(${point.x} ${point.y})`}>
+              <g
+                className={active.has(token.id) ? "tactical-player-token" : "tactical-player-token idle"}
+                key={token.id}
+                transform={`translate(${point.x} ${point.y})`}
+              >
                 <circle className={`tactical-diagram-token ${token.role}`} r="13" />
                 <text className={`tactical-diagram-label ${token.role}`} textAnchor="middle" y="4">
                   {token.label}

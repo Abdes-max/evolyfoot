@@ -95,8 +95,12 @@ function renderEmailHtml({ displayName, message, actionLabel, actionUrl, footnot
           </a>
           <p style="font-size:12px;line-height:1.6;color:#97a3b6;margin:24px 0 0;">
             Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur : ${url}
-          </p>${footnote ? `
-          <p style="font-size:12px;line-height:1.6;color:#97a3b6;margin:12px 0 0;">${escapeHtml(footnote)}</p>` : ""}
+          </p>${
+            footnote
+              ? `
+          <p style="font-size:12px;line-height:1.6;color:#97a3b6;margin:12px 0 0;">${escapeHtml(footnote)}</p>`
+              : ""
+          }
         </td>
       </tr>
     </table>

@@ -48,9 +48,7 @@ describe("session builder", () => {
       fireEvent.change(screen.getByLabelText("Rendez-vous (date et heure)"), { target: { value: "2026-09-15T18:00" } });
       fireEvent.click(screen.getByRole("button", { name: "Valider cette séance" }));
 
-      await vi.waitFor(() =>
-        expect(fetch).toHaveBeenCalledWith("/api/sessions", expect.objectContaining({ method: "POST" })),
-      );
+      await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/sessions", expect.objectContaining({ method: "POST" })));
       expect(await screen.findByRole("status")).toHaveTextContent("Séance prête");
       expect(screen.queryByText(/connecte-toi pour enregistrer/i)).not.toBeInTheDocument();
     });

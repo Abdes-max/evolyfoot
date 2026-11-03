@@ -51,7 +51,8 @@ export function CalendarImport<CreatedMatch>({ teamName, gameFormat, formationId
         const fixture = fixtureFromTitle(calendarEvent.title, teamName);
         const { date } = calendarEvent;
         const duplicate = existing.some(
-          (match) => match.opponent.toLowerCase() === fixture.opponent.toLowerCase() && date !== null && match.date !== null && sameDay(new Date(match.date), date),
+          (match) =>
+            match.opponent.toLowerCase() === fixture.opponent.toLowerCase() && date !== null && match.date !== null && sameDay(new Date(match.date), date),
         );
         const upcoming = date === null || date.getTime() >= now;
         return { key: `${index}-${calendarEvent.title}`, ...fixture, date, location: calendarEvent.location, duplicate, selected: upcoming && !duplicate };
@@ -93,7 +94,9 @@ export function CalendarImport<CreatedMatch>({ teamName, gameFormat, formationId
     setImporting(false);
     onImported(created);
     setCandidates(failed > 0 ? candidates : null);
-    setMessage(`${created.length} match${created.length > 1 ? "s" : ""} importé${created.length > 1 ? "s" : ""}.${failed > 0 ? ` ${failed} n’ont pas pu être créés.` : ""}`);
+    setMessage(
+      `${created.length} match${created.length > 1 ? "s" : ""} importé${created.length > 1 ? "s" : ""}.${failed > 0 ? ` ${failed} n’ont pas pu être créés.` : ""}`,
+    );
   }
 
   const selectedCount = candidates?.filter((candidate) => candidate.selected).length ?? 0;
@@ -117,7 +120,12 @@ export function CalendarImport<CreatedMatch>({ teamName, gameFormat, formationId
                   <span>
                     <strong>{candidate.opponent}</strong>
                     <small>
-                      {[candidate.date ? frenchDateLabel(candidate.date) : "Date à préciser", candidate.venue === "home" ? "Domicile" : "Extérieur", candidate.location, candidate.duplicate ? "Déjà présent" : null]
+                      {[
+                        candidate.date ? frenchDateLabel(candidate.date) : "Date à préciser",
+                        candidate.venue === "home" ? "Domicile" : "Extérieur",
+                        candidate.location,
+                        candidate.duplicate ? "Déjà présent" : null,
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </small>

@@ -1,9 +1,3 @@
-import {
-  checkDatabaseConnection,
-  createDatabaseHealthHandler,
-} from "@/server/database-health";
+import { checkDatabaseConnection, createDatabaseHealthHandler } from "@/server/database-health";
 
-export const GET = createDatabaseHealthHandler(
-  checkDatabaseConnection,
-  console.error,
-);
+export const GET = createDatabaseHealthHandler(checkDatabaseConnection, console.error);

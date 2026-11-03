@@ -57,9 +57,7 @@ function midpointScores(): PlayerEvaluationScores {
 
 function formatDate(iso: string): string {
   const parsed = new Date(iso);
-  return Number.isNaN(parsed.getTime())
-    ? iso
-    : parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  return Number.isNaN(parsed.getTime()) ? iso : parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
 function formatBirthDate(value: string | null): string {
@@ -67,9 +65,7 @@ function formatBirthDate(value: string | null): string {
     return "—";
   }
   const parsed = new Date(`${value}T00:00:00`);
-  return Number.isNaN(parsed.getTime())
-    ? value
-    : parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
 const playerPhotoMaxSide = 320;
@@ -438,13 +434,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                       Retirer
                     </button>
                   )}
-                  <input
-                    accept="image/*"
-                    className="visually-hidden"
-                    onChange={onPhotoChange}
-                    ref={fileInputRef}
-                    type="file"
-                  />
+                  <input accept="image/*" className="visually-hidden" onChange={onPhotoChange} ref={fileInputRef} type="file" />
                 </div>
               </div>
 
@@ -470,27 +460,15 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                     </label>
                     <label>
                       <span>Date de naissance</span>
-                      <input
-                        onChange={(event) => setForm({ ...form, birthDate: event.target.value })}
-                        type="date"
-                        value={form.birthDate}
-                      />
+                      <input onChange={(event) => setForm({ ...form, birthDate: event.target.value })} type="date" value={form.birthDate} />
                     </label>
                     <label>
                       <span>Téléphone (optionnel)</span>
-                      <input
-                        onChange={(event) => setForm({ ...form, phone: event.target.value })}
-                        type="tel"
-                        value={form.phone}
-                      />
+                      <input onChange={(event) => setForm({ ...form, phone: event.target.value })} type="tel" value={form.phone} />
                     </label>
                     <label>
                       <span>E-mail (optionnel)</span>
-                      <input
-                        onChange={(event) => setForm({ ...form, email: event.target.value })}
-                        type="email"
-                        value={form.email}
-                      />
+                      <input onChange={(event) => setForm({ ...form, email: event.target.value })} type="email" value={form.email} />
                     </label>
                     <label>
                       <span>Poste</span>
@@ -521,21 +499,11 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                     </label>
                     <label className="player-wide">
                       <span>Points forts</span>
-                      <textarea
-                        maxLength={1000}
-                        onChange={(event) => setForm({ ...form, strengths: event.target.value })}
-                        rows={3}
-                        value={form.strengths}
-                      />
+                      <textarea maxLength={1000} onChange={(event) => setForm({ ...form, strengths: event.target.value })} rows={3} value={form.strengths} />
                     </label>
                     <label className="player-wide">
                       <span>Axes de travail</span>
-                      <textarea
-                        maxLength={1000}
-                        onChange={(event) => setForm({ ...form, workAreas: event.target.value })}
-                        rows={3}
-                        value={form.workAreas}
-                      />
+                      <textarea maxLength={1000} onChange={(event) => setForm({ ...form, workAreas: event.target.value })} rows={3} value={form.workAreas} />
                     </label>
                     {detailsError && (
                       <p className="player-error" role="alert">
@@ -632,94 +600,94 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                 </div>
 
                 <div className="player-evaluation-columns">
-                <div className="print-hidden">
-                  <h3>{editingEvaluationId ? "Modifier l’évaluation" : "Nouvelle évaluation"}</h3>
-                  <form className="player-evaluation-form" onSubmit={saveEvaluation}>
-                    <label className="player-evaluation-date">
-                      <span>Date</span>
-                      <input onChange={(event) => setNewDate(event.target.value)} required type="date" value={newDate} />
-                    </label>
-                    {playerEvaluationAspects.map((aspect) => (
-                      <div className="player-evaluation-row" key={aspect}>
-                        <span>{playerEvaluationAspectLabels[aspect]}</span>
-                        <input
-                          aria-label={playerEvaluationAspectLabels[aspect]}
-                          max={playerEvaluationMaxScore}
-                          min={playerEvaluationMinScore}
-                          onChange={(event) =>
-                            setNewScores((current) => ({ ...current, [aspect]: Number(event.target.value) }))
-                          }
-                          type="range"
-                          value={newScores[aspect]}
-                        />
-                        <strong>{newScores[aspect]}</strong>
-                      </div>
-                    ))}
-                    {evaluationError && (
-                      <p className="player-error" role="alert">
-                        {evaluationError}
-                      </p>
-                    )}
-                    <div className="player-evaluation-form-actions">
-                      <button className="player-primary" disabled={addingEvaluation} type="submit">
-                        {addingEvaluation ? "Enregistrement…" : editingEvaluationId ? "Enregistrer les modifications" : "Enregistrer cette évaluation"}
-                      </button>
-                      {editingEvaluationId && (
-                        <button onClick={cancelEditingEvaluation} type="button">
-                          Annuler
-                        </button>
+                  <div className="print-hidden">
+                    <h3>{editingEvaluationId ? "Modifier l’évaluation" : "Nouvelle évaluation"}</h3>
+                    <form className="player-evaluation-form" onSubmit={saveEvaluation}>
+                      <label className="player-evaluation-date">
+                        <span>Date</span>
+                        <input onChange={(event) => setNewDate(event.target.value)} required type="date" value={newDate} />
+                      </label>
+                      {playerEvaluationAspects.map((aspect) => (
+                        <div className="player-evaluation-row" key={aspect}>
+                          <span>{playerEvaluationAspectLabels[aspect]}</span>
+                          <input
+                            aria-label={playerEvaluationAspectLabels[aspect]}
+                            max={playerEvaluationMaxScore}
+                            min={playerEvaluationMinScore}
+                            onChange={(event) => setNewScores((current) => ({ ...current, [aspect]: Number(event.target.value) }))}
+                            type="range"
+                            value={newScores[aspect]}
+                          />
+                          <strong>{newScores[aspect]}</strong>
+                        </div>
+                      ))}
+                      {evaluationError && (
+                        <p className="player-error" role="alert">
+                          {evaluationError}
+                        </p>
                       )}
-                    </div>
-                  </form>
-                </div>
+                      <div className="player-evaluation-form-actions">
+                        <button className="player-primary" disabled={addingEvaluation} type="submit">
+                          {addingEvaluation ? "Enregistrement…" : editingEvaluationId ? "Enregistrer les modifications" : "Enregistrer cette évaluation"}
+                        </button>
+                        {editingEvaluationId && (
+                          <button onClick={cancelEditingEvaluation} type="button">
+                            Annuler
+                          </button>
+                        )}
+                      </div>
+                    </form>
+                  </div>
 
-                <div>
-                  <h3>Historique</h3>
-                  {evaluations.length === 0 ? (
-                    <p className="player-evaluation-empty">Aucune évaluation pour l’instant.</p>
-                  ) : (
-                    <ul className="player-evaluation-history">
-                      {evaluations.map((evaluation) => {
-                        const total = playerEvaluationAspects.reduce((sum, aspect) => sum + evaluation.scores[aspect], 0);
-                        const average = Math.round((total / playerEvaluationAspects.length) * 10) / 10;
-                        const compared = comparedEvaluationIds.has(evaluation.id);
-                        return (
-                          <li key={evaluation.id}>
-                            <label className="player-evaluation-compare">
-                              <input checked={compared} onChange={() => toggleCompare(evaluation.id)} type="checkbox" />
-                              <span
-                                aria-hidden="true"
-                                className="radar-chart-legend-dot"
-                                style={{ background: compared ? colorForEvaluation(evaluation.id, evaluations) : "transparent" }}
-                              />
-                            </label>
-                            <div>
-                              <strong>
-                                {evaluation.source === "player" ? "Auto-évaluation · " : ""}
-                                {formatDate(evaluation.createdAt)}
-                              </strong>
-                              <span>Moyenne {average}/{playerEvaluationMaxScore}</span>
-                            </div>
-                            <div className="player-evaluation-history-actions">
-                              {evaluation.source !== "player" && (
-                                <button onClick={() => startEditingEvaluation(evaluation)} type="button">
-                                  Modifier
+                  <div>
+                    <h3>Historique</h3>
+                    {evaluations.length === 0 ? (
+                      <p className="player-evaluation-empty">Aucune évaluation pour l’instant.</p>
+                    ) : (
+                      <ul className="player-evaluation-history">
+                        {evaluations.map((evaluation) => {
+                          const total = playerEvaluationAspects.reduce((sum, aspect) => sum + evaluation.scores[aspect], 0);
+                          const average = Math.round((total / playerEvaluationAspects.length) * 10) / 10;
+                          const compared = comparedEvaluationIds.has(evaluation.id);
+                          return (
+                            <li key={evaluation.id}>
+                              <label className="player-evaluation-compare">
+                                <input checked={compared} onChange={() => toggleCompare(evaluation.id)} type="checkbox" />
+                                <span
+                                  aria-hidden="true"
+                                  className="radar-chart-legend-dot"
+                                  style={{ background: compared ? colorForEvaluation(evaluation.id, evaluations) : "transparent" }}
+                                />
+                              </label>
+                              <div>
+                                <strong>
+                                  {evaluation.source === "player" ? "Auto-évaluation · " : ""}
+                                  {formatDate(evaluation.createdAt)}
+                                </strong>
+                                <span>
+                                  Moyenne {average}/{playerEvaluationMaxScore}
+                                </span>
+                              </div>
+                              <div className="player-evaluation-history-actions">
+                                {evaluation.source !== "player" && (
+                                  <button onClick={() => startEditingEvaluation(evaluation)} type="button">
+                                    Modifier
+                                  </button>
+                                )}
+                                <button
+                                  aria-label={`Retirer l’évaluation du ${formatDate(evaluation.createdAt)}`}
+                                  onClick={() => removeEvaluation(evaluation.id)}
+                                  type="button"
+                                >
+                                  Retirer
                                 </button>
-                              )}
-                              <button
-                                aria-label={`Retirer l’évaluation du ${formatDate(evaluation.createdAt)}`}
-                                onClick={() => removeEvaluation(evaluation.id)}
-                                type="button"
-                              >
-                                Retirer
-                              </button>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -747,8 +715,8 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                 <h2>Accès tuteur / joueur</h2>
               </div>
               <p className="player-invite-lead">
-                Génère un lien à transmettre au tuteur : il crée un compte séparé qui ne voit que le suivi de{" "}
-                {player.name} (évaluations, présences, calendrier, convocations).
+                Génère un lien à transmettre au tuteur : il crée un compte séparé qui ne voit que le suivi de {player.name} (évaluations, présences, calendrier,
+                convocations).
               </p>
               {inviteUrl ? (
                 <div className="player-invite-result">

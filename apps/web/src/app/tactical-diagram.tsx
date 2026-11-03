@@ -38,12 +38,7 @@ export function TacticalDiagramView({ diagram, caption, targets = [] }: Tactical
           <DiagramTargetShape key={`t-${index}`} target={target} />
         ))}
         {diagram.arrows.map((arrow, index) => (
-          <path
-            className="tactical-diagram-arrow"
-            d={`M${arrow.x1} ${arrow.y1} L${arrow.x2} ${arrow.y2}`}
-            key={index}
-            markerEnd={`url(#${arrowheadId})`}
-          />
+          <path className="tactical-diagram-arrow" d={`M${arrow.x1} ${arrow.y1} L${arrow.x2} ${arrow.y2}`} key={index} markerEnd={`url(#${arrowheadId})`} />
         ))}
         {diagram.tokens.map((token) => (
           <g key={token.id}>

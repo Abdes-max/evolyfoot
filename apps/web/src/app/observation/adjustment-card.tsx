@@ -24,11 +24,7 @@ export function AdjustmentCard({ suggestion }: AdjustmentCardProps) {
     else decisionButton.current?.focus();
   }, [decision]);
 
-  const status = decision === "accepted"
-    ? "Ajustement appliqué à la prochaine séance"
-    : decision === "declined"
-      ? "Plan actuel conservé"
-      : "";
+  const status = decision === "accepted" ? "Ajustement appliqué à la prochaine séance" : decision === "declined" ? "Plan actuel conservé" : "";
 
   return (
     <section className="adjustment-card" aria-labelledby="adjustment-card-title">
@@ -53,14 +49,32 @@ export function AdjustmentCard({ suggestion }: AdjustmentCardProps) {
         </section>
       </div>
 
-      {status && <p aria-atomic="true" aria-live="polite" className="adjustment-card-status" role="status">{status}</p>}
+      {status && (
+        <p aria-atomic="true" aria-live="polite" className="adjustment-card-status" role="status">
+          {status}
+        </p>
+      )}
       <div className="adjustment-card-actions">
-        {decision === "pending" && <>
-          <button className="adjustment-card-apply" onClick={() => setDecision("accepted")} ref={applyButton} type="button">Appliquer cet ajustement</button>
-          <button onClick={() => setDecision("declined")} type="button">Garder mon plan</button>
-        </>}
-        {decision === "accepted" && <button onClick={() => setDecision("pending")} ref={decisionButton} type="button">Annuler</button>}
-        {decision === "declined" && <button onClick={() => setDecision("pending")} ref={decisionButton} type="button">Reconsidérer la proposition</button>}
+        {decision === "pending" && (
+          <>
+            <button className="adjustment-card-apply" onClick={() => setDecision("accepted")} ref={applyButton} type="button">
+              Appliquer cet ajustement
+            </button>
+            <button onClick={() => setDecision("declined")} type="button">
+              Garder mon plan
+            </button>
+          </>
+        )}
+        {decision === "accepted" && (
+          <button onClick={() => setDecision("pending")} ref={decisionButton} type="button">
+            Annuler
+          </button>
+        )}
+        {decision === "declined" && (
+          <button onClick={() => setDecision("pending")} ref={decisionButton} type="button">
+            Reconsidérer la proposition
+          </button>
+        )}
       </div>
     </section>
   );

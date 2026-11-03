@@ -52,9 +52,7 @@ export function TeamOnboardingForm() {
   const toggleDay = (day: TrainingDay) =>
     setProfile((current) => ({
       ...current,
-      trainingDays: current.trainingDays.includes(day)
-        ? current.trainingDays.filter((item) => item !== day)
-        : [...current.trainingDays, day],
+      trainingDays: current.trainingDays.includes(day) ? current.trainingDays.filter((item) => item !== day) : [...current.trainingDays, day],
     }));
 
   async function submit(event: FormEvent) {
@@ -98,11 +96,7 @@ export function TeamOnboardingForm() {
 
       <label>
         Nom de l’équipe
-        <input
-          onChange={(event) => setProfile({ ...profile, name: event.target.value })}
-          placeholder="Ex. FC Horizon"
-          value={profile.name}
-        />
+        <input onChange={(event) => setProfile({ ...profile, name: event.target.value })} placeholder="Ex. FC Horizon" value={profile.name} />
         {errors.name && <small className="field-error">{errors.name}</small>}
       </label>
 
@@ -155,10 +149,7 @@ export function TeamOnboardingForm() {
         </label>
         <label>
           Séances par semaine
-          <select
-            onChange={(event) => setProfile({ ...profile, sessionsPerWeek: Number(event.target.value) })}
-            value={profile.sessionsPerWeek}
-          >
+          <select onChange={(event) => setProfile({ ...profile, sessionsPerWeek: Number(event.target.value) })} value={profile.sessionsPerWeek}>
             {[1, 2, 3, 4].map((value) => (
               <option key={value} value={value}>
                 {value} séance{value > 1 ? "s" : ""}
@@ -198,7 +189,10 @@ export function TeamOnboardingForm() {
       )}
       {saveState === "auth-required" && (
         <p className="field-error" role="alert">
-          Connecte-toi pour enregistrer ton équipe. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
+          Connecte-toi pour enregistrer ton équipe.{" "}
+          <Link className="inline-cta" href="/connexion">
+            Se connecter →
+          </Link>
         </p>
       )}
       {saveState === "error" && (

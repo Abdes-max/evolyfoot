@@ -41,9 +41,7 @@ export function BibliothequeBrowser() {
     () =>
       trainingActivityCatalogue.filter(
         (activity) =>
-          (kind === "all" || activity.kind === kind) &&
-          (theme === "all" || activity.compatibleThemes.includes(theme)) &&
-          matchesQuery(activity, query),
+          (kind === "all" || activity.kind === kind) && (theme === "all" || activity.compatibleThemes.includes(theme)) && matchesQuery(activity, query),
       ),
     [kind, query, theme],
   );

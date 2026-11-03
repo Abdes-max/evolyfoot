@@ -167,9 +167,7 @@ export function createRemoveTournamentHandler(
 }
 
 export async function createTournamentGateway(): Promise<{ gateway: TournamentGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, PrismaEducatorRepository, PrismaTournamentRepository, TournamentService } = await import(
-    "@evolyfoot/database"
-  );
+  const { createDatabaseClient, PrismaEducatorRepository, PrismaTournamentRepository, TournamentService } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new TournamentService(new PrismaEducatorRepository(database.prisma), new PrismaTournamentRepository(database.prisma));
 

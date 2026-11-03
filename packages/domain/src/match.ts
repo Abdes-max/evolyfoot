@@ -185,13 +185,7 @@ export function maxSubstitutes(gameFormat: GameFormat): number {
   return maxSubstitutesByGameFormat[gameFormat];
 }
 
-export function createMatchPlan(
-  opponent: string,
-  dateLabel: string,
-  venue: MatchVenue,
-  gameFormat: GameFormat,
-  formationId?: string,
-): MatchPlan {
+export function createMatchPlan(opponent: string, dateLabel: string, venue: MatchVenue, gameFormat: GameFormat, formationId?: string): MatchPlan {
   return {
     opponent: opponent.trim(),
     dateLabel: dateLabel.trim(),
@@ -205,11 +199,7 @@ export function createMatchPlan(
   };
 }
 
-function withoutSlotAndPlayer(
-  lineup: ReadonlyArray<MatchLineupAssignment>,
-  slotId: string,
-  playerId: string,
-): MatchLineupAssignment[] {
+function withoutSlotAndPlayer(lineup: ReadonlyArray<MatchLineupAssignment>, slotId: string, playerId: string): MatchLineupAssignment[] {
   // Un joueur ne peut occuper qu'un seul poste à la fois : retire aussi toute affectation
   // précédente de ce même joueur ailleurs sur le terrain avant de le replacer sur `slotId`.
   return lineup.filter((assignment) => assignment.slotId !== slotId && assignment.playerId !== playerId);

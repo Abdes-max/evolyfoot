@@ -2,14 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AuthService } from "./auth-service";
 import { InvalidCredentialsError, ValidationError } from "./errors";
 import { hashSessionToken } from "./session-token";
-import type {
-  AccountRole,
-  EducatorAuthRecord,
-  EducatorRecord,
-  EducatorRepository,
-  SessionRecord,
-  SessionRepository,
-} from "./repositories";
+import type { AccountRole, EducatorAuthRecord, EducatorRecord, EducatorRepository, SessionRecord, SessionRepository } from "./repositories";
 
 const FIXED_DATE = new Date("2026-08-27T12:00:00.000Z");
 
@@ -121,26 +114,22 @@ describe("AuthService.register", () => {
   it("rejects a password shorter than 10 characters before creating anything", async () => {
     const { service, educatorRepository } = createService();
 
-    await expect(
-      service.register({ email: "coach@example.test", password: "short", displayName: "Coach" }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.register({ email: "coach@example.test", password: "short", displayName: "Coach" })).rejects.toBeInstanceOf(ValidationError);
     await expect(educatorRepository.findByEmail("coach@example.test")).resolves.toBeNull();
   });
 
   it("rejects a blank display name", async () => {
     const { service } = createService();
 
-    await expect(
-      service.register({ email: "coach@example.test", password: "motdepasse1", displayName: "   " }),
-    ).rejects.toThrow("Le nom de l’éducateur est obligatoire.");
+    await expect(service.register({ email: "coach@example.test", password: "motdepasse1", displayName: "   " })).rejects.toThrow(
+      "Le nom de l’éducateur est obligatoire.",
+    );
   });
 
   it("rejects a blank email as a validation error, distinct from wrong credentials", async () => {
     const { service } = createService();
 
-    await expect(
-      service.register({ email: "   ", password: "motdepasse1", displayName: "Coach" }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.register({ email: "   ", password: "motdepasse1", displayName: "Coach" })).rejects.toBeInstanceOf(ValidationError);
   });
 });
 
@@ -164,18 +153,14 @@ describe("AuthService.login", () => {
   it("rejects an unknown email without revealing it does not exist", async () => {
     const { service } = createService();
 
-    await expect(
-      service.login({ email: "inconnu@example.test", password: "motdepasse1" }),
-    ).rejects.toBeInstanceOf(InvalidCredentialsError);
+    await expect(service.login({ email: "inconnu@example.test", password: "motdepasse1" })).rejects.toBeInstanceOf(InvalidCredentialsError);
   });
 
   it("rejects the wrong password with the same error as an unknown email", async () => {
     const { service } = createService();
     await service.register({ email: "coach@example.test", password: "motdepasse1", displayName: "Coach" });
 
-    await expect(
-      service.login({ email: "coach@example.test", password: "mauvaispasse" }),
-    ).rejects.toBeInstanceOf(InvalidCredentialsError);
+    await expect(service.login({ email: "coach@example.test", password: "mauvaispasse" })).rejects.toBeInstanceOf(InvalidCredentialsError);
   });
 
   it("rejects a blank email as a validation error rather than invalid credentials", async () => {
@@ -219,7 +204,13 @@ describe("AuthService.getEducatorForSession pour un adjoint", () => {
   it("donne accès au compte de l'éducateur, pas au sien", async () => {
     const { service, educatorRepository } = createService();
     const owner = await service.register({ email: "titulaire@example.test", password: "motdepasse1", displayName: "Titulaire" });
-    const adjoint = await educatorRepository.create({ email: "adjoint@example.test", displayName: "Adjoint", passwordHash: "x", role: "assistant", ownerEducatorId: owner.educator.id });
+    const adjoint = await educatorRepository.create({
+      email: "adjoint@example.test",
+      displayName: "Adjoint",
+      passwordHash: "x",
+      role: "assistant",
+      ownerEducatorId: owner.educator.id,
+    });
     const { sessionToken } = await service.openSession(adjoint);
 
     expect((await service.getEducatorForSession(sessionToken))?.id).toBe(owner.educator.id);

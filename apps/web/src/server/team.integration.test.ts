@@ -26,7 +26,15 @@ const anonymous = async () => null;
 
 describe("createGetTeamHandler", () => {
   it("requires an authenticated session", async () => {
-    const handler = createGetTeamHandler(anonymous, { get: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createGetTeamHandler(
+      anonymous,
+      {
+        get: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(new Request("https://evolyfoot.test/api/team"));
 
@@ -53,7 +61,15 @@ describe("createGetTeamHandler", () => {
   it("logs and returns an information-safe 500 for an unexpected error", async () => {
     const errors: unknown[] = [];
     const failure = new Error("postgres://secret-host/internal");
-    const handler = createGetTeamHandler(authenticated, { get: async () => { throw failure; } }, errors.push.bind(errors));
+    const handler = createGetTeamHandler(
+      authenticated,
+      {
+        get: async () => {
+          throw failure;
+        },
+      },
+      errors.push.bind(errors),
+    );
 
     const response = await handler(new Request("https://evolyfoot.test/api/team"));
     const body = await response.json();
@@ -66,7 +82,15 @@ describe("createGetTeamHandler", () => {
 
 describe("createSaveTeamHandler", () => {
   it("requires an authenticated session before reading the body", async () => {
-    const handler = createSaveTeamHandler(anonymous, { save: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createSaveTeamHandler(
+      anonymous,
+      {
+        save: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest(validProfile));
 
@@ -89,7 +113,15 @@ describe("createSaveTeamHandler", () => {
   });
 
   it("rejects a malformed body without calling the gateway", async () => {
-    const handler = createSaveTeamHandler(authenticated, { save: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createSaveTeamHandler(
+      authenticated,
+      {
+        save: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest({ name: "FC Horizon" }));
 

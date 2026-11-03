@@ -14,7 +14,12 @@ interface RosterPlayer {
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  return parts.slice(0, 2).map((part) => part[0]!.toUpperCase()).join("") || "?";
+  return (
+    parts
+      .slice(0, 2)
+      .map((part) => part[0]!.toUpperCase())
+      .join("") || "?"
+  );
 }
 
 interface TeamSummary {
@@ -156,116 +161,106 @@ export function RosterView() {
     <>
       <SidebarNav />
       <main className="roster-shell">
-      <header className="page-header roster-header">
-        <div>
-          <span className="eyebrow light">MON ÉQUIPE</span>
-          <h1 title="L’effectif nominatif.">L’effectif nominatif.</h1>
-          <p title="Ajoute, renomme ou retire un joueur à tout moment.">Ajoute, renomme ou retire un joueur à tout moment.</p>
-        </div>
-      </header>
+        <header className="page-header roster-header">
+          <div>
+            <span className="eyebrow light">MON ÉQUIPE</span>
+            <h1 title="L’effectif nominatif.">L’effectif nominatif.</h1>
+            <p title="Ajoute, renomme ou retire un joueur à tout moment.">Ajoute, renomme ou retire un joueur à tout moment.</p>
+          </div>
+        </header>
 
-      {authenticated === false && (
-        <section className="roster-auth-required" role="status">
-          <p>
-            Connecte-toi pour gérer l’effectif de ton équipe. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
-          </p>
-        </section>
-      )}
-
-      {authenticated && (
-        <section className="roster-content">
-          {team && (
-            <p className="roster-team-summary">
-              {team.name} · {team.ageGroup} · Foot à {team.gameFormat} · {players.length} joueur{players.length > 1 ? "s" : ""} au total ·{" "}
-              <Link className="inline-cta" href="/onboarding">Modifier mon équipe →</Link>
+        {authenticated === false && (
+          <section className="roster-auth-required" role="status">
+            <p>
+              Connecte-toi pour gérer l’effectif de ton équipe.{" "}
+              <Link className="inline-cta" href="/connexion">
+                Se connecter →
+              </Link>
             </p>
-          )}
-          {!team && (
-            <p className="roster-no-team">
-              Configure d’abord ton équipe. <Link className="inline-cta" href="/onboarding">Configurer mon équipe →</Link>
-            </p>
-          )}
+          </section>
+        )}
 
-          <form className="roster-add-form" onSubmit={addPlayer}>
-            <label htmlFor="roster-new-player-first-name">Ajouter un joueur</label>
-            <div className="roster-add-row">
-              <input
-                id="roster-new-player-first-name"
-                onChange={(event) => setNewFirstName(event.target.value)}
-                placeholder="Prénom"
-                value={newFirstName}
-              />
-              <input
-                aria-label="Nom"
-                onChange={(event) => setNewLastName(event.target.value)}
-                placeholder="Nom"
-                value={newLastName}
-              />
-              <button disabled={adding} type="submit">
-                {adding ? "Ajout…" : "Ajouter"}
-              </button>
-            </div>
-            {addError && <small className="field-error">{addError}</small>}
-          </form>
+        {authenticated && (
+          <section className="roster-content">
+            {team && (
+              <p className="roster-team-summary">
+                {team.name} · {team.ageGroup} · Foot à {team.gameFormat} · {players.length} joueur{players.length > 1 ? "s" : ""} au total ·{" "}
+                <Link className="inline-cta" href="/onboarding">
+                  Modifier mon équipe →
+                </Link>
+              </p>
+            )}
+            {!team && (
+              <p className="roster-no-team">
+                Configure d’abord ton équipe.{" "}
+                <Link className="inline-cta" href="/onboarding">
+                  Configurer mon équipe →
+                </Link>
+              </p>
+            )}
 
-          <ul className="roster-list" aria-label="Effectif nominatif">
-            {players.map((player) => (
-              <li className="roster-row" key={player.id}>
-                {editingId === player.id ? (
-                  <>
-                    <input
-                      aria-label={`Prénom de ${player.name}`}
-                      onChange={(event) => setEditingFirstName(event.target.value)}
-                      value={editingFirstName}
-                    />
-                    <input
-                      aria-label={`Nom de ${player.name}`}
-                      onChange={(event) => setEditingLastName(event.target.value)}
-                      value={editingLastName}
-                    />
-                    <div className="roster-row-actions">
-                      <button onClick={() => confirmRename(player.id)} type="button">
-                        Enregistrer
-                      </button>
-                      <button onClick={() => setEditingId(null)} type="button">
-                        Annuler
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Link className="roster-row-name" href={`/equipe/${player.id}`}>
-                      <span aria-hidden="true" className="roster-avatar">
-                        {player.photo ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img alt="" src={player.photo} />
-                        ) : (
-                          initials(player.name)
-                        )}
-                      </span>
-                      <strong>{player.name}</strong>
-                    </Link>
-                    <div className="roster-row-actions">
-                      <button aria-label={`Renommer ${player.name}`} onClick={() => startEditing(player)} type="button">
-                        Renommer
-                      </button>
-                      <button aria-label={`Retirer ${player.name}`} onClick={() => removePlayer(player.id)} type="button">
-                        Retirer
-                      </button>
-                    </div>
-                  </>
-                )}
-                {rowError?.id === player.id && <small className="field-error">{rowError.message}</small>}
-              </li>
-            ))}
-            {players.length === 0 && <p className="roster-empty">Aucun joueur pour l’instant.</p>}
-          </ul>
+            <form className="roster-add-form" onSubmit={addPlayer}>
+              <label htmlFor="roster-new-player-first-name">Ajouter un joueur</label>
+              <div className="roster-add-row">
+                <input id="roster-new-player-first-name" onChange={(event) => setNewFirstName(event.target.value)} placeholder="Prénom" value={newFirstName} />
+                <input aria-label="Nom" onChange={(event) => setNewLastName(event.target.value)} placeholder="Nom" value={newLastName} />
+                <button disabled={adding} type="submit">
+                  {adding ? "Ajout…" : "Ajouter"}
+                </button>
+              </div>
+              {addError && <small className="field-error">{addError}</small>}
+            </form>
 
-          <Link className="back-link" href="/app">
-            Retour au tableau de bord
-          </Link>
-        </section>
-      )}
+            <ul className="roster-list" aria-label="Effectif nominatif">
+              {players.map((player) => (
+                <li className="roster-row" key={player.id}>
+                  {editingId === player.id ? (
+                    <>
+                      <input aria-label={`Prénom de ${player.name}`} onChange={(event) => setEditingFirstName(event.target.value)} value={editingFirstName} />
+                      <input aria-label={`Nom de ${player.name}`} onChange={(event) => setEditingLastName(event.target.value)} value={editingLastName} />
+                      <div className="roster-row-actions">
+                        <button onClick={() => confirmRename(player.id)} type="button">
+                          Enregistrer
+                        </button>
+                        <button onClick={() => setEditingId(null)} type="button">
+                          Annuler
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Link className="roster-row-name" href={`/equipe/${player.id}`}>
+                        <span aria-hidden="true" className="roster-avatar">
+                          {player.photo ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img alt="" src={player.photo} />
+                          ) : (
+                            initials(player.name)
+                          )}
+                        </span>
+                        <strong>{player.name}</strong>
+                      </Link>
+                      <div className="roster-row-actions">
+                        <button aria-label={`Renommer ${player.name}`} onClick={() => startEditing(player)} type="button">
+                          Renommer
+                        </button>
+                        <button aria-label={`Retirer ${player.name}`} onClick={() => removePlayer(player.id)} type="button">
+                          Retirer
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {rowError?.id === player.id && <small className="field-error">{rowError.message}</small>}
+                </li>
+              ))}
+              {players.length === 0 && <p className="roster-empty">Aucun joueur pour l’instant.</p>}
+            </ul>
+
+            <Link className="back-link" href="/app">
+              Retour au tableau de bord
+            </Link>
+          </section>
+        )}
       </main>
     </>
   );

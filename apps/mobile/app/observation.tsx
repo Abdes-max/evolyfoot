@@ -93,9 +93,7 @@ export default function ObservationScreen() {
       // Même garde que côté web : ne reconstruit le brouillon que si le coach n'a encore rien
       // saisi, ce chargement réseau pouvant se terminer après le début de l'interaction.
       setDraft((current) =>
-        current.ratings.length === 0 && current.signals.length === 0 && !current.note
-          ? createDraft(current.eventType, lineupPlayers)
-          : current,
+        current.ratings.length === 0 && current.signals.length === 0 && !current.note ? createDraft(current.eventType, lineupPlayers) : current,
       );
     })();
     return () => {
@@ -252,7 +250,11 @@ export default function ObservationScreen() {
         </View>
 
         <TouchableOpacity
-          accessibilityHint={complete ? "Valide et affiche la synthèse de l’observation." : `${remaining} comportement${remaining > 1 ? "s" : ""} reste${remaining > 1 ? "nt" : ""} à renseigner.`}
+          accessibilityHint={
+            complete
+              ? "Valide et affiche la synthèse de l’observation."
+              : `${remaining} comportement${remaining > 1 ? "s" : ""} reste${remaining > 1 ? "nt" : ""} à renseigner.`
+          }
           accessibilityLabel="Valider l’observation"
           accessibilityRole="button"
           accessibilityState={{ disabled: !complete }}
@@ -262,7 +264,9 @@ export default function ObservationScreen() {
         >
           <Text style={styles.validateText}>Valider l’observation →</Text>
         </TouchableOpacity>
-        {!complete && <Text style={styles.remaining}>{`${remaining} comportement${remaining > 1 ? "s" : ""} reste${remaining > 1 ? "nt" : ""} à renseigner.`}</Text>}
+        {!complete && (
+          <Text style={styles.remaining}>{`${remaining} comportement${remaining > 1 ? "s" : ""} reste${remaining > 1 ? "nt" : ""} à renseigner.`}</Text>
+        )}
 
         {report && (
           <View accessibilityLiveRegion="polite" style={styles.result}>
@@ -273,7 +277,9 @@ export default function ObservationScreen() {
             <Text style={styles.resultLabel}>Priorité à renforcer</Text>
             <Text style={styles.resultValue}>{report.summary.weakest.label}</Text>
             <Text style={styles.resultLabel}>Joueurs signalés</Text>
-            <Text style={styles.resultValue}>{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</Text>
+            <Text
+              style={styles.resultValue}
+            >{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</Text>
             {saveError ? <Text style={styles.saveError}>{saveError}</Text> : null}
           </View>
         )}
@@ -296,7 +302,18 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 20, lineHeight: 26, fontWeight: "800", color: colors.ink, marginTop: 5 },
   label: { fontSize: 12, fontWeight: "800", color: colors.ink, marginBottom: 8, marginTop: 18 },
   choiceRow: { flexDirection: "row", gap: 8 },
-  eventChoice: { flex: 1, minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center", padding: 10, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+  eventChoice: {
+    flex: 1,
+    minHeight: 44,
+    minWidth: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 10,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+  },
   selectedChoice: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   eventChoiceText: { color: colors.muted, fontSize: 11, fontWeight: "800", textAlign: "center" },
   selectedChoiceText: { color: colors.primary },
@@ -305,7 +322,16 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: "800", color: colors.ink },
   cardBody: { fontSize: 12, lineHeight: 18, color: colors.muted, marginTop: 5 },
   levels: { gap: 7, marginTop: 14 },
-  level: { minHeight: 44, minWidth: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
+  level: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.paper,
+  },
   levelText: { fontSize: 12, fontWeight: "800", color: colors.ink },
   players: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginTop: 24 },
   playersEmpty: { padding: 13, borderRadius: radii.sm, backgroundColor: colors.primarySoft, marginTop: 12 },
@@ -314,13 +340,41 @@ const styles = StyleSheet.create({
   playerRow: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 12, marginTop: 12 },
   playerName: { fontSize: 14, fontWeight: "800", color: colors.ink },
   playerActions: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 9 },
-  playerAction: { minHeight: 44, minWidth: 44, justifyContent: "center", paddingHorizontal: 10, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
+  playerAction: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.paper,
+  },
   playerActionText: { fontSize: 10, fontWeight: "800", color: colors.ink },
   highlight: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   support: { borderColor: colors.warn, backgroundColor: colors.warnSoft },
-  input: { minHeight: 96, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm, backgroundColor: colors.paper, color: colors.ink, fontSize: 13, lineHeight: 19, padding: 12, textAlignVertical: "top" },
+  input: {
+    minHeight: 96,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.sm,
+    backgroundColor: colors.paper,
+    color: colors.ink,
+    fontSize: 13,
+    lineHeight: 19,
+    padding: 12,
+    textAlignVertical: "top",
+  },
   counter: { color: colors.muted, fontSize: 10, marginTop: 6, textAlign: "right" },
-  validate: { minHeight: 48, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm, marginTop: 20, paddingHorizontal: 14 },
+  validate: {
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+    borderRadius: radii.sm,
+    marginTop: 20,
+    paddingHorizontal: 14,
+  },
   validateDisabled: { opacity: 0.45 },
   validateText: { fontSize: 12, fontWeight: "800", color: colors.primaryInk },
   remaining: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 8, textAlign: "center" },

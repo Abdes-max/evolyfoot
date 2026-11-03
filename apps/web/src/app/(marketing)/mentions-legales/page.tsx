@@ -23,9 +23,7 @@ export default function MentionsLegalesPage() {
         },
         {
           title: "Hébergement",
-          paragraphs: [
-            "Le site et l’application sont hébergés par [Nom de l’hébergeur], [adresse de l’hébergeur], [contact ou site web de l’hébergeur].",
-          ],
+          paragraphs: ["Le site et l’application sont hébergés par [Nom de l’hébergeur], [adresse de l’hébergeur], [contact ou site web de l’hébergeur]."],
         },
         {
           title: "Propriété intellectuelle",

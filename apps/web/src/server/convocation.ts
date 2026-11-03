@@ -34,7 +34,11 @@ async function notifyByEmail(outcome: ConvocationOutcome, coachName: string, req
     return 0;
   }
   const url = mailer.calendarUrl(request);
-  await Promise.all(outcome.recipients.map((recipient) => mailer.send({ to: recipient.email, ...renderConvocationEmail(recipient.name, coachName, outcome.subject, outcome.text, url) })));
+  await Promise.all(
+    outcome.recipients.map((recipient) =>
+      mailer.send({ to: recipient.email, ...renderConvocationEmail(recipient.name, coachName, outcome.subject, outcome.text, url) }),
+    ),
+  );
   return outcome.recipients.length;
 }
 

@@ -49,7 +49,11 @@ describe("createListCoachMessagesHandler", () => {
   it("maps a player belonging to no one (or not this coach) to a 404", async () => {
     const handler = createListCoachMessagesHandler(
       authenticatedCoach,
-      { listForCoach: async () => { throw new PlayerNotFoundError(); } },
+      {
+        listForCoach: async () => {
+          throw new PlayerNotFoundError();
+        },
+      },
       () => undefined,
     );
     expect((await handler(request("GET"), "player-1")).status).toBe(404);
@@ -58,7 +62,15 @@ describe("createListCoachMessagesHandler", () => {
 
 describe("createSendCoachMessageHandler", () => {
   it("rejects a missing text", async () => {
-    const handler = createSendCoachMessageHandler(authenticatedCoach, { sendAsCoach: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createSendCoachMessageHandler(
+      authenticatedCoach,
+      {
+        sendAsCoach: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await handler(request("POST", {}), "player-1")).status).toBe(400);
   });
 
@@ -79,7 +91,11 @@ describe("createSendCoachMessageHandler", () => {
   it("maps a validation error to a 400", async () => {
     const handler = createSendCoachMessageHandler(
       authenticatedCoach,
-      { sendAsCoach: async () => { throw new ValidationError("Le message ne peut pas être vide."); } },
+      {
+        sendAsCoach: async () => {
+          throw new ValidationError("Le message ne peut pas être vide.");
+        },
+      },
       () => undefined,
     );
     expect((await handler(request("POST", { text: "   " }), "player-1")).status).toBe(400);
@@ -102,7 +118,11 @@ describe("createListPlayerMessagesHandler", () => {
   it("maps a missing linked player to a 404", async () => {
     const handler = createListPlayerMessagesHandler(
       authenticatedPlayer,
-      { listForPlayerAccount: async () => { throw new EducatorNotFoundError(); } },
+      {
+        listForPlayerAccount: async () => {
+          throw new EducatorNotFoundError();
+        },
+      },
       () => undefined,
     );
     expect((await handler(request("GET"))).status).toBe(404);
@@ -111,7 +131,15 @@ describe("createListPlayerMessagesHandler", () => {
 
 describe("createSendPlayerMessageHandler", () => {
   it("rejects a missing text", async () => {
-    const handler = createSendPlayerMessageHandler(authenticatedPlayer, { sendAsPlayerAccount: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createSendPlayerMessageHandler(
+      authenticatedPlayer,
+      {
+        sendAsPlayerAccount: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await handler(request("POST", {}))).status).toBe(400);
   });
 

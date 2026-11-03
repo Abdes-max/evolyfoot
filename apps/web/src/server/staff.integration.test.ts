@@ -11,7 +11,11 @@ const origin = () => "https://evolyfoot.test";
 
 describe("gestion du staff", () => {
   it("exige une session", async () => {
-    const handler = createListStaffHandler(async () => null, { list: async () => [] }, () => undefined);
+    const handler = createListStaffHandler(
+      async () => null,
+      { list: async () => [] },
+      () => undefined,
+    );
 
     expect((await handler(request)).status).toBe(401);
   });
@@ -23,14 +27,36 @@ describe("gestion du staff", () => {
     const invite = vi.fn();
     const remove = vi.fn();
 
-    expect((await createInviteStaffHandler(async () => account, { invite }, origin, () => undefined)(request)).status).toBe(403);
-    expect((await createRemoveStaffHandler(async () => account, { remove }, () => undefined)(request, "x")).status).toBe(403);
+    expect(
+      (
+        await createInviteStaffHandler(
+          async () => account,
+          { invite },
+          origin,
+          () => undefined,
+        )(request)
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await createRemoveStaffHandler(
+          async () => account,
+          { remove },
+          () => undefined,
+        )(request, "x")
+      ).status,
+    ).toBe(403);
     expect(invite).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
   });
 
   it("renvoie le lien d'invitation à l'éducateur", async () => {
-    const handler = createInviteStaffHandler(async () => coach, { invite: async () => ({ token: "abc", expiresAt: "2026-11-08" }) }, origin, () => undefined);
+    const handler = createInviteStaffHandler(
+      async () => coach,
+      { invite: async () => ({ token: "abc", expiresAt: "2026-11-08" }) },
+      origin,
+      () => undefined,
+    );
 
     const response = await handler(request);
 
@@ -42,7 +68,9 @@ describe("gestion du staff", () => {
     const join = async () => ({ account: assistant, sessionToken: "jeton", expiresAt: new Date("2026-12-01") });
     const handler = createJoinStaffHandler({ join }, () => undefined);
 
-    const response = await handler(new Request("https://evolyfoot.test", { method: "POST", body: JSON.stringify({ token: "t", email: "a@b.c", password: "p", displayName: "A" }) }));
+    const response = await handler(
+      new Request("https://evolyfoot.test", { method: "POST", body: JSON.stringify({ token: "t", email: "a@b.c", password: "p", displayName: "A" }) }),
+    );
 
     expect(response.status).toBe(201);
     expect(response.headers.get("set-cookie")).toContain("evolyfoot_session=jeton");
@@ -54,7 +82,9 @@ describe("gestion du staff", () => {
     };
     const handler = createJoinStaffHandler({ join }, () => undefined);
 
-    const response = await handler(new Request("https://evolyfoot.test", { method: "POST", body: JSON.stringify({ token: "t", email: "a@b.c", password: "p", displayName: "A" }) }));
+    const response = await handler(
+      new Request("https://evolyfoot.test", { method: "POST", body: JSON.stringify({ token: "t", email: "a@b.c", password: "p", displayName: "A" }) }),
+    );
 
     expect(response.status).toBe(410);
   });

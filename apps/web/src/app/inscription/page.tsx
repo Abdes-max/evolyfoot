@@ -6,8 +6,7 @@ import { RegisterForm } from "./register-form";
 // Un vrai schéma du catalogue plutôt qu'une photo de stock : ancré dans ce que le produit fait
 // réellement (le même composant que /bibliotheque et le constructeur de séance), pas un décor
 // générique. "game" pour la densité visuelle (plusieurs joueurs, zones, flèches).
-const backdropActivity =
-  trainingActivityCatalogue.find((activity) => activity.kind === "game") ?? trainingActivityCatalogue[0];
+const backdropActivity = trainingActivityCatalogue.find((activity) => activity.kind === "game") ?? trainingActivityCatalogue[0];
 
 export default function InscriptionPage() {
   return (

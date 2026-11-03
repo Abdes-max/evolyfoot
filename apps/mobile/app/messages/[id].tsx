@@ -127,7 +127,12 @@ export default function MessagesScreen() {
             style={styles.input}
             value={draft}
           />
-          <TouchableOpacity accessibilityRole="button" disabled={sending || !draft.trim()} onPress={send} style={[styles.send, (sending || !draft.trim()) && styles.disabled]}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            disabled={sending || !draft.trim()}
+            onPress={send}
+            style={[styles.send, (sending || !draft.trim()) && styles.disabled]}
+          >
             <Text style={styles.sendText}>{sending ? "Envoi…" : "Envoyer"}</Text>
           </TouchableOpacity>
         </View>
@@ -154,7 +159,18 @@ const styles = StyleSheet.create({
   time: { fontSize: 10, color: colors.muted, marginTop: 4 },
   timeMine: { color: colors.primaryInk, opacity: 0.7 },
   composer: { padding: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.paper },
-  input: { minHeight: 56, maxHeight: 140, padding: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, color: colors.ink, fontSize: 15, textAlignVertical: "top" },
+  input: {
+    minHeight: 56,
+    maxHeight: 140,
+    padding: 12,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    color: colors.ink,
+    fontSize: 15,
+    textAlignVertical: "top",
+  },
   send: { minHeight: 46, marginTop: spacing.sm, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
   disabled: { opacity: 0.5 },
   sendText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },

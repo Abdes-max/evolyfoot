@@ -11,10 +11,7 @@ export interface AdjustmentSuggestion {
   reason: string;
 }
 
-export function suggestAdjustment(
-  focus: WeeklyFocus,
-  observations: ObservationSummary,
-): AdjustmentSuggestion {
+export function suggestAdjustment(focus: WeeklyFocus, observations: ObservationSummary): AdjustmentSuggestion {
   if (observations.reactionAfterLoss < 50) {
     return {
       action: "increase-pressure",

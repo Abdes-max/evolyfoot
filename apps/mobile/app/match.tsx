@@ -57,14 +57,23 @@ export default function MatchListScreen() {
       <ScrollView contentContainerStyle={styles.page}>
         <Text style={styles.step}>MATCHS</Text>
         <Text style={styles.title}>Prépare et suis tes matchs.</Text>
-        <Text style={styles.body}>Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire. Garde aussi une trace de tes tournois et plateaux.</Text>
+        <Text style={styles.body}>
+          Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire. Garde aussi une trace
+          de tes tournois et plateaux.
+        </Text>
 
         {!creating ? (
           <>
-          <TouchableOpacity accessibilityRole="button" onPress={() => setCreating(true)} style={styles.newButton}>
-            <Text style={styles.newButtonText}>+ Nouveau match</Text>
-          </TouchableOpacity>
-          <CalendarImport existing={matches} formationId={formationId} gameFormat={gameFormat} onImported={(created) => setMatches((current) => [...current, ...created])} teamName={team?.name ?? ""} />
+            <TouchableOpacity accessibilityRole="button" onPress={() => setCreating(true)} style={styles.newButton}>
+              <Text style={styles.newButtonText}>+ Nouveau match</Text>
+            </TouchableOpacity>
+            <CalendarImport
+              existing={matches}
+              formationId={formationId}
+              gameFormat={gameFormat}
+              onImported={(created) => setMatches((current) => [...current, ...created])}
+              teamName={team?.name ?? ""}
+            />
           </>
         ) : (
           <View style={styles.createForm}>
@@ -177,16 +186,50 @@ const styles = StyleSheet.create({
   label: { fontSize: 11, fontWeight: "800", color: colors.ink, marginTop: 14, marginBottom: 8 },
   input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
   choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  choice: { minHeight: 40, paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
-  formatChoice: { minHeight: 40, minWidth: 40, paddingHorizontal: 10, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
+  choice: {
+    minHeight: 40,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.paper,
+  },
+  formatChoice: {
+    minHeight: 40,
+    minWidth: 40,
+    paddingHorizontal: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.paper,
+  },
   choiceActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   choiceText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
   choiceTextActive: { color: colors.primary },
   fieldError: { color: colors.danger, fontSize: 10, marginTop: 10 },
   createActions: { flexDirection: "row", gap: 10, marginTop: 16 },
-  submitButton: { minHeight: 40, paddingHorizontal: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
+  submitButton: {
+    minHeight: 40,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+    borderRadius: radii.sm,
+  },
   submitButtonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
-  cancelButton: { minHeight: 40, paddingHorizontal: 16, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm },
+  cancelButton: {
+    minHeight: 40,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.sm,
+  },
   cancelButtonText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
   empty: { color: colors.muted, fontSize: 11, textAlign: "center", marginTop: 30 },
   card: { marginTop: 14, padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md },

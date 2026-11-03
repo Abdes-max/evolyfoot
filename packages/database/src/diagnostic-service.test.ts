@@ -83,9 +83,7 @@ describe("DiagnosticService.save", () => {
     const diagnosticRepository = new InMemoryDiagnosticRepository();
     const service = new DiagnosticService(new InMemoryEducatorRepository(["educator-1"]), diagnosticRepository);
 
-    await expect(service.save("educator-1", { ...validScores, availability: 5 })).rejects.toThrow(
-      "Chaque critère doit être évalué de 1 à 4.",
-    );
+    await expect(service.save("educator-1", { ...validScores, availability: 5 })).rejects.toThrow("Chaque critère doit être évalué de 1 à 4.");
     expect(diagnosticRepository.writeCount).toBe(0);
   });
 
@@ -96,10 +94,7 @@ describe("DiagnosticService.save", () => {
   });
 
   it("saves a valid diagnostic for its educator", async () => {
-    const service = new DiagnosticService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      new InMemoryDiagnosticRepository(),
-    );
+    const service = new DiagnosticService(new InMemoryEducatorRepository(["educator-1"]), new InMemoryDiagnosticRepository());
 
     const saved = await service.save("educator-1", validScores);
 
@@ -123,10 +118,7 @@ describe("DiagnosticService.save", () => {
 describe("DiagnosticService.get", () => {
   it("looks up a diagnostic using the caller educator ID", async () => {
     const diagnosticRepository = new InMemoryDiagnosticRepository();
-    const service = new DiagnosticService(
-      new InMemoryEducatorRepository(["educator-1", "educator-2"]),
-      diagnosticRepository,
-    );
+    const service = new DiagnosticService(new InMemoryEducatorRepository(["educator-1", "educator-2"]), diagnosticRepository);
     await service.save("educator-1", validScores);
     await service.save("educator-2", { ...validScores, scanning: 4 });
 
@@ -137,10 +129,7 @@ describe("DiagnosticService.get", () => {
   });
 
   it("rejects a missing diagnostic for the calling educator", async () => {
-    const service = new DiagnosticService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      new InMemoryDiagnosticRepository(),
-    );
+    const service = new DiagnosticService(new InMemoryEducatorRepository(["educator-1"]), new InMemoryDiagnosticRepository());
 
     await expect(service.get("educator-1")).rejects.toBeInstanceOf(DiagnosticNotFoundError);
   });

@@ -55,6 +55,8 @@ jobs:
         run: pnpm typecheck
       - name: Analyser le code
         run: pnpm lint
+      - name: Vérifier le formatage
+        run: pnpm format:check
       - name: Exécuter les tests unitaires et d'intégration
         run: pnpm test
       - name: Construire les applications

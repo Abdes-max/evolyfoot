@@ -13,7 +13,11 @@ function request(body?: unknown): Request {
 describe("contact handler", () => {
   it("rejects a body missing a field with a 400 and never calls the gateway", async () => {
     const handler = createSubmitContactHandler(
-      { submit: async () => { throw new Error("not called"); } },
+      {
+        submit: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
     expect((await handler(request({ name: "Alex", email: "a@b.test" }))).status).toBe(400);
@@ -22,7 +26,11 @@ describe("contact handler", () => {
   it("forwards a valid submission and returns 201", async () => {
     const received: unknown[] = [];
     const handler = createSubmitContactHandler(
-      { submit: async (input) => { received.push(input); } },
+      {
+        submit: async (input) => {
+          received.push(input);
+        },
+      },
       () => undefined,
     );
     const response = await handler(request({ name: "Alex", email: "a@b.test", message: "Bonjour" }));
@@ -32,7 +40,11 @@ describe("contact handler", () => {
 
   it("maps a ValidationError to a 400 with its message", async () => {
     const handler = createSubmitContactHandler(
-      { submit: async () => { throw new ValidationError("Indique une adresse e-mail valide."); } },
+      {
+        submit: async () => {
+          throw new ValidationError("Indique une adresse e-mail valide.");
+        },
+      },
       () => undefined,
     );
     const response = await handler(request({ name: "Alex", email: "x", message: "Bonjour" }));
@@ -43,7 +55,11 @@ describe("contact handler", () => {
   it("maps an unexpected error to a 500 and logs it", async () => {
     const logged: unknown[] = [];
     const handler = createSubmitContactHandler(
-      { submit: async () => { throw new Error("boom"); } },
+      {
+        submit: async () => {
+          throw new Error("boom");
+        },
+      },
       (error) => logged.push(error),
     );
     expect((await handler(request({ name: "Alex", email: "a@b.test", message: "Bonjour" }))).status).toBe(500);

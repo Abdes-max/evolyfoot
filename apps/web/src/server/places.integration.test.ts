@@ -17,10 +17,7 @@ describe("searchPlaces", () => {
       }),
     ) as unknown as typeof fetch;
 
-    expect(await searchPlaces("stade", fetcher)).toEqual([
-      "Stade Marius Requier, Avenue Ampère, 13100 Aix-en-Provence",
-      "12 Rue Victor Hugo, 75011 Paris",
-    ]);
+    expect(await searchPlaces("stade", fetcher)).toEqual(["Stade Marius Requier, Avenue Ampère, 13100 Aix-en-Provence", "12 Rue Victor Hugo, 75011 Paris"]);
   });
 
   it("ne renvoie rien si le service répond en erreur", async () => {
@@ -33,7 +30,11 @@ describe("searchPlaces", () => {
 describe("createSearchPlacesHandler", () => {
   it("exige une session d'éducateur", async () => {
     const search = vi.fn();
-    const response = await createSearchPlacesHandler(async () => null, search, () => undefined)(request("stade"));
+    const response = await createSearchPlacesHandler(
+      async () => null,
+      search,
+      () => undefined,
+    )(request("stade"));
 
     expect(response.status).toBe(401);
     expect(search).not.toHaveBeenCalled();

@@ -117,9 +117,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         setMatch(matchBody.match);
         setRoster(rosterBody.players ?? []);
         setDate(toDatetimeInputValue(matchBody.match?.date ?? null));
-        setMeetingOffsetMinutes(
-          typeof matchBody.match?.meetingOffsetMinutes === "number" ? String(matchBody.match.meetingOffsetMinutes) : "",
-        );
+        setMeetingOffsetMinutes(typeof matchBody.match?.meetingOffsetMinutes === "number" ? String(matchBody.match.meetingOffsetMinutes) : "");
         setLocation(matchBody.match?.location ?? "");
         setDescription(matchBody.match?.description ?? "");
         // Pré-coche les absents déjà connus -- notamment un joueur/tuteur qui a répondu à sa
@@ -351,9 +349,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       });
       const response = await fetch(`/api/matches/${matchId}/played`, {
         method: "POST",
-        ...(attendance.length > 0
-          ? { headers: { "content-type": "application/json" }, body: JSON.stringify({ attendance }) }
-          : {}),
+        ...(attendance.length > 0 ? { headers: { "content-type": "application/json" }, body: JSON.stringify({ attendance }) } : {}),
       });
       if (!response.ok) {
         setSaveError(await readErrorMessage(response));
@@ -372,7 +368,10 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       <main className="match-shell">
         <section className="match-auth-required" role="status">
           <p>
-            Connecte-toi pour préparer ce match. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
+            Connecte-toi pour préparer ce match.{" "}
+            <Link className="inline-cta" href="/connexion">
+              Se connecter →
+            </Link>
           </p>
         </section>
       </main>
@@ -466,9 +465,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           {!readOnly && <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur.</p>}
 
           <section aria-labelledby="match-bench-title" className="match-bench">
-            <h2 id="match-bench-title">
-              Remplaçants {readOnly ? "" : `(max. ${maxSubstitutes(gameFormat)})`}
-            </h2>
+            <h2 id="match-bench-title">Remplaçants {readOnly ? "" : `(max. ${maxSubstitutes(gameFormat)})`}</h2>
             <div aria-label="Remplaçants" className="match-bench-tokens" role="group">
               {benchSlots.map((playerId, index) => {
                 const player = playerId ? roster.find((candidate) => candidate.id === playerId) : null;
@@ -510,18 +507,9 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             <h2>Détails</h2>
             <label>
               <span>Date et heure du match</span>
-              <input
-                disabled={readOnly}
-                onChange={(event) => setDate(event.target.value)}
-                type="datetime-local"
-                value={date}
-              />
+              <input disabled={readOnly} onChange={(event) => setDate(event.target.value)} type="datetime-local" value={date} />
             </label>
-            {!date && (
-              <p className="match-slot-hint">
-                Coup d’envoi : {match.kickoffTime ? `${match.dateLabel} · ${match.kickoffTime}` : match.dateLabel}
-              </p>
-            )}
+            {!date && <p className="match-slot-hint">Coup d’envoi : {match.kickoffTime ? `${match.dateLabel} · ${match.kickoffTime}` : match.dateLabel}</p>}
             <label>
               <span>Rendez-vous, minutes avant le match</span>
               <input

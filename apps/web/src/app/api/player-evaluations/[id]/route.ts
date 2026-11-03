@@ -1,9 +1,5 @@
 import { createAuthGateway, readSessionToken, type PublicEducator } from "@/server/auth";
-import {
-  createPlayerEvaluationGateway,
-  createRemovePlayerEvaluationHandler,
-  createUpdatePlayerEvaluationHandler,
-} from "@/server/player-evaluation";
+import { createPlayerEvaluationGateway, createRemovePlayerEvaluationHandler, createUpdatePlayerEvaluationHandler } from "@/server/player-evaluation";
 
 async function resolveEducator(request: Request): Promise<PublicEducator | null> {
   const token = readSessionToken(request);

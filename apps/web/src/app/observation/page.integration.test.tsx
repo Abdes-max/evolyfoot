@@ -112,9 +112,7 @@ describe("quick observation", () => {
       completeObservationForm();
       fireEvent.click(screen.getByRole("button", { name: /valider l’observation/i }));
 
-      await vi.waitFor(() =>
-        expect(fetch).toHaveBeenCalledWith("/api/observations", expect.objectContaining({ method: "POST" })),
-      );
+      await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/observations", expect.objectContaining({ method: "POST" })));
       expect(screen.queryByText(/connecte-toi pour enregistrer/i)).not.toBeInTheDocument();
     });
 

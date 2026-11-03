@@ -45,12 +45,7 @@ export interface AttendanceEntry {
   readonly comment?: string | null;
 }
 
-export function createAttendanceEntry(
-  playerId: string,
-  playerName: string,
-  status: AttendanceStatus,
-  comment?: string | null,
-): AttendanceEntry {
+export function createAttendanceEntry(playerId: string, playerName: string, status: AttendanceStatus, comment?: string | null): AttendanceEntry {
   return Object.freeze({ playerId, playerName, status, present: isPresentStatus(status), comment: comment ?? null });
 }
 

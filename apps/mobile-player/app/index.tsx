@@ -72,7 +72,14 @@ const styles = StyleSheet.create({
   note: { color: colors.muted, fontSize: 14, lineHeight: 20 },
   team: { color: colors.lime, fontSize: 13, fontWeight: "800", textAlign: "center", marginBottom: spacing.sm },
   section: { color: colors.ink, fontSize: 22, fontWeight: "900", textTransform: "uppercase", marginTop: spacing.lg, marginBottom: spacing.sm },
-  event: { padding: spacing.md, marginBottom: spacing.sm, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primaryDark, backgroundColor: colors.surface },
+  event: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.primaryDark,
+    backgroundColor: colors.surface,
+  },
   eventTitle: { color: colors.ink, fontSize: 15, fontWeight: "800" },
   eventMeta: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 3 },
 });

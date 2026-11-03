@@ -73,12 +73,7 @@ export function RsvpControl({
             </label>
             <label className="rsvp-popup-field">
               <span>Commentaire pour le coach (facultatif)</span>
-              <textarea
-                onChange={(event) => setComment(event.target.value)}
-                placeholder="Ex. de retour la semaine prochaine"
-                rows={3}
-                value={comment}
-              />
+              <textarea onChange={(event) => setComment(event.target.value)} placeholder="Ex. de retour la semaine prochaine" rows={3} value={comment} />
             </label>
             <div className="rsvp-popup-actions">
               <button className="rsvp-popup-cancel" onClick={() => setOpen(false)} type="button">

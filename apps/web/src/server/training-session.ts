@@ -53,12 +53,7 @@ export interface TrainingSessionGateway {
 // Pas de constante partagée côté domaine pour les thèmes (contrairement à `ageGroups`) : on la
 // duplique ici, alignée sur `DevelopmentTheme`, pour rejeter une forme invalide avant même
 // d'appeler le service métier.
-const developmentThemes: ReadonlyArray<DevelopmentTheme> = [
-  "Conserver le ballon",
-  "Progresser ensemble",
-  "Finir les actions",
-  "Récupérer rapidement",
-];
+const developmentThemes: ReadonlyArray<DevelopmentTheme> = ["Conserver le ballon", "Progresser ensemble", "Finir les actions", "Récupérer rapidement"];
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
   try {
@@ -74,11 +69,7 @@ function isBlockShaped(value: unknown): value is TrainingSessionBlockInput {
     return false;
   }
   const block = value as Record<string, unknown>;
-  return (
-    typeof block.id === "string" &&
-    typeof block.activityId === "string" &&
-    typeof block.durationMinutes === "number"
-  );
+  return typeof block.id === "string" && typeof block.activityId === "string" && typeof block.durationMinutes === "number";
 }
 
 function isAttendanceEntryShaped(value: unknown): value is AttendanceEntry {
@@ -89,9 +80,7 @@ function isAttendanceEntryShaped(value: unknown): value is AttendanceEntry {
   return typeof entry.playerId === "string" && typeof entry.playerName === "string" && typeof entry.present === "boolean";
 }
 
-function isTrainingSessionInputShaped(
-  value: Record<string, unknown> | null,
-): value is Record<string, unknown> & TrainingSessionInput {
+function isTrainingSessionInputShaped(value: Record<string, unknown> | null): value is Record<string, unknown> & TrainingSessionInput {
   if (!value) {
     return false;
   }

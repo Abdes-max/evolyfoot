@@ -36,7 +36,15 @@ describe("exercices personnels", () => {
 
   it("ajoute au compte connecté et remonte les erreurs de validation", async () => {
     const add = vi.fn(async () => exercise);
-    const refused = createAddPersonalExerciseHandler(authenticated, { add: async () => { throw new ValidationError("Limite."); } }, vi.fn());
+    const refused = createAddPersonalExerciseHandler(
+      authenticated,
+      {
+        add: async () => {
+          throw new ValidationError("Limite.");
+        },
+      },
+      vi.fn(),
+    );
 
     expect((await createAddPersonalExerciseHandler(authenticated, { add }, vi.fn())(request(exercise))).status).toBe(201);
     expect(add.mock.calls[0]?.[0 as never]).toBe("educator-1");

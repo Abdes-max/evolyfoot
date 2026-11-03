@@ -49,7 +49,11 @@ function MatchPitch({ slots, match, onSlotTap }: { slots: readonly MatchLineupSl
         const isCaptain = Boolean(assignment && assignment.playerId === match.captainPlayerId);
         return (
           <TouchableOpacity
-            accessibilityLabel={assignment ? `${slot.roleLabel} : ${assignment.playerName}${isCaptain ? ", capitaine" : ""}` : `${slot.roleLabel} : aucun joueur, toucher pour affecter`}
+            accessibilityLabel={
+              assignment
+                ? `${slot.roleLabel} : ${assignment.playerName}${isCaptain ? ", capitaine" : ""}`
+                : `${slot.roleLabel} : aucun joueur, toucher pour affecter`
+            }
             accessibilityRole="button"
             disabled={!onSlotTap}
             key={slot.id}
@@ -68,8 +72,28 @@ function MatchPitch({ slots, match, onSlotTap }: { slots: readonly MatchLineupSl
 }
 
 const pitchStyles = StyleSheet.create({
-  pitch: { width: "100%", aspectRatio: 300 / 460, backgroundColor: "#0f2a1c", borderRadius: radii.lg, borderWidth: 1.5, borderColor: "rgba(255,255,255,.14)", overflow: "hidden" },
-  token: { position: "absolute", width: 36, height: 36, marginLeft: -18, marginTop: -18, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.line },
+  pitch: {
+    width: "100%",
+    aspectRatio: 300 / 460,
+    backgroundColor: "#0f2a1c",
+    borderRadius: radii.lg,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,.14)",
+    overflow: "hidden",
+  },
+  token: {
+    position: "absolute",
+    width: 36,
+    height: 36,
+    marginLeft: -18,
+    marginTop: -18,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.line,
+  },
   tokenFilled: { backgroundColor: colors.primary, borderColor: colors.primaryDark },
   tokenText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
   tokenTextFilled: { color: colors.primaryInk },
@@ -204,7 +228,18 @@ export default function MatchDetailScreen() {
         )}
 
         <View style={styles.pitchWrap}>
-          <MatchPitch match={match} onSlotTap={readOnly ? undefined : (slotId) => { setPickerCaptain(false); setPickerSlotId(slotId); }} slots={slots} />
+          <MatchPitch
+            match={match}
+            onSlotTap={
+              readOnly
+                ? undefined
+                : (slotId) => {
+                    setPickerCaptain(false);
+                    setPickerSlotId(slotId);
+                  }
+            }
+            slots={slots}
+          />
         </View>
 
         <Text style={styles.sectionTitle}>Composition</Text>
@@ -345,17 +380,48 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 8 },
   body: { fontSize: 12.5, color: colors.muted, marginTop: 6 },
   formationRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 16 },
-  formationChoice: { minHeight: 36, paddingHorizontal: 13, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+  formationChoice: {
+    minHeight: 36,
+    paddingHorizontal: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+  },
   formationChoiceActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   formationChoiceText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
   formationChoiceTextActive: { color: colors.primary },
   pitchWrap: { marginTop: 16 },
   sectionTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginTop: 24, marginBottom: 2 },
   sectionHint: { fontSize: 11, color: colors.muted, marginBottom: 8 },
-  slotRow: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm, backgroundColor: colors.surface, marginTop: 8 },
+  slotRow: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.sm,
+    backgroundColor: colors.surface,
+    marginTop: 8,
+  },
   slotLabel: { color: colors.muted, fontSize: 11.5, fontWeight: "700" },
   slotValue: { color: colors.ink, fontSize: 12.5, fontWeight: "700" },
-  captainRow: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm, backgroundColor: colors.primarySoft, marginTop: 18 },
+  captainRow: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.sm,
+    backgroundColor: colors.primarySoft,
+    marginTop: 18,
+  },
   fieldError: { color: colors.danger, fontSize: 11, marginTop: 14 },
   finalizeButton: { minHeight: 48, marginTop: 20, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
   finalizeButtonDisabled: { opacity: 0.45 },
@@ -365,6 +431,14 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginBottom: 12 },
   modalOption: { minHeight: 44, justifyContent: "center", paddingHorizontal: 6, borderTopWidth: 1, borderTopColor: colors.line },
   modalOptionText: { color: colors.ink, fontSize: 13, fontWeight: "700" },
-  modalClose: { minHeight: 44, marginTop: 10, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm },
+  modalClose: {
+    minHeight: 44,
+    marginTop: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.sm,
+  },
   modalCloseText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
 });

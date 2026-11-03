@@ -52,24 +52,11 @@ export function RegisterForm() {
       </label>
       <label>
         Adresse e-mail
-        <input
-          autoComplete="email"
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          type="email"
-          value={email}
-        />
+        <input autoComplete="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
       </label>
       <label>
         Mot de passe
-        <input
-          autoComplete="new-password"
-          minLength={10}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          type="password"
-          value={password}
-        />
+        <input autoComplete="new-password" minLength={10} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
         <small className="field-hint">Au moins 10 caractères.</small>
       </label>
       {error && (

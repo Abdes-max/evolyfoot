@@ -79,9 +79,7 @@ describe("PostgreSQL diagnostic persistence", () => {
     const educator = await createEducator("invalid-score");
     const invalidScores = { ...validScores, availability: 0 };
 
-    await expect(service.save(educator.id, invalidScores)).rejects.toThrow(
-      "Chaque critère doit être évalué de 1 à 4.",
-    );
+    await expect(service.save(educator.id, invalidScores)).rejects.toThrow("Chaque critère doit être évalué de 1 à 4.");
     await expect(database.prisma.diagnostic.count({ where: { educatorId: educator.id } })).resolves.toBe(0);
   });
 });

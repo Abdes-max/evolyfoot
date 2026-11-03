@@ -10,13 +10,7 @@ export default async function PlateauDetailPage({ params }: PlateauDetailPagePro
   return (
     <>
       <SidebarNav />
-      <CompetitionDetailView
-        backHref="/match"
-        competitionId={id}
-        endpoint="/api/plateaux"
-        itemKey="plateau"
-        singular="plateau"
-      />
+      <CompetitionDetailView backHref="/match" competitionId={id} endpoint="/api/plateaux" itemKey="plateau" singular="plateau" />
     </>
   );
 }

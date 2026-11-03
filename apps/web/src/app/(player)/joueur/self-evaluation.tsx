@@ -66,9 +66,7 @@ export function SelfEvaluation({ coachEvaluation, initialSelfEvaluation }: SelfE
       <h2>Mon auto-évaluation</h2>
       <p className="player-space-caption">Note-toi sur chaque aspect, puis compare avec le regard de ton éducateur.</p>
       <div className="player-self-evaluation">
-        {series.length > 0 && (
-          <RadarChart axes={radarAxes} max={playerEvaluationMaxScore} min={playerEvaluationMinScore} series={series} size={280} />
-        )}
+        {series.length > 0 && <RadarChart axes={radarAxes} max={playerEvaluationMaxScore} min={playerEvaluationMinScore} series={series} size={280} />}
         <div className="player-self-evaluation-form">
           {playerEvaluationAspects.map((aspect) => (
             <label key={aspect}>

@@ -17,12 +17,9 @@ describe("database health handler", () => {
     const errors: unknown[] = [];
     const failure = new Error("postgres://secret-host/internal");
 
-    const response = await createDatabaseHealthHandler(
-      async () => {
-        throw failure;
-      },
-      errors.push.bind(errors),
-    )();
+    const response = await createDatabaseHealthHandler(async () => {
+      throw failure;
+    }, errors.push.bind(errors))();
     const body = await response.json();
 
     expect(response.status).toBe(503);

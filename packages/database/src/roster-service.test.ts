@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { RosterService } from "./roster-service";
 import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "./errors";
-import type {
-  EducatorRecord,
-  EducatorRepository,
-  PersistedPlayer,
-  PlayerDetailsPatch,
-  PlayerRepository,
-} from "./repositories";
+import type { EducatorRecord, EducatorRepository, PersistedPlayer, PlayerDetailsPatch, PlayerRepository } from "./repositories";
 
 class InMemoryEducatorRepository implements EducatorRepository {
   constructor(private readonly ids: readonly string[]) {}

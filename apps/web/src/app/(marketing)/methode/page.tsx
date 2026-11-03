@@ -37,8 +37,7 @@ export default function MethodePage() {
         <span className="m-eyebrow">La méthode</span>
         <h1>Une boucle claire, que tu suis à ton rythme.</h1>
         <p>
-          EvolyFoot n’invente pas une pédagogie : il met en forme celle que les éducateurs de jeunes appliquent déjà, et
-          la rend tenable semaine après semaine.
+          EvolyFoot n’invente pas une pédagogie : il met en forme celle que les éducateurs de jeunes appliquent déjà, et la rend tenable semaine après semaine.
         </p>
       </section>
 

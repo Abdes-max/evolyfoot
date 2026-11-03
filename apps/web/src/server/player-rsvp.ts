@@ -93,14 +93,8 @@ export function createRespondToTrainingSessionHandler(
 }
 
 export async function createPlayerRsvpGateway(): Promise<{ gateway: PlayerRsvpGateway; disconnect: () => Promise<void> }> {
-  const {
-    createDatabaseClient,
-    PlayerRsvpService,
-    PrismaEducatorRepository,
-    PrismaMatchRepository,
-    PrismaPlayerRepository,
-    PrismaTrainingSessionRepository,
-  } = await import("@evolyfoot/database");
+  const { createDatabaseClient, PlayerRsvpService, PrismaEducatorRepository, PrismaMatchRepository, PrismaPlayerRepository, PrismaTrainingSessionRepository } =
+    await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new PlayerRsvpService(
     new PrismaEducatorRepository(database.prisma),
@@ -112,8 +106,7 @@ export async function createPlayerRsvpGateway(): Promise<{ gateway: PlayerRsvpGa
   return {
     gateway: {
       respondToMatch: (playerAccountId, matchId, status, comment) => service.respondToMatch(playerAccountId, matchId, status, comment),
-      respondToTrainingSession: (playerAccountId, sessionId, status, comment) =>
-        service.respondToTrainingSession(playerAccountId, sessionId, status, comment),
+      respondToTrainingSession: (playerAccountId, sessionId, status, comment) => service.respondToTrainingSession(playerAccountId, sessionId, status, comment),
     },
     disconnect: database.disconnect,
   };

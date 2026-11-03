@@ -37,11 +37,7 @@ export function PlanView() {
           return;
         }
 
-        const [diagnosticResponse, teamResponse, sessionsResponse] = await Promise.all([
-          fetch("/api/diagnostic"),
-          fetch("/api/team"),
-          fetch("/api/sessions"),
-        ]);
+        const [diagnosticResponse, teamResponse, sessionsResponse] = await Promise.all([fetch("/api/diagnostic"), fetch("/api/team"), fetch("/api/sessions")]);
         const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const sessionsBody = await sessionsResponse.json().catch(() => ({ sessions: [] }));
@@ -93,66 +89,64 @@ export function PlanView() {
     <>
       <SidebarNav />
       <main className="plan-shell">
-      <header className="page-header plan-header">
-        <div>
-          <span className="eyebrow light">ÉTAPE 3 SUR 3</span>
-          <h1 title={heading}>{heading}</h1>
-          <p title={plan.explanation}>{plan.explanation}</p>
-        </div>
-        <span className="plan-duration">
-          4 semaines · {totalSessions} séances
-        </span>
-      </header>
-      <section className="plan-content">
-        <div className="plan-summary">
+        <header className="page-header plan-header">
           <div>
-            <span className="eyebrow">FIL DIRECTEUR</span>
-            <h2>{plan.title}</h2>
+            <span className="eyebrow light">ÉTAPE 3 SUR 3</span>
+            <h1 title={heading}>{heading}</h1>
+            <p title={plan.explanation}>{plan.explanation}</p>
           </div>
-          <div>
-            <small>Priorité</small>
-            <strong>{plan.primaryTheme}</strong>
+          <span className="plan-duration">4 semaines · {totalSessions} séances</span>
+        </header>
+        <section className="plan-content">
+          <div className="plan-summary">
+            <div>
+              <span className="eyebrow">FIL DIRECTEUR</span>
+              <h2>{plan.title}</h2>
+            </div>
+            <div>
+              <small>Priorité</small>
+              <strong>{plan.primaryTheme}</strong>
+            </div>
+            <div>
+              <small>En soutien</small>
+              <strong>{plan.secondaryTheme}</strong>
+            </div>
           </div>
-          <div>
-            <small>En soutien</small>
-            <strong>{plan.secondaryTheme}</strong>
+          <div className="week-list">
+            {plan.weeks.map((week) => (
+              <article className="development-week" key={week.week}>
+                <span className="week-number">S{week.week}</span>
+                <div>
+                  <span className="phase">
+                    {cycleWeekDateRangeLabel(week.week, activeWeek)} · {week.phase}
+                  </span>
+                  <h2>{week.intention}</h2>
+                  <p>{week.observable}</p>
+                </div>
+                <span className="theme-chip">{week.theme}</span>
+              </article>
+            ))}
           </div>
-        </div>
-        <div className="week-list">
-          {plan.weeks.map((week) => (
-            <article className="development-week" key={week.week}>
-              <span className="week-number">S{week.week}</span>
-              <div>
-                <span className="phase">
-                  {cycleWeekDateRangeLabel(week.week, activeWeek)} · {week.phase}
-                </span>
-                <h2>{week.intention}</h2>
-                <p>{week.observable}</p>
-              </div>
-              <span className="theme-chip">{week.theme}</span>
-            </article>
-          ))}
-        </div>
-        <div className="plan-actions">
-          {sessions.length >= totalSessions ? (
-            <button className="continue-button" disabled={starting} onClick={startNextCycle} type="button">
-              {starting ? "…" : "Démarrer le cycle suivant"} <span aria-hidden="true">→</span>
-            </button>
-          ) : (
-            <Link className="continue-button" href="/session">
-              Préparer la première séance <span aria-hidden="true">→</span>
+          <div className="plan-actions">
+            {sessions.length >= totalSessions ? (
+              <button className="continue-button" disabled={starting} onClick={startNextCycle} type="button">
+                {starting ? "…" : "Démarrer le cycle suivant"} <span aria-hidden="true">→</span>
+              </button>
+            ) : (
+              <Link className="continue-button" href="/session">
+                Préparer la première séance <span aria-hidden="true">→</span>
+              </Link>
+            )}
+            {cycleError && (
+              <p className="field-error" role="alert">
+                {cycleError}
+              </p>
+            )}
+            <Link className="back-link" href="/diagnostic">
+              Ajuster mon diagnostic
             </Link>
-          )}
-          {cycleError && (
-            <p className="field-error" role="alert">
-              {cycleError}
-            </p>
-          )}
-          <Link className="back-link" href="/diagnostic">
-            Ajuster mon diagnostic
-          </Link>
-        </div>
-      </section>
+          </div>
+        </section>
       </main>
     </>
   );

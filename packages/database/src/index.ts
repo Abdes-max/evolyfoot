@@ -61,11 +61,7 @@ export { TeamProfileService } from "./team-profile-service";
 export { TournamentService } from "./tournament-service";
 export { TrainingSessionService, trainingCycleWeekCount } from "./training-session-service";
 export type { AuthenticatedSession } from "./auth-service";
-export type {
-  ContactMessageInput,
-  ContactMessageRecord,
-  ContactMessageRepository,
-} from "./contact-message-service";
+export type { ContactMessageInput, ContactMessageRecord, ContactMessageRepository } from "./contact-message-service";
 export type { CreatedVerification } from "./email-verification-service";
 export type { EducatorProfileInput, SeasonFormat } from "./educator-profile-service";
 export type { FunnelStep, MvpMetrics, WeeklyActivityPoint } from "./metrics-service";

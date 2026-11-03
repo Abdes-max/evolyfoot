@@ -3,12 +3,7 @@ import type { ObservationDraft } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
 import { ObservationService } from "./observation-service";
 import { EducatorNotFoundError, ObservationNotFoundError, ValidationError } from "./errors";
-import type {
-  EducatorRecord,
-  EducatorRepository,
-  ObservationRepository,
-  PersistedObservation,
-} from "./repositories";
+import type { EducatorRecord, EducatorRepository, ObservationRepository, PersistedObservation } from "./repositories";
 
 const players = [{ id: "lina", name: "Lina" }];
 

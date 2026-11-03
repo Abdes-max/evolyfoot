@@ -66,7 +66,8 @@ export function CalendarImport({ teamName, gameFormat, formationId, existing, on
         const fixture = fixtureFromTitle(calendarEvent.title, teamName);
         const { date } = calendarEvent;
         const duplicate = existing.some(
-          (match) => match.opponent.toLowerCase() === fixture.opponent.toLowerCase() && date !== null && match.date != null && sameDay(new Date(match.date), date),
+          (match) =>
+            match.opponent.toLowerCase() === fixture.opponent.toLowerCase() && date !== null && match.date != null && sameDay(new Date(match.date), date),
         );
         const upcoming = date === null || date.getTime() >= now;
         return { key: `${index}-${calendarEvent.title}`, ...fixture, date, location: calendarEvent.location, duplicate, selected: upcoming && !duplicate };
@@ -103,7 +104,9 @@ export function CalendarImport({ teamName, gameFormat, formationId, existing, on
     setImporting(false);
     onImported(created);
     setCandidates(failed > 0 ? candidates : null);
-    setMessage(`${created.length} match${created.length > 1 ? "s" : ""} importé${created.length > 1 ? "s" : ""}.${failed > 0 ? ` ${failed} n’ont pas pu être créés.` : ""}`);
+    setMessage(
+      `${created.length} match${created.length > 1 ? "s" : ""} importé${created.length > 1 ? "s" : ""}.${failed > 0 ? ` ${failed} n’ont pas pu être créés.` : ""}`,
+    );
   }
 
   const selectedCount = candidates?.filter((candidate) => candidate.selected).length ?? 0;
@@ -160,7 +163,15 @@ export function CalendarImport({ teamName, gameFormat, formationId, existing, on
 
 const styles = StyleSheet.create({
   wrap: { marginTop: 12 },
-  pick: { minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primary, borderStyle: "dashed" },
+  pick: {
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderStyle: "dashed",
+  },
   pickText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
   message: { color: colors.ink, fontSize: 12, marginTop: 8 },
   review: { marginTop: 10, padding: 12, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },

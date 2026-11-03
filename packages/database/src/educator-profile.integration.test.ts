@@ -53,9 +53,7 @@ describe("PostgreSQL educator profile", () => {
   it("changes the stored password hash only with the right current password", async () => {
     const educator = await createEducator("password");
 
-    await expect(service.changePassword(educator.id, "not-the-password", "a-new-strong-password")).rejects.toBeInstanceOf(
-      InvalidCredentialsError,
-    );
+    await expect(service.changePassword(educator.id, "not-the-password", "a-new-strong-password")).rejects.toBeInstanceOf(InvalidCredentialsError);
 
     await service.changePassword(educator.id, "initial-password", "a-new-strong-password");
     const record = await database.prisma.educator.findUniqueOrThrow({ where: { id: educator.id } });

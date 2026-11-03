@@ -41,11 +41,7 @@ async function removeTestEducators(): Promise<void> {
   await database.prisma.educator.deleteMany({ where: { displayName: { startsWith: testRun } } });
 }
 
-const generated = generateTrainingSession(
-  { week: 1, phase: "Découvrir", theme: "Récupérer rapidement", intention: "Test", observable: "Test" },
-  "U12",
-  14,
-);
+const generated = generateTrainingSession({ week: 1, phase: "Découvrir", theme: "Récupérer rapidement", intention: "Test", observable: "Test" }, "U12", 14);
 const sessionInput: TrainingSessionInput = {
   title: generated.title,
   ageGroup: generated.ageGroup,
@@ -167,8 +163,8 @@ describe("ConvocationService", () => {
   it("rejette un compte introuvable", async () => {
     // UUID syntaxiquement valide mais inexistant -- un id mal formé ferait échouer la requête
     // Postgres elle-même (colonne UUID) avant même d'atteindre la logique testée ici.
-    await expect(
-      convocationService.sendForMatch("00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"),
-    ).rejects.toBeInstanceOf(EducatorNotFoundError);
+    await expect(convocationService.sendForMatch("00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")).rejects.toBeInstanceOf(
+      EducatorNotFoundError,
+    );
   });
 });

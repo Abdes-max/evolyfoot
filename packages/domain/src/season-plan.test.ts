@@ -16,7 +16,9 @@ describe("plan de saison", () => {
   });
 
   it("passe par chaque thème une fois par tour", () => {
-    const themes = buildSeasonPlan(scores, 1, 1, new Date(2026, 8, 7)).slice(0, 4).map((cycle) => cycle.theme);
+    const themes = buildSeasonPlan(scores, 1, 1, new Date(2026, 8, 7))
+      .slice(0, 4)
+      .map((cycle) => cycle.theme);
 
     expect(new Set(themes).size).toBe(4);
   });

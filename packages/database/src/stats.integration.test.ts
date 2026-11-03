@@ -42,10 +42,7 @@ const demoWeek = {
   observable: "Les joueurs identifient le moment de la perte.",
 };
 
-function sessionInput(
-  attendance?: Array<{ playerId: string; playerName: string; present: boolean }>,
-  slot = 0,
-) {
+function sessionInput(attendance?: Array<{ playerId: string; playerName: string; present: boolean }>, slot = 0) {
   const generated = generateTrainingSession(demoWeek, "U12", 14);
   return {
     title: generated.title,

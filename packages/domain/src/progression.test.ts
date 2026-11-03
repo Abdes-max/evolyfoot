@@ -15,10 +15,7 @@ describe("suggestAdjustment", () => {
   });
 
   it("consolide un thème maîtrisé avant de passer au suivant", () => {
-    const result = suggestAdjustment(
-      { ...demoFocus, progress: 82 },
-      { availability: 76, scanning: 73, reactionAfterLoss: 68 },
-    );
+    const result = suggestAdjustment({ ...demoFocus, progress: 82 }, { availability: 76, scanning: 73, reactionAfterLoss: 68 });
 
     expect(result.action).toBe("consolidate");
   });

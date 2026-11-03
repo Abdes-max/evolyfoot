@@ -74,10 +74,7 @@ export interface SavedTrainingSession {
 // Reconstruit une `TrainingSession` à partir d'un enregistrement : chaque bloc retrouve son activité
 // dans le catalogue ou parmi les exercices personnels de l'éducateur. Retourne `null` si une
 // activité n'existe plus.
-export function rehydrateTrainingSession(
-  record: SavedTrainingSession,
-  personalExercises: readonly PersonalExercise[] = [],
-): TrainingSession | null {
+export function rehydrateTrainingSession(record: SavedTrainingSession, personalExercises: readonly PersonalExercise[] = []): TrainingSession | null {
   const personalActivities = personalExercises.map(personalExerciseToActivity);
   const blocks: TrainingSession["blocks"] = [];
   for (const block of record.blocks) {

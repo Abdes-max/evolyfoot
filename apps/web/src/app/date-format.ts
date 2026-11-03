@@ -3,9 +3,7 @@
 // competitions-panel.tsx). Même format que trainingSessionDateLabel côté base
 // (player-dashboard-service.ts), dupliqué ici plutôt que partagé entre client et serveur.
 export function frenchDateLabel(date: Date): string {
-  return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" })
-    .format(date)
-    .replace(/^\p{L}/u, (letter) => letter.toUpperCase());
+  return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(date).replace(/^\p{L}/u, (letter) => letter.toUpperCase());
 }
 
 // `<input type="date">` renvoie "YYYY-MM-DD" (heure locale implicite = minuit) -- converti en

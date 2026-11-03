@@ -12,11 +12,7 @@ function parseSlot(value: string | undefined): number {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0;
 }
 
-export default async function SessionPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ week?: string; slot?: string }>;
-}) {
+export default async function SessionPage({ searchParams }: { searchParams: Promise<{ week?: string; slot?: string }> }) {
   const { week, slot } = await searchParams;
   return (
     <>

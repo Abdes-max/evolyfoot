@@ -55,10 +55,7 @@ export function VerifyEmailView({ token }: { token: string }) {
           {status === "invalid" && (
             <>
               <h1>Ce lien n’est plus valide.</h1>
-              <p>
-                Il a peut-être expiré (48 heures) ou déjà été utilisé. Connecte-toi puis demande un nouveau lien
-                depuis ton profil.
-              </p>
+              <p>Il a peut-être expiré (48 heures) ou déjà été utilisé. Connecte-toi puis demande un nouveau lien depuis ton profil.</p>
             </>
           )}
         </div>

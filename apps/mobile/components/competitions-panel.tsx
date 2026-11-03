@@ -81,7 +81,14 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
       {adding && (
         <View style={styles.form}>
           <TextInput accessibilityLabel={`Nom du ${singular}`} onChangeText={setName} placeholder={`Nom du ${singular}`} style={styles.input} value={name} />
-          <TextInput accessibilityLabel="Date" keyboardType="numbers-and-punctuation" onChangeText={setDateInput} placeholder="Date (JJ/MM/AAAA)" style={styles.input} value={dateInput} />
+          <TextInput
+            accessibilityLabel="Date"
+            keyboardType="numbers-and-punctuation"
+            onChangeText={setDateInput}
+            placeholder="Date (JJ/MM/AAAA)"
+            style={styles.input}
+            value={dateInput}
+          />
           <TextInput accessibilityLabel="Bilan" onChangeText={setResult} placeholder="Bilan (optionnel)" style={styles.input} value={result} />
           {error ? <Text style={styles.fieldError}>{error}</Text> : null}
           <View style={styles.actions}>
@@ -130,15 +137,38 @@ const styles = StyleSheet.create({
   section: { marginTop: 30 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { fontSize: 18, fontWeight: "800", color: colors.ink },
-  addButton: { minHeight: 36, paddingHorizontal: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.primary, borderRadius: radii.sm },
+  addButton: {
+    minHeight: 36,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radii.sm,
+  },
   addButtonText: { color: colors.primary, fontSize: 11, fontWeight: "800" },
   form: { marginTop: 12, padding: spacing.md, gap: 10, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.surface },
   input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
   fieldError: { color: colors.danger, fontSize: 10 },
   actions: { flexDirection: "row", gap: 10 },
-  submitButton: { minHeight: 40, paddingHorizontal: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
+  submitButton: {
+    minHeight: 40,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+    borderRadius: radii.sm,
+  },
   submitButtonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
-  cancelButton: { minHeight: 40, paddingHorizontal: 16, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm },
+  cancelButton: {
+    minHeight: 40,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.sm,
+  },
   cancelButtonText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
   empty: { color: colors.muted, fontSize: 11, marginTop: 12 },
   card: { marginTop: 12, padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md },

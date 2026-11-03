@@ -12,7 +12,10 @@ export interface StaffGateway {
   list(ownerId: string): Promise<StaffMemberSummary[]>;
   invite(ownerId: string): Promise<{ token: string; expiresAt: string }>;
   preview(token: string): Promise<{ coachName: string; teamName: string | null }>;
-  join(token: string, input: { email: string; password: string; displayName: string }): Promise<{ account: PublicAccount; sessionToken: string; expiresAt: Date }>;
+  join(
+    token: string,
+    input: { email: string; password: string; displayName: string },
+  ): Promise<{ account: PublicAccount; sessionToken: string; expiresAt: Date }>;
   remove(ownerId: string, memberId: string): Promise<void>;
 }
 
@@ -61,7 +64,12 @@ export function createListStaffHandler(resolveAccount: ResolveAccount, staff: Pi
   };
 }
 
-export function createInviteStaffHandler(resolveAccount: ResolveAccount, staff: Pick<StaffGateway, "invite">, origin: (request: Request) => string, log: (error: unknown) => void) {
+export function createInviteStaffHandler(
+  resolveAccount: ResolveAccount,
+  staff: Pick<StaffGateway, "invite">,
+  origin: (request: Request) => string,
+  log: (error: unknown) => void,
+) {
   return async (request: Request): Promise<Response> => {
     const owner = await requireOwner(resolveAccount, request);
     if (owner instanceof Response) {
@@ -90,7 +98,16 @@ export function createJoinStaffHandler(staff: Pick<StaffGateway, "join">, log: (
   return async (request: Request): Promise<Response> => {
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
     const { token, email, password, displayName } = body ?? {};
-    if (typeof token !== "string" || typeof email !== "string" || typeof password !== "string" || typeof displayName !== "string" || !token || !email || !password || !displayName) {
+    if (
+      typeof token !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      typeof displayName !== "string" ||
+      !token ||
+      !email ||
+      !password ||
+      !displayName
+    ) {
       return Response.json({ error: "Tous les champs sont requis." }, { status: 400 });
     }
     try {
@@ -120,7 +137,8 @@ export function createRemoveStaffHandler(resolveAccount: ResolveAccount, staff: 
 }
 
 export async function createStaffGateway(): Promise<{ gateway: StaffGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, AuthService, StaffService, PrismaEducatorRepository, PrismaSessionRepository, PrismaStaffRepository, PrismaTeamRepository } = await import("@evolyfoot/database");
+  const { createDatabaseClient, AuthService, StaffService, PrismaEducatorRepository, PrismaSessionRepository, PrismaStaffRepository, PrismaTeamRepository } =
+    await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const educators = new PrismaEducatorRepository(database.prisma);
   const service = new StaffService(
@@ -144,7 +162,14 @@ export async function createStaffGateway(): Promise<{ gateway: StaffGateway; dis
       async join(token, input) {
         const session = await service.join(token, input);
         return {
-          account: { id: session.educator.id, email: session.educator.email, displayName: session.educator.displayName, role: "assistant", linkedPlayerId: null, emailVerified: true },
+          account: {
+            id: session.educator.id,
+            email: session.educator.email,
+            displayName: session.educator.displayName,
+            role: "assistant",
+            linkedPlayerId: null,
+            emailVerified: true,
+          },
           sessionToken: session.sessionToken,
           expiresAt: session.expiresAt,
         };

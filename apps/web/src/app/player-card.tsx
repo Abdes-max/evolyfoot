@@ -42,60 +42,58 @@ export function PlayerCard({ name, photo, position, jerseyNumber, preferredFoot,
   return (
     <div className="player-card-frame">
       <div className="player-card-border">
-      <article aria-label={`Carte de ${name}`} className="player-card">
-      <div className="player-card-top">
-        <div className="player-card-rating">
-          <strong aria-label={overall === null ? "Pas encore de note" : `Note ${frenchNumber(overall)} sur ${playerEvaluationMaxScore}`}>
-            {overall === null ? "—" : frenchNumber(overall)}
-          </strong>
-          {positionCode && <span>{positionCode}</span>}
-          {jerseyNumber && <small>N° {jerseyNumber}</small>}
-        </div>
-        <div className="player-card-photo">
-          {photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img alt={`Photo de ${name}`} src={photo} />
+        <article aria-label={`Carte de ${name}`} className="player-card">
+          <div className="player-card-top">
+            <div className="player-card-rating">
+              <strong aria-label={overall === null ? "Pas encore de note" : `Note ${frenchNumber(overall)} sur ${playerEvaluationMaxScore}`}>
+                {overall === null ? "—" : frenchNumber(overall)}
+              </strong>
+              {positionCode && <span>{positionCode}</span>}
+              {jerseyNumber && <small>N° {jerseyNumber}</small>}
+            </div>
+            <div className="player-card-photo">
+              {photo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt={`Photo de ${name}`} src={photo} />
+              ) : (
+                <span aria-hidden="true">{name.trim().slice(0, 1).toUpperCase() || "?"}</span>
+              )}
+            </div>
+          </div>
+
+          <strong className="player-card-name">{name}</strong>
+          {preferredFoot && <small className="player-card-foot">Pied fort : {preferredFoot.toLowerCase()}</small>}
+
+          {scores ? (
+            <ul className="player-card-stats">
+              {playerEvaluationAspects.map((aspect) => (
+                <li className={scores[aspect] === topScore ? "top" : undefined} key={aspect}>
+                  <strong>{scores[aspect]}</strong>
+                  <abbr title={playerEvaluationAspectLabels[aspect]}>{playerAspectCodes[aspect]}</abbr>
+                </li>
+              ))}
+            </ul>
           ) : (
-            <span aria-hidden="true">{name.trim().slice(0, 1).toUpperCase() || "?"}</span>
+            <p className="player-card-empty">La carte se remplit avec la première évaluation.</p>
           )}
-        </div>
-      </div>
 
-      <strong className="player-card-name">{name}</strong>
-      {preferredFoot && <small className="player-card-foot">Pied fort : {preferredFoot.toLowerCase()}</small>}
+          <dl className="player-card-season">
+            <div>
+              <dd>{season.matches}</dd>
+              <dt>Matchs</dt>
+            </div>
+            <div>
+              <dd>{season.goals}</dd>
+              <dt>Buts</dt>
+            </div>
+            <div>
+              <dd>{season.assists}</dd>
+              <dt>Passes</dt>
+            </div>
+          </dl>
 
-      {scores ? (
-        <ul className="player-card-stats">
-          {playerEvaluationAspects.map((aspect) => (
-            <li className={scores[aspect] === topScore ? "top" : undefined} key={aspect}>
-              <strong>{scores[aspect]}</strong>
-              <abbr title={playerEvaluationAspectLabels[aspect]}>{playerAspectCodes[aspect]}</abbr>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="player-card-empty">La carte se remplit avec la première évaluation.</p>
-      )}
-
-      <dl className="player-card-season">
-        <div>
-          <dd>{season.matches}</dd>
-          <dt>Matchs</dt>
-        </div>
-        <div>
-          <dd>{season.goals}</dd>
-          <dt>Buts</dt>
-        </div>
-        <div>
-          <dd>{season.assists}</dd>
-          <dt>Passes</dt>
-        </div>
-      </dl>
-
-      {scores && overall !== null && previousScores && (
-        <p className="player-card-trend">{trendLabel(overall, playerOverallScore(previousScores))}</p>
-      )}
-      </article>
+          {scores && overall !== null && previousScores && <p className="player-card-trend">{trendLabel(overall, playerOverallScore(previousScores))}</p>}
+        </article>
       </div>
     </div>
   );

@@ -32,22 +32,9 @@ export default function ConnexionScreen() {
         <Text style={styles.body}>Connecte-toi avec l’adresse e-mail de ton compte éducateur.</Text>
 
         <Text style={styles.label}>Adresse e-mail</Text>
-        <TextInput
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          onChangeText={setEmail}
-          style={styles.input}
-          value={email}
-        />
+        <TextInput autoCapitalize="none" autoComplete="email" keyboardType="email-address" onChangeText={setEmail} style={styles.input} value={email} />
         <Text style={styles.label}>Mot de passe</Text>
-        <TextInput
-          autoComplete="current-password"
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-          value={password}
-        />
+        <TextInput autoComplete="current-password" onChangeText={setPassword} secureTextEntry style={styles.input} value={password} />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
