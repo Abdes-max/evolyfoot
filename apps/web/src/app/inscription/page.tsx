@@ -1,4 +1,4 @@
-import { trainingActivityCatalogue } from "@evolyfoot/domain";
+import { diagramTargets, trainingActivityCatalogue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { TacticalDiagramView } from "../tactical-diagram";
 import { RegisterForm } from "./register-form";
@@ -14,7 +14,7 @@ export default function InscriptionPage() {
     <main className="onboarding-shell">
       <section className="onboarding-intro">
         <div className="onboarding-intro-backdrop" aria-hidden="true">
-          <TacticalDiagramView diagram={backdropActivity.diagram} />
+          <TacticalDiagramView diagram={backdropActivity.diagram} targets={diagramTargets(backdropActivity)} />
         </div>
         <Link className="onboarding-brand" href="/">
           <span className="brand-mark">EV</span> EvolyFoot

@@ -6,6 +6,7 @@ import {
   canValidateSession,
   currentCycleWeek,
   demoTeam,
+  diagramTargets,
   explainTrainingSession,
   generateTrainingSession,
   getSessionDuration,
@@ -273,7 +274,7 @@ export default function SessionScreen() {
             {block.activity.photo ? null : animatedBlockId === block.id ? (
               <TacticalPlayer exercise={block.activity} label={`Schéma tactique animé : ${block.activity.title}`} seed={block.activity.id} />
             ) : (
-              <TacticalDiagramView diagram={block.activity.diagram} label={`Schéma tactique : ${block.activity.title}`} />
+              <TacticalDiagramView diagram={block.activity.diagram} targets={diagramTargets(block.activity)} label={`Schéma tactique : ${block.activity.title}`} />
             )}
             {block.activity.photo ? null : (
               <TouchableOpacity accessibilityRole="button" hitSlop={6} onPress={() => setAnimatedBlockId(animatedBlockId === block.id ? null : block.id)}>

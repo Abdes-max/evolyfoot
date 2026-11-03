@@ -1,16 +1,19 @@
 "use client";
 
-import type { TacticalDiagram } from "@evolyfoot/domain";
+import type { DiagramTarget, TacticalDiagram } from "@evolyfoot/domain";
 import { useId } from "react";
+import { DiagramTargetShape } from "./diagram-target";
 
 interface TacticalDiagramViewProps {
   diagram: TacticalDiagram;
   caption?: string;
+  // Buts, portes et lignes de l'exercice (diagramTargets).
+  targets?: readonly DiagramTarget[];
 }
 
 const tokenRadius: Record<string, number> = { attacker: 13, defender: 13, goalkeeper: 12 };
 
-export function TacticalDiagramView({ diagram, caption }: TacticalDiagramViewProps) {
+export function TacticalDiagramView({ diagram, caption, targets = [] }: TacticalDiagramViewProps) {
   const arrowheadId = `tactical-diagram-arrowhead-${useId()}`;
 
   return (
@@ -30,6 +33,9 @@ export function TacticalDiagramView({ diagram, caption }: TacticalDiagramViewPro
         <rect className="tactical-diagram-pitch" height={diagram.height - 8} rx="14" width={diagram.width - 8} x="4" y="4" />
         {diagram.zones.map((zone, index) => (
           <rect className="tactical-diagram-zone" height={zone.height} key={index} rx="8" width={zone.width} x={zone.x} y={zone.y} />
+        ))}
+        {targets.map((target, index) => (
+          <DiagramTargetShape key={`t-${index}`} target={target} />
         ))}
         {diagram.arrows.map((arrow, index) => (
           <path
