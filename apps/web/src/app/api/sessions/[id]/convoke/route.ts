@@ -1,5 +1,5 @@
 import { createAuthGateway, readSessionToken, type PublicEducator } from "@/server/auth";
-import { createConvocationGateway, createSendTrainingSessionConvocationHandler } from "@/server/convocation";
+import { convocationMailer, createConvocationGateway, createSendTrainingSessionConvocationHandler } from "@/server/convocation";
 
 async function resolveEducator(request: Request): Promise<PublicEducator | null> {
   const token = readSessionToken(request);
@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: RouteParams): Promise<R
   const { id } = await params;
   const { gateway, disconnect } = await createConvocationGateway();
   try {
-    return await createSendTrainingSessionConvocationHandler(resolveEducator, gateway, console.error)(request, id);
+    return await createSendTrainingSessionConvocationHandler(resolveEducator, gateway, console.error, convocationMailer)(request, id);
   } finally {
     await disconnect();
   }

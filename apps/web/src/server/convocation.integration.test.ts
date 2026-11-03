@@ -25,13 +25,13 @@ describe("createSendMatchConvocationHandler", () => {
     const gateway: Pick<ConvocationGateway, "sendForMatch"> = {
       sendForMatch: async (educatorId, matchId) => {
         received.push({ educatorId, matchId });
-        return { sentCount: 3 };
+        return { sentCount: 3, subject: "Convocation : match contre US Vallée", text: "Convocation : match…", recipients: [] };
       },
     };
     const handler = createSendMatchConvocationHandler(authenticated, gateway, () => undefined);
     const response = await handler(request(), "match-1");
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ sentCount: 3 });
+    expect(await response.json()).toEqual({ sentCount: 3, emailCount: 0 });
     expect(received).toEqual([{ educatorId: educator.id, matchId: "match-1" }]);
   });
 
@@ -74,13 +74,13 @@ describe("createSendTrainingSessionConvocationHandler", () => {
     const gateway: Pick<ConvocationGateway, "sendForTrainingSession"> = {
       sendForTrainingSession: async (educatorId, sessionId) => {
         received.push({ educatorId, sessionId });
-        return { sentCount: 14 };
+        return { sentCount: 14, subject: "Convocation : séance", text: "Convocation : séance…", recipients: [] };
       },
     };
     const handler = createSendTrainingSessionConvocationHandler(authenticated, gateway, () => undefined);
     const response = await handler(request(), "session-1");
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ sentCount: 14 });
+    expect(await response.json()).toEqual({ sentCount: 14, emailCount: 0 });
     expect(received).toEqual([{ educatorId: educator.id, sessionId: "session-1" }]);
   });
 
@@ -91,5 +91,32 @@ describe("createSendTrainingSessionConvocationHandler", () => {
       () => undefined,
     );
     expect((await handler(request(), "session-1")).status).toBe(404);
+  });
+
+  it("sends an e-mail reminder to every known address and counts them", async () => {
+    const mails: Array<{ to: string; subject: string; text: string }> = [];
+    const handler = createSendTrainingSessionConvocationHandler(
+      authenticated,
+      {
+        sendForTrainingSession: async () => ({
+          sentCount: 14,
+          subject: "Convocation : séance « Récupérer »",
+          text: "Convocation : séance « Récupérer », mardi · 18:00 — Stade.",
+          recipients: [
+            { email: "parent@example.test", name: "Kylian" },
+            { email: "tuteur@example.test", name: "Tuteur de Nael" },
+          ],
+        }),
+      },
+      () => undefined,
+      { send: async (input) => void mails.push(input), calendarUrl: () => "https://evolyfoot.test/joueur/calendrier" },
+    );
+    const response = await handler(request(), "session-1");
+    expect(await response.json()).toEqual({ sentCount: 14, emailCount: 2 });
+    expect(mails.map((mail) => mail.to)).toEqual(["parent@example.test", "tuteur@example.test"]);
+    expect(mails[0]!.subject).toBe("Convocation : séance « Récupérer » — EvolyFoot");
+    expect(mails[0]!.text).toContain("Bonjour Kylian");
+    expect(mails[0]!.text).toContain("Coach t’envoie une convocation");
+    expect(mails[0]!.text).toContain("https://evolyfoot.test/joueur/calendrier");
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import type { TrainingSession } from "@evolyfoot/domain";
+import { convocationFeedback as formatConvocationFeedback, type TrainingSession } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { PlaceInput } from "../../place-input";
@@ -173,7 +173,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
         return;
       }
       const body = await response.json();
-      setConvocationFeedback(`Convocation envoyée à ${body.sentCount} joueur${body.sentCount > 1 ? "s" : ""}.`);
+      setConvocationFeedback(formatConvocationFeedback(body.sentCount, body.emailCount));
     } catch {
       setConvocationFeedback("Une erreur est survenue.");
     } finally {
