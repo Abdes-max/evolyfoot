@@ -1,6 +1,6 @@
 "use client";
 
-import { buildDiagramAnimation, type AnimationPoint, type TacticalDiagram } from "@evolyfoot/domain";
+import { ballFrame, buildDiagramAnimation, type AnimatedExercise, type AnimationPoint } from "@evolyfoot/domain";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 const stepSeconds = 1.7;
@@ -25,8 +25,9 @@ function mix(from: AnimationPoint, to: AnimationPoint, ratio: number): Animation
   return { x: from.x + (to.x - from.x) * ratio, y: from.y + (to.y - from.y) * ratio };
 }
 
-export function TacticalPlayer({ diagram, seed }: { diagram: TacticalDiagram; seed: string }) {
-  const steps = useMemo(() => buildDiagramAnimation(diagram, seed), [diagram, seed]);
+export function TacticalPlayer({ exercise, seed }: { exercise: AnimatedExercise; seed: string }) {
+  const { diagram } = exercise;
+  const steps = useMemo(() => buildDiagramAnimation(exercise, seed), [exercise, seed]);
   const reducedMotion = useReducedMotion();
   // `null` tant que l'éducateur n'a touché à rien : la lecture démarre seule, sauf animations réduites.
   const [playChoice, setPlayChoice] = useState<boolean | null>(null);
@@ -81,10 +82,9 @@ export function TacticalPlayer({ diagram, seed }: { diagram: TacticalDiagram; se
             const to = at(press.targetId);
             return <line className="tactical-player-press" key={press.id} x1={from.x} x2={to.x} y1={from.y} y2={to.y} />;
           })}
-          {step.passes.map((pass) => {
-            const from = at(pass.fromId);
-            const to = at(pass.toId);
-            return <line className="tactical-player-pass" key={pass.fromId} x1={from.x} x2={to.x} y1={from.y} y2={to.y} />;
+          {step.balls.map((ball) => {
+            const { trail } = ballFrame(ball, at, passing);
+            return trail && <line className={`tactical-player-pass ${ball.kind}`} key={`${ball.kind}-${ball.fromId}`} x1={trail.from.x} x2={trail.to.x} y1={trail.from.y} y2={trail.to.y} />;
           })}
           {diagram.tokens.map((token) => {
             const point = at(token.id);
@@ -101,13 +101,12 @@ export function TacticalPlayer({ diagram, seed }: { diagram: TacticalDiagram; se
             const point = at(press.id);
             return <circle className="tactical-player-ring press" cx={point.x} cy={point.y} key={press.id} r={18 + (1 - movement) * 6} />;
           })}
-          {step.passes.map((pass) => {
-            const holder = at(passing < 1 ? pass.fromId : pass.toId);
-            const ball = mix(at(pass.fromId), at(pass.toId), passing);
+          {step.balls.map((ball) => {
+            const frame = ballFrame(ball, at, passing);
             return (
-              <g key={pass.fromId}>
-                <circle className="tactical-player-ring" cx={holder.x} cy={holder.y} r="18" />
-                <circle className="tactical-player-ball" cx={ball.x + 9} cy={ball.y - 9} r="4.5" />
+              <g key={`${ball.kind}-${ball.fromId}`}>
+                {frame.holder && <circle className="tactical-player-ring" cx={frame.holder.x} cy={frame.holder.y} r="18" />}
+                <circle className="tactical-player-ball" cx={frame.ball.x + 9} cy={frame.ball.y - 9} r="4.5" />
               </g>
             );
           })}

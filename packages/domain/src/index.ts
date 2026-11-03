@@ -123,8 +123,8 @@ export {
   setCaptain,
   validateMatchPlan,
 } from "./match";
-export { buildDiagramAnimation, diagramAnimationStepCount } from "./diagram-animation";
-export type { AnimationPass, AnimationPoint, AnimationStep } from "./diagram-animation";
+export { ballFrame, buildDiagramAnimation, diagramAnimationStepCount, exerciseScenario } from "./diagram-animation";
+export type { AnimatedExercise, AnimationBall, AnimationBallKind, AnimationPoint, AnimationStep, BallFrame, ExerciseScenario } from "./diagram-animation";
 export { fixtureFromTitle, parseCalendarFile } from "./calendar-import";
 export type { CalendarEvent, ImportedFixture } from "./calendar-import";
 export { analyzeMatchup } from "./tactical-analysis";

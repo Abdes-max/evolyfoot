@@ -37,7 +37,7 @@ export function ExerciseSheet({ activity, durationMinutes, playerCount, children
           // eslint-disable-next-line @next/next/no-img-element
           <img alt={`Schéma de ${activity.title}`} className="sheet-photo" src={activity.photo} />
         ) : (
-          <TacticalPlayer diagram={activity.diagram} seed={activity.id} />
+          <TacticalPlayer exercise={activity} seed={activity.id} />
         )}
         {activity.equipment.length > 0 && (
           <p className="sheet-equipment">

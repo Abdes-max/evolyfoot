@@ -271,7 +271,7 @@ export default function SessionScreen() {
             </View>
             <Text style={styles.objective}>{block.activity.objective}</Text>
             {block.activity.photo ? null : animatedBlockId === block.id ? (
-              <TacticalPlayer diagram={block.activity.diagram} label={`Schéma tactique animé : ${block.activity.title}`} seed={block.activity.id} />
+              <TacticalPlayer exercise={block.activity} label={`Schéma tactique animé : ${block.activity.title}`} seed={block.activity.id} />
             ) : (
               <TacticalDiagramView diagram={block.activity.diagram} label={`Schéma tactique : ${block.activity.title}`} />
             )}
