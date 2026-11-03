@@ -1,5 +1,5 @@
 import { colors, radii } from "@evolyfoot/design-tokens";
-import { buildDiagramAnimation, type AnimationPoint, type DiagramTokenRole, type TacticalDiagram } from "@evolyfoot/domain";
+import { ballFrame, buildDiagramAnimation, type AnimatedExercise, type AnimationPoint, type DiagramTokenRole } from "@evolyfoot/domain";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AccessibilityInfo, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Circle, G, Line, Rect, Text as SvgText } from "react-native-svg";
@@ -38,8 +38,9 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
-export function TacticalPlayer({ diagram, seed, label = "Schéma tactique animé" }: { diagram: TacticalDiagram; seed: string; label?: string }) {
-  const steps = useMemo(() => buildDiagramAnimation(diagram, seed), [diagram, seed]);
+export function TacticalPlayer({ exercise, seed, label = "Schéma tactique animé" }: { exercise: AnimatedExercise; seed: string; label?: string }) {
+  const { diagram } = exercise;
+  const steps = useMemo(() => buildDiagramAnimation(exercise, seed), [exercise, seed]);
   const reducedMotion = useReducedMotion();
   // `null` tant que l'éducateur n'a touché à rien : la lecture démarre seule, sauf animations réduites.
   const [playChoice, setPlayChoice] = useState<boolean | null>(null);
@@ -98,10 +99,23 @@ export function TacticalPlayer({ diagram, seed, label = "Schéma tactique animé
             const to = at(press.targetId);
             return <Line key={`p-${press.id}`} opacity={0.8} stroke={pressColor} strokeDasharray="4 5" strokeWidth={1.4} x1={from.x} x2={to.x} y1={from.y} y2={to.y} />;
           })}
-          {step.passes.map((pass) => {
-            const from = at(pass.fromId);
-            const to = at(pass.toId);
-            return <Line key={`l-${pass.fromId}`} opacity={0.75} stroke="#ffffff" strokeDasharray="5 5" strokeWidth={1.6} x1={from.x} x2={to.x} y1={from.y} y2={to.y} />;
+          {step.balls.map((ball) => {
+            const { trail } = ballFrame(ball, at, passing);
+            return (
+              trail && (
+                <Line
+                  key={`l-${ball.kind}-${ball.fromId}`}
+                  opacity={0.75}
+                  stroke={ball.kind === "shot" ? colors.lime : "#ffffff"}
+                  strokeDasharray="5 5"
+                  strokeWidth={ball.kind === "shot" ? 2.2 : 1.6}
+                  x1={trail.from.x}
+                  x2={trail.to.x}
+                  y1={trail.from.y}
+                  y2={trail.to.y}
+                />
+              )
+            );
           })}
           {diagram.tokens.map((token) => {
             const point = at(token.id);
@@ -118,13 +132,12 @@ export function TacticalPlayer({ diagram, seed, label = "Schéma tactique animé
             const point = at(press.id);
             return <Circle cx={point.x} cy={point.y} fill="none" key={`r-${press.id}`} r={18 + (1 - movement) * 6} stroke={pressColor} strokeWidth={2} />;
           })}
-          {step.passes.map((pass) => {
-            const holder = at(passing < 1 ? pass.fromId : pass.toId);
-            const ball = mix(at(pass.fromId), at(pass.toId), passing);
+          {step.balls.map((ball) => {
+            const frame = ballFrame(ball, at, passing);
             return (
-              <G key={`b-${pass.fromId}`}>
-                <Circle cx={holder.x} cy={holder.y} fill="none" r={18} stroke={colors.lime} strokeWidth={2} />
-                <Circle cx={ball.x + 9} cy={ball.y - 9} fill="#ffffff" r={4.5} stroke="#0b131e" strokeWidth={1.2} />
+              <G key={`b-${ball.kind}-${ball.fromId}`}>
+                {frame.holder && <Circle cx={frame.holder.x} cy={frame.holder.y} fill="none" r={18} stroke={colors.lime} strokeWidth={2} />}
+                <Circle cx={frame.ball.x + 9} cy={frame.ball.y - 9} fill="#ffffff" r={4.5} stroke="#0b131e" strokeWidth={1.2} />
               </G>
             );
           })}
