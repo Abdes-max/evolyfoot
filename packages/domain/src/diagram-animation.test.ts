@@ -137,10 +137,26 @@ describe("animation d'un exercice", () => {
         }
       }
     }
-    expect(diagramTargets(exercise("Match à trois passes")).map((target) => target.kind)).toEqual(["miniGoal", "miniGoal"]);
-    expect(diagramTargets(exercise("Le 3 contre 2 vers les portes")).map((target) => target.kind)).toEqual(["gate", "gate", "gate", "gate"]);
-    expect(diagramTargets(exercise("Les rois de la ligne")).map((target) => target.kind)).toEqual(["line"]);
-    expect(diagramTargets(exercise("Rondo mobile 4 contre 1"))).toEqual([]);
+    const kinds = (title: string) => diagramTargets(exercise(title)).filter((target) => target.kind !== "cone" && target.kind !== "plot").map((target) => target.kind);
+    expect(kinds("Match à trois passes")).toEqual(["miniGoal", "miniGoal"]);
+    expect(kinds("Le 3 contre 2 vers les portes")).toEqual(["gate", "gate", "gate", "gate"]);
+    expect(kinds("Les rois de la ligne")).toEqual(["line"]);
+    expect(kinds("Rondo mobile 4 contre 1")).toEqual([]);
+  });
+
+  it("dessine les cônes et les plots de l'organisation", () => {
+    const cones = (title: string) => diagramTargets(exercise(title)).filter((target) => target.kind === "cone" || target.kind === "plot");
+    const star = exercise("Passes en étoile");
+
+    // Zone délimitée aux quatre coins : par des cônes si la fiche en prévoit, sinon par des plots.
+    expect(cones("Rondo mobile 4 contre 1").map((target) => target.kind)).toEqual(["cone", "cone", "cone", "cone"]);
+    expect(cones("Passes en étoile").every((target) => target.kind === "plot")).toBe(true);
+    expect(diagramTargets({ ...exercise("Rondo mobile 4 contre 1"), equipment: ["Chasubles"] })).toEqual([]);
+    // Un plot par joueur en étoile, un plot central, une ligne de plots pour le slalom.
+    expect(cones("Passes en étoile")).toHaveLength(4 + star.diagram.tokens.filter((token) => token.role === "attacker").length);
+    expect(cones("Les passes croisées")).toHaveLength(5);
+    expect(cones("Le slalom à deux")).toHaveLength(4 + 5);
+    expect(cones("Conduite et accélération")).toHaveLength(4 + 8);
   });
 
   it("tire dans la cage dessinée", () => {

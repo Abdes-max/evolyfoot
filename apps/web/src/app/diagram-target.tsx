@@ -1,14 +1,25 @@
-import { targetGeometry, type DiagramTarget } from "@evolyfoot/domain";
+import { targetGeometry, type AnimationPoint, type DiagramTarget } from "@evolyfoot/domain";
 
-// But et mini-but ouverts vers le terrain, porte en deux plots, ligne à franchir en pointillés --
-// communs au schéma fixe (tactical-diagram.tsx) et à l'animation (tactical-player.tsx).
+function Cone({ at }: { at: AnimationPoint }) {
+  return <polygon className="tactical-target-cone" points={`${at.x},${at.y - 6} ${at.x - 5},${at.y + 4} ${at.x + 5},${at.y + 4}`} />;
+}
+
+// But et mini-but ouverts vers le terrain, porte en deux cônes, ligne à franchir en pointillés,
+// cône (triangle) ou plot (coupelle plate) -- communs au schéma fixe (tactical-diagram.tsx) et à
+// l'animation (tactical-player.tsx).
 export function DiagramTargetShape({ target }: { target: DiagramTarget }) {
   const { a, b, backA, backB } = targetGeometry(target);
+  if (target.kind === "cone") {
+    return <Cone at={target.center} />;
+  }
+  if (target.kind === "plot") {
+    return <ellipse className="tactical-target-plot" cx={target.center.x} cy={target.center.y} rx="5" ry="3" />;
+  }
   if (target.kind === "gate") {
     return (
-      <g className="tactical-target-gate">
-        <circle cx={a.x} cy={a.y} r="4" />
-        <circle cx={b.x} cy={b.y} r="4" />
+      <g>
+        <Cone at={a} />
+        <Cone at={b} />
       </g>
     );
   }

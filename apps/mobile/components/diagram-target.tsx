@@ -1,16 +1,32 @@
 import { colors } from "@evolyfoot/design-tokens";
-import { targetGeometry, type DiagramTarget } from "@evolyfoot/domain";
-import { Circle, G, Line, Polyline } from "react-native-svg";
+import { targetGeometry, type AnimationPoint, type DiagramTarget } from "@evolyfoot/domain";
+import { Ellipse, G, Line, Polygon, Polyline } from "react-native-svg";
 
-// But et mini-but ouverts vers le terrain, porte en deux plots, ligne à franchir en pointillés --
-// communs au schéma fixe (tactical-diagram.tsx) et à l'animation (tactical-player.tsx).
+// Mêmes couleurs que le web (apps/web/src/app/exercise-sheet.css).
+const coneFill = "#ff8a1f";
+const plotFill = "#ffd23f";
+const markerStroke = "#3a2600";
+
+function Cone({ at }: { at: AnimationPoint }) {
+  return <Polygon fill={coneFill} points={`${at.x},${at.y - 6} ${at.x - 5},${at.y + 4} ${at.x + 5},${at.y + 4}`} stroke={markerStroke} strokeWidth={1} />;
+}
+
+// But et mini-but ouverts vers le terrain, porte en deux cônes, ligne à franchir en pointillés,
+// cône (triangle) ou plot (coupelle plate) -- communs au schéma fixe (tactical-diagram.tsx) et à
+// l'animation (tactical-player.tsx).
 export function DiagramTargetShape({ target }: { target: DiagramTarget }) {
   const { a, b, backA, backB } = targetGeometry(target);
+  if (target.kind === "cone") {
+    return <Cone at={target.center} />;
+  }
+  if (target.kind === "plot") {
+    return <Ellipse cx={target.center.x} cy={target.center.y} fill={plotFill} rx={5} ry={3} stroke={markerStroke} strokeWidth={1} />;
+  }
   if (target.kind === "gate") {
     return (
       <G>
-        <Circle cx={a.x} cy={a.y} fill="#ffb347" r={4} stroke="#3a2600" strokeWidth={1} />
-        <Circle cx={b.x} cy={b.y} fill="#ffb347" r={4} stroke="#3a2600" strokeWidth={1} />
+        <Cone at={a} />
+        <Cone at={b} />
       </G>
     );
   }
