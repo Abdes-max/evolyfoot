@@ -85,4 +85,30 @@ describe("SidebarIdentity", () => {
 
     Object.defineProperty(window, "location", { value: originalLocation, writable: true });
   });
+
+  it("n’annonce le nouveau lien de confirmation qu’une fois l’envoi accepté, sinon propose de réessayer", async () => {
+    let resendStatus = 500;
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.includes("/api/auth/resend-verification")) {
+        return new Response(JSON.stringify({}), { status: resendStatus });
+      }
+      if (url.includes("/api/auth/session")) {
+        return jsonResponse({ educator: { id: "1", email: "coach@example.test", displayName: "Coach Test", emailVerified: false } });
+      }
+      return jsonResponse({ profile: null });
+    });
+
+    render(<SidebarIdentity />);
+    fireEvent.click(await screen.findByRole("button", { name: "Renvoyer le lien" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Le lien n’a pas pu être envoyé.");
+    expect(screen.queryByText("Nouveau lien envoyé.")).not.toBeInTheDocument();
+
+    resendStatus = 200;
+    fireEvent.click(screen.getByRole("button", { name: "Réessayer" }));
+
+    expect(await screen.findByText("Nouveau lien envoyé.")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
 });

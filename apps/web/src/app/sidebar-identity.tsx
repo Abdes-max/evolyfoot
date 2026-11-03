@@ -34,7 +34,7 @@ export function SidebarIdentity() {
   // `Team.playerCount` -- un chiffre saisi une fois à l'onboarding, avant que l'effectif nominatif
   // n'existe (voir roadmap.md, phase 2), qui se désynchronise dès qu'un joueur est ajouté/retiré.
   const [playerCount, setPlayerCount] = useState<number | null>(null);
-  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -69,12 +69,15 @@ export function SidebarIdentity() {
     };
   }, []);
 
+  // « Nouveau lien envoyé » seulement si le serveur a accepté la demande ; sinon le bouton revient
+  // pour réessayer.
   async function resendVerification() {
     setResendState("sending");
     try {
-      await fetch("/api/auth/resend-verification", { method: "POST" });
-    } finally {
-      setResendState("sent");
+      const response = await fetch("/api/auth/resend-verification", { method: "POST" });
+      setResendState(response.ok ? "sent" : "failed");
+    } catch {
+      setResendState("failed");
     }
   }
 
@@ -157,11 +160,14 @@ export function SidebarIdentity() {
         <div className="email-reminder">
           <span>Confirme ton adresse e-mail : un lien t’a été envoyé à l’inscription.</span>
           {resendState === "sent" ? (
-            <span>Nouveau lien envoyé.</span>
+            <span role="status">Nouveau lien envoyé.</span>
           ) : (
-            <button disabled={resendState === "sending"} onClick={resendVerification} type="button">
-              {resendState === "sending" ? "Envoi…" : "Renvoyer le lien"}
-            </button>
+            <>
+              {resendState === "failed" && <span role="alert">Le lien n’a pas pu être envoyé.</span>}
+              <button disabled={resendState === "sending"} onClick={resendVerification} type="button">
+                {resendState === "sending" ? "Envoi…" : resendState === "failed" ? "Réessayer" : "Renvoyer le lien"}
+              </button>
+            </>
           )}
         </div>
       )}
