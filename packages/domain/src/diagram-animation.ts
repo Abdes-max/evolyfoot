@@ -35,7 +35,7 @@ export type ExerciseScenario = "possession" | "passAndMove" | "dribbling" | "pro
 
 export type AnimatedExercise = Pick<
   TrainingActivity,
-  "kind" | "title" | "organization" | "instruction" | "observable" | "rules" | "coachingPoints" | "defenderCount" | "diagram"
+  "kind" | "title" | "organization" | "instruction" | "observable" | "rules" | "coachingPoints" | "equipment" | "defenderCount" | "diagram"
 >;
 
 export const diagramAnimationStepCount = 6;
@@ -674,9 +674,9 @@ function buildGroups(diagram: AnimatedExercise["diagram"], miniGoals: boolean): 
   });
 }
 
-export type DiagramTargetKind = "goal" | "miniGoal" | "gate" | "line";
+export type DiagramTargetKind = "goal" | "miniGoal" | "gate" | "line" | "cone" | "plot";
 
-// Cible dessinée sur le terrain : but, mini-but, porte de plots ou ligne à franchir.
+// Repère dessiné sur le terrain : but, mini-but, porte (deux cônes), ligne à franchir, cône ou plot.
 export interface DiagramTarget {
   readonly kind: DiagramTargetKind;
   readonly center: AnimationPoint;
@@ -755,8 +755,69 @@ export function diagramTargets(exercise: AnimatedExercise): readonly DiagramTarg
         targets.push({ kind: "gate", center: between(token, next, 0.5), facing: unit(token, next), width: 20 });
       });
     }
+    targets.push(...conesFor(exercise, group, targets));
   }
   return targets;
+}
+
+// Cône (haut, pour délimiter) ou plot (coupelle plate, pour baliser un parcours).
+function marker(center: AnimationPoint, kind: "cone" | "plot" = "plot"): DiagramTarget {
+  return { kind, center, facing: { x: 0, y: -1 }, width: 0 };
+}
+
+// Rangée de plots dans l'axe du jeu, décalée de `offset` sur le côté.
+function coneRow(group: ZoneGroup, count: number, offset: number): DiagramTarget[] {
+  const center = zoneCenter(group.zone);
+  const side = { x: -group.forward.y, y: group.forward.x };
+  const length = Math.abs(group.forward.x) > Math.abs(group.forward.y) ? group.zone.width : group.zone.height;
+  return Array.from({ length: count }, (_, index) => marker(shift(shift(center, group.forward, (index / (count - 1) - 0.5) * (length - 4 * zoneInset)), side, offset)));
+}
+
+// Plots de l'organisation : délimitation de la zone (matériel « Cônes » ou « Plots »), puis les
+// dispositions décrites dans la fiche (étoile, plot central, ligne de plots, coins du but…).
+function conesFor(exercise: AnimatedExercise, group: ZoneGroup, targets: readonly DiagramTarget[]): DiagramTarget[] {
+  const organization = lower(exercise.organization, exercise.instruction, ...(exercise.rules ?? []));
+  const equipment = lower(...(exercise.equipment ?? []));
+  const { zone } = group;
+  const cones: DiagramTarget[] = [];
+  if (/cône|plot/.test(equipment) || /\bplots?\b/.test(organization)) {
+    const corner = /cône/.test(equipment) ? "cone" : "plot";
+    for (const x of [zone.x, zone.x + zone.width]) {
+      for (const y of [zone.y, zone.y + zone.height]) {
+        cones.push(marker({ x, y }, corner));
+      }
+    }
+  }
+  const center = zoneCenter(zone);
+  if (/étoile|joueur par plot|plot suivant/.test(organization)) {
+    for (const token of group.attackers) {
+      cones.push(marker(shift(token, unit(center, token), 17)));
+    }
+  }
+  if (/plot central/.test(organization)) {
+    cones.push(marker(center));
+  }
+  const side = Math.abs(group.forward.x) > Math.abs(group.forward.y) ? zone.height : zone.width;
+  if (/deux lignes de plots/.test(organization)) {
+    cones.push(...coneRow(group, 4, -side / 4), ...coneRow(group, 4, side / 4));
+  } else if (/ligne de plots|slalom|plots tous les/.test(organization)) {
+    cones.push(...coneRow(group, 5, 0));
+  }
+  if (/ligne des plots/.test(organization)) {
+    const axis = { x: -group.forward.y, y: group.forward.x };
+    const mark = shift(center, group.forward, side * 0.2);
+    cones.push(...[-1.5, -0.5, 0.5, 1.5].map((step) => marker(shift(mark, axis, (step * side) / 5))));
+  }
+  if (/coins du but/.test(organization)) {
+    for (const goal of targets.filter((target) => target.kind === "goal" || target.kind === "miniGoal")) {
+      const { a, b } = targetGeometry(goal);
+      cones.push(marker(between(a, goal.center, 0.15)), marker(between(b, goal.center, 0.15)));
+    }
+  }
+  if (/presse un plot/.test(organization)) {
+    cones.push(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([dx, dy]) => marker({ x: center.x + (dx! * zone.width) / 4, y: center.y + (dy! * zone.height) / 4 })));
+  }
+  return cones;
 }
 
 export interface BallFrame {
