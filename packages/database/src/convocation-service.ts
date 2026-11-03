@@ -1,6 +1,29 @@
 import { EducatorNotFoundError, MatchNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
 import { matchMeetingTime } from "./match-time";
-import type { EducatorRepository, MatchRepository, MessageRepository, PersistedMatch, PersistedTrainingSession, PlayerRepository, TrainingSessionRepository } from "./repositories";
+import type {
+  EducatorRepository,
+  MatchRepository,
+  MessageRepository,
+  PersistedMatch,
+  PersistedPlayer,
+  PersistedTrainingSession,
+  PlayerRepository,
+  TrainingSessionRepository,
+} from "./repositories";
+
+// Adresse à prévenir aussi par e-mail : celle de la fiche joueur (saisie par l'éducateur) et celle
+// du compte EvolyFoot Player lié au joueur, sans doublon.
+export interface ConvocationRecipient {
+  email: string;
+  name: string;
+}
+
+export interface ConvocationResult {
+  sentCount: number;
+  subject: string;
+  text: string;
+  recipients: ConvocationRecipient[];
+}
 
 // Fuseau du club plutôt que celui (souvent UTC) du serveur qui exécute ce code -- voir le même
 // correctif dans match-time.ts.
@@ -56,7 +79,7 @@ export class ConvocationService {
     private readonly messageRepository: MessageRepository,
   ) {}
 
-  async sendForMatch(educatorId: string, matchId: string): Promise<{ sentCount: number }> {
+  async sendForMatch(educatorId: string, matchId: string): Promise<ConvocationResult> {
     const [educator, match] = await Promise.all([
       this.educatorRepository.findById(educatorId),
       this.matchRepository.findById(matchId, educatorId),
@@ -77,10 +100,12 @@ export class ConvocationService {
         this.messageRepository.create({ educatorId, playerId, authorRole: "coach", authorName: educator.displayName, text }),
       ),
     );
-    return { sentCount: playerIds.length };
+    const roster = await this.playerRepository.listByEducator(educatorId);
+    const convoked = roster.filter((player) => playerIds.includes(player.id));
+    return { sentCount: playerIds.length, subject: `Convocation : match contre ${match.opponent}`, text, recipients: await this.recipientsFor(convoked) };
   }
 
-  async sendForTrainingSession(educatorId: string, sessionId: string): Promise<{ sentCount: number }> {
+  async sendForTrainingSession(educatorId: string, sessionId: string): Promise<ConvocationResult> {
     const [educator, session, roster] = await Promise.all([
       this.educatorRepository.findById(educatorId),
       this.trainingSessionRepository.findById(sessionId, educatorId),
@@ -101,6 +126,21 @@ export class ConvocationService {
         this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text }),
       ),
     );
-    return { sentCount: roster.length };
+    return { sentCount: roster.length, subject: `Convocation : séance « ${session.title} »`, text, recipients: await this.recipientsFor(roster) };
+  }
+
+  private async recipientsFor(players: readonly PersistedPlayer[]): Promise<ConvocationRecipient[]> {
+    const accounts = await Promise.all(players.map((player) => this.educatorRepository.findByLinkedPlayerId(player.id)));
+    const byEmail = new Map<string, ConvocationRecipient>();
+    players.forEach((player, index) => {
+      const account = accounts[index];
+      for (const candidate of [account ? { email: account.email, name: account.displayName } : null, player.email ? { email: player.email, name: player.firstName } : null]) {
+        const key = candidate?.email.trim().toLowerCase();
+        if (candidate && key && key.includes("@") && !byEmail.has(key)) {
+          byEmail.set(key, { email: candidate.email.trim(), name: candidate.name });
+        }
+      }
+    });
+    return [...byEmail.values()];
   }
 }

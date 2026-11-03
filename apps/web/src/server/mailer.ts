@@ -86,7 +86,7 @@ function renderEmailHtml({ displayName, message, actionLabel, actionUrl, footnot
     <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#151d2b;border:1px solid #232c3c;border-radius:16px;">
       <tr>
         <td style="padding:32px 28px;color:#f4f6f9;">
-          <div style="display:inline-block;width:32px;height:32px;line-height:32px;text-align:center;border-radius:9px;background:#3ec6f5;color:#062330;font-weight:bold;font-size:16px;">E</div>
+          <div style="display:inline-block;width:32px;height:32px;line-height:32px;text-align:center;border-radius:9px;background:#3ec6f5;color:#062330;font-weight:bold;font-size:13px;letter-spacing:-0.5px;">EV</div>
           <span style="font-weight:bold;font-size:18px;margin-left:8px;">EvolyFoot</span>
           <h1 style="font-size:20px;margin:24px 0 12px;">Bonjour ${escapeHtml(displayName)},</h1>
           <p style="font-size:14px;line-height:1.6;color:#97a3b6;margin:0 0 24px;">${escapeHtml(message)}</p>
@@ -110,6 +110,21 @@ export function renderVerificationEmail(displayName: string, verifyUrl: string):
     subject: "Confirme ton adresse e-mail — EvolyFoot",
     html: renderEmailHtml({ displayName, message, actionLabel: "Confirmer mon e-mail", actionUrl: verifyUrl }),
     text: `Bonjour ${displayName},\n\n${message}\n${verifyUrl}`,
+  };
+}
+
+export function renderConvocationEmail(
+  displayName: string,
+  coachName: string,
+  subject: string,
+  text: string,
+  calendarUrl: string,
+): { subject: string; html: string; text: string } {
+  const message = `${coachName} t’envoie une convocation. ${text}`;
+  return {
+    subject: `${subject} — EvolyFoot`,
+    html: renderEmailHtml({ displayName, message, actionLabel: "Répondre dans EvolyFoot", actionUrl: calendarUrl }),
+    text: `Bonjour ${displayName},\n\n${message}\n${calendarUrl}`,
   };
 }
 

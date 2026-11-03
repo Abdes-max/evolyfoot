@@ -1,4 +1,5 @@
 import {
+  convocationFeedback,
   adjustBlockDuration,
   buildDevelopmentPlan,
   canReplaceSessionActivity,
@@ -213,7 +214,7 @@ export default function SessionScreen() {
       setConvocationStatus(typeof body?.error === "string" ? body.error : "La convocation n’est pas partie, réessayez.");
       return;
     }
-    setConvocationStatus(`Convocation envoyée à ${body.sentCount} joueur${body.sentCount > 1 ? "s" : ""}.`);
+    setConvocationStatus(convocationFeedback(body.sentCount, body.emailCount));
   }
 
   function confirmConvocation() {

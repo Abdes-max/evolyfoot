@@ -6,6 +6,7 @@ import {
   attendanceStatusLabels,
   canFinalizeMatchPlan,
   clearSlot,
+  convocationFeedback as formatConvocationFeedback,
   defaultFormationId,
   formationSlots,
   gameFormats,
@@ -312,7 +313,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         return;
       }
       const body = await response.json();
-      setConvocationFeedback(`Convocation envoyée à ${body.sentCount} joueur${body.sentCount > 1 ? "s" : ""}.`);
+      setConvocationFeedback(formatConvocationFeedback(body.sentCount, body.emailCount));
     } catch {
       setConvocationFeedback("Une erreur est survenue.");
     } finally {

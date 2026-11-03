@@ -86,7 +86,7 @@ describe("ConvocationService", () => {
 
     const result = await convocationService.sendForMatch(coach.id, match.id);
 
-    expect(result).toEqual({ sentCount: 2 });
+    expect(result).toMatchObject({ sentCount: 2, subject: "Convocation : match contre US Vallée", recipients: [] });
     const p1Messages = await messageRepository.listByPlayer(coach.id, p1.id);
     expect(p1Messages).toHaveLength(1);
     expect(p1Messages[0]).toMatchObject({ authorRole: "coach", authorName: coach.displayName });
@@ -121,12 +121,40 @@ describe("ConvocationService", () => {
 
     const result = await convocationService.sendForTrainingSession(coach.id, session.id);
 
-    expect(result).toEqual({ sentCount: 2 });
+    expect(result).toMatchObject({ sentCount: 2, recipients: [] });
     const p1Messages = await messageRepository.listByPlayer(coach.id, p1.id);
     expect(p1Messages).toHaveLength(1);
     expect(p1Messages[0]!.text).toContain(session.title);
     const p2Messages = await messageRepository.listByPlayer(coach.id, p2.id);
     expect(p2Messages).toHaveLength(1);
+  });
+
+  it("prévient aussi par e-mail l'adresse de la fiche et le compte lié, sans doublon", async () => {
+    const coach = await createCoach("emails");
+    const p1 = await playerRepository.create(coach.id, "Kylian");
+    const p2 = await playerRepository.create(coach.id, "Nael");
+    await playerRepository.create(coach.id, "Sans adresse");
+    await playerRepository.update(p1.id, coach.id, { email: "parent.kylian@example.test" });
+    await playerRepository.update(p2.id, coach.id, { email: "Tuteur.Nael@example.test" });
+    await educatorRepository.create({
+      email: "tuteur.nael@example.test",
+      displayName: `${testRun}-tuteur`,
+      passwordHash: "tutor-password-hash",
+      role: "player",
+      linkedPlayerId: p2.id,
+    });
+    const session = await trainingSessionService.save(coach.id, sessionInput);
+
+    const result = await convocationService.sendForTrainingSession(coach.id, session.id);
+
+    expect(result.sentCount).toBe(3);
+    expect(result.recipients).toHaveLength(2);
+    expect(result.recipients).toEqual(
+      expect.arrayContaining([
+        { email: "parent.kylian@example.test", name: "Kylian" },
+        { email: "tuteur.nael@example.test", name: `${testRun}-tuteur` },
+      ]),
+    );
   });
 
   it("rejette la convocation d'une séance sans effectif", async () => {

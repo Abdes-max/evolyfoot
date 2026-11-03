@@ -1,9 +1,41 @@
 import { EducatorNotFoundError, MatchNotFoundError, TrainingSessionNotFoundError, ValidationError } from "@evolyfoot/database";
 import type { PublicEducator } from "./auth";
+import type { MailInput } from "./mailer";
+import { renderConvocationEmail, sendMail } from "./mailer";
+import { resolveOrigin } from "./request-origin";
+
+export interface ConvocationOutcome {
+  sentCount: number;
+  subject: string;
+  text: string;
+  recipients: Array<{ email: string; name: string }>;
+}
 
 export interface ConvocationGateway {
-  sendForMatch(educatorId: string, matchId: string): Promise<{ sentCount: number }>;
-  sendForTrainingSession(educatorId: string, sessionId: string): Promise<{ sentCount: number }>;
+  sendForMatch(educatorId: string, matchId: string): Promise<ConvocationOutcome>;
+  sendForTrainingSession(educatorId: string, sessionId: string): Promise<ConvocationOutcome>;
+}
+
+export interface ConvocationMailer {
+  send: (input: MailInput) => Promise<void>;
+  // Lien de l'onglet Calendrier d'EvolyFoot Player, où répondre présent ou absent.
+  calendarUrl: (request: Request) => string;
+}
+
+export const convocationMailer: ConvocationMailer = {
+  send: (input) => sendMail(input),
+  calendarUrl: (request) => `${resolveOrigin(request)}/joueur/calendrier`,
+};
+
+// La convocation part d'abord dans la messagerie ; l'e-mail n'est qu'un rappel, envoyé aux
+// adresses connues. Un envoi raté est journalisé par `sendMail` sans faire échouer la convocation.
+async function notifyByEmail(outcome: ConvocationOutcome, coachName: string, request: Request, mailer: ConvocationMailer | undefined): Promise<number> {
+  if (!mailer || outcome.recipients.length === 0) {
+    return 0;
+  }
+  const url = mailer.calendarUrl(request);
+  await Promise.all(outcome.recipients.map((recipient) => mailer.send({ to: recipient.email, ...renderConvocationEmail(recipient.name, coachName, outcome.subject, outcome.text, url) })));
+  return outcome.recipients.length;
 }
 
 function errorResponse(error: unknown, log: (error: unknown) => void): Response {
@@ -27,6 +59,7 @@ export function createSendMatchConvocationHandler(
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
   convocation: Pick<ConvocationGateway, "sendForMatch">,
   log: (error: unknown) => void,
+  mailer?: ConvocationMailer,
 ): (request: Request, matchId: string) => Promise<Response> {
   return async (request, matchId) => {
     const educator = await resolveEducator(request);
@@ -34,7 +67,8 @@ export function createSendMatchConvocationHandler(
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
     try {
-      return Response.json(await convocation.sendForMatch(educator.id, matchId));
+      const outcome = await convocation.sendForMatch(educator.id, matchId);
+      return Response.json({ sentCount: outcome.sentCount, emailCount: await notifyByEmail(outcome, educator.displayName, request, mailer) });
     } catch (error) {
       return errorResponse(error, log);
     }
@@ -45,6 +79,7 @@ export function createSendTrainingSessionConvocationHandler(
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
   convocation: Pick<ConvocationGateway, "sendForTrainingSession">,
   log: (error: unknown) => void,
+  mailer?: ConvocationMailer,
 ): (request: Request, sessionId: string) => Promise<Response> {
   return async (request, sessionId) => {
     const educator = await resolveEducator(request);
@@ -52,7 +87,8 @@ export function createSendTrainingSessionConvocationHandler(
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
     try {
-      return Response.json(await convocation.sendForTrainingSession(educator.id, sessionId));
+      const outcome = await convocation.sendForTrainingSession(educator.id, sessionId);
+      return Response.json({ sentCount: outcome.sentCount, emailCount: await notifyByEmail(outcome, educator.displayName, request, mailer) });
     } catch (error) {
       return errorResponse(error, log);
     }
