@@ -1,6 +1,6 @@
 "use client";
 
-import { trainingActivityCatalogue, type DevelopmentTheme, type TrainingActivity, type TrainingBlockKind } from "@evolyfoot/domain";
+import { type DevelopmentTheme, diagramTargets, type TrainingActivity, trainingActivityCatalogue, type TrainingBlockKind } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { TacticalDiagramView } from "../tactical-diagram";
@@ -88,7 +88,7 @@ export function BibliothequeBrowser() {
           {activities.map((activity) => (
             <Link className="bibliotheque-card" href={`/bibliotheque/${activity.id}`} key={activity.id}>
               <div className="bibliotheque-thumb">
-                <TacticalDiagramView diagram={activity.diagram} />
+                <TacticalDiagramView diagram={activity.diagram} targets={diagramTargets(activity)} />
               </div>
               <div className="bibliotheque-card-body">
                 <div className="bibliotheque-card-meta">

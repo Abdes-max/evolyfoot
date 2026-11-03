@@ -4,6 +4,7 @@ import {
   adjustBlockDuration,
   canReplaceSessionActivity,
   canValidateSession,
+  diagramTargets,
   getSessionDuration,
   isPersonalActivityId,
   moveSessionBlock,
@@ -249,7 +250,7 @@ export function SessionBuilder({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img alt={`Schéma de ${block.activity.title}`} src={block.activity.photo} />
                   ) : (
-                    <TacticalDiagramView diagram={block.activity.diagram} />
+                    <TacticalDiagramView diagram={block.activity.diagram} targets={diagramTargets(block.activity)} />
                   )}
                 </div>
                 <div className="session-run-body">

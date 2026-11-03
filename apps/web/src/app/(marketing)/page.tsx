@@ -1,4 +1,4 @@
-import { trainingActivityCatalogue } from "@evolyfoot/domain";
+import { diagramTargets, trainingActivityCatalogue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { TacticalDiagramView } from "../tactical-diagram";
 import { AuthedRedirect } from "./authed-redirect";
@@ -149,7 +149,7 @@ export default function MarketingHome() {
         <ul className="m-showcase" tabIndex={0}>
           {showcase.map((activity) => (
             <li key={activity.id}>
-              <TacticalDiagramView diagram={activity.diagram} />
+              <TacticalDiagramView diagram={activity.diagram} targets={diagramTargets(activity)} />
               <small>{activity.compatibleThemes[0]}</small>
               <h3>{activity.title}</h3>
               <p>{activity.objective}</p>

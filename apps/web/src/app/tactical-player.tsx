@@ -1,7 +1,8 @@
 "use client";
 
-import { ballFrame, buildDiagramAnimation, diagramTargets, targetGeometry, type AnimatedExercise, type AnimationPoint, type DiagramTarget } from "@evolyfoot/domain";
+import { ballFrame, buildDiagramAnimation, diagramTargets, type AnimatedExercise, type AnimationPoint } from "@evolyfoot/domain";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { DiagramTargetShape } from "./diagram-target";
 
 const stepSeconds = 1.7;
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
@@ -23,23 +24,6 @@ function easeInOut(value: number): number {
 
 function mix(from: AnimationPoint, to: AnimationPoint, ratio: number): AnimationPoint {
   return { x: from.x + (to.x - from.x) * ratio, y: from.y + (to.y - from.y) * ratio };
-}
-
-// But et mini-but ouverts vers le terrain, porte en deux plots, ligne à franchir en pointillés.
-function TargetShape({ target }: { target: DiagramTarget }) {
-  const { a, b, backA, backB } = targetGeometry(target);
-  if (target.kind === "gate") {
-    return (
-      <g className="tactical-target-gate">
-        <circle cx={a.x} cy={a.y} r="4" />
-        <circle cx={b.x} cy={b.y} r="4" />
-      </g>
-    );
-  }
-  if (target.kind === "line") {
-    return <line className="tactical-target-line" x1={a.x} x2={b.x} y1={a.y} y2={b.y} />;
-  }
-  return <polyline className={`tactical-target-goal ${target.kind}`} points={`${a.x},${a.y} ${backA.x},${backA.y} ${backB.x},${backB.y} ${b.x},${b.y}`} />;
 }
 
 export function TacticalPlayer({ exercise, seed }: { exercise: AnimatedExercise; seed: string }) {
@@ -96,7 +80,7 @@ export function TacticalPlayer({ exercise, seed }: { exercise: AnimatedExercise;
             <rect className="tactical-diagram-zone" height={zone.height} key={index} rx="8" width={zone.width} x={zone.x} y={zone.y} />
           ))}
           {targets.map((target, index) => (
-            <TargetShape key={index} target={target} />
+            <DiagramTargetShape key={index} target={target} />
           ))}
           {step.pressers.map((press) => {
             const from = at(press.id);
