@@ -192,6 +192,8 @@ interface ZoneGroup {
   // But attaqué (gardien adverse ou bord de la zone) et but visé en contre-attaque.
   attackGoal: AnimationPoint;
   defenseGoal: AnimationPoint;
+  attackGoalKind: "goal" | "miniGoal";
+  defenseGoalKind: "goal" | "miniGoal";
   forward: AnimationPoint;
 }
 
@@ -262,11 +264,12 @@ function dribble(context: StepContext, id: string): void {
   context.active.push(id);
 }
 
-function shoot(context: StepContext, shooterId: string, goal: AnimationPoint): void {
+// Le tir part dans la cage dessinée, à côté du gardien.
+function shoot(context: StepContext, shooterId: string, goal: AnimationPoint, kind: "goal" | "miniGoal"): void {
   const start = context.positions[shooterId]!;
-  const direction = unit(start, goal);
-  place(context, shooterId, shift(start, direction, 10));
-  const target = shift(goal, { x: -direction.y, y: direction.x }, (context.random() < 0.5 ? -1 : 1) * 16);
+  place(context, shooterId, shift(start, unit(start, goal), 10));
+  const facing = unit(goal, zoneCenter(context.group.zone));
+  const target = shift(goal, { x: -facing.y, y: facing.x }, (context.random() < 0.5 ? -1 : 1) * (goalWidths[kind] / 2 - 6));
   context.balls.push({ kind: "shot", fromId: shooterId, toId: null, target });
   context.active.push(shooterId);
 }
@@ -484,7 +487,7 @@ function finishingStep(context: StepContext): void {
   }
   if (index === 2 || index === 5) {
     moveAll(context, group.attackers.filter((token) => token.id !== carrierId), 6, group.forward, 10);
-    shoot(context, carrierId, group.attackGoal);
+    shoot(context, carrierId, group.attackGoal, group.attackGoalKind);
     defend(context, carrierId, null);
     return;
   }
@@ -563,7 +566,7 @@ function pressingStep(context: StepContext): void {
   moveAll(context, group.attackers, 8);
   if (context.scoresOnCounter) {
     moveAll(context, group.defenders.filter((token) => token.id !== holderId), 6, counter, 10);
-    shoot(context, holderId, group.defenseGoal);
+    shoot(context, holderId, group.defenseGoal, group.defenseGoalKind);
     group.defenderCarrierId = null;
     return;
   }
@@ -618,7 +621,32 @@ function placeKeepers(context: StepContext, groupBalls: readonly AnimationBall[]
   }
 }
 
-function buildGroups(diagram: AnimatedExercise["diagram"]): ZoneGroup[] {
+const goalWidths = { goal: 46, miniGoal: 26 } as const;
+// La cage se dessine juste derrière le gardien.
+const keeperToGoalLine = 8;
+
+function usesMiniGoals(exercise: AnimatedExercise): boolean {
+  return /mini-but|petits? buts?/.test(lower(exercise.organization, exercise.instruction, ...(exercise.rules ?? [])));
+}
+
+// Point du bord de la zone dans une direction donnée depuis son centre.
+function edgePoint(zone: DiagramZone, direction: AnimationPoint): AnimationPoint {
+  const center = zoneCenter(zone);
+  const reach = Math.min(
+    direction.x === 0 ? Infinity : zone.width / 2 / Math.abs(direction.x),
+    direction.y === 0 ? Infinity : zone.height / 2 / Math.abs(direction.y),
+  );
+  return shift(center, direction, reach);
+}
+
+function goalBehind(keeper: DiagramToken | undefined, zone: DiagramZone, fallback: AnimationPoint): AnimationPoint {
+  if (!keeper) {
+    return edgePoint(zone, fallback);
+  }
+  return shift(keeper, unit(zoneCenter(zone), keeper), keeperToGoalLine);
+}
+
+function buildGroups(diagram: AnimatedExercise["diagram"], miniGoals: boolean): ZoneGroup[] {
   const zones: readonly DiagramZone[] = diagram.zones.length > 0 ? diagram.zones : [{ x: 0, y: 0, width: diagram.width, height: diagram.height }];
   return zones.map((zone) => {
     const tokens = diagram.tokens.filter((token) => nearestZone(token, zones) === zone);
@@ -626,7 +654,7 @@ function buildGroups(diagram: AnimatedExercise["diagram"]): ZoneGroup[] {
     const center = zoneCenter(zone);
     const attackKeeper = goalkeepers[0];
     const defenseKeeper = goalkeepers.length > 1 ? goalkeepers[goalkeepers.length - 1] : undefined;
-    const attackGoal = attackKeeper ? { x: attackKeeper.x, y: attackKeeper.y } : { x: zone.x + zone.width, y: center.y };
+    const attackGoal = goalBehind(attackKeeper, zone, { x: 1, y: 0 });
     const attackers = tokens.filter((token) => token.role === "attacker");
     return {
       zone,
@@ -638,10 +666,97 @@ function buildGroups(diagram: AnimatedExercise["diagram"]): ZoneGroup[] {
       dribblers: [],
       defenderCarrierId: null,
       attackGoal,
-      defenseGoal: defenseKeeper ? { x: defenseKeeper.x, y: defenseKeeper.y } : { x: zone.x, y: center.y },
+      defenseGoal: goalBehind(defenseKeeper, zone, { x: -1, y: 0 }),
+      attackGoalKind: attackKeeper || !miniGoals ? "goal" : "miniGoal",
+      defenseGoalKind: defenseKeeper || !miniGoals ? "goal" : "miniGoal",
       forward: unit(center, attackGoal),
     };
   });
+}
+
+export type DiagramTargetKind = "goal" | "miniGoal" | "gate" | "line";
+
+// Cible dessinée sur le terrain : but, mini-but, porte de plots ou ligne à franchir.
+export interface DiagramTarget {
+  readonly kind: DiagramTargetKind;
+  readonly center: AnimationPoint;
+  // Direction vers le terrain : le filet d'un but est dessiné de l'autre côté.
+  readonly facing: AnimationPoint;
+  readonly width: number;
+}
+
+export interface TargetGeometry {
+  // Montants du but, plots de la porte ou extrémités de la ligne.
+  readonly a: AnimationPoint;
+  readonly b: AnimationPoint;
+  // Fond du filet (confondu avec a et b pour une porte ou une ligne).
+  readonly backA: AnimationPoint;
+  readonly backB: AnimationPoint;
+}
+
+export function targetGeometry(target: DiagramTarget): TargetGeometry {
+  const axis = { x: -target.facing.y, y: target.facing.x };
+  const a = shift(target.center, axis, target.width / 2);
+  const b = shift(target.center, axis, -target.width / 2);
+  const depth = target.kind === "goal" ? 9 : target.kind === "miniGoal" ? 6 : 0;
+  return { a, b, backA: shift(a, target.facing, -depth), backB: shift(b, target.facing, -depth) };
+}
+
+function goalTarget(kind: "goal" | "miniGoal", goal: AnimationPoint, zone: DiagramZone): DiagramTarget {
+  return { kind, center: goal, facing: unit(goal, zoneCenter(zone)), width: goalWidths[kind] };
+}
+
+// Deux portes ou une ligne sur le bord attaqué.
+function edgeTargets(group: ZoneGroup, gates: boolean): DiagramTarget[] {
+  const facing = { x: -group.forward.x, y: -group.forward.y };
+  const center = edgePoint(group.zone, group.forward);
+  const side = Math.abs(group.forward.x) > Math.abs(group.forward.y) ? group.zone.height : group.zone.width;
+  if (!gates) {
+    return [{ kind: "line", center, facing, width: side - 2 * zoneInset }];
+  }
+  const axis = { x: -facing.y, y: facing.x };
+  return [-1, 1].map((sign) => ({ kind: "gate" as const, center: shift(center, axis, (sign * side) / 4), facing, width: 22 }));
+}
+
+// Cibles de l'exercice : là où va le ballon dans l'animation (but, portes, ligne d'en-but).
+export function diagramTargets(exercise: AnimatedExercise): readonly DiagramTarget[] {
+  const scenario = exerciseScenario(exercise);
+  const all = lower(exercise.title, exercise.organization, exercise.instruction, ...(exercise.rules ?? []));
+  const gates = /\bportes?\b/.test(all);
+  const scoresOnCounter = finishingWords.test(withoutGoalLines(lower(exercise.organization, exercise.instruction, ...(exercise.rules ?? []))));
+  const targets: DiagramTarget[] = [];
+  for (const group of buildGroups(exercise.diagram, usesMiniGoals(exercise))) {
+    const attackGoal = goalTarget(group.attackGoalKind, group.attackGoal, group.zone);
+    const defenseGoal = goalTarget(group.defenseGoalKind, group.defenseGoal, group.zone);
+    if (scenario === "finishing") {
+      targets.push(attackGoal);
+      if (exercise.kind === "game") {
+        targets.push(defenseGoal);
+      }
+    } else if (scenario === "pressing") {
+      if (scoresOnCounter) {
+        targets.push(defenseGoal);
+        if (exercise.kind === "game") {
+          targets.push(attackGoal);
+        }
+      } else if (gates || /ligne|zone de marque|en-but/.test(all)) {
+        targets.push(...edgeTargets(group, gates));
+      }
+    } else if (scenario === "progression" || (scenario === "dribbling" && /ligne|plots?/.test(all))) {
+      targets.push(...edgeTargets(group, gates));
+    } else if (scenario === "possession" && gates) {
+      for (const direction of [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]) {
+        targets.push({ kind: "gate", center: edgePoint(group.zone, direction), facing: { x: -direction.x, y: -direction.y }, width: 22 });
+      }
+    } else if (scenario === "passAndMove" && gates && group.attackers.length > 1) {
+      // Une porte entre chaque partenaire : la passe la traverse.
+      group.attackers.forEach((token, index) => {
+        const next = group.attackers[(index + 1) % group.attackers.length]!;
+        targets.push({ kind: "gate", center: between(token, next, 0.5), facing: unit(token, next), width: 20 });
+      });
+    }
+  }
+  return targets;
 }
 
 export interface BallFrame {
@@ -670,7 +785,7 @@ export function buildDiagramAnimation(exercise: AnimatedExercise, seed: string):
   const random = randomFrom(seed);
   const scenario = exerciseScenario(exercise);
   const captions = captionsFor(exercise, scenario);
-  const groups = buildGroups(exercise.diagram);
+  const groups = buildGroups(exercise.diagram, usesMiniGoals(exercise));
   const head = lower(exercise.organization, exercise.instruction);
   const handoff = /pour deux/.test(head) && /donne|passe/.test(lower(exercise.instruction));
   const soloApproach = soloApproachWords.test(head);
