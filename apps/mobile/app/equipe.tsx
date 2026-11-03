@@ -81,20 +81,8 @@ export default function EquipeScreen() {
 
         <Text style={styles.label}>Ajouter un joueur</Text>
         <View style={styles.addRow}>
-          <TextInput
-            accessibilityLabel="Prénom du joueur"
-            onChangeText={setNewFirstName}
-            placeholder="Prénom"
-            style={styles.input}
-            value={newFirstName}
-          />
-          <TextInput
-            accessibilityLabel="Nom du joueur"
-            onChangeText={setNewLastName}
-            placeholder="Nom"
-            style={styles.input}
-            value={newLastName}
-          />
+          <TextInput accessibilityLabel="Prénom du joueur" onChangeText={setNewFirstName} placeholder="Prénom" style={styles.input} value={newFirstName} />
+          <TextInput accessibilityLabel="Nom du joueur" onChangeText={setNewLastName} placeholder="Nom" style={styles.input} value={newLastName} />
           <TouchableOpacity disabled={adding} onPress={submitAdd} style={styles.addButton}>
             <Text style={styles.addButtonText}>{adding ? "Ajout…" : "Ajouter"}</Text>
           </TouchableOpacity>
@@ -111,12 +99,7 @@ export default function EquipeScreen() {
                   style={styles.rowInput}
                   value={editingFirstName}
                 />
-                <TextInput
-                  accessibilityLabel={`Nom de ${player.name}`}
-                  onChangeText={setEditingLastName}
-                  style={styles.rowInput}
-                  value={editingLastName}
-                />
+                <TextInput accessibilityLabel={`Nom de ${player.name}`} onChangeText={setEditingLastName} style={styles.rowInput} value={editingLastName} />
                 <View style={styles.rowActions}>
                   <TouchableOpacity onPress={() => confirmRename(player.id)} style={styles.rowButton}>
                     <Text style={styles.rowButtonText}>Enregistrer</Text>
@@ -128,7 +111,12 @@ export default function EquipeScreen() {
               </>
             ) : (
               <>
-                <TouchableOpacity accessibilityHint="Ouvre la fiche du joueur" accessibilityRole="link" onPress={() => router.push(`/equipe/${player.id}`)} style={styles.rowNameLink}>
+                <TouchableOpacity
+                  accessibilityHint="Ouvre la fiche du joueur"
+                  accessibilityRole="link"
+                  onPress={() => router.push(`/equipe/${player.id}`)}
+                  style={styles.rowNameLink}
+                >
                   <Text style={styles.rowName}>{player.name} ›</Text>
                 </TouchableOpacity>
                 <View style={styles.rowActions}>
@@ -139,11 +127,7 @@ export default function EquipeScreen() {
                   >
                     <Text style={styles.rowButtonText}>Renommer</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    accessibilityLabel={`Retirer ${player.name}`}
-                    onPress={() => confirmRemove(player.id)}
-                    style={styles.rowButton}
-                  >
+                  <TouchableOpacity accessibilityLabel={`Retirer ${player.name}`} onPress={() => confirmRemove(player.id)} style={styles.rowButton}>
                     <Text style={styles.rowButtonText}>Retirer</Text>
                   </TouchableOpacity>
                 </View>
@@ -173,12 +157,41 @@ const styles = StyleSheet.create({
   addButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: 18, backgroundColor: colors.primary, borderRadius: radii.sm },
   addButtonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
   fieldError: { color: colors.danger, fontSize: 10, marginTop: 6 },
-  row: { marginTop: 10, padding: 14, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.surface, flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10 },
+  row: {
+    marginTop: 10,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
   rowNameLink: { flex: 1 },
   rowName: { fontSize: 13, fontWeight: "800", color: colors.ink },
-  rowInput: { flex: 1, minWidth: 120, backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 9, color: colors.ink },
+  rowInput: {
+    flex: 1,
+    minWidth: 120,
+    backgroundColor: colors.paper,
+    borderColor: colors.line,
+    borderWidth: 1,
+    borderRadius: radii.sm,
+    padding: 9,
+    color: colors.ink,
+  },
   rowActions: { flexDirection: "row", gap: 7 },
-  rowButton: { minHeight: 36, justifyContent: "center", paddingHorizontal: 12, backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
+  rowButton: {
+    minHeight: 36,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    backgroundColor: colors.paper,
+    borderColor: colors.line,
+    borderWidth: 1,
+    borderRadius: radii.sm,
+  },
   rowButtonText: { fontSize: 10, fontWeight: "800", color: colors.ink },
   empty: { color: colors.muted, fontSize: 11, textAlign: "center", marginTop: 30 },
 });

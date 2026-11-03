@@ -95,7 +95,14 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   note: { color: colors.muted, fontSize: 14, lineHeight: 20 },
-  event: { padding: spacing.md, marginBottom: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.primaryDark, backgroundColor: colors.surface },
+  event: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.primaryDark,
+    backgroundColor: colors.surface,
+  },
   kind: { color: colors.lime, fontSize: 11, fontWeight: "900" },
   title: { color: colors.ink, fontSize: 17, fontWeight: "800", marginTop: 3 },
   meta: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 3 },

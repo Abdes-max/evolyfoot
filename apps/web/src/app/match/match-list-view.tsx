@@ -73,11 +73,7 @@ export function MatchListView() {
           return;
         }
 
-        const [matchesResponse, teamResponse, profileResponse] = await Promise.all([
-          fetch("/api/matches"),
-          fetch("/api/team"),
-          fetch("/api/profile"),
-        ]);
+        const [matchesResponse, teamResponse, profileResponse] = await Promise.all([fetch("/api/matches"), fetch("/api/team"), fetch("/api/profile")]);
         const matchesBody = await matchesResponse.json().catch(() => ({ matches: [] }));
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const profileBody = await profileResponse.json().catch(() => ({ profile: null }));
@@ -149,7 +145,10 @@ export function MatchListView() {
       {authenticated === false && (
         <section className="match-auth-required" role="status">
           <p>
-            Connecte-toi pour préparer tes matchs. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
+            Connecte-toi pour préparer tes matchs.{" "}
+            <Link className="inline-cta" href="/connexion">
+              Se connecter →
+            </Link>
           </p>
         </section>
       )}
@@ -216,7 +215,11 @@ export function MatchListView() {
                   ))}
                 </div>
               </fieldset>
-              {createError && <p className="field-error" role="alert">{createError}</p>}
+              {createError && (
+                <p className="field-error" role="alert">
+                  {createError}
+                </p>
+              )}
               <div className="match-create-actions">
                 <button disabled={submitting} type="submit">
                   {submitting ? "Création…" : "Créer le match"}

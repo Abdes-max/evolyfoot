@@ -1,12 +1,7 @@
 import { ageGroups, canValidateSession, findTrainingActivity, isPersonalActivityId, personalExerciseToActivity } from "@evolyfoot/domain";
 import type { AgeGroup, AttendanceEntry, DevelopmentTheme, TrainingBlock, TrainingSession } from "@evolyfoot/domain";
 import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
-import type {
-  EducatorRepository,
-  PersistedTrainingSession,
-  PersonalExerciseRepository,
-  TrainingSessionRepository,
-} from "./repositories";
+import type { EducatorRepository, PersistedTrainingSession, PersonalExerciseRepository, TrainingSessionRepository } from "./repositories";
 
 // Cycle du plan de progression : 4 semaines (voir buildDevelopmentPlan côté domaine).
 export const trainingCycleWeekCount = 4;
@@ -41,12 +36,7 @@ export interface TrainingSessionInput {
 // Pas de constante partagée côté domaine pour les thèmes (contrairement à `ageGroups`) : on la
 // duplique ici, alignée sur `DevelopmentTheme` et sur les mappers Prisma, pour rejeter une valeur
 // invalide en 400 avant qu'elle n'atteigne la conversion vers l'enum Postgres.
-const developmentThemes: ReadonlyArray<DevelopmentTheme> = [
-  "Conserver le ballon",
-  "Progresser ensemble",
-  "Finir les actions",
-  "Récupérer rapidement",
-];
+const developmentThemes: ReadonlyArray<DevelopmentTheme> = ["Conserver le ballon", "Progresser ensemble", "Finir les actions", "Récupérer rapidement"];
 
 export class TrainingSessionService {
   constructor(

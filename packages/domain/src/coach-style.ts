@@ -14,11 +14,7 @@ const playStyleRules: Readonly<Record<PlayStyle, string>> = {
 };
 
 export function playStyleNote(style: string | null | undefined): string | null {
-  return style && style in playStyleRules
-    ? `Ton style « ${style} » : pendant le match de fin de séance, ${playStyleRules[style as PlayStyle]}`
-    : null;
+  return style && style in playStyleRules ? `Ton style « ${style} » : pendant le match de fin de séance, ${playStyleRules[style as PlayStyle]}` : null;
 }
 
-export const allFormationIds: readonly string[] = [
-  ...new Set(gameFormats.flatMap((format) => listFormations(format).map((formation) => formation.id))),
-];
+export const allFormationIds: readonly string[] = [...new Set(gameFormats.flatMap((format) => listFormations(format).map((formation) => formation.id)))];

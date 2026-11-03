@@ -126,9 +126,7 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
           // précédente -- un `createDraft` inconditionnel ici effaçait alors silencieusement les
           // évaluations et la note déjà saisies dès que la réponse arrivait.
           setDraft((current) =>
-            current.ratings.length === 0 && current.signals.length === 0 && !current.note
-              ? createDraft(current.eventType, roster)
-              : current,
+            current.ratings.length === 0 && current.signals.length === 0 && !current.note ? createDraft(current.eventType, roster) : current,
           );
         }
       } catch {
@@ -181,68 +179,196 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
   return (
     <section className="observation-form" aria-labelledby="observation-form-title">
       <div className="observation-form-intro">
-        <div><span className="eyebrow">EN MOINS DE TROIS MINUTES</span><h2 id="observation-form-title">Une lecture utile du terrain</h2></div>
+        <div>
+          <span className="eyebrow">EN MOINS DE TROIS MINUTES</span>
+          <h2 id="observation-form-title">Une lecture utile du terrain</h2>
+        </div>
         <p>Les quatre comportements donnent une tendance collective. Les joueurs restent facultatifs.</p>
       </div>
 
       <fieldset className="event-choice">
         <legend>Quel moment observes-tu&nbsp;?</legend>
-        <div>{eventOptions.map((option) => {
-          const selected = draft.eventType === option.type;
-          return <button aria-label={option.label} aria-pressed={selected} className={selected ? "active" : ""} key={option.type} onClick={() => selectEventType(option.type)} type="button">{option.label}{selected && <span aria-hidden="true" className="selection-indicator"> · Sélectionné</span>}</button>;
-        })}</div>
+        <div>
+          {eventOptions.map((option) => {
+            const selected = draft.eventType === option.type;
+            return (
+              <button
+                aria-label={option.label}
+                aria-pressed={selected}
+                className={selected ? "active" : ""}
+                key={option.type}
+                onClick={() => selectEventType(option.type)}
+                type="button"
+              >
+                {option.label}
+                {selected && (
+                  <span aria-hidden="true" className="selection-indicator">
+                    {" "}
+                    · Sélectionné
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </fieldset>
 
       <div className="observation-grid">
         <section aria-labelledby="collective-observation-title">
-          <div className="section-title"><span className="eyebrow">COLLECTIF</span><h3 id="collective-observation-title">Les comportements du groupe</h3></div>
+          <div className="section-title">
+            <span className="eyebrow">COLLECTIF</span>
+            <h3 id="collective-observation-title">Les comportements du groupe</h3>
+          </div>
           <div className="observation-criteria">
             {diagnosticCriteria.map((criterion) => {
               const selectedLevel = draft.ratings.find((rating) => rating.criterion === criterion.id)?.level;
-              return <article className="observation-criterion" key={criterion.id}>
-                <div><h4>{criterion.label}</h4><p>{criterion.description}</p></div>
-                <div aria-label={criterion.label} className="observation-levels">
-                  {levels.map((level) => {
-                    const selected = selectedLevel === level.value;
-                    return <button aria-label={`${criterion.label} : ${level.label}`} aria-pressed={selected} className={selected ? "active" : ""} key={level.value} onClick={() => editDraft(rateObservation(draft, criterion.id, level.value))} type="button">{level.label}{selected && <span aria-hidden="true" className="selection-indicator"> · Sélectionné</span>}</button>;
-                  })}
-                </div>
-              </article>;
+              return (
+                <article className="observation-criterion" key={criterion.id}>
+                  <div>
+                    <h4>{criterion.label}</h4>
+                    <p>{criterion.description}</p>
+                  </div>
+                  <div aria-label={criterion.label} className="observation-levels">
+                    {levels.map((level) => {
+                      const selected = selectedLevel === level.value;
+                      return (
+                        <button
+                          aria-label={`${criterion.label} : ${level.label}`}
+                          aria-pressed={selected}
+                          className={selected ? "active" : ""}
+                          key={level.value}
+                          onClick={() => editDraft(rateObservation(draft, criterion.id, level.value))}
+                          type="button"
+                        >
+                          {level.label}
+                          {selected && (
+                            <span aria-hidden="true" className="selection-indicator">
+                              {" "}
+                              · Sélectionné
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </article>
+              );
             })}
           </div>
         </section>
 
         <aside className="observation-aside" aria-labelledby="player-observation-title">
-          <div className="section-title"><span className="eyebrow">FACULTATIF</span><h3 id="player-observation-title">Joueurs à retenir</h3><p>Un même joueur ne peut recevoir qu&apos;un seul signal.</p></div>
+          <div className="section-title">
+            <span className="eyebrow">FACULTATIF</span>
+            <h3 id="player-observation-title">Joueurs à retenir</h3>
+            <p>Un même joueur ne peut recevoir qu&apos;un seul signal.</p>
+          </div>
           {draft.players.length === 0 && (
             <p className="player-signals-empty">
-              Aucun joueur dans ton effectif pour l&apos;instant. <Link className="inline-cta" href="/equipe">Ajouter mon effectif →</Link>
+              Aucun joueur dans ton effectif pour l&apos;instant.{" "}
+              <Link className="inline-cta" href="/equipe">
+                Ajouter mon effectif →
+              </Link>
             </p>
           )}
           <div className="player-signals">
             {draft.players.map((player) => {
               const signal = draft.signals.find((candidate) => candidate.playerId === player.id)?.kind;
-              return <article key={player.id}><strong>{player.name}</strong><div>
-                <button aria-label={`Mettre ${player.name} en réussite à retenir`} aria-pressed={signal === "highlight"} className={signal === "highlight" ? "active highlight" : ""} onClick={() => editDraft(togglePlayerSignal(draft, player, "highlight"))} type="button">Réussite à retenir{signal === "highlight" && <span aria-hidden="true" className="selection-indicator"> · Sélectionné</span>}</button>
-                <button aria-label={`Signaler ${player.name} pour un accompagnement`} aria-pressed={signal === "support"} className={signal === "support" ? "active support" : ""} onClick={() => editDraft(togglePlayerSignal(draft, player, "support"))} type="button">À accompagner{signal === "support" && <span aria-hidden="true" className="selection-indicator"> · Sélectionné</span>}</button>
-              </div></article>;
+              return (
+                <article key={player.id}>
+                  <strong>{player.name}</strong>
+                  <div>
+                    <button
+                      aria-label={`Mettre ${player.name} en réussite à retenir`}
+                      aria-pressed={signal === "highlight"}
+                      className={signal === "highlight" ? "active highlight" : ""}
+                      onClick={() => editDraft(togglePlayerSignal(draft, player, "highlight"))}
+                      type="button"
+                    >
+                      Réussite à retenir
+                      {signal === "highlight" && (
+                        <span aria-hidden="true" className="selection-indicator">
+                          {" "}
+                          · Sélectionné
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      aria-label={`Signaler ${player.name} pour un accompagnement`}
+                      aria-pressed={signal === "support"}
+                      className={signal === "support" ? "active support" : ""}
+                      onClick={() => editDraft(togglePlayerSignal(draft, player, "support"))}
+                      type="button"
+                    >
+                      À accompagner
+                      {signal === "support" && (
+                        <span aria-hidden="true" className="selection-indicator">
+                          {" "}
+                          · Sélectionné
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </article>
+              );
             })}
           </div>
-          <label className="observation-note"><span>Une note si elle aide à te souvenir</span><textarea maxLength={280} onChange={(event) => editDraft(setObservationNote(draft, event.target.value))} placeholder="Un fait marquant, une situation à revoir…" rows={4} value={draft.note ?? ""} /><small>{`${draft.note?.length ?? 0}/280 caractères`}</small></label>
+          <label className="observation-note">
+            <span>Une note si elle aide à te souvenir</span>
+            <textarea
+              maxLength={280}
+              onChange={(event) => editDraft(setObservationNote(draft, event.target.value))}
+              placeholder="Un fait marquant, une situation à revoir…"
+              rows={4}
+              value={draft.note ?? ""}
+            />
+            <small>{`${draft.note?.length ?? 0}/280 caractères`}</small>
+          </label>
         </aside>
       </div>
 
       <div className="observation-submit">
-        <button disabled={!complete} onClick={submitObservation} type="button">Valider l’observation <span aria-hidden="true">→</span></button>
+        <button disabled={!complete} onClick={submitObservation} type="button">
+          Valider l’observation <span aria-hidden="true">→</span>
+        </button>
         {!complete && <p>{`${remaining} comportement${remaining > 1 ? "s" : ""} reste${remaining > 1 ? "nt" : ""} à renseigner.`}</p>}
       </div>
 
-      {report && <section aria-live="polite" className="observation-result" role="status"><span className="eyebrow">SYNTHÈSE EVOLY</span><h3>{`Tendance ${levelText[report.summary.trend]}`}</h3><dl><div><dt>Point fort</dt><dd>{report.summary.strongest.label}</dd></div><div><dt>Priorité à renforcer</dt><dd>{report.summary.weakest.label}</dd></div><div><dt>Joueurs signalés</dt><dd>{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</dd></div></dl>
-        {saveState === "auth-required" && <p className="field-error">Connecte-toi pour enregistrer cette observation. <Link className="inline-cta" href="/connexion">Se connecter →</Link></p>}
-        {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
-      </section>}
+      {report && (
+        <section aria-live="polite" className="observation-result" role="status">
+          <span className="eyebrow">SYNTHÈSE EVOLY</span>
+          <h3>{`Tendance ${levelText[report.summary.trend]}`}</h3>
+          <dl>
+            <div>
+              <dt>Point fort</dt>
+              <dd>{report.summary.strongest.label}</dd>
+            </div>
+            <div>
+              <dt>Priorité à renforcer</dt>
+              <dd>{report.summary.weakest.label}</dd>
+            </div>
+            <div>
+              <dt>Joueurs signalés</dt>
+              <dd>{`${report.signals.length} joueur${report.signals.length > 1 ? "s" : ""} signalé${report.signals.length > 1 ? "s" : ""}`}</dd>
+            </div>
+          </dl>
+          {saveState === "auth-required" && (
+            <p className="field-error">
+              Connecte-toi pour enregistrer cette observation.{" "}
+              <Link className="inline-cta" href="/connexion">
+                Se connecter →
+              </Link>
+            </p>
+          )}
+          {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
+        </section>
+      )}
       {suggestion && <AdjustmentCard suggestion={suggestion} />}
-      {report && <Link className="observation-exit back-link" href="/app">Retour au tableau de bord</Link>}
+      {report && (
+        <Link className="observation-exit back-link" href="/app">
+          Retour au tableau de bord
+        </Link>
+      )}
     </section>
   );
 }

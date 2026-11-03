@@ -44,7 +44,16 @@ describe("tableau de bord", () => {
       "/api/diagnostic": { scores: { availability: 3, scanning: 3, progression: 3, reactionAfterLoss: 1 } },
       "/api/sessions": {
         sessions: [
-          { id: "s1", weekNumber: 1, slot: 0, title: "Réagir ensemble", theme: "Récupérer rapidement", playerCount: 12, blocks: [{ durationMinutes: 75 }], meetingAt },
+          {
+            id: "s1",
+            weekNumber: 1,
+            slot: 0,
+            title: "Réagir ensemble",
+            theme: "Récupérer rapidement",
+            playerCount: 12,
+            blocks: [{ durationMinutes: 75 }],
+            meetingAt,
+          },
         ],
       },
       "/api/observations": {

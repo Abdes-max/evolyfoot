@@ -8,7 +8,14 @@ import { useState } from "react";
 const cycles = [
   { id: "monthly", label: "Mensuel", price: 9, per: "/mois", note: "Sans engagement, résiliable à tout moment." },
   { id: "annual-monthly", label: "Annuel, prélevé chaque mois", price: 7, per: "/mois", note: "84 €/an, engagement 12 mois — 22 % d’économie vs mensuel." },
-  { id: "annual-upfront", label: "Annuel, payé en une fois", price: 4.92, per: "/mois", note: "59 €/an payés en une fois — 45 % d’économie vs mensuel.", badge: "Le moins cher" },
+  {
+    id: "annual-upfront",
+    label: "Annuel, payé en une fois",
+    price: 4.92,
+    per: "/mois",
+    note: "59 €/an payés en une fois — 45 % d’économie vs mensuel.",
+    badge: "Le moins cher",
+  },
 ] as const;
 
 export function PricingToggle() {
@@ -34,7 +41,9 @@ export function PricingToggle() {
       </div>
       <div className="m-plan-price">
         {cycle.price.toLocaleString("fr-FR", { minimumFractionDigits: cycle.price % 1 === 0 ? 0 : 2 })} €
-        <small>{cycle.per} · {cycle.note}</small>
+        <small>
+          {cycle.per} · {cycle.note}
+        </small>
       </div>
     </div>
   );

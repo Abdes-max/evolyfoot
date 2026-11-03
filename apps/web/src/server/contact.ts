@@ -13,10 +13,7 @@ async function readJsonBody(request: Request): Promise<Record<string, unknown> |
   }
 }
 
-export function createSubmitContactHandler(
-  contact: ContactGateway,
-  log: (error: unknown) => void,
-): (request: Request) => Promise<Response> {
+export function createSubmitContactHandler(contact: ContactGateway, log: (error: unknown) => void): (request: Request) => Promise<Response> {
   return async (request) => {
     const body = await readJsonBody(request);
     const name = typeof body?.name === "string" ? body.name : null;

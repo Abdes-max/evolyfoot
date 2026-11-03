@@ -15,8 +15,7 @@ const CARD_WIDTH = 300;
 const CARD_HEIGHT = 470;
 // Écusson dessiné dans le repère de la carte. Le halo vient de contours superposés : les ombres
 // colorées ne s'appliquent pas à une forme SVG sur Android.
-const CREST =
-  "M12 34 L34 12 H108 L122 24 H178 L192 12 H266 L288 34 V400 L150 458 L12 400 Z";
+const CREST = "M12 34 L34 12 H108 L122 24 H178 L192 12 H266 L288 34 V400 L150 458 L12 400 Z";
 
 interface PlayerCardProps {
   name: string;
@@ -118,7 +117,16 @@ const styles = StyleSheet.create({
   jersey: { color: colors.ink, fontSize: 11, fontWeight: "800", marginTop: 2 },
   photo: { width: 124, height: 124, borderRadius: 62 },
   initial: { color: colors.primary, fontSize: 96, lineHeight: 112, fontWeight: "900", marginRight: 22, ...glow(colors.primary) },
-  name: { color: colors.ink, fontSize: 28, lineHeight: 31, fontWeight: "900", textAlign: "center", textTransform: "uppercase", marginTop: 4, ...glow(colors.primary) },
+  name: {
+    color: colors.ink,
+    fontSize: 28,
+    lineHeight: 31,
+    fontWeight: "900",
+    textAlign: "center",
+    textTransform: "uppercase",
+    marginTop: 4,
+    ...glow(colors.primary),
+  },
   foot: { color: colors.muted, fontSize: 11, fontWeight: "700", textAlign: "center", marginTop: 3 },
   stats: { flexDirection: "row", marginTop: 8, paddingVertical: 6, borderTopWidth: 1, borderBottomWidth: 1, borderColor: "rgba(198,255,61,0.42)" },
   column: { flex: 1, alignItems: "center" },

@@ -42,13 +42,26 @@ describe("plateau handlers", () => {
   });
 
   it("create rejects a missing name/date and never trusts a body educatorId", async () => {
-    const bad = createCreatePlateauHandler(authenticated, { create: async () => { throw new Error("not called"); } }, () => undefined);
+    const bad = createCreatePlateauHandler(
+      authenticated,
+      {
+        create: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await bad(request("POST", { name: "Plateau" }))).status).toBe(400);
 
     const received: string[] = [];
     const ok = createCreatePlateauHandler(
       authenticated,
-      { create: async (id) => { received.push(id); return summary; } },
+      {
+        create: async (id) => {
+          received.push(id);
+          return summary;
+        },
+      },
       () => undefined,
     );
     const response = await ok(request("POST", { name: "Plateau", dateLabel: "14 sept.", educatorId: "attacker" }));
@@ -59,7 +72,11 @@ describe("plateau handlers", () => {
   it("maps a missing educator to a 401", async () => {
     const handler = createCreatePlateauHandler(
       authenticated,
-      { create: async () => { throw new EducatorNotFoundError(); } },
+      {
+        create: async () => {
+          throw new EducatorNotFoundError();
+        },
+      },
       () => undefined,
     );
     expect((await handler(request("POST", { name: "P", dateLabel: "d" }))).status).toBe(401);
@@ -88,7 +105,15 @@ describe("createGetPlateauHandler", () => {
 
 describe("createUpdatePlateauDetailsHandler", () => {
   it("requires authentication", async () => {
-    const handler = createUpdatePlateauDetailsHandler(anonymous, { updateDetails: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createUpdatePlateauDetailsHandler(
+      anonymous,
+      {
+        updateDetails: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await handler(request("PATCH", { location: "Stade X" }), "p1")).status).toBe(401);
   });
 

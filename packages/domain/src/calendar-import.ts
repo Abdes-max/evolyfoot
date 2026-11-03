@@ -18,7 +18,10 @@ const maxCalendarEvents = 200;
 const defaultHour = 12;
 
 function unescapeText(value: string): string {
-  return value.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1").trim();
+  return value
+    .replace(/\\n/gi, " ")
+    .replace(/\\([,;\\])/g, "$1")
+    .trim();
 }
 
 function parseDate(value: string): Date | null {
@@ -34,7 +37,10 @@ function parseDate(value: string): Date | null {
 
 export function parseCalendarFile(content: string): CalendarEvent[] {
   // Une ligne longue se poursuit sur la suivante, qui commence par une espace ou une tabulation.
-  const lines = content.replace(/\r\n?/g, "\n").replace(/\n[ \t]/g, "").split("\n");
+  const lines = content
+    .replace(/\r\n?/g, "\n")
+    .replace(/\n[ \t]/g, "")
+    .split("\n");
   const events: CalendarEvent[] = [];
   let current: { title: string; date: Date | null; location: string | null } | null = null;
 

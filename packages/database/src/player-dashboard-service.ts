@@ -170,12 +170,8 @@ export class PlayerDashboardService {
       this.tournamentRepository.listByEducator(ownerId),
     ]);
 
-    const trainingEntries: AttendanceEntry[] = sessions.flatMap((session) =>
-      (session.attendance ?? []).filter((entry) => entry.playerId === playerId),
-    );
-    const matchEntries: AttendanceEntry[] = matches.flatMap((match) =>
-      (match.attendance ?? []).filter((entry) => entry.playerId === playerId),
-    );
+    const trainingEntries: AttendanceEntry[] = sessions.flatMap((session) => (session.attendance ?? []).filter((entry) => entry.playerId === playerId));
+    const matchEntries: AttendanceEntry[] = matches.flatMap((match) => (match.attendance ?? []).filter((entry) => entry.playerId === playerId));
 
     const upcomingMatches: PlayerDashboardMatch[] = matches
       .filter((match) => match.status === "scheduled")

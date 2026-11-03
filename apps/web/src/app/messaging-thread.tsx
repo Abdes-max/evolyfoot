@@ -20,15 +20,7 @@ function formatTime(iso: string): string {
 // onglet Messages du joueur/tuteur) -- seuls `fetchUrl`/`sendUrl`/`viewerRole` changent. Pas de
 // temps réel (websocket) pour cette première version : rechargé à l'ouverture et après envoi,
 // avec un bouton "Actualiser" pour le reste.
-export function MessagingThread({
-  fetchUrl,
-  sendUrl,
-  viewerRole,
-}: {
-  fetchUrl: string;
-  sendUrl: string;
-  viewerRole: MessageAuthorRole;
-}) {
+export function MessagingThread({ fetchUrl, sendUrl, viewerRole }: { fetchUrl: string; sendUrl: string; viewerRole: MessageAuthorRole }) {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [messages, setMessages] = useState<ThreadMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -123,13 +115,7 @@ export function MessagingThread({
         ))}
 
       <form className="messaging-form" onSubmit={send}>
-        <textarea
-          disabled={sending}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="Écris un message…"
-          rows={2}
-          value={draft}
-        />
+        <textarea disabled={sending} onChange={(event) => setDraft(event.target.value)} placeholder="Écris un message…" rows={2} value={draft} />
         <div className="messaging-form-actions">
           <button disabled={status === "loading" || sending} onClick={reload} type="button">
             Actualiser

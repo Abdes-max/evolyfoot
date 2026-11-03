@@ -17,9 +17,7 @@ type StatField = "goals" | "assists";
 export function MatchResultForm({ matchId, players, goalsFor, goalsAgainst, playerStats }: MatchResultFormProps) {
   const [scoreFor, setScoreFor] = useState(goalsFor ?? 0);
   const [scoreAgainst, setScoreAgainst] = useState(goalsAgainst ?? 0);
-  const [stats, setStats] = useState<ReadonlyMap<string, MatchPlayerStat>>(
-    () => new Map(playerStats.map((stat) => [stat.playerId, stat])),
-  );
+  const [stats, setStats] = useState<ReadonlyMap<string, MatchPlayerStat>>(() => new Map(playerStats.map((stat) => [stat.playerId, stat])));
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -65,24 +63,12 @@ export function MatchResultForm({ matchId, players, goalsFor, goalsAgainst, play
         <div className="match-result-score">
           <label>
             <span>Nous</span>
-            <input
-              max={matchResultMaxGoals}
-              min={0}
-              onChange={(event) => setScoreFor(Number(event.target.value))}
-              type="number"
-              value={scoreFor}
-            />
+            <input max={matchResultMaxGoals} min={0} onChange={(event) => setScoreFor(Number(event.target.value))} type="number" value={scoreFor} />
           </label>
           <span aria-hidden="true">–</span>
           <label>
             <span>Adversaire</span>
-            <input
-              max={matchResultMaxGoals}
-              min={0}
-              onChange={(event) => setScoreAgainst(Number(event.target.value))}
-              type="number"
-              value={scoreAgainst}
-            />
+            <input max={matchResultMaxGoals} min={0} onChange={(event) => setScoreAgainst(Number(event.target.value))} type="number" value={scoreAgainst} />
           </label>
         </div>
 

@@ -51,7 +51,15 @@ const anonymous = async () => null;
 
 describe("createListMatchesHandler", () => {
   it("requires an authenticated session", async () => {
-    const handler = createListMatchesHandler(anonymous, { list: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createListMatchesHandler(
+      anonymous,
+      {
+        list: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(new Request("https://evolyfoot.test/api/matches"));
 
@@ -70,7 +78,15 @@ describe("createListMatchesHandler", () => {
 
 describe("createCreateMatchHandler", () => {
   it("requires an authenticated session before reading the body", async () => {
-    const handler = createCreateMatchHandler(anonymous, { create: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createCreateMatchHandler(
+      anonymous,
+      {
+        create: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest("POST", { opponent: "US Vallée" }));
 
@@ -78,7 +94,15 @@ describe("createCreateMatchHandler", () => {
   });
 
   it("rejects a request missing required fields", async () => {
-    const handler = createCreateMatchHandler(authenticated, { create: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createCreateMatchHandler(
+      authenticated,
+      {
+        create: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest("POST", { opponent: "US Vallée" }));
 
@@ -132,7 +156,15 @@ describe("createGetMatchHandler", () => {
 
 describe("createUpdateLineupHandler", () => {
   it("rejects a malformed lineup", async () => {
-    const handler = createUpdateLineupHandler(authenticated, { updateLineup: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createUpdateLineupHandler(
+      authenticated,
+      {
+        updateLineup: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest("PUT", { lineup: [{ slotId: "goalkeeper-1" }], captainPlayerId: null }), "match-1");
 
@@ -166,22 +198,24 @@ describe("createUpdateLineupHandler", () => {
     };
     const handler = createUpdateLineupHandler(authenticated, gateway, () => undefined);
 
-    const response = await handler(
-      jsonRequest("PUT", { lineup: [], captainPlayerId: null, substitutePlayerIds: ["p2", "p3"] }),
-      "match-1",
-    );
+    const response = await handler(jsonRequest("PUT", { lineup: [], captainPlayerId: null, substitutePlayerIds: ["p2", "p3"] }), "match-1");
 
     expect(response.status).toBe(200);
     expect(received).toEqual([{ lineup: [], captainPlayerId: null, substitutePlayerIds: ["p2", "p3"] }]);
   });
 
   it("rejects a malformed substitutePlayerIds", async () => {
-    const handler = createUpdateLineupHandler(authenticated, { updateLineup: async () => { throw new Error("not called"); } }, () => undefined);
-
-    const response = await handler(
-      jsonRequest("PUT", { lineup: [], captainPlayerId: null, substitutePlayerIds: [42] }),
-      "match-1",
+    const handler = createUpdateLineupHandler(
+      authenticated,
+      {
+        updateLineup: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
     );
+
+    const response = await handler(jsonRequest("PUT", { lineup: [], captainPlayerId: null, substitutePlayerIds: [42] }), "match-1");
 
     expect(response.status).toBe(400);
   });
@@ -189,7 +223,15 @@ describe("createUpdateLineupHandler", () => {
 
 describe("createUpdateMatchDetailsHandler", () => {
   it("requires authentication", async () => {
-    const handler = createUpdateMatchDetailsHandler(anonymous, { updateDetails: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createUpdateMatchDetailsHandler(
+      anonymous,
+      {
+        updateDetails: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await handler(jsonRequest("PATCH", { location: "Stade X" }), "match-1")).status).toBe(401);
   });
 
@@ -229,7 +271,15 @@ describe("createUpdateMatchDetailsHandler", () => {
 
 describe("createChangeFormationHandler", () => {
   it("rejects a request missing formationId", async () => {
-    const handler = createChangeFormationHandler(authenticated, { changeFormation: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createChangeFormationHandler(
+      authenticated,
+      {
+        changeFormation: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest("PUT", {}), "match-1");
 
@@ -249,9 +299,7 @@ describe("createChangeFormationHandler", () => {
     const response = await handler(jsonRequest("PUT", { formationId: "2-3-2" }), "match-1");
 
     expect(response.status).toBe(200);
-    expect(received).toEqual([
-      { educatorId: educator.id, matchId: "match-1", input: { formationId: "2-3-2", gameFormat: undefined } },
-    ]);
+    expect(received).toEqual([{ educatorId: educator.id, matchId: "match-1", input: { formationId: "2-3-2", gameFormat: undefined } }]);
   });
 
   it("also forwards a chosen game format to the gateway", async () => {
@@ -267,9 +315,7 @@ describe("createChangeFormationHandler", () => {
     const response = await handler(jsonRequest("PUT", { formationId: "3-3-1", gameFormat: 5 }), "match-1");
 
     expect(response.status).toBe(200);
-    expect(received).toEqual([
-      { educatorId: educator.id, matchId: "match-1", input: { formationId: "3-3-1", gameFormat: 5 } },
-    ]);
+    expect(received).toEqual([{ educatorId: educator.id, matchId: "match-1", input: { formationId: "3-3-1", gameFormat: 5 } }]);
   });
 
   it("translates a formation/format mismatch into a 400", async () => {
@@ -345,7 +391,15 @@ describe("createMarkPlayedHandler", () => {
 
 describe("createRemoveMatchHandler", () => {
   it("requires an authenticated session", async () => {
-    const handler = createRemoveMatchHandler(anonymous, { remove: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createRemoveMatchHandler(
+      anonymous,
+      {
+        remove: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(new Request("https://evolyfoot.test/api/matches/match-1", { method: "DELETE" }), "match-1");
 

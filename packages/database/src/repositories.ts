@@ -501,10 +501,7 @@ export interface PersistedTournament {
 export interface TournamentRepository {
   listByEducator(educatorId: string): Promise<PersistedTournament[]>;
   findById(id: string, educatorId: string): Promise<PersistedTournament | null>;
-  create(
-    educatorId: string,
-    input: { name: string; dateLabel: string; date?: Date | null; result?: string },
-  ): Promise<PersistedTournament>;
+  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedTournament>;
   // Lieu, description et bilan -- modifiables indépendamment depuis la fiche détail, même
   // principe que TrainingSessionRepository.update.
   update(
@@ -531,10 +528,7 @@ export interface PersistedPlateau {
 export interface PlateauRepository {
   listByEducator(educatorId: string): Promise<PersistedPlateau[]>;
   findById(id: string, educatorId: string): Promise<PersistedPlateau | null>;
-  create(
-    educatorId: string,
-    input: { name: string; dateLabel: string; date?: Date | null; result?: string },
-  ): Promise<PersistedPlateau>;
+  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedPlateau>;
   update(
     id: string,
     educatorId: string,
@@ -561,20 +555,11 @@ export interface PlayerEvaluationRepository {
   listByPlayer(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation[]>;
   // `since` limite le décompte à une période (la saison en cours pour la limite d'historique).
   countByPlayer(playerId: string, educatorId: string, source?: PlayerEvaluationSource, since?: Date): Promise<number>;
-  create(
-    educatorId: string,
-    playerId: string,
-    scores: PlayerEvaluationScores,
-    source?: PlayerEvaluationSource,
-  ): Promise<PersistedPlayerEvaluation>;
+  create(educatorId: string, playerId: string, scores: PlayerEvaluationScores, source?: PlayerEvaluationSource): Promise<PersistedPlayerEvaluation>;
   // `undefined` = champ non touché ; jamais retiré une fois posé, mêmes conventions que
   // MatchRepository.update ci-dessus. `createdAt` sert de date d'évaluation modifiable (voir
   // PlayerEvaluationService.update) -- pas une simple trace d'audit dans ce contexte.
-  update(
-    id: string,
-    educatorId: string,
-    input: { scores?: PlayerEvaluationScores; createdAt?: Date },
-  ): Promise<PersistedPlayerEvaluation>;
+  update(id: string, educatorId: string, input: { scores?: PlayerEvaluationScores; createdAt?: Date }): Promise<PersistedPlayerEvaluation>;
   remove(id: string, educatorId: string): Promise<void>;
 }
 
@@ -599,11 +584,5 @@ export interface PersistedMessage {
 
 export interface MessageRepository {
   listByPlayer(educatorId: string, playerId: string): Promise<PersistedMessage[]>;
-  create(input: {
-    educatorId: string;
-    playerId: string;
-    authorRole: MessageAuthorRole;
-    authorName: string;
-    text: string;
-  }): Promise<PersistedMessage>;
+  create(input: { educatorId: string; playerId: string; authorRole: MessageAuthorRole; authorName: string; text: string }): Promise<PersistedMessage>;
 }

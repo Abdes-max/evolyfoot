@@ -36,14 +36,8 @@ export function createGetStatsHandler(
 }
 
 export async function createStatsGateway(): Promise<{ gateway: StatsGateway; disconnect: () => Promise<void> }> {
-  const {
-    createDatabaseClient,
-    PrismaMatchRepository,
-    PrismaPlateauRepository,
-    PrismaTournamentRepository,
-    PrismaTrainingSessionRepository,
-    StatsService,
-  } = await import("@evolyfoot/database");
+  const { createDatabaseClient, PrismaMatchRepository, PrismaPlateauRepository, PrismaTournamentRepository, PrismaTrainingSessionRepository, StatsService } =
+    await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new StatsService(
     new PrismaTrainingSessionRepository(database.prisma),

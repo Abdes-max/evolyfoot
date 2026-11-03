@@ -40,13 +40,7 @@ function cookieAttributes(extra: string[]): string[] {
 }
 
 export function buildSessionCookie(token: string, expiresAt: Date): string {
-  return cookieAttributes([
-    `${SESSION_COOKIE_NAME}=${token}`,
-    "Path=/",
-    "HttpOnly",
-    "SameSite=Lax",
-    `Expires=${expiresAt.toUTCString()}`,
-  ]).join("; ");
+  return cookieAttributes([`${SESSION_COOKIE_NAME}=${token}`, "Path=/", "HttpOnly", "SameSite=Lax", `Expires=${expiresAt.toUTCString()}`]).join("; ");
 }
 
 export function buildClearedSessionCookie(): string {
@@ -116,10 +110,7 @@ function handleAuthError(error: unknown, log: (error: unknown) => void): Respons
   return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
 }
 
-export function createRegisterHandler(
-  gateway: Pick<AuthGateway, "register">,
-  log: (error: unknown) => void,
-): (request: Request) => Promise<Response> {
+export function createRegisterHandler(gateway: Pick<AuthGateway, "register">, log: (error: unknown) => void): (request: Request) => Promise<Response> {
   return async (request) => {
     const body = await readJsonBody(request);
     if (!body || !isNonEmptyString(body.email) || !isNonEmptyString(body.password) || !isNonEmptyString(body.displayName)) {
@@ -144,10 +135,7 @@ export function createRegisterHandler(
   };
 }
 
-export function createLoginHandler(
-  gateway: Pick<AuthGateway, "login">,
-  log: (error: unknown) => void,
-): (request: Request) => Promise<Response> {
+export function createLoginHandler(gateway: Pick<AuthGateway, "login">, log: (error: unknown) => void): (request: Request) => Promise<Response> {
   return async (request) => {
     const body = await readJsonBody(request);
     if (!body || !isNonEmptyString(body.email) || !isNonEmptyString(body.password)) {
@@ -168,10 +156,7 @@ export function createLoginHandler(
   };
 }
 
-export function createLogoutHandler(
-  gateway: Pick<AuthGateway, "logout">,
-  log: (error: unknown) => void,
-): (request: Request) => Promise<Response> {
+export function createLogoutHandler(gateway: Pick<AuthGateway, "logout">, log: (error: unknown) => void): (request: Request) => Promise<Response> {
   return async (request) => {
     const token = readSessionToken(request);
     if (token) {
@@ -275,14 +260,9 @@ export async function resolvePlayerAccountFromRequest(request: Request): Promise
 }
 
 export async function createAuthGateway(): Promise<{ gateway: AuthGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, AuthService, PrismaEducatorRepository, PrismaSessionRepository } = await import(
-    "@evolyfoot/database"
-  );
+  const { createDatabaseClient, AuthService, PrismaEducatorRepository, PrismaSessionRepository } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const service = new AuthService(
-    new PrismaEducatorRepository(database.prisma),
-    new PrismaSessionRepository(database.prisma),
-  );
+  const service = new AuthService(new PrismaEducatorRepository(database.prisma), new PrismaSessionRepository(database.prisma));
 
   return {
     gateway: {

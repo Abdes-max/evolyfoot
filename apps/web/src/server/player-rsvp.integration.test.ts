@@ -16,12 +16,28 @@ function request(body?: unknown): Request {
 
 describe("createRespondToMatchHandler", () => {
   it("requires an authenticated player account", async () => {
-    const handler = createRespondToMatchHandler(anonymous, { respondToMatch: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createRespondToMatchHandler(
+      anonymous,
+      {
+        respondToMatch: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await handler(request({ matchId: "m1", status: "present" }))).status).toBe(401);
   });
 
   it("rejects a missing matchId or an invalid status", async () => {
-    const handler = createRespondToMatchHandler(authenticated, { respondToMatch: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createRespondToMatchHandler(
+      authenticated,
+      {
+        respondToMatch: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await handler(request({ status: "present" }))).status).toBe(400);
     expect((await handler(request({ matchId: "m1", status: "sur-la-lune" }))).status).toBe(400);
   });
@@ -30,7 +46,11 @@ describe("createRespondToMatchHandler", () => {
     const received: unknown[] = [];
     const handler = createRespondToMatchHandler(
       authenticated,
-      { respondToMatch: async (accountId, matchId, status) => { received.push({ accountId, matchId, status }); } },
+      {
+        respondToMatch: async (accountId, matchId, status) => {
+          received.push({ accountId, matchId, status });
+        },
+      },
       () => undefined,
     );
     const response = await handler(request({ matchId: "m1", status: "injured" }));
@@ -41,7 +61,11 @@ describe("createRespondToMatchHandler", () => {
   it("maps a match belonging to no one (or not this player) to a 404", async () => {
     const handler = createRespondToMatchHandler(
       authenticated,
-      { respondToMatch: async () => { throw new EducatorNotFoundError(); } },
+      {
+        respondToMatch: async () => {
+          throw new EducatorNotFoundError();
+        },
+      },
       () => undefined,
     );
     expect((await handler(request({ matchId: "m1", status: "present" }))).status).toBe(404);
@@ -50,7 +74,11 @@ describe("createRespondToMatchHandler", () => {
   it("maps a match already played to a 400", async () => {
     const handler = createRespondToMatchHandler(
       authenticated,
-      { respondToMatch: async () => { throw new ValidationError("Ce match a déjà eu lieu."); } },
+      {
+        respondToMatch: async () => {
+          throw new ValidationError("Ce match a déjà eu lieu.");
+        },
+      },
       () => undefined,
     );
     expect((await handler(request({ matchId: "m1", status: "present" }))).status).toBe(400);
@@ -61,7 +89,11 @@ describe("createRespondToTrainingSessionHandler", () => {
   it("requires an authenticated player account", async () => {
     const handler = createRespondToTrainingSessionHandler(
       anonymous,
-      { respondToTrainingSession: async () => { throw new Error("not called"); } },
+      {
+        respondToTrainingSession: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
     expect((await handler(request({ sessionId: "s1", status: "present" }))).status).toBe(401);
@@ -70,7 +102,11 @@ describe("createRespondToTrainingSessionHandler", () => {
   it("rejects a missing sessionId or an invalid status", async () => {
     const handler = createRespondToTrainingSessionHandler(
       authenticated,
-      { respondToTrainingSession: async () => { throw new Error("not called"); } },
+      {
+        respondToTrainingSession: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
     expect((await handler(request({ status: "present" }))).status).toBe(400);
@@ -96,7 +132,11 @@ describe("createRespondToTrainingSessionHandler", () => {
   it("maps a session belonging to no one (or not this player) to a 404", async () => {
     const handler = createRespondToTrainingSessionHandler(
       authenticated,
-      { respondToTrainingSession: async () => { throw new EducatorNotFoundError(); } },
+      {
+        respondToTrainingSession: async () => {
+          throw new EducatorNotFoundError();
+        },
+      },
       () => undefined,
     );
     expect((await handler(request({ sessionId: "s1", status: "present" }))).status).toBe(404);

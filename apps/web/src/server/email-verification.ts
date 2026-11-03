@@ -74,13 +74,9 @@ export async function createEmailVerificationGateway(): Promise<{
   gateway: EmailVerificationGateway;
   disconnect: () => Promise<void>;
 }> {
-  const { createDatabaseClient, EmailVerificationService, PrismaEducatorRepository, PrismaEmailVerificationRepository } =
-    await import("@evolyfoot/database");
+  const { createDatabaseClient, EmailVerificationService, PrismaEducatorRepository, PrismaEmailVerificationRepository } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const service = new EmailVerificationService(
-    new PrismaEducatorRepository(database.prisma),
-    new PrismaEmailVerificationRepository(database.prisma),
-  );
+  const service = new EmailVerificationService(new PrismaEducatorRepository(database.prisma), new PrismaEmailVerificationRepository(database.prisma));
 
   return {
     gateway: {

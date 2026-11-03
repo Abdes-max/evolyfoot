@@ -14,10 +14,7 @@ describe("development plan", () => {
 
     expect(screen.getAllByText(/^S[1-4]$/)).toHaveLength(4);
     expect(screen.getByText(/comportement le plus fragile/i)).toBeVisible();
-    expect(screen.getByRole("link", { name: "Préparer la première séance" })).toHaveAttribute(
-      "href",
-      "/session",
-    );
+    expect(screen.getByRole("link", { name: "Préparer la première séance" })).toHaveAttribute("href", "/session");
   });
 
   describe("avec un éducateur connecté", () => {

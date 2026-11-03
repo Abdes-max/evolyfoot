@@ -15,15 +15,19 @@ function request(method: string, url: string, body?: unknown): Request {
 
 describe("createConsumeVerificationHandler", () => {
   it("rejects a request without a token", async () => {
-    const handler = createConsumeVerificationHandler({ consume: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createConsumeVerificationHandler(
+      {
+        consume: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await handler(request("POST", "https://evolyfoot.test/api/auth/verify-email", {}))).status).toBe(400);
   });
 
   it("returns the display name on success", async () => {
-    const handler = createConsumeVerificationHandler(
-      { consume: async () => ({ displayName: "Coach Test" }) },
-      () => undefined,
-    );
+    const handler = createConsumeVerificationHandler({ consume: async () => ({ displayName: "Coach Test" }) }, () => undefined);
     const response = await handler(request("POST", "https://evolyfoot.test/api/auth/verify-email", { token: "abc" }));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: "ok", displayName: "Coach Test" });
@@ -38,7 +42,15 @@ describe("createConsumeVerificationHandler", () => {
 
 describe("createResendVerificationHandler", () => {
   it("requires an authenticated educator", async () => {
-    const handler = createResendVerificationHandler(anonymous, { send: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createResendVerificationHandler(
+      anonymous,
+      {
+        send: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
     expect((await handler(request("POST", "https://evolyfoot.test/api/auth/resend-verification"))).status).toBe(401);
   });
 

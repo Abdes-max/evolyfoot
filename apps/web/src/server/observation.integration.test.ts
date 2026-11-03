@@ -53,7 +53,11 @@ describe("createSaveObservationHandler", () => {
   it("requires an authenticated session before reading the body", async () => {
     const handler = createSaveObservationHandler(
       anonymous,
-      { save: async () => { throw new Error("not called"); } },
+      {
+        save: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -80,7 +84,11 @@ describe("createSaveObservationHandler", () => {
   it("rejects a malformed body without calling the gateway", async () => {
     const handler = createSaveObservationHandler(
       authenticated,
-      { save: async () => { throw new Error("not called"); } },
+      {
+        save: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -129,7 +137,15 @@ describe("createSaveObservationHandler", () => {
 
 describe("createListObservationsHandler", () => {
   it("requires an authenticated session", async () => {
-    const handler = createListObservationsHandler(anonymous, { list: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createListObservationsHandler(
+      anonymous,
+      {
+        list: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(getRequest());
 
@@ -155,7 +171,15 @@ describe("createListObservationsHandler", () => {
 
 describe("createGetObservationHandler", () => {
   it("requires an authenticated session", async () => {
-    const handler = createGetObservationHandler(anonymous, { get: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createGetObservationHandler(
+      anonymous,
+      {
+        get: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(getRequest(), record.id);
 

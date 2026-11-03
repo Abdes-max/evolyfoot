@@ -10,13 +10,7 @@ export default async function TournamentDetailPage({ params }: TournamentDetailP
   return (
     <>
       <SidebarNav />
-      <CompetitionDetailView
-        backHref="/match"
-        competitionId={id}
-        endpoint="/api/tournaments"
-        itemKey="tournament"
-        singular="tournoi"
-      />
+      <CompetitionDetailView backHref="/match" competitionId={id} endpoint="/api/tournaments" itemKey="tournament" singular="tournoi" />
     </>
   );
 }

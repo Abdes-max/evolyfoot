@@ -129,7 +129,14 @@ export default function CompetitionDetailScreen() {
         <View style={styles.form}>
           <Text style={styles.formTitle}>Détails</Text>
           <Text style={styles.label}>Date</Text>
-          <TextInput accessibilityLabel="Date" keyboardType="numbers-and-punctuation" onChangeText={setDateInput} placeholder="JJ/MM/AAAA" style={styles.input} value={dateInput} />
+          <TextInput
+            accessibilityLabel="Date"
+            keyboardType="numbers-and-punctuation"
+            onChangeText={setDateInput}
+            placeholder="JJ/MM/AAAA"
+            style={styles.input}
+            value={dateInput}
+          />
           <Text style={styles.label}>Lieu</Text>
           <PlaceInput onChange={setLocation} value={location} />
           <Text style={styles.label}>Description</Text>
@@ -167,6 +174,14 @@ const styles = StyleSheet.create({
   feedback: { color: colors.primary, fontSize: 11, fontWeight: "700", marginTop: 10 },
   submitButton: { minHeight: 44, marginTop: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
   submitButtonText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
-  removeButton: { minHeight: 44, marginTop: 16, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.danger, borderRadius: radii.sm },
+  removeButton: {
+    minHeight: 44,
+    marginTop: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.danger,
+    borderRadius: radii.sm,
+  },
   removeButtonText: { color: colors.danger, fontSize: 12, fontWeight: "800" },
 });

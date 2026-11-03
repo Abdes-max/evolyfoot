@@ -40,11 +40,7 @@ const validTeam: TeamProfile = {
   trainingDays: ["Mardi", "Jeudi"],
 };
 
-const generated = generateTrainingSession(
-  { week: 1, phase: "Découvrir", theme: "Récupérer rapidement", intention: "x", observable: "y" },
-  "U12",
-  14,
-);
+const generated = generateTrainingSession({ week: 1, phase: "Découvrir", theme: "Récupérer rapidement", intention: "x", observable: "y" }, "U12", 14);
 const validSession = {
   title: generated.title,
   ageGroup: generated.ageGroup,

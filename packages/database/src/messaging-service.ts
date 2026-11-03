@@ -22,10 +22,7 @@ export class MessagingService {
   }
 
   async sendAsCoach(educatorId: string, playerId: string, text: string): Promise<PersistedMessage> {
-    const [educator, player] = await Promise.all([
-      this.educatorRepository.findById(educatorId),
-      this.playerRepository.findById(playerId, educatorId),
-    ]);
+    const [educator, player] = await Promise.all([this.educatorRepository.findById(educatorId), this.playerRepository.findById(playerId, educatorId)]);
     if (!educator) {
       throw new EducatorNotFoundError();
     }

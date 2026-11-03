@@ -21,7 +21,11 @@ export function SeasonPlanView({ now }: { now: Date }) {
     let cancelled = false;
 
     (async () => {
-      const [diagnosticResponse, sessionsResponse, teamResponse] = await Promise.all([fetch("/api/diagnostic"), fetch("/api/sessions"), fetch("/api/team")]).catch(() => []);
+      const [diagnosticResponse, sessionsResponse, teamResponse] = await Promise.all([
+        fetch("/api/diagnostic"),
+        fetch("/api/sessions"),
+        fetch("/api/team"),
+      ]).catch(() => []);
       const diagnosticBody = await diagnosticResponse?.json().catch(() => null);
       const sessionsBody = await sessionsResponse?.json().catch(() => null);
       const teamBody = await teamResponse?.json().catch(() => null);

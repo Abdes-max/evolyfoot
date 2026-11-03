@@ -68,9 +68,7 @@ describe("PostgreSQL player evaluation persistence", () => {
     for (let index = 0; index < 10; index += 1) {
       await service.add(educator.id, player.id, createEmptyPlayerEvaluationScores());
     }
-    await expect(service.add(educator.id, player.id, createEmptyPlayerEvaluationScores())).rejects.toBeInstanceOf(
-      ValidationError,
-    );
+    await expect(service.add(educator.id, player.id, createEmptyPlayerEvaluationScores())).rejects.toBeInstanceOf(ValidationError);
 
     const [oldest] = (await service.listByPlayer(educator.id, player.id)).slice(-1);
     await service.remove(educator.id, oldest!.id);
@@ -100,9 +98,7 @@ describe("PostgreSQL player evaluation persistence", () => {
     const educator = await createEducator("invalid");
     const player = await playerRepository.create(educator.id, "Kylian");
 
-    await expect(
-      service.add(educator.id, player.id, { ...createEmptyPlayerEvaluationScores(), technique: 11 }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.add(educator.id, player.id, { ...createEmptyPlayerEvaluationScores(), technique: 11 })).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("rejects evaluating a player belonging to another educator", async () => {
@@ -110,9 +106,7 @@ describe("PostgreSQL player evaluation persistence", () => {
     const stranger = await createEducator("stranger");
     const player = await playerRepository.create(owner.id, "Kylian");
 
-    await expect(
-      service.add(stranger.id, player.id, createEmptyPlayerEvaluationScores()),
-    ).rejects.toBeInstanceOf(PlayerNotFoundError);
+    await expect(service.add(stranger.id, player.id, createEmptyPlayerEvaluationScores())).rejects.toBeInstanceOf(PlayerNotFoundError);
   });
 
   it("cascades a test player deletion to its evaluations", async () => {
@@ -145,9 +139,7 @@ describe("PostgreSQL player evaluation persistence", () => {
     const player = await playerRepository.create(educator.id, "Kylian");
     const created = await service.add(educator.id, player.id, createEmptyPlayerEvaluationScores());
 
-    await expect(
-      service.update(educator.id, created.id, { scores: { ...created.scores, technique: 42 } }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.update(educator.id, created.id, { scores: { ...created.scores, technique: 42 } })).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("rejects updating an evaluation belonging to another educator", async () => {
@@ -156,8 +148,6 @@ describe("PostgreSQL player evaluation persistence", () => {
     const player = await playerRepository.create(owner.id, "Kylian");
     const created = await service.add(owner.id, player.id, createEmptyPlayerEvaluationScores());
 
-    await expect(
-      service.update(stranger.id, created.id, { scores: created.scores }),
-    ).rejects.toBeInstanceOf(PlayerEvaluationNotFoundError);
+    await expect(service.update(stranger.id, created.id, { scores: created.scores })).rejects.toBeInstanceOf(PlayerEvaluationNotFoundError);
   });
 });

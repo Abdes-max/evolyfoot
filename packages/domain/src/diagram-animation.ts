@@ -40,9 +40,17 @@ export type AnimatedExercise = Pick<
 
 export const diagramAnimationStepCount = 6;
 
-const fallbackCaptions = ["Le ballon circule", "Les partenaires se rendent disponibles", "Passe et déplacement", "Nouvelle ligne de passe", "Passe et suit", "Le groupe garde son rythme"];
+const fallbackCaptions = [
+  "Le ballon circule",
+  "Les partenaires se rendent disponibles",
+  "Passe et déplacement",
+  "Nouvelle ligne de passe",
+  "Passe et suit",
+  "Le groupe garde son rythme",
+];
 
-const pressingWords = /\bpresse|pressing|récup|perte|\bperds\b|\bperd (le|ton) ballon|chasseur|\bchat\b|ferme (une|la|les)|fermer|fermé|coulisse|retarde|reconqu|intercept/;
+const pressingWords =
+  /\bpresse|pressing|récup|perte|\bperds\b|\bperd (le|ton) ballon|chasseur|\bchat\b|ferme (une|la|les)|fermer|fermé|coulisse|retarde|reconqu|intercept/;
 const finishingWords = /\btir|frapp|\bfini|reprise|centre vers|et centre|\bbuts?\b|mini-but/;
 const dribblingWords = /condui|balle au pied|slalom|dribbl|rapporte/;
 const progressionWords = /avance|avanç|vers l’avant|devant|progress|dépasse\b|profondeur|en-but|franchi|\blignes?\b|\battaque\b|remonte|cible/;
@@ -90,9 +98,30 @@ const stepTopics: Record<ExerciseScenario, readonly (RegExp | null)[]> = {
   possession: [null, /passe|touche/, /bouge|solution|disponible|angle|appui|soutien|démarqu/, /défenseur|press|récup|point/, null, null],
   passAndMove: [null, /passe|ballon|touche/, /suis|cours|déplace|place|bouge|course/, null, null, null],
   dribbling: [null, /condui|pied|ballon/, /tête|regard|accél|ligne/, null, null, null],
-  progression: [null, /avant|devant|dépasse|soutien|accompagne|course/, /ligne|porte|en-but|franchi|point/, null, /passe|touche/, /ligne|porte|en-but|franchi|point/],
-  finishing: [null, /passe|remise|combin|touche|condui/, /tir|frapp|\bbut|cadr|fini|coin/, null, /passe|touche|seconde|condui/, /tir|frapp|\bbut|cadr|fini|point/],
-  pressing: [null, /press|ferme|coupe|proche/, /récup|intercept|perte|perd/, /seconde|replace|attaque|vite|contre|transition/, /\bbut|point|récup|presse/, null],
+  progression: [
+    null,
+    /avant|devant|dépasse|soutien|accompagne|course/,
+    /ligne|porte|en-but|franchi|point/,
+    null,
+    /passe|touche/,
+    /ligne|porte|en-but|franchi|point/,
+  ],
+  finishing: [
+    null,
+    /passe|remise|combin|touche|condui/,
+    /tir|frapp|\bbut|cadr|fini|coin/,
+    null,
+    /passe|touche|seconde|condui/,
+    /tir|frapp|\bbut|cadr|fini|point/,
+  ],
+  pressing: [
+    null,
+    /press|ferme|coupe|proche/,
+    /récup|intercept|perte|perd/,
+    /seconde|replace|attaque|vite|contre|transition/,
+    /\bbut|point|récup|presse/,
+    null,
+  ],
 };
 
 function captionsFor(exercise: AnimatedExercise, scenario: ExerciseScenario): string[] {
@@ -324,9 +353,7 @@ function possessionStep(context: StepContext): void {
     return;
   }
   const options = candidates.filter((token) => token.id !== group.previousCarrierId || candidates.length === 1);
-  const ranked = options
-    .map((token) => ({ token, score: clearance(context, carrierId, token.id) + random() * 30 }))
-    .sort((a, b) => b.score - a.score);
+  const ranked = options.map((token) => ({ token, score: clearance(context, carrierId, token.id) + random() * 30 })).sort((a, b) => b.score - a.score);
   const receiver = ranked[0]!.token;
   const support = ranked[1]?.token ?? null;
   for (const attacker of group.attackers) {
@@ -390,7 +417,11 @@ function dribblingStep(context: StepContext): void {
     }
     group.dribblers = receivers.length > 0 ? receivers : group.dribblers;
   } else if (context.handoff) {
-    moveAll(context, group.attackers.filter((token) => !group.dribblers.includes(token.id)), 12);
+    moveAll(
+      context,
+      group.attackers.filter((token) => !group.dribblers.includes(token.id)),
+      12,
+    );
     for (const id of group.dribblers) {
       place(context, id, jitter(positions[id]!, random, 34));
       dribble(context, id);
@@ -486,13 +517,23 @@ function finishingStep(context: StepContext): void {
     return;
   }
   if (index === 2 || index === 5) {
-    moveAll(context, group.attackers.filter((token) => token.id !== carrierId), 6, group.forward, 10);
+    moveAll(
+      context,
+      group.attackers.filter((token) => token.id !== carrierId),
+      6,
+      group.forward,
+      10,
+    );
     shoot(context, carrierId, group.attackGoal, group.attackGoalKind);
     defend(context, carrierId, null);
     return;
   }
   if (context.soloApproach) {
-    moveAll(context, group.attackers.filter((token) => token.id !== carrierId), 6);
+    moveAll(
+      context,
+      group.attackers.filter((token) => token.id !== carrierId),
+      6,
+    );
     const start = positions[carrierId]!;
     const direction = unit(start, group.attackGoal);
     place(context, carrierId, shift(start, direction, Math.min(shortSide(group.zone) * 0.3, roomAhead(group, start, direction))));
@@ -520,7 +561,13 @@ function pressingStep(context: StepContext): void {
     const ball = positions[carrierId]!;
     const presser = nearestTo(group.defenders, positions, ball)!;
     moveAll(context, group.attackers, 6);
-    moveAll(context, group.defenders.filter((token) => token.id !== presser.id), 6, counter, 14);
+    moveAll(
+      context,
+      group.defenders.filter((token) => token.id !== presser.id),
+      6,
+      counter,
+      14,
+    );
     place(context, presser.id, shift(ball, unit(ball, positions[presser.id]!), minSpacing));
     context.pressers.push({ id: presser.id, targetId: carrierId });
     pass(context, carrierId, presser.id, "steal");
@@ -565,7 +612,13 @@ function pressingStep(context: StepContext): void {
   }
   moveAll(context, group.attackers, 8);
   if (context.scoresOnCounter) {
-    moveAll(context, group.defenders.filter((token) => token.id !== holderId), 6, counter, 10);
+    moveAll(
+      context,
+      group.defenders.filter((token) => token.id !== holderId),
+      6,
+      counter,
+      10,
+    );
     shoot(context, holderId, group.defenseGoal, group.defenseGoalKind);
     group.defenderCarrierId = null;
     return;
@@ -745,7 +798,12 @@ export function diagramTargets(exercise: AnimatedExercise): readonly DiagramTarg
     } else if (scenario === "progression" || (scenario === "dribbling" && /ligne|plots?/.test(all))) {
       targets.push(...edgeTargets(group, gates));
     } else if (scenario === "possession" && gates) {
-      for (const direction of [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]) {
+      for (const direction of [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 },
+      ]) {
         targets.push({ kind: "gate", center: edgePoint(group.zone, direction), facing: { x: -direction.x, y: -direction.y }, width: 22 });
       }
     } else if (scenario === "passAndMove" && gates && group.attackers.length > 1) {
@@ -770,7 +828,9 @@ function coneRow(group: ZoneGroup, count: number, offset: number): DiagramTarget
   const center = zoneCenter(group.zone);
   const side = { x: -group.forward.y, y: group.forward.x };
   const length = Math.abs(group.forward.x) > Math.abs(group.forward.y) ? group.zone.width : group.zone.height;
-  return Array.from({ length: count }, (_, index) => marker(shift(shift(center, group.forward, (index / (count - 1) - 0.5) * (length - 4 * zoneInset)), side, offset)));
+  return Array.from({ length: count }, (_, index) =>
+    marker(shift(shift(center, group.forward, (index / (count - 1) - 0.5) * (length - 4 * zoneInset)), side, offset)),
+  );
 }
 
 // Plots de l'organisation : délimitation de la zone (matériel « Cônes » ou « Plots »), puis les
@@ -815,7 +875,14 @@ function conesFor(exercise: AnimatedExercise, group: ZoneGroup, targets: readonl
     }
   }
   if (/presse un plot/.test(organization)) {
-    cones.push(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([dx, dy]) => marker({ x: center.x + (dx! * zone.width) / 4, y: center.y + (dy! * zone.height) / 4 })));
+    cones.push(
+      ...[
+        [-1, -1],
+        [1, -1],
+        [-1, 1],
+        [1, 1],
+      ].map(([dx, dy]) => marker({ x: center.x + (dx! * zone.width) / 4, y: center.y + (dy! * zone.height) / 4 })),
+    );
   }
   return cones;
 }
@@ -863,7 +930,20 @@ export function buildDiagramAnimation(exercise: AnimatedExercise, seed: string):
 
     for (const group of groups) {
       const groupBalls: AnimationBall[] = [];
-      const context: StepContext = { group, index, random, home, positions, targets, balls: groupBalls, pressers, active, handoff, soloApproach, scoresOnCounter };
+      const context: StepContext = {
+        group,
+        index,
+        random,
+        home,
+        positions,
+        targets,
+        balls: groupBalls,
+        pressers,
+        active,
+        handoff,
+        soloApproach,
+        scoresOnCounter,
+      };
       scenarioSteps[scenario](context);
       spreadOut(group, targets);
       placeKeepers(context, groupBalls);

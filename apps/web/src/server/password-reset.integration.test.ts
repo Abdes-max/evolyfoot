@@ -10,7 +10,14 @@ function post(body: unknown): Request {
 describe("createForgotPasswordHandler", () => {
   it("répond pareil que l'envoi réussisse ou échoue", async () => {
     const ok = createForgotPasswordHandler({ request: async () => undefined }, vi.fn());
-    const failing = createForgotPasswordHandler({ request: async () => { throw new Error("panne"); } }, vi.fn());
+    const failing = createForgotPasswordHandler(
+      {
+        request: async () => {
+          throw new Error("panne");
+        },
+      },
+      vi.fn(),
+    );
 
     const first = await ok(post({ email: "a@example.test" }));
     const second = await failing(post({ email: "b@example.test" }));
@@ -39,8 +46,22 @@ describe("createResetPasswordHandler", () => {
   });
 
   it("traduit lien périmé et mot de passe refusé", async () => {
-    const expired = createResetPasswordHandler({ reset: async () => { throw new PasswordResetInvalidError(); } }, vi.fn());
-    const refused = createResetPasswordHandler({ reset: async () => { throw new ValidationError("Trop court."); } }, vi.fn());
+    const expired = createResetPasswordHandler(
+      {
+        reset: async () => {
+          throw new PasswordResetInvalidError();
+        },
+      },
+      vi.fn(),
+    );
+    const refused = createResetPasswordHandler(
+      {
+        reset: async () => {
+          throw new ValidationError("Trop court.");
+        },
+      },
+      vi.fn(),
+    );
 
     expect((await expired(post({ token: "t", password: "x" }))).status).toBe(410);
     expect((await refused(post({ token: "t", password: "x" }))).status).toBe(400);

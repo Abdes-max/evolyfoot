@@ -4,8 +4,7 @@ import { PricingToggle } from "./pricing-toggle";
 
 export const metadata: Metadata = {
   title: "Tarifs — EvolyFoot",
-  description:
-    "EvolyFoot est gratuit pour une équipe U10–U13, constructeur de séance et évaluation joueur compris. Premium est en préparation.",
+  description: "EvolyFoot est gratuit pour une équipe U10–U13, constructeur de séance et évaluation joueur compris. Premium est en préparation.",
 };
 
 const free = [
@@ -22,10 +21,7 @@ const free = [
 
 // Rien de cette liste n'existe encore dans l'app : ne rien y ajouter avant que ce soit livré sans
 // la marquer "à venir" dans la page.
-const premium = [
-  "Plusieurs équipes sur un même compte",
-  "Partage entre éducateurs d’un même club",
-];
+const premium = ["Plusieurs équipes sur un même compte", "Partage entre éducateurs d’un même club"];
 
 export default function TarifsPage() {
   return (
@@ -34,8 +30,8 @@ export default function TarifsPage() {
         <span className="m-eyebrow">Tarifs</span>
         <h1>Tout ce qui existe aujourd’hui est gratuit.</h1>
         <p>
-          Le plan gratuit couvre toutes les fonctionnalités disponibles pour une équipe. Premium ajoutera des outils
-          pour aller plus loin : ils sont en préparation et signalés comme tels ci-dessous.
+          Le plan gratuit couvre toutes les fonctionnalités disponibles pour une équipe. Premium ajoutera des outils pour aller plus loin : ils sont en
+          préparation et signalés comme tels ci-dessous.
         </p>
       </section>
 
@@ -72,8 +68,8 @@ export default function TarifsPage() {
           </article>
         </div>
         <p className="m-legal-notice" role="note" style={{ marginTop: 28 }}>
-          Premium est en préparation : les tarifs ci-dessus sont une proposition, aucun paiement n’est activé
-          aujourd’hui. Le plan Gratuit reste disponible sans condition de durée.
+          Premium est en préparation : les tarifs ci-dessus sont une proposition, aucun paiement n’est activé aujourd’hui. Le plan Gratuit reste disponible sans
+          condition de durée.
         </p>
       </section>
 

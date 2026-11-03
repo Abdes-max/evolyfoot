@@ -147,9 +147,7 @@ describe("PostgreSQL match persistence", () => {
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
     const otherFormatFormationId = listFormations(11)[0]!.id;
 
-    await expect(
-      service.changeFormation(educator.id, match.id, { formationId: otherFormatFormationId }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.changeFormation(educator.id, match.id, { formationId: otherFormatFormationId })).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("change de format de jeu, repart d'une formation par défaut et tronque le banc au nouveau plafond", async () => {
@@ -175,9 +173,7 @@ describe("PostgreSQL match persistence", () => {
     const educator = await createEducator("change-game-format-invalid");
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
 
-    await expect(
-      service.changeFormation(educator.id, match.id, { formationId: "whatever", gameFormat: 3 }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.changeFormation(educator.id, match.id, { formationId: "whatever", gameFormat: 3 })).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("rejette l’accès à un match appartenant à un autre éducateur", async () => {
@@ -186,9 +182,7 @@ describe("PostgreSQL match persistence", () => {
     const match = await service.create(owner.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
 
     await expect(service.get(stranger.id, match.id)).rejects.toBeInstanceOf(MatchNotFoundError);
-    await expect(
-      service.updateLineup(stranger.id, match.id, { lineup: [], captainPlayerId: null }),
-    ).rejects.toBeInstanceOf(MatchNotFoundError);
+    await expect(service.updateLineup(stranger.id, match.id, { lineup: [], captainPlayerId: null })).rejects.toBeInstanceOf(MatchNotFoundError);
   });
 
   it("supprime un match appartenant à l’éducateur", async () => {
@@ -293,8 +287,6 @@ describe("PostgreSQL match persistence", () => {
     const stranger = await createEducator("details-stranger");
     const match = await service.create(owner.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
 
-    await expect(
-      service.updateDetails(stranger.id, match.id, { location: "Ailleurs" }),
-    ).rejects.toBeInstanceOf(MatchNotFoundError);
+    await expect(service.updateDetails(stranger.id, match.id, { location: "Ailleurs" })).rejects.toBeInstanceOf(MatchNotFoundError);
   });
 });

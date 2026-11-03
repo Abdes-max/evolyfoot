@@ -11,25 +11,21 @@ interface AdjustmentCardProps {
 
 export function AdjustmentCard({ suggestion }: AdjustmentCardProps) {
   const [decision, setDecision] = useState<Decision>("pending");
-  const status = decision === "accepted"
-    ? "Ajustement appliqué à la prochaine séance"
-    : decision === "declined"
-      ? "Plan actuel conservé"
-      : "";
+  const status = decision === "accepted" ? "Ajustement appliqué à la prochaine séance" : decision === "declined" ? "Plan actuel conservé" : "";
 
   function decide(nextDecision: Decision) {
     setDecision(nextDecision);
     if (Platform.OS === "ios" && nextDecision !== "pending") {
-      AccessibilityInfo.announceForAccessibility(nextDecision === "accepted"
-        ? "Ajustement appliqué à la prochaine séance"
-        : "Plan actuel conservé");
+      AccessibilityInfo.announceForAccessibility(nextDecision === "accepted" ? "Ajustement appliqué à la prochaine séance" : "Plan actuel conservé");
     }
   }
 
   return (
     <View style={styles.card}>
       <Text style={styles.eyebrow}>PROPOSITION POUR LA PROCHAINE SÉANCE</Text>
-      <Text accessibilityRole="header" style={styles.title}>{suggestion.title}</Text>
+      <Text accessibilityRole="header" style={styles.title}>
+        {suggestion.title}
+      </Text>
 
       <View style={styles.detail}>
         <Text style={styles.label}>Pourquoi</Text>
@@ -45,22 +41,50 @@ export function AdjustmentCard({ suggestion }: AdjustmentCardProps) {
         <Text style={styles.body}>{suggestion.observable}</Text>
       </View>
 
-      {status && <Text accessibilityLiveRegion={Platform.OS === "android" ? "polite" : "none"} style={styles.status}>{status}</Text>}
+      {status && (
+        <Text accessibilityLiveRegion={Platform.OS === "android" ? "polite" : "none"} style={styles.status}>
+          {status}
+        </Text>
+      )}
       <View style={styles.actions}>
-        {decision === "pending" && <>
-          <TouchableOpacity accessibilityLabel="Appliquer cet ajustement" accessibilityRole="button" hitSlop={8} onPress={() => decide("accepted")} style={[styles.action, styles.apply]}>
-            <Text style={styles.applyText}>Appliquer cet ajustement</Text>
+        {decision === "pending" && (
+          <>
+            <TouchableOpacity
+              accessibilityLabel="Appliquer cet ajustement"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={() => decide("accepted")}
+              style={[styles.action, styles.apply]}
+            >
+              <Text style={styles.applyText}>Appliquer cet ajustement</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityLabel="Garder mon plan"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={() => decide("declined")}
+              style={styles.action}
+            >
+              <Text style={styles.actionText}>Garder mon plan</Text>
+            </TouchableOpacity>
+          </>
+        )}
+        {decision === "accepted" && (
+          <TouchableOpacity accessibilityLabel="Annuler" accessibilityRole="button" hitSlop={8} onPress={() => decide("pending")} style={styles.action}>
+            <Text style={styles.actionText}>Annuler</Text>
           </TouchableOpacity>
-          <TouchableOpacity accessibilityLabel="Garder mon plan" accessibilityRole="button" hitSlop={8} onPress={() => decide("declined")} style={styles.action}>
-            <Text style={styles.actionText}>Garder mon plan</Text>
+        )}
+        {decision === "declined" && (
+          <TouchableOpacity
+            accessibilityLabel="Reconsidérer la proposition"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => decide("pending")}
+            style={styles.action}
+          >
+            <Text style={styles.actionText}>Reconsidérer la proposition</Text>
           </TouchableOpacity>
-        </>}
-        {decision === "accepted" && <TouchableOpacity accessibilityLabel="Annuler" accessibilityRole="button" hitSlop={8} onPress={() => decide("pending")} style={styles.action}>
-          <Text style={styles.actionText}>Annuler</Text>
-        </TouchableOpacity>}
-        {decision === "declined" && <TouchableOpacity accessibilityLabel="Reconsidérer la proposition" accessibilityRole="button" hitSlop={8} onPress={() => decide("pending")} style={styles.action}>
-          <Text style={styles.actionText}>Reconsidérer la proposition</Text>
-        </TouchableOpacity>}
+        )}
       </View>
     </View>
   );
@@ -75,7 +99,17 @@ const styles = StyleSheet.create({
   body: { color: colors.ink, fontSize: 13, lineHeight: 19, marginTop: 4 },
   status: { color: colors.primary, fontSize: 13, fontWeight: "800", lineHeight: 19, marginTop: 18 },
   actions: { gap: 8, marginTop: 18 },
-  action: { alignItems: "center", backgroundColor: colors.paper, borderColor: colors.line, borderRadius: radii.sm, borderWidth: 1, justifyContent: "center", minHeight: 44, minWidth: 44, paddingHorizontal: 14 },
+  action: {
+    alignItems: "center",
+    backgroundColor: colors.paper,
+    borderColor: colors.line,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: 14,
+  },
   apply: { backgroundColor: colors.primary, borderColor: colors.primary },
   actionText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
   applyText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },

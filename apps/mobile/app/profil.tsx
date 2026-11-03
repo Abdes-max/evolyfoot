@@ -295,7 +295,13 @@ export default function ProfilScreen() {
           ).map(([key, label, autoComplete]) => (
             <View key={key} style={styles.field}>
               <Text style={styles.label}>{label}</Text>
-              <TextInput autoComplete={autoComplete} onChangeText={(value) => setPasswords({ ...passwords, [key]: value })} secureTextEntry style={styles.input} value={passwords[key]} />
+              <TextInput
+                autoComplete={autoComplete}
+                onChangeText={(value) => setPasswords({ ...passwords, [key]: value })}
+                secureTextEntry
+                style={styles.input}
+                value={passwords[key]}
+              />
             </View>
           ))}
           {passwordMessage ? <Text style={passwordMessage.startsWith("Mot de passe modifié") ? styles.success : styles.danger}>{passwordMessage}</Text> : null}

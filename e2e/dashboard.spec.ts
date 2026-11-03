@@ -48,7 +48,9 @@ test("l’éducateur gère l’effectif nominatif de son équipe", async ({ page
   // Même approche que le test d'onboarding ci-dessus : la persistance réelle est couverte par
   // les tests d'intégration, ce parcours vérifie le câblage client (ajout, renommage, retrait).
   await page.route("**/api/team", (route) =>
-    route.fulfill({ json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: ["Mardi", "Jeudi"] } } }),
+    route.fulfill({
+      json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: ["Mardi", "Jeudi"] } },
+    }),
   );
 
   let players: Array<{ id: string; firstName: string; lastName: string; name: string }> = [];
@@ -65,9 +67,7 @@ test("l’éducateur gère l’effectif nominatif de son équipe", async ({ page
     const id = route.request().url().split("/").pop();
     if (route.request().method() === "PATCH") {
       const { firstName, lastName } = JSON.parse(route.request().postData() ?? "{}");
-      players = players.map((player) =>
-        player.id === id ? { ...player, firstName, lastName, name: `${firstName} ${lastName}`.trim() } : player,
-      );
+      players = players.map((player) => (player.id === id ? { ...player, firstName, lastName, name: `${firstName} ${lastName}`.trim() } : player));
       return route.fulfill({ json: { player: players.find((player) => player.id === id) } });
     }
     players = players.filter((player) => player.id !== id);
@@ -117,12 +117,8 @@ test("le coach personnalise, valide puis observe sa séance", async ({ page }) =
   // d'une base de données.
   await page.route("**/api/team", (route) => route.fulfill({ json: { profile: null } }));
   await page.route("**/api/diagnostic", (route) => route.fulfill({ json: { scores: null } }));
-  await page.route("**/api/sessions", (route) =>
-    route.fulfill({ status: 201, json: { session: JSON.parse(route.request().postData() ?? "{}") } }),
-  );
-  await page.route("**/api/observations", (route) =>
-    route.fulfill({ status: 201, json: { report: JSON.parse(route.request().postData() ?? "{}") } }),
-  );
+  await page.route("**/api/sessions", (route) => route.fulfill({ status: 201, json: { session: JSON.parse(route.request().postData() ?? "{}") } }));
+  await page.route("**/api/observations", (route) => route.fulfill({ status: 201, json: { report: JSON.parse(route.request().postData() ?? "{}") } }));
 
   await page.goto("/plan");
   await page.getByRole("link", { name: /préparer la première séance/i }).click();
@@ -147,7 +143,9 @@ test("le coach personnalise, valide puis observe sa séance", async ({ page }) =
   await page.getByRole("button", { name: /valider l’observation/i }).click();
   await expect(page.getByRole("heading", { name: /garder le cap/i })).toBeVisible();
   await page.getByRole("button", { name: "Appliquer cet ajustement" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "Ajustement appliqué à la prochaine séance" })).toContainText("Ajustement appliqué à la prochaine séance");
+  await expect(page.getByRole("status").filter({ hasText: "Ajustement appliqué à la prochaine séance" })).toContainText(
+    "Ajustement appliqué à la prochaine séance",
+  );
 });
 
 test("l’éducateur retrouve ses séances par créneau du cycle et ouvre celle du calendrier", async ({ page }) => {
@@ -155,7 +153,9 @@ test("l’éducateur retrouve ses séances par créneau du cycle et ouvre celle 
   // l'éducateur pour vérifier le câblage client : page Séances, créneaux générés / non générés,
   // et pastille du calendrier qui ouvre la bonne séance.
   await page.route("**/api/team", (route) =>
-    route.fulfill({ json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: ["Mardi", "Jeudi"] } } }),
+    route.fulfill({
+      json: { profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: ["Mardi", "Jeudi"] } },
+    }),
   );
   await page.route("**/api/diagnostic", (route) => route.fulfill({ json: { scores: null } }));
   await page.route("**/api/matches", (route) => route.fulfill({ json: { matches: [] } }));
@@ -508,9 +508,7 @@ test("un visiteur non connecté découvre la vitrine sur la page d'accueil", asy
   await page.goto("/");
 
   await expect(page).toHaveURL(/\/$/);
-  await expect(
-    page.getByRole("heading", { name: /prépare des séances qui font progresser/i }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: /prépare des séances qui font progresser/i })).toBeVisible();
   await expect(page.getByRole("link", { name: "Essayer gratuitement" }).first()).toHaveAttribute("href", "/inscription");
   await expect(page.getByRole("link", { name: "Éducateurs" }).first()).toHaveAttribute("href", "/educateurs");
 
@@ -639,9 +637,7 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   // Le tuteur ouvre le lien (pas de session tant qu'il n'a pas créé son compte).
   await page.context().clearCookies();
   let registered = false;
-  await page.route("**/api/auth/session", (route) =>
-    route.fulfill({ json: registered ? { educator: null, role: "player" } : { educator: null, role: null } }),
-  );
+  await page.route("**/api/auth/session", (route) => route.fulfill({ json: registered ? { educator: null, role: "player" } : { educator: null, role: null } }));
   await page.route("**/api/invites/tok-123", (route) =>
     route.fulfill({ json: { invite: { playerName: "Kylian", teamName: "FC Horizon", coachName: "Coach E2E" } } }),
   );
@@ -702,9 +698,7 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
               myStatus: null,
             },
           ],
-          competitions: [
-            { id: "p1", type: "plateau", name: "Plateau de rentrée", dateLabel: "Dimanche 20 septembre", date: "2026-09-20T00:00:00.000Z" },
-          ],
+          competitions: [{ id: "p1", type: "plateau", name: "Plateau de rentrée", dateLabel: "Dimanche 20 septembre", date: "2026-09-20T00:00:00.000Z" }],
         },
       },
     }),
@@ -747,7 +741,10 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
 
   // "Mes séances" : même page de détail, icônes + plan de l'adresse, réponse binaire -- toujours
   // "convoquée" (pas de composition retenue pour une séance, toute l'équipe est attendue).
-  await page.locator(".player-space-matches").getByRole("link", { name: /Conserver le ballon/ }).click();
+  await page
+    .locator(".player-space-matches")
+    .getByRole("link", { name: /Conserver le ballon/ })
+    .click();
   await expect(page).toHaveURL(/\/joueur\/seances\/s1$/);
   await expect(page.locator(".player-match-detail")).toContainText("Conserver le ballon");
   await expect(page.locator(".player-match-detail")).toContainText("Stade Marius Requier, Aix-en-Provence");
@@ -767,7 +764,10 @@ test("un coach invite un tuteur, qui crée son compte et arrive sur son espace j
   // Réponse du joueur/tuteur à la convocation depuis "Mes convocations" : ouvre une vraie page
   // (/joueur/matches/:id), pas un panneau superposé -- et sans barre de navigation (page de
   // détail, comme match-prep-view.tsx côté coach).
-  await page.locator(".player-space-matches").getByRole("link", { name: /US Vallée/ }).click();
+  await page
+    .locator(".player-space-matches")
+    .getByRole("link", { name: /US Vallée/ })
+    .click();
   await expect(page).toHaveURL(/\/joueur\/matches\/m1$/);
   await expect(page.locator(".player-match-detail")).toContainText("US Vallée");
   await expect(page.locator(".player-match-detail")).toContainText("Stade Marius Requier, Aix-en-Provence");

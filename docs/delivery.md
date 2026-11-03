@@ -10,11 +10,11 @@
 
 ## Cibles
 
-| Cible | Source | Outil prévu |
-| --- | --- | --- |
-| Web / API | `master` | image Docker vers VPS |
-| iOS | tag de version issu de `master` | EAS Build puis TestFlight / App Store |
-| Android | tag de version issu de `master` | EAS Build puis piste interne / Play Store |
+| Cible     | Source                          | Outil prévu                               |
+| --------- | ------------------------------- | ----------------------------------------- |
+| Web / API | `master`                        | image Docker vers VPS                     |
+| iOS       | tag de version issu de `master` | EAS Build puis TestFlight / App Store     |
+| Android   | tag de version issu de `master` | EAS Build puis piste interne / Play Store |
 
 ## Stratégie progressive
 
@@ -114,14 +114,14 @@ Piège rencontré et corrigé : la branche par défaut du dépôt GitHub était 
 
 L'environnement `production` (Settings → Environments) porte ces secrets, déjà en place :
 
-| Secret | Contenu |
-| --- | --- |
-| `DEPLOY_HOST` | `186.240.151.40` |
-| `DEPLOY_USER` | `root` |
+| Secret           | Contenu                                                              |
+| ---------------- | -------------------------------------------------------------------- |
+| `DEPLOY_HOST`    | `186.240.151.40`                                                     |
+| `DEPLOY_USER`    | `root`                                                               |
 | `DEPLOY_SSH_KEY` | Clé privée SSH correspondant à une clé publique autorisée sur le VPS |
-| `DEPLOY_PORT` | Port SSH (`22` par défaut, optionnel) |
-| `DEPLOY_PATH` | `/opt/evolyfoot` |
-| `DEPLOY_DOMAIN` | `evolyfoot.com` (pour la vérification de santé finale du workflow) |
+| `DEPLOY_PORT`    | Port SSH (`22` par défaut, optionnel)                                |
+| `DEPLOY_PATH`    | `/opt/evolyfoot`                                                     |
+| `DEPLOY_DOMAIN`  | `evolyfoot.com` (pour la vérification de santé finale du workflow)   |
 
 Cet environnement **ne porte aucune règle de protection** (pas d'approbateur requis, pas de délai) : rien ne met en pause un déploiement déclenché automatiquement avant l'étape `deploy` elle-même. Si une approbation manuelle est un jour souhaitée, l'ajouter explicitement dans Settings → Environments → production → Protection rules.
 
@@ -139,10 +139,10 @@ Les sauvegardes automatisées de PostgreSQL et la supervision de l'application r
 
 Deux applications, chacune avec son projet EAS et ses fiches sur les stores :
 
-| Application | Dossier | Identifiant iOS et Android | Comptes |
-| --- | --- | --- | --- |
-| EvolyFoot Coach | `apps/mobile` | `com.evolyfoot.coach` | Éducateurs |
-| EvolyFoot Player | `apps/mobile-player` | `com.evolyfoot.player` | Joueurs et tuteurs, sur invitation de l'éducateur |
+| Application      | Dossier              | Identifiant iOS et Android | Comptes                                           |
+| ---------------- | -------------------- | -------------------------- | ------------------------------------------------- |
+| EvolyFoot Coach  | `apps/mobile`        | `com.evolyfoot.coach`      | Éducateurs                                        |
+| EvolyFoot Player | `apps/mobile-player` | `com.evolyfoot.player`     | Joueurs et tuteurs, sur invitation de l'éducateur |
 
 Les étapes ci-dessous sont à faire une fois pour chaque dossier ; `eas.json` y est identique.
 

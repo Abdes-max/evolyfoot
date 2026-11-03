@@ -82,16 +82,19 @@ export function MetricsView() {
         <span className="eyebrow light">TABLEAU DE BORD</span>
         <h1>Indicateurs MVP.</h1>
         <p>
-          Deux des quatre indicateurs de docs/mvp.md — les autres (chronométrage de la séance et de
-          l’observation, acceptation d’un ajustement) demandent une instrumentation qui n’existe pas
-          encore.
+          Deux des quatre indicateurs de docs/mvp.md — les autres (chronométrage de la séance et de l’observation, acceptation d’un ajustement) demandent une
+          instrumentation qui n’existe pas encore.
         </p>
       </header>
 
       {status === "loading" && <p className="metrics-loading">Chargement…</p>}
       {status === "denied" && (
         <p className="metrics-denied">
-          Accès réservé. <Link className="inline-cta" href="/connexion">Se connecter</Link> avec un compte autorisé.
+          Accès réservé.{" "}
+          <Link className="inline-cta" href="/connexion">
+            Se connecter
+          </Link>{" "}
+          avec un compte autorisé.
         </p>
       )}
       {status === "error" && <p className="metrics-denied">Une erreur est survenue, réessaie plus tard.</p>}
@@ -101,9 +104,7 @@ export function MetricsView() {
           <section className="metrics-section" aria-labelledby="funnel-title">
             <div className="metrics-section-head">
               <h2 id="funnel-title">Entonnoir d’activation</h2>
-              <p className="metrics-section-note">
-                De l’inscription à la première observation, par nombre d’éducateurs distincts.
-              </p>
+              <p className="metrics-section-note">De l’inscription à la première observation, par nombre d’éducateurs distincts.</p>
             </div>
             <div className="funnel">
               {metrics.funnel.map((step, index) => {
@@ -118,9 +119,7 @@ export function MetricsView() {
                       <div className="funnel-bar" style={{ width: `${widthPercent}%` }} />
                       <span className={`funnel-count${widthPercent < 22 ? " on-track" : ""}`}>{step.count}</span>
                     </div>
-                    <span className={`funnel-conversion${conversion === null ? " first" : ""}`}>
-                      {conversion === null ? "—" : `${conversion}%`}
-                    </span>
+                    <span className={`funnel-conversion${conversion === null ? " first" : ""}`}>{conversion === null ? "—" : `${conversion}%`}</span>
                   </div>
                 );
               })}
@@ -159,9 +158,8 @@ export function MetricsView() {
                 <small> / {metrics.retention.activeLastFourWeeks} actifs</small>
               </p>
               <p className="kpi-hint">
-                Éducateurs actifs chacune des 4 dernières semaines, parmi ceux actifs au moins une fois sur
-                la période — opérationnalise « utilisation hebdomadaire pendant quatre semaines
-                consécutives ».
+                Éducateurs actifs chacune des 4 dernières semaines, parmi ceux actifs au moins une fois sur la période — opérationnalise « utilisation
+                hebdomadaire pendant quatre semaines consécutives ».
               </p>
             </div>
             <div className="kpi-card">

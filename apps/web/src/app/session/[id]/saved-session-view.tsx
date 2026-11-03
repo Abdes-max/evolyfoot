@@ -15,10 +15,7 @@ interface RosterPlayer {
 }
 
 type LoadState =
-  | { status: "loading" }
-  | { status: "not-found" }
-  | { status: "stale" }
-  | { status: "ready"; session: TrainingSession; weekNumber: number; slot: number };
+  { status: "loading" } | { status: "not-found" } | { status: "stale" } | { status: "ready"; session: TrainingSession; weekNumber: number; slot: number };
 
 export function SavedSessionView({ sessionId }: { sessionId: string }) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -56,10 +53,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
         }
         setAuthenticated(true);
 
-        const [recordResponse, rosterResponse] = await Promise.all([
-          fetch(`/api/sessions/${sessionId}`),
-          fetch("/api/roster"),
-        ]);
+        const [recordResponse, rosterResponse] = await Promise.all([fetch(`/api/sessions/${sessionId}`), fetch("/api/roster")]);
         if (cancelled) {
           return;
         }
@@ -266,8 +260,8 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
               {sendingConvocation ? "Envoi…" : confirmingNoLocation && !location.trim() ? "Envoyer sans lieu" : "Envoyer la convocation"}
             </button>
             <p className="match-slot-hint">
-              {location.trim() ? `Lieu indiqué : ${location.trim()}.` : "Aucun lieu renseigné : ajoutez-le ci-dessus pour qu’il figure dans la convocation."} Envoyée
-              à tout l’effectif -- une séance n’a pas de composition retenue.
+              {location.trim() ? `Lieu indiqué : ${location.trim()}.` : "Aucun lieu renseigné : ajoutez-le ci-dessus pour qu’il figure dans la convocation."}{" "}
+              Envoyée à tout l’effectif -- une séance n’a pas de composition retenue.
             </p>
             {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
           </div>

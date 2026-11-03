@@ -129,15 +129,24 @@ describe("animation d'un exercice", () => {
         expect(targets.length, activity.id).toBeGreaterThan(0);
       }
       if (scenario === "finishing") {
-        expect(targets.some((target) => target.kind === "goal" || target.kind === "miniGoal"), activity.id).toBe(true);
+        expect(
+          targets.some((target) => target.kind === "goal" || target.kind === "miniGoal"),
+          activity.id,
+        ).toBe(true);
       }
       for (const target of targets) {
         for (const point of Object.values(targetGeometry(target))) {
-          expect(point.x >= 4 && point.x <= activity.diagram.width - 4 && point.y >= 4 && point.y <= activity.diagram.height - 4, `${activity.id} ${target.kind}`).toBe(true);
+          expect(
+            point.x >= 4 && point.x <= activity.diagram.width - 4 && point.y >= 4 && point.y <= activity.diagram.height - 4,
+            `${activity.id} ${target.kind}`,
+          ).toBe(true);
         }
       }
     }
-    const kinds = (title: string) => diagramTargets(exercise(title)).filter((target) => target.kind !== "cone" && target.kind !== "plot").map((target) => target.kind);
+    const kinds = (title: string) =>
+      diagramTargets(exercise(title))
+        .filter((target) => target.kind !== "cone" && target.kind !== "plot")
+        .map((target) => target.kind);
     expect(kinds("Match à trois passes")).toEqual(["miniGoal", "miniGoal"]);
     expect(kinds("Le 3 contre 2 vers les portes")).toEqual(["gate", "gate", "gate", "gate"]);
     expect(kinds("Les rois de la ligne")).toEqual(["line"]);

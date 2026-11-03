@@ -235,9 +235,7 @@ export function ProfilView() {
         <div>
           <span className="eyebrow light">Mon compte</span>
           <h1 title="Profil">Profil</h1>
-          <p title="Tes informations d’éducateur et l’accès à ton compte.">
-            Tes informations d’éducateur et l’accès à ton compte.
-          </p>
+          <p title="Tes informations d’éducateur et l’accès à ton compte.">Tes informations d’éducateur et l’accès à ton compte.</p>
         </div>
       </header>
 
@@ -291,17 +289,9 @@ export function ProfilView() {
                     <label className="profil-field" key={field.key}>
                       <span>{field.label}</span>
                       {field.options ? (
-                        <input
-                          list={`profil-${field.key}-options`}
-                          onChange={(event) => updateField(field.key, event.target.value)}
-                          value={form[field.key]}
-                        />
+                        <input list={`profil-${field.key}-options`} onChange={(event) => updateField(field.key, event.target.value)} value={form[field.key]} />
                       ) : (
-                        <input
-                          onChange={(event) => updateField(field.key, event.target.value)}
-                          type={field.type}
-                          value={form[field.key]}
-                        />
+                        <input onChange={(event) => updateField(field.key, event.target.value)} type={field.type} value={form[field.key]} />
                       )}
                       {field.options && (
                         <datalist id={`profil-${field.key}-options`}>
@@ -389,30 +379,15 @@ export function ProfilView() {
                 <form className="profil-password-form" onSubmit={changePassword}>
                   <label className="profil-field">
                     <span>Mot de passe actuel</span>
-                    <input
-                      autoComplete="current-password"
-                      onChange={(event) => setPwCurrent(event.target.value)}
-                      type="password"
-                      value={pwCurrent}
-                    />
+                    <input autoComplete="current-password" onChange={(event) => setPwCurrent(event.target.value)} type="password" value={pwCurrent} />
                   </label>
                   <label className="profil-field">
                     <span>Nouveau mot de passe (10 caractères minimum)</span>
-                    <input
-                      autoComplete="new-password"
-                      onChange={(event) => setPwNew(event.target.value)}
-                      type="password"
-                      value={pwNew}
-                    />
+                    <input autoComplete="new-password" onChange={(event) => setPwNew(event.target.value)} type="password" value={pwNew} />
                   </label>
                   <label className="profil-field">
                     <span>Confirmer le nouveau mot de passe</span>
-                    <input
-                      autoComplete="new-password"
-                      onChange={(event) => setPwConfirm(event.target.value)}
-                      type="password"
-                      value={pwConfirm}
-                    />
+                    <input autoComplete="new-password" onChange={(event) => setPwConfirm(event.target.value)} type="password" value={pwConfirm} />
                   </label>
                   {pwError && (
                     <p className="profil-error" role="alert">

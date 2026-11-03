@@ -169,13 +169,7 @@ export function DashboardView() {
             <Link
               aria-label={upcoming ? `Ouvrir la séance : ${upcoming.title}` : "Préparer ma prochaine séance"}
               className="session-card card-link"
-              href={
-                upcoming
-                  ? `/session/${upcoming.id}`
-                  : freeSlot
-                    ? `/session?week=${freeSlot.weekNumber}&slot=${freeSlot.slot}`
-                    : "/seances"
-              }
+              href={upcoming ? `/session/${upcoming.id}` : freeSlot ? `/session?week=${freeSlot.weekNumber}&slot=${freeSlot.slot}` : "/seances"}
               id="session"
             >
               <div className="card-top">
@@ -226,8 +220,7 @@ export function DashboardView() {
             </section>
           ) : (
             <p className="dashboard-empty">
-              Aucune observation pour l’instant. <Link href="/observation">Note ce que tu as vu</Link> après ta prochaine séance
-              ou ton prochain match.
+              Aucune observation pour l’instant. <Link href="/observation">Note ce que tu as vu</Link> après ta prochaine séance ou ton prochain match.
             </p>
           )}
 

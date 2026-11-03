@@ -61,16 +61,10 @@ export function MatchPitch({ slots, lineup, captainPlayerId, roster = [], onSlot
           const assignment = lineup.find((candidate) => candidate.slotId === slot.id);
           const isCaptain = Boolean(assignment && assignment.playerId === captainPlayerId);
           const style = { left: `${(slot.x / 300) * 100}%`, top: `${(slot.y / 460) * 100}%` };
-          const availablePlayers = roster.filter(
-            (player) => player.id === assignment?.playerId || !assignedPlayerIds.has(player.id),
-          );
+          const availablePlayers = roster.filter((player) => player.id === assignment?.playerId || !assignedPlayerIds.has(player.id));
 
           return (
-            <div
-              className={assignment ? "match-pitch-token filled" : "match-pitch-token empty"}
-              key={slot.id}
-              style={style}
-            >
+            <div className={assignment ? "match-pitch-token filled" : "match-pitch-token empty"} key={slot.id} style={style}>
               {!readOnly && (
                 <select
                   aria-label={`${slot.roleLabel} : ${assignment ? assignment.playerName : "aucun joueur"}, toucher pour affecter`}

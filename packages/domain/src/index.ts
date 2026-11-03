@@ -2,11 +2,7 @@ import type { GameFormat } from "./team";
 
 export type AgeGroup = "U10" | "U11" | "U12" | "U13";
 
-export type DevelopmentTheme =
-  | "Conserver le ballon"
-  | "Progresser ensemble"
-  | "Finir les actions"
-  | "Récupérer rapidement";
+export type DevelopmentTheme = "Conserver le ballon" | "Progresser ensemble" | "Finir les actions" | "Récupérer rapidement";
 
 export interface WeeklyFocus {
   id: string;
@@ -48,13 +44,7 @@ export {
   validatePersonalExercise,
 } from "./personal-exercise";
 export type { ImportedExerciseText, PersonalExercise, PersonalExerciseInput } from "./personal-exercise";
-export {
-  currentCycleWeek,
-  firstFreeCycleSlot,
-  rehydrateTrainingSession,
-  suggestedMeetingAt,
-  trainingCycleWeekCount,
-} from "./training-calendar";
+export { currentCycleWeek, firstFreeCycleSlot, rehydrateTrainingSession, suggestedMeetingAt, trainingCycleWeekCount } from "./training-calendar";
 export type { SavedTrainingSession } from "./training-calendar";
 export { ageGroups, createTeamProfile, gameFormats, sortTrainingDays, validateTeamProfile } from "./team";
 export type { GameFormat, TeamProfile, TeamProfileErrors, TrainingDay } from "./team";
@@ -86,14 +76,7 @@ export type {
   TrainingBlockKind,
   TrainingSession,
 } from "./training-session";
-export {
-  canCompleteObservation,
-  completeObservation,
-  createObservationDraft,
-  rateObservation,
-  setObservationNote,
-  togglePlayerSignal,
-} from "./observation";
+export { canCompleteObservation, completeObservation, createObservationDraft, rateObservation, setObservationNote, togglePlayerSignal } from "./observation";
 export type {
   ObservationDraft,
   ObservationEventType,
@@ -124,7 +107,18 @@ export {
   validateMatchPlan,
 } from "./match";
 export { ballFrame, buildDiagramAnimation, diagramAnimationStepCount, diagramTargets, exerciseScenario, targetGeometry } from "./diagram-animation";
-export type { AnimatedExercise, AnimationBall, AnimationBallKind, AnimationPoint, AnimationStep, BallFrame, DiagramTarget, DiagramTargetKind, ExerciseScenario, TargetGeometry } from "./diagram-animation";
+export type {
+  AnimatedExercise,
+  AnimationBall,
+  AnimationBallKind,
+  AnimationPoint,
+  AnimationStep,
+  BallFrame,
+  DiagramTarget,
+  DiagramTargetKind,
+  ExerciseScenario,
+  TargetGeometry,
+} from "./diagram-animation";
 export { fixtureFromTitle, parseCalendarFile } from "./calendar-import";
 export type { CalendarEvent, ImportedFixture } from "./calendar-import";
 export { analyzeMatchup } from "./tactical-analysis";
@@ -135,16 +129,7 @@ export { allFormationIds, playStyleNote, playStyles } from "./coach-style";
 export type { PlayStyle } from "./coach-style";
 export { matchResultMaxGoals, playerSeasonTotals, validateMatchResult } from "./match-result";
 export type { MatchPlayerStat, MatchResult, PlayerSeasonTotals } from "./match-result";
-export type {
-  Formation,
-  LineupRole,
-  MatchLineupAssignment,
-  MatchLineupSlot,
-  MatchPlan,
-  MatchPlanErrors,
-  MatchStatus,
-  MatchVenue,
-} from "./match";
+export type { Formation, LineupRole, MatchLineupAssignment, MatchLineupSlot, MatchPlan, MatchPlanErrors, MatchStatus, MatchVenue } from "./match";
 export {
   buildPlayerEvaluationSeasons,
   createEmptyPlayerEvaluationScores,
@@ -157,14 +142,7 @@ export {
   validatePlayerEvaluationScores,
 } from "./player-evaluation";
 export type { PlayerEvaluationAspect, PlayerEvaluationScores, PlayerEvaluationSeason } from "./player-evaluation";
-export {
-  isValidJerseyNumber,
-  playerAspectCodes,
-  playerFeet,
-  playerOverallScore,
-  playerPositionCodes,
-  playerPositions,
-} from "./player-profile";
+export { isValidJerseyNumber, playerAspectCodes, playerFeet, playerOverallScore, playerPositionCodes, playerPositions } from "./player-profile";
 export type { PlayerFoot, PlayerPosition } from "./player-profile";
 export { validateTournament } from "./tournament";
 export type { TournamentErrors, TournamentInput } from "./tournament";

@@ -47,7 +47,11 @@ describe("createSaveTrainingSessionHandler", () => {
   it("requires an authenticated session before reading the body", async () => {
     const handler = createSaveTrainingSessionHandler(
       anonymous,
-      { save: async () => { throw new Error("not called"); } },
+      {
+        save: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -74,7 +78,11 @@ describe("createSaveTrainingSessionHandler", () => {
   it("rejects a malformed body without calling the gateway", async () => {
     const handler = createSaveTrainingSessionHandler(
       authenticated,
-      { save: async () => { throw new Error("not called"); } },
+      {
+        save: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -86,7 +94,11 @@ describe("createSaveTrainingSessionHandler", () => {
   it("rejects an unknown age group without calling the gateway", async () => {
     const handler = createSaveTrainingSessionHandler(
       authenticated,
-      { save: async () => { throw new Error("not called"); } },
+      {
+        save: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -98,7 +110,11 @@ describe("createSaveTrainingSessionHandler", () => {
   it("rejects a cycle week outside 1..4 without calling the gateway", async () => {
     const handler = createSaveTrainingSessionHandler(
       authenticated,
-      { save: async () => { throw new Error("not called"); } },
+      {
+        save: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -185,7 +201,11 @@ describe("createUpdateTrainingSessionDetailsHandler", () => {
   it("requires authentication", async () => {
     const handler = createUpdateTrainingSessionDetailsHandler(
       anonymous,
-      { updateDetails: async () => { throw new Error("not called"); } },
+      {
+        updateDetails: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
     expect((await handler(jsonRequest({ location: "Stade X" }), "session-1")).status).toBe(401);

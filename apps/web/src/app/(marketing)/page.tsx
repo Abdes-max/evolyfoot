@@ -51,7 +51,10 @@ const faq = [
   { q: "Mes données sont-elles à moi ?", a: "Oui. Ton effectif, tes séances et tes observations t’appartiennent et restent privés." },
   { q: "Web ou mobile ?", a: "Les deux. L’application web pour préparer, l’application mobile pour le bord du terrain." },
   { q: "Combien de temps pour démarrer ?", a: "Le diagnostic et le premier cycle se font en quelques minutes, avant ta prochaine séance." },
-  { q: "C’est vraiment gratuit ?", a: "Oui. Le plan gratuit couvre aujourd’hui toutes les fonctionnalités disponibles pour une équipe, sans limite de séances." },
+  {
+    q: "C’est vraiment gratuit ?",
+    a: "Oui. Le plan gratuit couvre aujourd’hui toutes les fonctionnalités disponibles pour une équipe, sans limite de séances.",
+  },
 ];
 
 const showcase = trainingActivityCatalogue.filter((activity) => activity.kind === "main").slice(0, 12);
@@ -70,8 +73,8 @@ export default function MarketingHome() {
             Prépare des séances qui <em>font progresser</em>, sans y passer tes soirées.
           </h1>
           <p>
-            EvolyFoot transforme ton diagnostic d’équipe en un cycle de 4 semaines, des séances prêtes à l’emploi et des
-            ajustements expliqués après chaque match.
+            EvolyFoot transforme ton diagnostic d’équipe en un cycle de 4 semaines, des séances prêtes à l’emploi et des ajustements expliqués après chaque
+            match.
           </p>
           <div className="m-hero-actions">
             <Link className="m-btn m-btn-primary" href="/inscription">

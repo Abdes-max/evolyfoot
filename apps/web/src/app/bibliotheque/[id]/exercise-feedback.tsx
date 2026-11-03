@@ -20,7 +20,12 @@ export function ExerciseFeedback() {
           </svg>
           <span className="visually-hidden">Cet exercice m’a plu</span>
         </button>
-        <button aria-pressed={feedback === "disliked"} className={feedback === "disliked" ? "active" : ""} onClick={() => setFeedback("disliked")} type="button">
+        <button
+          aria-pressed={feedback === "disliked"}
+          className={feedback === "disliked" ? "active" : ""}
+          onClick={() => setFeedback("disliked")}
+          type="button"
+        >
           <svg fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="20">
             <path d="M17 13V4h3a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1Z" />
             <path d="M17 13l-3.5 7a2 2 0 0 1-2-2v-4H6.3a2 2 0 0 1-2-2.4l1.4-6A2 2 0 0 1 7.7 4H14a3 3 0 0 1 3 3" />
@@ -28,7 +33,9 @@ export function ExerciseFeedback() {
           <span className="visually-hidden">Cet exercice ne m’a pas plu</span>
         </button>
       </div>
-      <p aria-live="polite" className="exercise-feedback-status" role="status">{status}</p>
+      <p aria-live="polite" className="exercise-feedback-status" role="status">
+        {status}
+      </p>
     </div>
   );
 }

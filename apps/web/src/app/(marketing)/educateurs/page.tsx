@@ -46,10 +46,7 @@ export default function EducateursPage() {
       <section className="m-section m-hero">
         <span className="m-eyebrow">Pour les éducateurs</span>
         <h1>Tout le fil de ta semaine, au même endroit.</h1>
-        <p>
-          EvolyFoot suit l’éducateur du diagnostic à l’ajustement, dans l’ordre où le travail se fait vraiment. Voici
-          chaque étape.
-        </p>
+        <p>EvolyFoot suit l’éducateur du diagnostic à l’ajustement, dans l’ordre où le travail se fait vraiment. Voici chaque étape.</p>
         <div className="m-hero-actions">
           <Link className="m-btn m-btn-primary" href="/inscription">
             Essayer gratuitement

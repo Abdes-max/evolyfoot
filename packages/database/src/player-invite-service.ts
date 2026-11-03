@@ -3,12 +3,7 @@ import { normalizeEducatorEmail } from "./email";
 import { PlayerNotFoundError, ValidationError } from "./errors";
 import { hashPassword, validatePassword } from "./password";
 import { generateSessionToken, hashSessionToken } from "./session-token";
-import type {
-  EducatorRepository,
-  PlayerInviteRepository,
-  PlayerRepository,
-  TeamRepository,
-} from "./repositories";
+import type { EducatorRepository, PlayerInviteRepository, PlayerRepository, TeamRepository } from "./repositories";
 
 const INVITE_DURATION_MS = 1000 * 60 * 60 * 24 * 14; // 14 jours
 
@@ -89,10 +84,7 @@ export class PlayerInviteService {
   }
 
   // Crée le compte tuteur/joueur lié et ouvre sa session. Marque l'invitation consommée.
-  async consume(
-    token: string,
-    input: { email: string; password: string; displayName: string },
-  ): Promise<AuthenticatedSession> {
+  async consume(token: string, input: { email: string; password: string; displayName: string }): Promise<AuthenticatedSession> {
     const invite = await this.playerInviteRepository.findByTokenHash(hashSessionToken(token));
     if (!invite || invite.consumedAt || invite.expiresAt.getTime() <= this.now().getTime()) {
       throw new InviteInvalidError();

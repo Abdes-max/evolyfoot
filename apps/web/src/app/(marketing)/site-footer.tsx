@@ -8,9 +8,7 @@ export function SiteFooter() {
           <Link className="m-brand" href="/">
             <span className="brand-mark">EV</span> EvolyFoot
           </Link>
-          <span style={{ color: "var(--m-muted)", fontSize: 12.5 }}>
-            L’assistant de progression des éducateurs de football de jeunes.
-          </span>
+          <span style={{ color: "var(--m-muted)", fontSize: 12.5 }}>L’assistant de progression des éducateurs de football de jeunes.</span>
         </div>
         <div className="m-footer-col">
           <strong>Produit</strong>

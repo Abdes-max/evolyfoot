@@ -61,7 +61,9 @@ describe("exercices personnels", () => {
 
 describe("parseExerciseText", () => {
   it("reconnaît le titre et les champs annoncés", () => {
-    const parsed = parseExerciseText("Rondo fédéral\nObjectif : garder le ballon\nOrganisation : carré de 10m\nsur herbe\nConsigne : deux touches\nÀ observer : le soutien");
+    const parsed = parseExerciseText(
+      "Rondo fédéral\nObjectif : garder le ballon\nOrganisation : carré de 10m\nsur herbe\nConsigne : deux touches\nÀ observer : le soutien",
+    );
 
     expect(parsed).toEqual({
       title: "Rondo fédéral",

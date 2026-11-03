@@ -33,7 +33,15 @@ describe("createMetricsHandler", () => {
   });
 
   it("requires an authenticated session", async () => {
-    const handler = createMetricsHandler(anonymous, { get: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createMetricsHandler(
+      anonymous,
+      {
+        get: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(new Request("https://evolyfoot.test/api/admin/metrics"));
 
@@ -43,7 +51,11 @@ describe("createMetricsHandler", () => {
   it("refuse une adresse admin qui n'a pas été confirmée", async () => {
     const handler = createMetricsHandler(
       async () => ({ ...admin, emailVerified: false }),
-      { get: async () => { throw new Error("not called"); } },
+      {
+        get: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -55,7 +67,11 @@ describe("createMetricsHandler", () => {
   it("rejects an authenticated educator who is not on the admin allowlist", async () => {
     const handler = createMetricsHandler(
       authenticatedAsEducator,
-      { get: async () => { throw new Error("not called"); } },
+      {
+        get: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -87,7 +103,11 @@ describe("createMetricsHandler", () => {
     const failure = new Error("postgres://secret-host/internal");
     const handler = createMetricsHandler(
       authenticatedAsAdmin,
-      { get: async () => { throw failure; } },
+      {
+        get: async () => {
+          throw failure;
+        },
+      },
       errors.push.bind(errors),
     );
 
@@ -103,7 +123,11 @@ describe("createMetricsHandler", () => {
     process.env.ADMIN_EMAILS = "";
     const handler = createMetricsHandler(
       authenticatedAsAdmin,
-      { get: async () => { throw new Error("not called"); } },
+      {
+        get: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -116,7 +140,11 @@ describe("createMetricsHandler", () => {
     delete process.env.ADMIN_EMAILS;
     const handler = createMetricsHandler(
       authenticatedAsAdmin,
-      { get: async () => { throw new Error("not called"); } },
+      {
+        get: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 

@@ -108,7 +108,12 @@ export default function StatistiquesScreen() {
                 </Text>
               ))}
             </View>
-            <TouchableOpacity accessibilityRole="button" disabled={exporting} onPress={() => exportPdf(stats)} style={[styles.pdf, exporting && styles.disabled]}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              disabled={exporting}
+              onPress={() => exportPdf(stats)}
+              style={[styles.pdf, exporting && styles.disabled]}
+            >
               <Text style={styles.pdfText}>{exporting ? "Création du PDF…" : "Exporter le rapport en PDF"}</Text>
             </TouchableOpacity>
           </>

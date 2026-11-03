@@ -120,9 +120,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
               <li key={item.id}>
                 <Link aria-label={`${item.name} — Voir le détail`} className="match-card card-link" href={`${detailBasePath}/${item.id}`}>
                   <div className="match-card-top">
-                    <span className={isPast ? "match-status match-status-played" : "match-status match-status-scheduled"}>
-                      {isPast ? "Passé" : "À venir"}
-                    </span>
+                    <span className={isPast ? "match-status match-status-played" : "match-status match-status-scheduled"}>{isPast ? "Passé" : "À venir"}</span>
                   </div>
                   <h2 aria-hidden="true">{item.name}</h2>
                   <p aria-hidden="true">

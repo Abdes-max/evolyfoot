@@ -71,11 +71,7 @@ export interface MatchGateway {
       opponentFormationId?: string | null;
     },
   ): Promise<MatchSummary>;
-  changeFormation(
-    educatorId: string,
-    matchId: string,
-    input: { formationId: string; gameFormat?: number },
-  ): Promise<MatchSummary>;
+  changeFormation(educatorId: string, matchId: string, input: { formationId: string; gameFormat?: number }): Promise<MatchSummary>;
   markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<MatchSummary>;
   saveResult(educatorId: string, matchId: string, result: MatchResult): Promise<MatchSummary>;
   remove(educatorId: string, matchId: string): Promise<void>;
@@ -268,7 +264,8 @@ export function createUpdateMatchDetailsHandler(
     const meetingTime = body?.meetingTime === undefined ? undefined : isNullableString(body.meetingTime) ? body.meetingTime : null;
     const location = body?.location === undefined ? undefined : isNullableString(body.location) ? body.location : null;
     const description = body?.description === undefined ? undefined : isNullableString(body.description) ? body.description : null;
-    const opponentFormationId = body?.opponentFormationId === undefined ? undefined : isNullableString(body.opponentFormationId) ? body.opponentFormationId : null;
+    const opponentFormationId =
+      body?.opponentFormationId === undefined ? undefined : isNullableString(body.opponentFormationId) ? body.opponentFormationId : null;
     try {
       return Response.json({
         match: await matches.updateDetails(educator.id, matchId, { date, meetingOffsetMinutes, meetingTime, location, description, opponentFormationId }),
@@ -358,12 +355,7 @@ export function createSaveMatchResultHandler(
 
     const body = await readJsonBody(request);
     const { goalsFor, goalsAgainst, playerStats } = body ?? {};
-    if (
-      typeof goalsFor !== "number" ||
-      typeof goalsAgainst !== "number" ||
-      !Array.isArray(playerStats) ||
-      !playerStats.every(isPlayerStatShaped)
-    ) {
+    if (typeof goalsFor !== "number" || typeof goalsAgainst !== "number" || !Array.isArray(playerStats) || !playerStats.every(isPlayerStatShaped)) {
       return Response.json({ error: "Le résultat est invalide." }, { status: 400 });
     }
 
@@ -395,9 +387,8 @@ export function createRemoveMatchHandler(
 }
 
 export async function createMatchGateway(): Promise<{ gateway: MatchGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, MatchService, PrismaEducatorRepository, PrismaMatchRepository, matchKickoffTime, matchMeetingTime } = await import(
-    "@evolyfoot/database"
-  );
+  const { createDatabaseClient, MatchService, PrismaEducatorRepository, PrismaMatchRepository, matchKickoffTime, matchMeetingTime } =
+    await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new MatchService(new PrismaEducatorRepository(database.prisma), new PrismaMatchRepository(database.prisma));
 

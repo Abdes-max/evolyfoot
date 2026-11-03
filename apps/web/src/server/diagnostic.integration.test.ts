@@ -21,7 +21,11 @@ describe("createGetDiagnosticHandler", () => {
   it("requires an authenticated session", async () => {
     const handler = createGetDiagnosticHandler(
       anonymous,
-      { get: async () => { throw new Error("not called"); } },
+      {
+        get: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -52,7 +56,11 @@ describe("createGetDiagnosticHandler", () => {
     const failure = new Error("postgres://secret-host/internal");
     const handler = createGetDiagnosticHandler(
       authenticated,
-      { get: async () => { throw failure; } },
+      {
+        get: async () => {
+          throw failure;
+        },
+      },
       errors.push.bind(errors),
     );
 
@@ -69,7 +77,11 @@ describe("createSaveDiagnosticHandler", () => {
   it("requires an authenticated session before reading the body", async () => {
     const handler = createSaveDiagnosticHandler(
       anonymous,
-      { save: async () => { throw new Error("not called"); } },
+      {
+        save: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -96,7 +108,11 @@ describe("createSaveDiagnosticHandler", () => {
   it("rejects a malformed body without calling the gateway", async () => {
     const handler = createSaveDiagnosticHandler(
       authenticated,
-      { save: async () => { throw new Error("not called"); } },
+      {
+        save: async () => {
+          throw new Error("not called");
+        },
+      },
       () => undefined,
     );
 
@@ -134,11 +150,7 @@ describe("createSaveDiagnosticHandler", () => {
   });
 
   it("saves and returns the scores on success", async () => {
-    const handler = createSaveDiagnosticHandler(
-      authenticated,
-      { save: async (_id, scores) => scores },
-      () => undefined,
-    );
+    const handler = createSaveDiagnosticHandler(authenticated, { save: async (_id, scores) => scores }, () => undefined);
 
     const response = await handler(jsonRequest(validScores));
 

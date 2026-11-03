@@ -15,11 +15,7 @@ export interface PlayerEvaluationGateway {
   list(educatorId: string): Promise<PlayerEvaluationSummary[]>;
   listByPlayer(educatorId: string, playerId: string): Promise<PlayerEvaluationSummary[]>;
   add(educatorId: string, playerId: string, scores: PlayerEvaluationScores): Promise<PlayerEvaluationSummary>;
-  update(
-    educatorId: string,
-    evaluationId: string,
-    input: { scores?: PlayerEvaluationScores; date?: string },
-  ): Promise<PlayerEvaluationSummary>;
+  update(educatorId: string, evaluationId: string, input: { scores?: PlayerEvaluationScores; date?: string }): Promise<PlayerEvaluationSummary>;
   remove(educatorId: string, evaluationId: string): Promise<void>;
 }
 
@@ -66,9 +62,7 @@ export function createListPlayerEvaluationsHandler(
     }
     const playerId = new URL(request.url).searchParams.get("playerId");
     try {
-      const list = playerId
-        ? await evaluations.listByPlayer(educator.id, playerId)
-        : await evaluations.list(educator.id);
+      const list = playerId ? await evaluations.listByPlayer(educator.id, playerId) : await evaluations.list(educator.id);
       return Response.json({ evaluations: list });
     } catch (error) {
       return errorResponse(error, log);
@@ -150,13 +144,8 @@ export async function createPlayerEvaluationGateway(): Promise<{
   gateway: PlayerEvaluationGateway;
   disconnect: () => Promise<void>;
 }> {
-  const {
-    createDatabaseClient,
-    PlayerEvaluationService,
-    PrismaEducatorRepository,
-    PrismaPlayerEvaluationRepository,
-    PrismaPlayerRepository,
-  } = await import("@evolyfoot/database");
+  const { createDatabaseClient, PlayerEvaluationService, PrismaEducatorRepository, PrismaPlayerEvaluationRepository, PrismaPlayerRepository } =
+    await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new PlayerEvaluationService(
     new PrismaEducatorRepository(database.prisma),

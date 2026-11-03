@@ -44,12 +44,7 @@ export class PlayerRsvpService {
   // Même principe que respondToMatch ci-dessus -- pas de blocage une fois la séance "passée" : à
   // la différence du match (`status`), une séance n'a pas d'état explicite pour ça, la présence
   // pouvant être (re)générée à tout moment par `TrainingSessionService.save`.
-  async respondToTrainingSession(
-    playerAccountId: string,
-    sessionId: string,
-    status: AttendanceStatus,
-    comment?: string | null,
-  ): Promise<void> {
+  async respondToTrainingSession(playerAccountId: string, sessionId: string, status: AttendanceStatus, comment?: string | null): Promise<void> {
     const account = await this.educatorRepository.findById(playerAccountId);
     if (!account || account.role !== "player" || !account.linkedPlayerId) {
       throw new EducatorNotFoundError();

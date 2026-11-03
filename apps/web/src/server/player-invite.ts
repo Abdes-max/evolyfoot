@@ -130,10 +130,7 @@ export async function createPlayerInviteGateway(): Promise<{
     PrismaTeamRepository,
   } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const authService = new AuthService(
-    new PrismaEducatorRepository(database.prisma),
-    new PrismaSessionRepository(database.prisma),
-  );
+  const authService = new AuthService(new PrismaEducatorRepository(database.prisma), new PrismaSessionRepository(database.prisma));
   const service = new PlayerInviteService(
     new PrismaEducatorRepository(database.prisma),
     new PrismaPlayerRepository(database.prisma),

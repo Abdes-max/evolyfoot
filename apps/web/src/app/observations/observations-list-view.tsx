@@ -68,7 +68,10 @@ export function ObservationsListView() {
       {authenticated === false && (
         <section className="observations-auth-required" role="status">
           <p>
-            Connecte-toi pour consulter tes observations. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
+            Connecte-toi pour consulter tes observations.{" "}
+            <Link className="inline-cta" href="/connexion">
+              Se connecter →
+            </Link>
           </p>
         </section>
       )}
@@ -76,18 +79,12 @@ export function ObservationsListView() {
       {authenticated && (
         <section className="observations-content">
           {observations.length === 0 ? (
-            <p className="observations-empty">
-              Aucune observation pour l’instant. Elles apparaissent ici après une séance ou un match.
-            </p>
+            <p className="observations-empty">Aucune observation pour l’instant. Elles apparaissent ici après une séance ou un match.</p>
           ) : (
             <ul className="observations-list" aria-label="Observations">
               {observations.map((observation) => (
                 <li key={observation.id}>
-                  <Link
-                    aria-label={`${observation.title} — Voir le détail`}
-                    className="observation-card card-link"
-                    href={`/observations/${observation.id}`}
-                  >
+                  <Link aria-label={`${observation.title} — Voir le détail`} className="observation-card card-link" href={`/observations/${observation.id}`}>
                     <div className="observation-card-top">
                       <span className="observation-type-badge" aria-hidden="true">
                         {eventTypeLabel[observation.eventType]}

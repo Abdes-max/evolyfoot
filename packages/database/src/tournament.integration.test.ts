@@ -104,11 +104,9 @@ describe("PostgreSQL tournament persistence", () => {
     const stranger = await createEducator("details-stranger");
     const tournament = await service.create(owner.id, { name: "Tournoi", dateLabel: "12 avril 2026" });
 
-    await expect(
-      service.updateDetails(stranger.id, tournament.id, { location: "Ailleurs" }),
-    ).rejects.toBeInstanceOf(TournamentNotFoundError);
-    await expect(
-      service.updateDetails(owner.id, "00000000-0000-0000-0000-000000000000", { location: "Ailleurs" }),
-    ).rejects.toBeInstanceOf(TournamentNotFoundError);
+    await expect(service.updateDetails(stranger.id, tournament.id, { location: "Ailleurs" })).rejects.toBeInstanceOf(TournamentNotFoundError);
+    await expect(service.updateDetails(owner.id, "00000000-0000-0000-0000-000000000000", { location: "Ailleurs" })).rejects.toBeInstanceOf(
+      TournamentNotFoundError,
+    );
   });
 });

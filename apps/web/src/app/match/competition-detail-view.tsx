@@ -138,7 +138,10 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
       <main className="match-shell">
         <section className="match-auth-required" role="status">
           <p>
-            Connecte-toi pour voir ce {singular}. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
+            Connecte-toi pour voir ce {singular}.{" "}
+            <Link className="inline-cta" href="/connexion">
+              Se connecter →
+            </Link>
           </p>
         </section>
       </main>

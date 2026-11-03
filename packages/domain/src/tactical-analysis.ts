@@ -72,9 +72,30 @@ export function analyzeMatchup(gameFormat: GameFormat, ourFormationId: string, o
 
   return {
     lines: [
-      { id: "midfield", label: "Milieu contre milieu", ours: ours("midfielder"), theirs: theirs("midfielder"), balance: midfield, advice: midfieldAdvice[midfield] },
-      { id: "attack", label: "Ton attaque contre leur défense", ours: ours("attacker"), theirs: theirs("defender"), balance: attack, advice: attackAdvice[attack] },
-      { id: "defense", label: "Ta défense contre leur attaque", ours: ours("defender"), theirs: theirs("attacker"), balance: defense, advice: defenseAdvice[defense] },
+      {
+        id: "midfield",
+        label: "Milieu contre milieu",
+        ours: ours("midfielder"),
+        theirs: theirs("midfielder"),
+        balance: midfield,
+        advice: midfieldAdvice[midfield],
+      },
+      {
+        id: "attack",
+        label: "Ton attaque contre leur défense",
+        ours: ours("attacker"),
+        theirs: theirs("defender"),
+        balance: attack,
+        advice: attackAdvice[attack],
+      },
+      {
+        id: "defense",
+        label: "Ta défense contre leur attaque",
+        ours: ours("defender"),
+        theirs: theirs("attacker"),
+        balance: defense,
+        advice: defenseAdvice[defense],
+      },
     ],
     summary: summaries[theme],
     theme,

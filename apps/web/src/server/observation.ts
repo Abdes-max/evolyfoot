@@ -55,11 +55,7 @@ function isSignalShaped(value: unknown): boolean {
     return false;
   }
   const signal = value as Record<string, unknown>;
-  return (
-    typeof signal.playerId === "string" &&
-    typeof signal.playerName === "string" &&
-    (signal.kind === "highlight" || signal.kind === "support")
-  );
+  return typeof signal.playerId === "string" && typeof signal.playerName === "string" && (signal.kind === "highlight" || signal.kind === "support");
 }
 
 function isObservationDraftShaped(value: Record<string, unknown> | null): value is Record<string, unknown> & ObservationDraft {

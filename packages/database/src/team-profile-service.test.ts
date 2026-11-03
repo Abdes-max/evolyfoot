@@ -1,12 +1,7 @@
 import type { TeamProfile } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
 import { EducatorNotFoundError, TeamNotFoundError } from "./errors";
-import type {
-  EducatorRecord,
-  EducatorRepository,
-  PersistedTeamProfile,
-  TeamRepository,
-} from "./repositories";
+import type { EducatorRecord, EducatorRepository, PersistedTeamProfile, TeamRepository } from "./repositories";
 import { TeamProfileService } from "./team-profile-service";
 
 const validProfile: TeamProfile = {
@@ -96,9 +91,7 @@ describe("TeamProfileService", () => {
     const service = new TeamProfileService(new InMemoryEducatorRepository(["educator-1"]), teamRepository);
     const incompleteProfile = { ...validProfile, playerCount: 5 };
 
-    await expect(service.save("educator-1", incompleteProfile)).rejects.toThrow(
-      "Le profil d’équipe est incomplet.",
-    );
+    await expect(service.save("educator-1", incompleteProfile)).rejects.toThrow("Le profil d’équipe est incomplet.");
     expect(teamRepository.writeCount).toBe(0);
   });
 
@@ -109,10 +102,7 @@ describe("TeamProfileService", () => {
   });
 
   it("saves a valid profile for its educator", async () => {
-    const service = new TeamProfileService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      new InMemoryTeamRepository(),
-    );
+    const service = new TeamProfileService(new InMemoryEducatorRepository(["educator-1"]), new InMemoryTeamRepository());
 
     const saved = await service.save("educator-1", validProfile);
 
@@ -133,10 +123,7 @@ describe("TeamProfileService", () => {
   });
 
   it("rejects a missing team for the calling educator", async () => {
-    const service = new TeamProfileService(
-      new InMemoryEducatorRepository(["educator-1"]),
-      new InMemoryTeamRepository(),
-    );
+    const service = new TeamProfileService(new InMemoryEducatorRepository(["educator-1"]), new InMemoryTeamRepository());
 
     await expect(service.get("educator-1")).rejects.toBeInstanceOf(TeamNotFoundError);
   });

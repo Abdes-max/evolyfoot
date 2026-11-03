@@ -30,9 +30,9 @@ Messagerie parents/joueurs et convocations ont été livrées après coup, voir 
 
 ## Indicateurs de réussite
 
-- Première séance planifiée en moins de 10 minutes. *(non mesuré — demande un chronométrage de l'interaction, non instrumenté)*
-- Compte rendu saisi en moins de 3 minutes. *(non mesuré — idem)*
-- Au moins une suggestion d'ajustement acceptée par cycle. *(non mesuré — la décision de la carte d'ajustement reste un état local, jamais envoyée au serveur)*
-- Utilisation hebdomadaire pendant quatre semaines consécutives. *(mesuré — voir `/admin/metrics`, section « Rétention 4 semaines »)*
+- Première séance planifiée en moins de 10 minutes. _(non mesuré — demande un chronométrage de l'interaction, non instrumenté)_
+- Compte rendu saisi en moins de 3 minutes. _(non mesuré — idem)_
+- Au moins une suggestion d'ajustement acceptée par cycle. _(non mesuré — la décision de la carte d'ajustement reste un état local, jamais envoyée au serveur)_
+- Utilisation hebdomadaire pendant quatre semaines consécutives. _(mesuré — voir `/admin/metrics`, section « Rétention 4 semaines »)_
 
 Entonnoir d'activation complémentaire (comptes créés → équipe → diagnostic → première séance → première observation), mesuré sur `/admin/metrics` — voir docs/architecture.md.

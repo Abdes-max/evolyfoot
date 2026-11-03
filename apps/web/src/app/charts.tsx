@@ -1,6 +1,5 @@
 "use client";
 
-
 // Trois graphiques simples, en SVG/CSS pur (même approche que tactical-diagram.tsx) plutôt qu'une
 // bibliothèque externe : le besoin (compteurs, une proportion à deux valeurs, une évaluation sur
 // quelques axes) ne justifie pas une dépendance de plus.

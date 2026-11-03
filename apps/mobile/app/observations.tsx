@@ -32,7 +32,9 @@ export default function ObservationsScreen() {
         <Text style={styles.step}>OBSERVATIONS</Text>
         <Text style={styles.title}>L’historique de tes observations.</Text>
         {observations === null && <Text style={styles.muted}>Chargement…</Text>}
-        {observations?.length === 0 && <Text style={styles.muted}>Aucune observation pour l’instant. Elles apparaissent ici après une séance ou un match.</Text>}
+        {observations?.length === 0 && (
+          <Text style={styles.muted}>Aucune observation pour l’instant. Elles apparaissent ici après une séance ou un match.</Text>
+        )}
         {observations?.map((observation) => (
           <TouchableOpacity
             accessibilityLabel={`${observation.title}, voir le détail`}

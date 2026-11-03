@@ -64,10 +64,7 @@ describe("suggestAdjustmentFromObservation", () => {
   });
 
   it("progresses when the average is exactly 75 without a zero score", () => {
-    const suggestion = suggestAdjustmentFromObservation(
-      reportWith({ availability: 50, scanning: 50 }),
-      currentWeek,
-    );
+    const suggestion = suggestAdjustmentFromObservation(reportWith({ availability: 50, scanning: 50 }), currentWeek);
 
     expect(suggestion.action).toBe("progress");
     expect(suggestion.triggerScore).toBe(75);
@@ -81,10 +78,7 @@ describe("suggestAdjustmentFromObservation", () => {
   });
 
   it("maintains the current direction for middle scores below the progress threshold", () => {
-    const suggestion = suggestAdjustmentFromObservation(
-      reportWith({ availability: 50, scanning: 50, progression: 50 }),
-      currentWeek,
-    );
+    const suggestion = suggestAdjustmentFromObservation(reportWith({ availability: 50, scanning: 50, progression: 50 }), currentWeek);
 
     expect(suggestion.action).toBe("maintain");
     expect(suggestion.reason).toContain("50/100");
@@ -92,24 +86,18 @@ describe("suggestAdjustmentFromObservation", () => {
   });
 
   it("selects the first diagnostic criterion when the weakest score is tied", () => {
-    const suggestion = suggestAdjustmentFromObservation(
-      reportWith({ availability: 0, scanning: 0 }),
-      currentWeek,
-    );
+    const suggestion = suggestAdjustmentFromObservation(reportWith({ availability: 0, scanning: 0 }), currentWeek);
 
     expect(suggestion.proposedTheme).toBe("Conserver le ballon");
     expect(suggestion.reason).toContain("Se rendre disponible");
   });
 
-  it.each<ObservationEventType>(["training", "match"])(
-    "accepts a %s observation report",
-    (eventType) => {
-      const suggestion = suggestAdjustmentFromObservation(reportWith({}, eventType), currentWeek);
+  it.each<ObservationEventType>(["training", "match"])("accepts a %s observation report", (eventType) => {
+    const suggestion = suggestAdjustmentFromObservation(reportWith({}, eventType), currentWeek);
 
-      expect(suggestion.action).toBe("progress");
-      expect(suggestion.id).toContain("report-42");
-    },
-  );
+    expect(suggestion.action).toBe("progress");
+    expect(suggestion.id).toContain("report-42");
+  });
 
   it("rejects reports that do not contain the four unique canonical criteria", () => {
     const report = reportWith();

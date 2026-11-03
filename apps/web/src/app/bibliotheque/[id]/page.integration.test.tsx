@@ -27,9 +27,6 @@ describe("détail d’un exercice", () => {
   it("navigue vers l’exercice suivant du même thème", async () => {
     render(await ExercisePage({ params: Promise.resolve({ id: "welcome-recuperer" }) }));
 
-    expect(screen.getByRole("link", { name: /duel et contre-pression/i })).toHaveAttribute(
-      "href",
-      "/bibliotheque/activation-recuperer",
-    );
+    expect(screen.getByRole("link", { name: /duel et contre-pression/i })).toHaveAttribute("href", "/bibliotheque/activation-recuperer");
   });
 });

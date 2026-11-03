@@ -72,10 +72,7 @@ function toMatchPlan(
   };
 }
 
-function validateSubstitutesAgainstLineup(
-  lineup: readonly MatchLineupAssignment[],
-  substitutePlayerIds: readonly string[],
-): void {
+function validateSubstitutesAgainstLineup(lineup: readonly MatchLineupAssignment[], substitutePlayerIds: readonly string[]): void {
   const starterIds = new Set(lineup.map((assignment) => assignment.playerId));
   const seen = new Set<string>();
   for (const playerId of substitutePlayerIds) {
@@ -89,11 +86,7 @@ function validateSubstitutesAgainstLineup(
   }
 }
 
-function validateLineupAgainstFormation(
-  gameFormat: GameFormat,
-  formationId: string,
-  lineup: readonly MatchLineupAssignment[],
-): void {
+function validateLineupAgainstFormation(gameFormat: GameFormat, formationId: string, lineup: readonly MatchLineupAssignment[]): void {
   const validSlotIds = new Set(formationSlots(gameFormat, formationId).map((slot) => slot.id));
   const seenSlots = new Set<string>();
   const seenPlayers = new Set<string>();
@@ -231,11 +224,7 @@ export class MatchService {
   // des affectations orphelines (même principe que `changeFormation` côté domaine, rejoué ici
   // côté serveur). Un format de jeu différent peut aussi réduire le nombre de remplaçants
   // autorisés (voir maxSubstitutes) : le banc est alors tronqué plutôt que rejeté en bloc.
-  async changeFormation(
-    educatorId: string,
-    matchId: string,
-    input: { formationId: string; gameFormat?: number },
-  ): Promise<PersistedMatch> {
+  async changeFormation(educatorId: string, matchId: string, input: { formationId: string; gameFormat?: number }): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
     const gameFormat = input.gameFormat === undefined ? match.gameFormat : normalizeGameFormat(input.gameFormat);
     if (!listFormations(gameFormat).some((formation) => formation.id === input.formationId)) {
@@ -251,11 +240,7 @@ export class MatchService {
     });
   }
 
-  async markPlayed(
-    educatorId: string,
-    matchId: string,
-    attendance?: readonly AttendanceEntry[],
-  ): Promise<PersistedMatch> {
+  async markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
     const errors = validateMatchPlan(toMatchPlan(match));
     if (Object.keys(errors).length > 0) {

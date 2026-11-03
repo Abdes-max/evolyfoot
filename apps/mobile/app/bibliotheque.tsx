@@ -13,7 +13,17 @@ function matches(item: { title: string; objective: string }, query: string): boo
   return `${item.title} ${item.objective}`.toLowerCase().includes(query.trim().toLowerCase());
 }
 
-function Chips<Value extends string>({ values, active, label, onChange }: { values: readonly Value[]; active: Value; label: (value: Value) => string; onChange: (value: Value) => void }) {
+function Chips<Value extends string>({
+  values,
+  active,
+  label,
+  onChange,
+}: {
+  values: readonly Value[];
+  active: Value;
+  label: (value: Value) => string;
+  onChange: (value: Value) => void;
+}) {
   return (
     <ScrollView contentContainerStyle={styles.chips} horizontal showsHorizontalScrollIndicator={false}>
       {values.map((value) => (
@@ -73,7 +83,9 @@ export default function BibliothequeScreen() {
       ),
     [kind, query, theme],
   );
-  const mine = personal.filter((exercise) => (kind === "all" || exercise.kind === kind) && (theme === "all" || exercise.theme === theme) && matches(exercise, query));
+  const mine = personal.filter(
+    (exercise) => (kind === "all" || exercise.kind === kind) && (theme === "all" || exercise.theme === theme) && matches(exercise, query),
+  );
 
   return (
     <SafeAreaView style={styles.safe}>

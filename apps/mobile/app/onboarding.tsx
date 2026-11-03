@@ -1,11 +1,4 @@
-import {
-  ageGroups,
-  createTeamProfile,
-  gameFormats,
-  validateTeamProfile,
-  type TeamProfile,
-  type TrainingDay,
-} from "@evolyfoot/domain";
+import { ageGroups, createTeamProfile, gameFormats, validateTeamProfile, type TeamProfile, type TrainingDay } from "@evolyfoot/domain";
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -29,9 +22,7 @@ export default function OnboardingScreen() {
   const toggleDay = (day: TrainingDay) =>
     setProfile((current) => ({
       ...current,
-      trainingDays: current.trainingDays.includes(day)
-        ? current.trainingDays.filter((item) => item !== day)
-        : [...current.trainingDays, day],
+      trainingDays: current.trainingDays.includes(day) ? current.trainingDays.filter((item) => item !== day) : [...current.trainingDays, day],
     }));
 
   async function submit() {
@@ -58,12 +49,7 @@ export default function OnboardingScreen() {
         <Text style={styles.body}>Ces repères permettent d’adapter le plan de progression à ta réalité terrain.</Text>
 
         <Text style={styles.label}>Nom de l’équipe</Text>
-        <TextInput
-          onChangeText={(name) => setProfile({ ...profile, name })}
-          placeholder="Ex. FC Horizon"
-          style={styles.input}
-          value={profile.name}
-        />
+        <TextInput onChangeText={(name) => setProfile({ ...profile, name })} placeholder="Ex. FC Horizon" style={styles.input} value={profile.name} />
         {errors.name ? <Text style={styles.fieldError}>{errors.name}</Text> : null}
 
         <Text style={styles.label}>Catégorie</Text>
@@ -87,9 +73,7 @@ export default function OnboardingScreen() {
               onPress={() => setProfile({ ...profile, gameFormat: format })}
               style={[styles.formatChoice, profile.gameFormat === format && styles.active]}
             >
-              <Text style={[styles.choiceText, profile.gameFormat === format && styles.activeText]}>
-                Foot à {format}
-              </Text>
+              <Text style={[styles.choiceText, profile.gameFormat === format && styles.activeText]}>Foot à {format}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -123,14 +107,8 @@ export default function OnboardingScreen() {
         </Text>
         <View style={styles.dayGrid}>
           {days.map((day) => (
-            <TouchableOpacity
-              key={day}
-              onPress={() => toggleDay(day)}
-              style={[styles.day, profile.trainingDays.includes(day) && styles.active]}
-            >
-              <Text style={[styles.choiceText, profile.trainingDays.includes(day) && styles.activeText]}>
-                {day.slice(0, 3)}
-              </Text>
+            <TouchableOpacity key={day} onPress={() => toggleDay(day)} style={[styles.day, profile.trainingDays.includes(day) && styles.active]}>
+              <Text style={[styles.choiceText, profile.trainingDays.includes(day) && styles.activeText]}>{day.slice(0, 3)}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -161,7 +139,15 @@ const styles = StyleSheet.create({
   choices: { flexDirection: "row", gap: 8 },
   choice: { flex: 1, alignItems: "center", padding: 14, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
   formatGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  formatChoice: { width: "22%", alignItems: "center", padding: 12, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
+  formatChoice: {
+    width: "22%",
+    alignItems: "center",
+    padding: 12,
+    backgroundColor: colors.surface,
+    borderColor: colors.line,
+    borderWidth: 1,
+    borderRadius: radii.sm,
+  },
   dayGrid: { flexDirection: "row", gap: 6 },
   day: { flex: 1, alignItems: "center", padding: 11, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
   active: { backgroundColor: colors.primarySoft, borderColor: colors.primary },

@@ -3,9 +3,7 @@ import { hashPassword, validatePassword, verifyPassword } from "./password";
 
 describe("validatePassword", () => {
   it("rejects a password shorter than 10 characters", () => {
-    expect(() => validatePassword("court1234")).toThrow(
-      "Le mot de passe doit contenir au moins 10 caractères.",
-    );
+    expect(() => validatePassword("court1234")).toThrow("Le mot de passe doit contenir au moins 10 caractères.");
   });
 
   it("accepts a password of at least 10 characters", () => {

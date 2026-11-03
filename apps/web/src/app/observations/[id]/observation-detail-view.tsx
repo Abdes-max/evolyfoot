@@ -91,7 +91,10 @@ export function ObservationDetailView({ observationId }: { observationId: string
       <main className="observations-shell">
         <section className="observations-auth-required" role="status">
           <p>
-            Connecte-toi pour consulter cette observation. <Link className="inline-cta" href="/connexion">Se connecter →</Link>
+            Connecte-toi pour consulter cette observation.{" "}
+            <Link className="inline-cta" href="/connexion">
+              Se connecter →
+            </Link>
           </p>
         </section>
       </main>

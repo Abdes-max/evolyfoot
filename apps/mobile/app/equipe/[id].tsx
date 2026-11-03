@@ -98,7 +98,10 @@ export default function PlayerScreen() {
     }
     setSaving(true);
     setMessage("");
-    const response = await apiRequest("/api/player-evaluations", { method: "POST", body: JSON.stringify({ playerId: id, scores, date: new Date().toISOString() }) });
+    const response = await apiRequest("/api/player-evaluations", {
+      method: "POST",
+      body: JSON.stringify({ playerId: id, scores, date: new Date().toISOString() }),
+    });
     setSaving(false);
     if (!response?.ok) {
       setMessage(await errorOf(response, "L’enregistrement a échoué."));
@@ -201,7 +204,9 @@ export default function PlayerScreen() {
                 {photoBusy && <ActivityIndicator color={colors.primary} style={StyleSheet.absoluteFill} />}
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.step}>{[player.position, player.jerseyNumber ? `N° ${player.jerseyNumber}` : null].filter(Boolean).join(" · ").toUpperCase() || "JOUEUR"}</Text>
+                <Text style={styles.step}>
+                  {[player.position, player.jerseyNumber ? `N° ${player.jerseyNumber}` : null].filter(Boolean).join(" · ").toUpperCase() || "JOUEUR"}
+                </Text>
                 <Text style={styles.title}>{player.name}</Text>
                 <View style={styles.photoActions}>
                   <TouchableOpacity accessibilityRole="button" disabled={photoBusy} hitSlop={6} onPress={changePhoto}>
@@ -258,17 +263,17 @@ export default function PlayerScreen() {
                     </View>
                   ))}
                   {player.strengths ? (
-                  <>
-                    <Text style={styles.label}>Points forts</Text>
-                    <Text style={styles.text}>{player.strengths}</Text>
-                  </>
-                ) : null}
-                {player.workAreas ? (
-                  <>
-                    <Text style={styles.label}>Axes de travail</Text>
-                    <Text style={styles.text}>{player.workAreas}</Text>
-                  </>
-                ) : null}
+                    <>
+                      <Text style={styles.label}>Points forts</Text>
+                      <Text style={styles.text}>{player.strengths}</Text>
+                    </>
+                  ) : null}
+                  {player.workAreas ? (
+                    <>
+                      <Text style={styles.label}>Axes de travail</Text>
+                      <Text style={styles.text}>{player.workAreas}</Text>
+                    </>
+                  ) : null}
                 </>
               )}
             </View>
@@ -292,11 +297,21 @@ export default function PlayerScreen() {
                   {playerEvaluationAspects.map((aspect) => (
                     <View key={aspect} style={styles.scoreRow}>
                       <Text style={styles.scoreLabel}>{playerEvaluationAspectLabels[aspect]}</Text>
-                      <TouchableOpacity accessibilityLabel={`Baisser ${playerEvaluationAspectLabels[aspect]}`} hitSlop={8} onPress={() => adjust(aspect, -1)} style={styles.step10}>
+                      <TouchableOpacity
+                        accessibilityLabel={`Baisser ${playerEvaluationAspectLabels[aspect]}`}
+                        hitSlop={8}
+                        onPress={() => adjust(aspect, -1)}
+                        style={styles.step10}
+                      >
                         <Text style={styles.stepText}>−</Text>
                       </TouchableOpacity>
                       <Text style={styles.score}>{scores[aspect]}</Text>
-                      <TouchableOpacity accessibilityLabel={`Monter ${playerEvaluationAspectLabels[aspect]}`} hitSlop={8} onPress={() => adjust(aspect, 1)} style={styles.step10}>
+                      <TouchableOpacity
+                        accessibilityLabel={`Monter ${playerEvaluationAspectLabels[aspect]}`}
+                        hitSlop={8}
+                        onPress={() => adjust(aspect, 1)}
+                        style={styles.step10}
+                      >
                         <Text style={styles.stepText}>+</Text>
                       </TouchableOpacity>
                     </View>
@@ -309,7 +324,11 @@ export default function PlayerScreen() {
                   </TouchableOpacity>
                 </>
               ) : (
-                <TouchableOpacity accessibilityRole="button" onPress={() => (setScores(latestCoach ?? midpointScores()), setMessage(""))} style={styles.primary}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => (setScores(latestCoach ?? midpointScores()), setMessage(""))}
+                  style={styles.primary}
+                >
                   <Text style={styles.primaryText}>Nouvelle évaluation</Text>
                 </TouchableOpacity>
               )}
@@ -330,7 +349,9 @@ export default function PlayerScreen() {
                       <Text style={styles.seasonLabel}>{season.label}</Text>
                       <Text style={styles.seasonOverall}>
                         {season.overall.toLocaleString("fr-FR")}/{playerEvaluationMaxScore}
-                        {season.deltaFromPrevious === null ? "" : (
+                        {season.deltaFromPrevious === null ? (
+                          ""
+                        ) : (
                           <Text style={season.deltaFromPrevious >= 0 ? styles.up : styles.down}>
                             {`  ${season.deltaFromPrevious > 0 ? "+" : ""}${season.deltaFromPrevious.toLocaleString("fr-FR")}`}
                           </Text>
@@ -383,7 +404,17 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 4 },
   header: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 16 },
   headerText: { flex: 1 },
-  avatar: { width: 76, height: 76, borderRadius: 38, borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  avatar: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
   avatarImage: { width: "100%", height: "100%" },
   avatarInitials: { fontSize: 24, fontWeight: "800", color: colors.primary },
   photoActions: { flexDirection: "row", gap: 16, marginTop: 6 },

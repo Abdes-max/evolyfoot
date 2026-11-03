@@ -77,7 +77,9 @@ export default function ExerciseScreen() {
               <Text style={styles.muted}>Mon exercice · {personal?.theme}</Text>
             )}
             {activity && <TacticalPlayer exercise={activity} label={`Schéma tactique animé : ${activity.title}`} seed={activity.id} />}
-            {personal?.photo ? <Image accessibilityLabel="Schéma de l’exercice" resizeMode="contain" source={{ uri: personal.photo }} style={styles.photo} /> : null}
+            {personal?.photo ? (
+              <Image accessibilityLabel="Schéma de l’exercice" resizeMode="contain" source={{ uri: personal.photo }} style={styles.photo} />
+            ) : null}
             <Block text={exercise.objective} title="But" />
             <Block text={exercise.organization} title="Organisation" />
             <Block text={exercise.instruction} title="Consigne" />

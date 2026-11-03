@@ -16,15 +16,17 @@ import { kindLabels } from "./exercise-labels";
 
 // Les PDF sont imprimés sur fond blanc, comme ceux du web (impression du navigateur) : encre
 // sombre, couleurs réservées au schéma.
-const escapeHtml = (value: string): string =>
-  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const escapeHtml = (value: string): string => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const tokenFill: Record<DiagramTokenRole, string> = { attacker: "#2fd4ff", defender: "#ff8f7a", goalkeeper: "#ffffff" };
 const labelFill: Record<DiagramTokenRole, string> = { attacker: "#062330", defender: "#3a140c", goalkeeper: "#152a22" };
 
 export function diagramSvg(diagram: TacticalDiagram): string {
   const zones = diagram.zones
-    .map((zone) => `<rect x="${zone.x}" y="${zone.y}" width="${zone.width}" height="${zone.height}" rx="8" fill="none" stroke="#2c463b" stroke-width="1.5" stroke-dasharray="5 5"/>`)
+    .map(
+      (zone) =>
+        `<rect x="${zone.x}" y="${zone.y}" width="${zone.width}" height="${zone.height}" rx="8" fill="none" stroke="#2c463b" stroke-width="1.5" stroke-dasharray="5 5"/>`,
+    )
     .join("");
   const arrows = diagram.arrows
     .map((arrow) => `<path d="M${arrow.x1} ${arrow.y1} L${arrow.x2} ${arrow.y2}" stroke="#2fd4ff" stroke-width="2.2" fill="none" marker-end="url(#head)"/>`)
@@ -107,8 +109,19 @@ export interface ReportPlayer {
   workAreas: string | null;
 }
 
-export function playerReportHtml(player: ReportPlayer, teamName: string, season: PlayerSeasonTotals, scores: PlayerEvaluationScores | null, evaluationCount: number): string {
-  const identity = [player.position, player.jerseyNumber ? `N° ${player.jerseyNumber}` : null, player.preferredFoot ? `Pied ${player.preferredFoot}` : null, teamName]
+export function playerReportHtml(
+  player: ReportPlayer,
+  teamName: string,
+  season: PlayerSeasonTotals,
+  scores: PlayerEvaluationScores | null,
+  evaluationCount: number,
+): string {
+  const identity = [
+    player.position,
+    player.jerseyNumber ? `N° ${player.jerseyNumber}` : null,
+    player.preferredFoot ? `Pied ${player.preferredFoot}` : null,
+    teamName,
+  ]
     .filter(Boolean)
     .map((part) => escapeHtml(String(part)))
     .join(" · ");
@@ -124,7 +137,7 @@ export function playerReportHtml(player: ReportPlayer, teamName: string, season:
     `Bilan de ${player.name}`,
     `${player.photo?.startsWith("data:image/") ? `<img alt="" src="${escapeHtml(player.photo)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;float:right">` : ""}<h1>Bilan de ${escapeHtml(player.name)}</h1><p class="muted">${identity}</p>
     <section class="block"><dl><dt>Matchs joués</dt><dd>${season.matches}</dd><dt>Buts</dt><dd>${season.goals}</dd><dt>Passes décisives</dt><dd>${season.assists}</dd></dl></section>
-    <h2>Dernière évaluation de l’éducateur</h2>${scores ? `<table>${bars}</table><p class="muted">${evaluationCount} évaluation${evaluationCount > 1 ? "s" : ""} enregistrée${evaluationCount > 1 ? "s" : ""}.</p>` : "<p class=\"muted\">Pas encore d’évaluation.</p>"}
+    <h2>Dernière évaluation de l’éducateur</h2>${scores ? `<table>${bars}</table><p class="muted">${evaluationCount} évaluation${evaluationCount > 1 ? "s" : ""} enregistrée${evaluationCount > 1 ? "s" : ""}.</p>` : '<p class="muted">Pas encore d’évaluation.</p>'}
     ${player.strengths ? `<h2>Points forts</h2><p>${escapeHtml(player.strengths)}</p>` : ""}
     ${player.workAreas ? `<h2>Axes de travail</h2><p>${escapeHtml(player.workAreas)}</p>` : ""}`,
   );

@@ -35,7 +35,12 @@ describe("SidebarIdentity", () => {
         // (un chiffre saisi une fois à l'onboarding, désynchronisé dès qu'un joueur est
         // ajouté/retiré) -- volontairement différent des 14 de Team.playerCount ci-dessous pour
         // vérifier que ce dernier n'est plus utilisé.
-        return jsonResponse({ players: [{ id: "p1", name: "Kylian" }, { id: "p2", name: "Léo" }] });
+        return jsonResponse({
+          players: [
+            { id: "p1", name: "Kylian" },
+            { id: "p2", name: "Léo" },
+          ],
+        });
       }
       return jsonResponse({ profile: { name: "FC Horizon", ageGroup: "U12", gameFormat: 8, playerCount: 14 } });
     });

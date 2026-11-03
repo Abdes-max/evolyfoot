@@ -63,16 +63,21 @@ describe("cookie helpers", () => {
   });
 
   it("identifies a mobile client from its platform header", () => {
-    expect(isMobileClient(new Request("https://evolyfoot.test", { headers: { "x-client-platform": "mobile" } }))).toBe(
-      true,
-    );
+    expect(isMobileClient(new Request("https://evolyfoot.test", { headers: { "x-client-platform": "mobile" } }))).toBe(true);
     expect(isMobileClient(new Request("https://evolyfoot.test"))).toBe(false);
   });
 });
 
 describe("createRegisterHandler", () => {
   it("rejects a request missing a required field", async () => {
-    const handler = createRegisterHandler({ register: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createRegisterHandler(
+      {
+        register: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest({ email: "coach@example.test", password: "motdepasse1" }));
 
@@ -85,9 +90,7 @@ describe("createRegisterHandler", () => {
     };
     const handler = createRegisterHandler(gateway, () => undefined);
 
-    const response = await handler(
-      jsonRequest({ email: educator.email, password: "motdepasse1", displayName: educator.displayName }),
-    );
+    const response = await handler(jsonRequest({ email: educator.email, password: "motdepasse1", displayName: educator.displayName }));
 
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ educator });
@@ -101,11 +104,7 @@ describe("createRegisterHandler", () => {
     const handler = createRegisterHandler(gateway, () => undefined);
 
     const response = await handler(
-      jsonRequest(
-        { email: educator.email, password: "motdepasse1", displayName: educator.displayName },
-        undefined,
-        { "x-client-platform": "mobile" },
-      ),
+      jsonRequest({ email: educator.email, password: "motdepasse1", displayName: educator.displayName }, undefined, { "x-client-platform": "mobile" }),
     );
 
     expect(await response.json()).toEqual({ educator, sessionToken: "le-jeton" });
@@ -119,9 +118,7 @@ describe("createRegisterHandler", () => {
     };
     const handler = createRegisterHandler(gateway, () => undefined);
 
-    const response = await handler(
-      jsonRequest({ email: educator.email, password: "motdepasse1", displayName: educator.displayName }),
-    );
+    const response = await handler(jsonRequest({ email: educator.email, password: "motdepasse1", displayName: educator.displayName }));
 
     expect(response.status).toBe(409);
   });
@@ -151,9 +148,7 @@ describe("createRegisterHandler", () => {
     };
     const handler = createRegisterHandler(gateway, errors.push.bind(errors));
 
-    const response = await handler(
-      jsonRequest({ email: educator.email, password: "motdepasse1", displayName: educator.displayName }),
-    );
+    const response = await handler(jsonRequest({ email: educator.email, password: "motdepasse1", displayName: educator.displayName }));
     const body = await response.json();
 
     expect(response.status).toBe(500);
@@ -164,7 +159,14 @@ describe("createRegisterHandler", () => {
 
 describe("createLoginHandler", () => {
   it("rejects a request missing credentials", async () => {
-    const handler = createLoginHandler({ login: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createLoginHandler(
+      {
+        login: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest({ email: "" }));
 
@@ -190,9 +192,7 @@ describe("createLoginHandler", () => {
     };
     const handler = createLoginHandler(gateway, () => undefined);
 
-    const response = await handler(
-      jsonRequest({ email: educator.email, password: "motdepasse1" }, undefined, { "x-client-platform": "mobile" }),
-    );
+    const response = await handler(jsonRequest({ email: educator.email, password: "motdepasse1" }, undefined, { "x-client-platform": "mobile" }));
 
     expect(await response.json()).toEqual({ educator, sessionToken: "le-jeton" });
   });
@@ -213,7 +213,14 @@ describe("createLoginHandler", () => {
 
 describe("createLogoutHandler", () => {
   it("clears the cookie even without an existing session", async () => {
-    const handler = createLogoutHandler({ logout: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createLogoutHandler(
+      {
+        logout: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(new Request("https://evolyfoot.test", { method: "POST" }));
 
@@ -223,7 +230,14 @@ describe("createLogoutHandler", () => {
 
   it("invalidates the session token when one is present", async () => {
     const tokens: string[] = [];
-    const handler = createLogoutHandler({ logout: async (token) => { tokens.push(token); } }, () => undefined);
+    const handler = createLogoutHandler(
+      {
+        logout: async (token) => {
+          tokens.push(token);
+        },
+      },
+      () => undefined,
+    );
 
     await handler(new Request("https://evolyfoot.test", { method: "POST", headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }));
 
@@ -233,13 +247,15 @@ describe("createLogoutHandler", () => {
   it("still clears the cookie if invalidating the session fails", async () => {
     const errors: unknown[] = [];
     const handler = createLogoutHandler(
-      { logout: async () => { throw new Error("boom"); } },
+      {
+        logout: async () => {
+          throw new Error("boom");
+        },
+      },
       errors.push.bind(errors),
     );
 
-    const response = await handler(
-      new Request("https://evolyfoot.test", { method: "POST", headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }),
-    );
+    const response = await handler(new Request("https://evolyfoot.test", { method: "POST", headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }));
 
     expect(response.status).toBe(200);
     expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
@@ -251,7 +267,14 @@ describe("createSessionHandler", () => {
   const coachAccount = { ...educator, role: "coach" as const, linkedPlayerId: null, emailVerified: true };
 
   it("returns a null educator when there is no session cookie", async () => {
-    const handler = createSessionHandler({ getAccountForSession: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createSessionHandler(
+      {
+        getAccountForSession: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(new Request("https://evolyfoot.test"));
 
@@ -261,9 +284,7 @@ describe("createSessionHandler", () => {
   it("returns the educator and role 'coach' for a coach session", async () => {
     const handler = createSessionHandler({ getAccountForSession: async () => coachAccount }, () => undefined);
 
-    const response = await handler(
-      new Request("https://evolyfoot.test", { headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }),
-    );
+    const response = await handler(new Request("https://evolyfoot.test", { headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }));
 
     expect(await response.json()).toEqual({ educator: coachAccount, role: "coach" });
   });
@@ -281,9 +302,7 @@ describe("createSessionHandler", () => {
       () => undefined,
     );
 
-    const response = await handler(
-      new Request("https://evolyfoot.test", { headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }),
-    );
+    const response = await handler(new Request("https://evolyfoot.test", { headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }));
 
     expect(await response.json()).toEqual({ educator: null, role: "player" });
   });
@@ -291,13 +310,15 @@ describe("createSessionHandler", () => {
   it("returns a null educator and logs when the lookup fails", async () => {
     const errors: unknown[] = [];
     const handler = createSessionHandler(
-      { getAccountForSession: async () => { throw new Error("boom"); } },
+      {
+        getAccountForSession: async () => {
+          throw new Error("boom");
+        },
+      },
       errors.push.bind(errors),
     );
 
-    const response = await handler(
-      new Request("https://evolyfoot.test", { headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }),
-    );
+    const response = await handler(new Request("https://evolyfoot.test", { headers: { cookie: `${SESSION_COOKIE_NAME}=le-jeton` } }));
 
     expect(await response.json()).toEqual({ educator: null, role: null });
     expect(errors).toHaveLength(1);

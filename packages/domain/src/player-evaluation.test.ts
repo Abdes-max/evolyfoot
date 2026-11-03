@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildPlayerEvaluationSeasons,
-  createEmptyPlayerEvaluationScores,
-  playerEvaluationAspects,
-  validatePlayerEvaluationScores,
-} from "./player-evaluation";
+import { buildPlayerEvaluationSeasons, createEmptyPlayerEvaluationScores, playerEvaluationAspects, validatePlayerEvaluationScores } from "./player-evaluation";
 
 describe("player evaluation", () => {
   it("liste exactement sept aspects", () => {

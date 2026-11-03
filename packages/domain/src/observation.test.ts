@@ -34,15 +34,7 @@ describe("quick observation domain", () => {
 
   it("normalizes observation levels to 0, 50 and 100", () => {
     const draft = createObservationDraft("match", "Match 1", players);
-    const rated = rateObservation(
-      rateObservation(
-        rateObservation(draft, "availability", "reinforce"),
-        "scanning",
-        "progress",
-      ),
-      "progression",
-      "achieved",
-    );
+    const rated = rateObservation(rateObservation(rateObservation(draft, "availability", "reinforce"), "scanning", "progress"), "progression", "achieved");
     const complete = rateObservation(rated, "reactionAfterLoss", "progress");
 
     expect(completeObservation(complete).ratings.map((rating) => rating.score)).toEqual([0, 50, 100, 50]);
@@ -71,18 +63,8 @@ describe("quick observation domain", () => {
 
     expect(noted.note).toBe("  Belle largeur dans les temps  ");
     expect(blank.note).toBe("   ");
-    const completedNoted = completeObservation(
-      diagnosticCriteria.reduce(
-        (current, criterion) => rateObservation(current, criterion.id, "progress"),
-        noted,
-      ),
-    );
-    const completedBlank = completeObservation(
-      diagnosticCriteria.reduce(
-        (current, criterion) => rateObservation(current, criterion.id, "progress"),
-        blank,
-      ),
-    );
+    const completedNoted = completeObservation(diagnosticCriteria.reduce((current, criterion) => rateObservation(current, criterion.id, "progress"), noted));
+    const completedBlank = completeObservation(diagnosticCriteria.reduce((current, criterion) => rateObservation(current, criterion.id, "progress"), blank));
 
     expect(completedNoted.note).toBe("Belle largeur dans les temps");
     expect(completedBlank).not.toHaveProperty("note");
@@ -126,19 +108,13 @@ describe("quick observation domain", () => {
   });
 
   it("rejects incomplete completion with the domain error", () => {
-    expect(() => completeObservation(createObservationDraft("training", "Séance 1", players))).toThrow(
-      "Les quatre comportements doivent être renseignés.",
-    );
+    expect(() => completeObservation(createObservationDraft("training", "Séance 1", players))).toThrow("Les quatre comportements doivent être renseignés.");
   });
 
   it("serializes a non-uniform report with its strongest, weakest and trend", () => {
     const draft = rateObservation(
       rateObservation(
-        rateObservation(
-          rateObservation(createObservationDraft("match", "Match 1", players), "availability", "achieved"),
-          "scanning",
-          "reinforce",
-        ),
+        rateObservation(rateObservation(createObservationDraft("match", "Match 1", players), "availability", "achieved"), "scanning", "reinforce"),
         "progression",
         "progress",
       ),

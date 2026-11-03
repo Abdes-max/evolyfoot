@@ -63,5 +63,5 @@ Les écrans `/connexion`, `/inscription` et l’onboarding mobile (nom d’équi
 
 1. Prototype navigable avec données locales.
 2. Authentification éducateur, routes d’équipe autorisées par la session et données d’équipe synchronisées web/mobile — fait.
-4. Moteur de recommandations fondé sur des règles explicables.
-5. Assistance IA encadrée par le plan, les observations et des garde-fous métier.
+3. Moteur de recommandations fondé sur des règles explicables.
+4. Assistance IA encadrée par le plan, les observations et des garde-fous métier.

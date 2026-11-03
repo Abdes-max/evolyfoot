@@ -39,7 +39,15 @@ const anonymous = async () => null;
 
 describe("createListRosterHandler", () => {
   it("requires an authenticated session", async () => {
-    const handler = createListRosterHandler(anonymous, { list: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createListRosterHandler(
+      anonymous,
+      {
+        list: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(new Request("https://evolyfoot.test/api/roster"));
 
@@ -58,7 +66,15 @@ describe("createListRosterHandler", () => {
 
 describe("createAddPlayerHandler", () => {
   it("requires an authenticated session before reading the body", async () => {
-    const handler = createAddPlayerHandler(anonymous, { add: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createAddPlayerHandler(
+      anonymous,
+      {
+        add: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest("POST", { firstName: "Kylian", lastName: "Test" }));
 
@@ -81,7 +97,15 @@ describe("createAddPlayerHandler", () => {
   });
 
   it("rejects a missing first or last name without calling the gateway", async () => {
-    const handler = createAddPlayerHandler(authenticated, { add: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createAddPlayerHandler(
+      authenticated,
+      {
+        add: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     expect((await handler(jsonRequest("POST", {}))).status).toBe(400);
     expect((await handler(jsonRequest("POST", { firstName: "Kylian" }))).status).toBe(400);
@@ -120,7 +144,12 @@ describe("createAddPlayerHandler", () => {
     const received: unknown[] = [];
     const handler = createAddPlayerHandler(
       authenticated,
-      { add: async (educatorId, firstName, lastName) => { received.push({ educatorId, firstName, lastName }); return player; } },
+      {
+        add: async (educatorId, firstName, lastName) => {
+          received.push({ educatorId, firstName, lastName });
+          return player;
+        },
+      },
       () => undefined,
     );
 
@@ -134,7 +163,15 @@ describe("createAddPlayerHandler", () => {
 
 describe("createUpdatePlayerHandler", () => {
   it("requires an authenticated session", async () => {
-    const handler = createUpdatePlayerHandler(anonymous, { update: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createUpdatePlayerHandler(
+      anonymous,
+      {
+        update: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest("PATCH", { firstName: "Mbappé" }), player.id);
 
@@ -183,7 +220,15 @@ describe("createUpdatePlayerHandler", () => {
 
 describe("createRemovePlayerHandler", () => {
   it("requires an authenticated session", async () => {
-    const handler = createRemovePlayerHandler(anonymous, { remove: async () => { throw new Error("not called"); } }, () => undefined);
+    const handler = createRemovePlayerHandler(
+      anonymous,
+      {
+        remove: async () => {
+          throw new Error("not called");
+        },
+      },
+      () => undefined,
+    );
 
     const response = await handler(jsonRequest("DELETE"), player.id);
 

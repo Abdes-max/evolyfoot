@@ -32,30 +32,11 @@ export default function InscriptionScreen() {
         <Text style={styles.body}>Un compte éducateur pour suivre la progression de ton équipe.</Text>
 
         <Text style={styles.label}>Nom</Text>
-        <TextInput
-          autoComplete="name"
-          onChangeText={setDisplayName}
-          placeholder="Ex. Abdes Meziane"
-          style={styles.input}
-          value={displayName}
-        />
+        <TextInput autoComplete="name" onChangeText={setDisplayName} placeholder="Ex. Abdes Meziane" style={styles.input} value={displayName} />
         <Text style={styles.label}>Adresse e-mail</Text>
-        <TextInput
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          onChangeText={setEmail}
-          style={styles.input}
-          value={email}
-        />
+        <TextInput autoCapitalize="none" autoComplete="email" keyboardType="email-address" onChangeText={setEmail} style={styles.input} value={email} />
         <Text style={styles.label}>Mot de passe</Text>
-        <TextInput
-          autoComplete="new-password"
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-          value={password}
-        />
+        <TextInput autoComplete="new-password" onChangeText={setPassword} secureTextEntry style={styles.input} value={password} />
         <Text style={styles.hint}>Au moins 10 caractères.</Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}

@@ -6,3 +6,7 @@ dist
 node_modules
 pnpm-lock.yaml
 sources
+# Plans de travail historiques : gardés tels qu'écrits.
+docs/superpowers
+# Instructions locales d'un agent, jamais commitées.
+**/CLAUDE.md

@@ -163,9 +163,7 @@ export function createRemovePlateauHandler(
 }
 
 export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, PrismaEducatorRepository, PrismaPlateauRepository, PlateauService } = await import(
-    "@evolyfoot/database"
-  );
+  const { createDatabaseClient, PrismaEducatorRepository, PrismaPlateauRepository, PlateauService } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new PlateauService(new PrismaEducatorRepository(database.prisma), new PrismaPlateauRepository(database.prisma));
 

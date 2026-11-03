@@ -32,14 +32,7 @@ export default function ConnexionScreen() {
         <Text style={styles.body}>Pour les joueurs et leurs parents. Ton compte se crée avec le lien envoyé par ton éducateur.</Text>
 
         <Text style={styles.label}>Adresse e-mail</Text>
-        <TextInput
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          onChangeText={setEmail}
-          style={styles.input}
-          value={email}
-        />
+        <TextInput autoCapitalize="none" autoComplete="email" keyboardType="email-address" onChangeText={setEmail} style={styles.input} value={email} />
         <Text style={styles.label}>Mot de passe</Text>
         <TextInput autoComplete="current-password" onChangeText={setPassword} secureTextEntry style={styles.input} value={password} />
 

@@ -33,41 +33,33 @@ export default async function ExercisePage({ params }: ExercisePageProps) {
     <>
       <SidebarNav />
       <main className="exercise-shell">
-      <header className="exercise-topbar">
-        <Link aria-label="Retour à la bibliothèque" className="exercise-back" href="/bibliotheque">
-          <svg fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="18">
-            <path d="M19 12H5" />
-            <path d="m11 18-6-6 6-6" />
-          </svg>
-        </Link>
-        <span className="exercise-crumb">
-          <Link href="/bibliotheque">Bibliothèque</Link> · <strong>{activity.title}</strong>
-        </span>
-      </header>
+        <header className="exercise-topbar">
+          <Link aria-label="Retour à la bibliothèque" className="exercise-back" href="/bibliotheque">
+            <svg fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="18">
+              <path d="M19 12H5" />
+              <path d="m11 18-6-6 6-6" />
+            </svg>
+          </Link>
+          <span className="exercise-crumb">
+            <Link href="/bibliotheque">Bibliothèque</Link> · <strong>{activity.title}</strong>
+          </span>
+        </header>
 
-      <div className="exercise-heading">
-        <span className="session-exercise-kind">{kindLabels[activity.kind]}</span>
-        <h1 className="session-exercise-title">{activity.title}</h1>
-      </div>
-      <ExerciseSheet activity={activity} />
+        <div className="exercise-heading">
+          <span className="session-exercise-kind">{kindLabels[activity.kind]}</span>
+          <h1 className="session-exercise-title">{activity.title}</h1>
+        </div>
+        <ExerciseSheet activity={activity} />
 
-      <ExerciseFeedback />
+        <ExerciseFeedback />
 
-      <nav aria-label="Navigation entre exercices" className="exercise-pager">
-        {previous ? (
-          <Link href={`/bibliotheque/${previous.id}`}>← {previous.title}</Link>
-        ) : (
-          <span />
-        )}
-        <span className="exercise-pager-count">
-          {index + 1} / {trainingActivityCatalogue.length}
-        </span>
-        {next ? (
-          <Link href={`/bibliotheque/${next.id}`}>{next.title} →</Link>
-        ) : (
-          <span />
-        )}
-      </nav>
+        <nav aria-label="Navigation entre exercices" className="exercise-pager">
+          {previous ? <Link href={`/bibliotheque/${previous.id}`}>← {previous.title}</Link> : <span />}
+          <span className="exercise-pager-count">
+            {index + 1} / {trainingActivityCatalogue.length}
+          </span>
+          {next ? <Link href={`/bibliotheque/${next.id}`}>{next.title} →</Link> : <span />}
+        </nav>
       </main>
     </>
   );

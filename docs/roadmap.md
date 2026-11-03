@@ -6,26 +6,26 @@ Dernière mise à jour : 1er novembre 2026.
 
 Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque merge dans `master`. Application mobile construite mais non publiée.
 
-| Domaine | État |
-| --- | --- |
-| Boucle produit (diagnostic, plan, séance, observation, ajustement) | Livrée, web et mobile |
-| Séances | Génération variée et expliquée, 100 exercices, exercices personnels, fiche d'exercice avec animation générée (joueurs, passes, pressing), export PDF |
-| Matchs et compétitions | Analyse de l'adversaire par système de jeu, composition, convocations avec adresse et plan, recherche de lieu, présences, score, buteurs et passeurs, tournois, plateaux |
-| Profil de coach | Style de jeu et formation préférée : règle de match dans chaque séance, formation pré-sélectionnée |
-| Suivi joueur | Carte joueur, profil sportif, évaluations datées, auto-évaluation comparée, buts et passes de la saison |
-| Staff | Adjoints invités par lien, avec leur propre compte, qui travaillent sur l'équipe de l'éducateur |
-| Espace joueur / tuteur | Compte sur invitation, calendrier, réponses aux convocations, messages (web uniquement) |
-| Comptes | Inscription, connexion, confirmation d'e-mail, mot de passe oublié |
-| Saison | Vue mois par mois, plan des cycles jusqu'en juin ; cycles de 4 semaines enchaînés, avec nouveau diagnostic à chaque cycle |
-| Vitrine | Pages en ligne ; contenu légal à compléter |
-| E-mails en production | Code prêt ; configuration Brevo du VPS à confirmer |
-| Mobile | Deux applications iOS et Android non publiées : EvolyFoot Coach (`apps/mobile`) et EvolyFoot Player (`apps/mobile-player`) ; non testées sur téléphone réel |
+| Domaine                                                            | État                                                                                                                                                                     |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Boucle produit (diagnostic, plan, séance, observation, ajustement) | Livrée, web et mobile                                                                                                                                                    |
+| Séances                                                            | Génération variée et expliquée, 100 exercices, exercices personnels, fiche d'exercice avec animation générée (joueurs, passes, pressing), export PDF                     |
+| Matchs et compétitions                                             | Analyse de l'adversaire par système de jeu, composition, convocations avec adresse et plan, recherche de lieu, présences, score, buteurs et passeurs, tournois, plateaux |
+| Profil de coach                                                    | Style de jeu et formation préférée : règle de match dans chaque séance, formation pré-sélectionnée                                                                       |
+| Suivi joueur                                                       | Carte joueur, profil sportif, évaluations datées, auto-évaluation comparée, buts et passes de la saison                                                                  |
+| Staff                                                              | Adjoints invités par lien, avec leur propre compte, qui travaillent sur l'équipe de l'éducateur                                                                          |
+| Espace joueur / tuteur                                             | Compte sur invitation, calendrier, réponses aux convocations, messages (web uniquement)                                                                                  |
+| Comptes                                                            | Inscription, connexion, confirmation d'e-mail, mot de passe oublié                                                                                                       |
+| Saison                                                             | Vue mois par mois, plan des cycles jusqu'en juin ; cycles de 4 semaines enchaînés, avec nouveau diagnostic à chaque cycle                                                |
+| Vitrine                                                            | Pages en ligne ; contenu légal à compléter                                                                                                                               |
+| E-mails en production                                              | Code prêt ; configuration Brevo du VPS à confirmer                                                                                                                       |
+| Mobile                                                             | Deux applications iOS et Android non publiées : EvolyFoot Coach (`apps/mobile`) et EvolyFoot Player (`apps/mobile-player`) ; non testées sur téléphone réel              |
 
 ## Reste à faire
 
 ### Bloquant avant une ouverture publique (à faire par le porteur du projet)
 
-- [ ] Renseigner Brevo dans le `.env` du VPS, authentifier le domaine d'envoi, puis tester un vrai e-mail (voir docs/delivery.md).
+- [x] Renseigner Brevo dans le `.env` du VPS, authentifier le domaine d'envoi, puis tester un vrai e-mail (voir docs/delivery.md). Fait le 4 novembre 2026 : domaine `evolyfoot.com` authentifié (DKIM, DMARC), e-mails de réinitialisation et de confirmation délivrés en production.
 - [ ] Compléter les mentions légales, les CGU et la politique de confidentialité : identité de l'éditeur, hébergeur, dates. Les pages affichent encore des champs `[à compléter]`.
 
 ### Mobile
@@ -48,7 +48,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 
 ### Technique
 
-- [ ] Activer le contrôle Prettier dans la CI.
+- [x] Activer le contrôle Prettier dans la CI. Fait le 4 novembre 2026 : premier formatage de tout le dépôt (`.prettierrc.json`, lignes de 160 caractères), étape « Vérifier le formatage » dans `ci.yml`. Lancer `pnpm format` avant de pousser.
 - [ ] Lire automatiquement les photos de schéma, si cela reste souhaité : elles sont aujourd’hui stockées et affichées seulement.
 - [ ] Multilingue : non commencé.
 
@@ -66,7 +66,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 - [x] Stratégie de branches, PR et livraison.
 - [x] Installation complète et génération du lockfile validées dans GitHub Actions ; CI passée à `--frozen-lockfile`.
 - [x] Première PR vers `master` fusionnée après validation complète de la CI.
-- [ ] Activer le contrôle Prettier dans la CI après le premier formatage automatisé.
+- [x] Activer le contrôle Prettier dans la CI après le premier formatage automatisé (4 novembre 2026).
 
 ### Journal de validation
 

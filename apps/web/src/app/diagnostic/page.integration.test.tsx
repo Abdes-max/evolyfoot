@@ -45,12 +45,7 @@ describe("initial diagnostic", () => {
       submitDiagnostic();
 
       expect(screen.getByRole("status")).toHaveTextContent("Réagir après la perte");
-      await vi.waitFor(() =>
-        expect(fetch).toHaveBeenCalledWith(
-          "/api/diagnostic",
-          expect.objectContaining({ method: "PUT" }),
-        ),
-      );
+      await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/diagnostic", expect.objectContaining({ method: "PUT" })));
       expect(screen.queryByText(/connecte-toi pour sauvegarder/i)).not.toBeInTheDocument();
     });
 

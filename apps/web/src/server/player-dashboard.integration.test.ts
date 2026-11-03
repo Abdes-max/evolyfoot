@@ -40,12 +40,20 @@ describe("createAddSelfEvaluationHandler", () => {
   it("traduit les erreurs métier", async () => {
     const capped = createAddSelfEvaluationHandler(
       async () => account,
-      { addSelfEvaluation: async () => { throw new ValidationError("Limite atteinte."); } },
+      {
+        addSelfEvaluation: async () => {
+          throw new ValidationError("Limite atteinte.");
+        },
+      },
       vi.fn(),
     );
     const unlinked = createAddSelfEvaluationHandler(
       async () => account,
-      { addSelfEvaluation: async () => { throw new EducatorNotFoundError(); } },
+      {
+        addSelfEvaluation: async () => {
+          throw new EducatorNotFoundError();
+        },
+      },
       vi.fn(),
     );
 

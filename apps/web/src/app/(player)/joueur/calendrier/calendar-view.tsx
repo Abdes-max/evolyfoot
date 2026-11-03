@@ -34,7 +34,16 @@ function ResponseBadge({ status }: { status: AttendanceStatus | null }) {
 // formes d'origine possibles, réduites ici à une forme commune juste pour le tri/l'affichage ;
 // chacune garde son lien et son badge propres (une compétition n'a ni page de détail, ni réponse).
 type CalendarItem =
-  | { kind: "seance"; id: string; date: Date | null; title: string; dateLabel: string; meetingTime: string | null; location: string | null; myStatus: AttendanceStatus | null }
+  | {
+      kind: "seance";
+      id: string;
+      date: Date | null;
+      title: string;
+      dateLabel: string;
+      meetingTime: string | null;
+      location: string | null;
+      myStatus: AttendanceStatus | null;
+    }
   | {
       kind: "match";
       id: string;
@@ -56,45 +65,39 @@ export function PlayerCalendarView() {
 
   const items: CalendarItem[] = dashboard
     ? [
-        ...dashboard.trainingSessions.map(
-          (session): CalendarItem => ({
-            kind: "seance",
-            id: session.id,
-            date: session.date ? new Date(session.date) : null,
-            title: session.title,
-            dateLabel: session.dateLabel,
-            meetingTime: session.meetingTime,
-            location: session.location,
-            myStatus: session.myStatus,
-          }),
-        ),
+        ...dashboard.trainingSessions.map((session): CalendarItem => ({
+          kind: "seance",
+          id: session.id,
+          date: session.date ? new Date(session.date) : null,
+          title: session.title,
+          dateLabel: session.dateLabel,
+          meetingTime: session.meetingTime,
+          location: session.location,
+          myStatus: session.myStatus,
+        })),
         // Ne pas être convoqué à un match à venir n'est pas une "convocation" -- ces matchs n'ont
         // rien à faire dans cette liste (voir demande utilisateur).
         ...dashboard.upcomingMatches
           .filter((match) => match.convoked)
-          .map(
-            (match): CalendarItem => ({
-              kind: "match",
-              id: match.id,
-              date: match.date ? new Date(match.date) : null,
-              title: match.opponent,
-              dateLabel: match.dateLabel,
-              meetingTime: match.meetingTime,
-              location: match.location,
-              venue: match.venue,
-              myStatus: match.myStatus,
-            }),
-          ),
-        ...dashboard.competitions.map(
-          (competition): CalendarItem => ({
-            kind: "competition",
-            id: competition.id,
-            date: competition.date ? new Date(competition.date) : null,
-            title: competition.name,
-            dateLabel: competition.dateLabel,
-            type: competition.type,
-          }),
-        ),
+          .map((match): CalendarItem => ({
+            kind: "match",
+            id: match.id,
+            date: match.date ? new Date(match.date) : null,
+            title: match.opponent,
+            dateLabel: match.dateLabel,
+            meetingTime: match.meetingTime,
+            location: match.location,
+            venue: match.venue,
+            myStatus: match.myStatus,
+          })),
+        ...dashboard.competitions.map((competition): CalendarItem => ({
+          kind: "competition",
+          id: competition.id,
+          date: competition.date ? new Date(competition.date) : null,
+          title: competition.name,
+          dateLabel: competition.dateLabel,
+          type: competition.type,
+        })),
       ]
     : [];
   const sortedItems = sortChronologically(items, (item) => item.date);
