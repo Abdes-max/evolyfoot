@@ -1,6 +1,6 @@
 "use client";
 
-import { ballFrame, buildDiagramAnimation, type AnimatedExercise, type AnimationPoint } from "@evolyfoot/domain";
+import { ballFrame, buildDiagramAnimation, diagramTargets, targetGeometry, type AnimatedExercise, type AnimationPoint, type DiagramTarget } from "@evolyfoot/domain";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 const stepSeconds = 1.7;
@@ -25,9 +25,27 @@ function mix(from: AnimationPoint, to: AnimationPoint, ratio: number): Animation
   return { x: from.x + (to.x - from.x) * ratio, y: from.y + (to.y - from.y) * ratio };
 }
 
+// But et mini-but ouverts vers le terrain, porte en deux plots, ligne à franchir en pointillés.
+function TargetShape({ target }: { target: DiagramTarget }) {
+  const { a, b, backA, backB } = targetGeometry(target);
+  if (target.kind === "gate") {
+    return (
+      <g className="tactical-target-gate">
+        <circle cx={a.x} cy={a.y} r="4" />
+        <circle cx={b.x} cy={b.y} r="4" />
+      </g>
+    );
+  }
+  if (target.kind === "line") {
+    return <line className="tactical-target-line" x1={a.x} x2={b.x} y1={a.y} y2={b.y} />;
+  }
+  return <polyline className={`tactical-target-goal ${target.kind}`} points={`${a.x},${a.y} ${backA.x},${backA.y} ${backB.x},${backB.y} ${b.x},${b.y}`} />;
+}
+
 export function TacticalPlayer({ exercise, seed }: { exercise: AnimatedExercise; seed: string }) {
   const { diagram } = exercise;
   const steps = useMemo(() => buildDiagramAnimation(exercise, seed), [exercise, seed]);
+  const targets = useMemo(() => diagramTargets(exercise), [exercise]);
   const reducedMotion = useReducedMotion();
   // `null` tant que l'éducateur n'a touché à rien : la lecture démarre seule, sauf animations réduites.
   const [playChoice, setPlayChoice] = useState<boolean | null>(null);
@@ -76,6 +94,9 @@ export function TacticalPlayer({ exercise, seed }: { exercise: AnimatedExercise;
           <rect className="tactical-diagram-pitch" height={diagram.height - 8} rx="14" width={diagram.width - 8} x="4" y="4" />
           {diagram.zones.map((zone, index) => (
             <rect className="tactical-diagram-zone" height={zone.height} key={index} rx="8" width={zone.width} x={zone.x} y={zone.y} />
+          ))}
+          {targets.map((target, index) => (
+            <TargetShape key={index} target={target} />
           ))}
           {step.pressers.map((press) => {
             const from = at(press.id);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDiagramAnimation, diagramAnimationStepCount, exerciseScenario } from "./diagram-animation";
+import { buildDiagramAnimation, diagramAnimationStepCount, diagramTargets, exerciseScenario, targetGeometry } from "./diagram-animation";
 import { trainingActivityCatalogue, type TrainingActivity } from "./training-session";
 
 function exercise(title: string): TrainingActivity {
@@ -119,6 +119,43 @@ describe("animation d'un exercice", () => {
     const steal = steps[2]!.balls.find((ball) => ball.kind === "steal")!;
     expect(defenders.has(steal.toId!)).toBe(true);
     expect(steps[3]!.pressers.some((press) => !defenders.has(press.id))).toBe(true);
+  });
+
+  it("dessine une cible pour chaque exercice qui vise un but, une porte ou une ligne", () => {
+    for (const activity of trainingActivityCatalogue) {
+      const scenario = exerciseScenario(activity);
+      const targets = diagramTargets(activity);
+      if (scenario === "finishing" || scenario === "progression") {
+        expect(targets.length, activity.id).toBeGreaterThan(0);
+      }
+      if (scenario === "finishing") {
+        expect(targets.some((target) => target.kind === "goal" || target.kind === "miniGoal"), activity.id).toBe(true);
+      }
+      for (const target of targets) {
+        for (const point of Object.values(targetGeometry(target))) {
+          expect(point.x >= 4 && point.x <= activity.diagram.width - 4 && point.y >= 4 && point.y <= activity.diagram.height - 4, `${activity.id} ${target.kind}`).toBe(true);
+        }
+      }
+    }
+    expect(diagramTargets(exercise("Match à trois passes")).map((target) => target.kind)).toEqual(["miniGoal", "miniGoal"]);
+    expect(diagramTargets(exercise("Le 3 contre 2 vers les portes")).map((target) => target.kind)).toEqual(["gate", "gate", "gate", "gate"]);
+    expect(diagramTargets(exercise("Les rois de la ligne")).map((target) => target.kind)).toEqual(["line"]);
+    expect(diagramTargets(exercise("Rondo mobile 4 contre 1"))).toEqual([]);
+  });
+
+  it("tire dans la cage dessinée", () => {
+    for (const activity of trainingActivityCatalogue.filter((candidate) => exerciseScenario(candidate) === "finishing")) {
+      const goals = diagramTargets(activity).filter((target) => target.kind === "goal" || target.kind === "miniGoal");
+      for (const step of animate(activity)) {
+        for (const shot of step.balls.filter((ball) => ball.kind === "shot")) {
+          const inside = goals.some((goal) => {
+            const { a, b } = targetGeometry(goal);
+            return Math.hypot(shot.target!.x - a.x, shot.target!.y - a.y) + Math.hypot(shot.target!.x - b.x, shot.target!.y - b.y) <= goal.width + 0.01;
+          });
+          expect(inside, activity.id).toBe(true);
+        }
+      }
+    }
   });
 
   it("garde un ballon et des légendes pour une fiche sans texte ni défenseur", () => {
