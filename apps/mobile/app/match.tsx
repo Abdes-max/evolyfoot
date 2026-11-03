@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CalendarImport } from "../components/calendar-import";
+import { CompetitionsPanel } from "../components/competitions-panel";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
 
 const statusLabel: Record<MatchStatus, string> = { scheduled: "À venir", played: "Joué" };
@@ -56,7 +57,7 @@ export default function MatchListScreen() {
       <ScrollView contentContainerStyle={styles.page}>
         <Text style={styles.step}>MATCHS</Text>
         <Text style={styles.title}>Prépare et suis tes matchs.</Text>
-        <Text style={styles.body}>Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire.</Text>
+        <Text style={styles.body}>Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire. Garde aussi une trace de tes tournois et plateaux.</Text>
 
         {!creating ? (
           <>
@@ -156,6 +157,9 @@ export default function MatchListScreen() {
             </TouchableOpacity>
           ))
         )}
+
+        <CompetitionsPanel kind="tournament" />
+        <CompetitionsPanel kind="plateau" />
       </ScrollView>
     </SafeAreaView>
   );
