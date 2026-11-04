@@ -21,11 +21,14 @@ export interface MvpMetrics {
   rosterAdoption: { educatorsWithPlayers: number; totalEducators: number };
   // Comptes rendus dont l'appli a mesuré la durée de saisie.
   reportEntry: { measured: number; underThreeMinutes: number; medianSeconds: number | null };
+  // Première séance de chaque éducateur dont la préparation a été chronométrée.
+  firstSession: { measured: number; underTenMinutes: number; medianSeconds: number | null };
   // Réponses aux propositions d'ajustement sur les 4 dernières semaines (un cycle).
   adjustments: { accepted: number; declined: number; educatorsWithAccepted: number; educatorsWithObservations: number };
 }
 
 export const reportEntryTargetSeconds = 180;
+export const firstSessionTargetSeconds = 600;
 
 // Prend `PrismaClient` directement plutôt qu'un repository comme les autres services de ce
 // fichier : il n'y a ici aucune règle métier à isoler derrière une interface pour des tests unitaires
@@ -103,6 +106,22 @@ export class MetricsService {
     `;
     const entry = entryRows[0] ?? { measured: 0, under_target: 0, median_seconds: null };
 
+    // Première séance enregistrée par chaque éducateur ; seules celles chronométrées comptent.
+    const firstRows = await this.prisma.$queryRaw<Array<{ measured: number; under_target: number; median_seconds: number | null }>>`
+      with first_sessions as (
+        select distinct on (educator_id) preparation_seconds
+        from training_sessions
+        order by educator_id, created_at
+      )
+      select
+        count(preparation_seconds)::int as measured,
+        count(*) filter (where preparation_seconds <= ${firstSessionTargetSeconds})::int as under_target,
+        (percentile_cont(0.5) within group (order by preparation_seconds))::int as median_seconds
+      from first_sessions
+      where preparation_seconds is not null
+    `;
+    const first = firstRows[0] ?? { measured: 0, under_target: 0, median_seconds: null };
+
     const adjustmentRows = await this.prisma.$queryRaw<
       Array<{ accepted: number; declined: number; educators_with_accepted: number; educators_with_observations: number }>
     >`
@@ -131,6 +150,7 @@ export class MetricsService {
         totalEducators,
       },
       reportEntry: { measured: entry.measured, underThreeMinutes: entry.under_target, medianSeconds: entry.median_seconds },
+      firstSession: { measured: first.measured, underTenMinutes: first.under_target, medianSeconds: first.median_seconds },
       adjustments: {
         accepted: adjustments.accepted,
         declined: adjustments.declined,

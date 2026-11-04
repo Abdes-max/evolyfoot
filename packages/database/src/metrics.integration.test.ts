@@ -163,4 +163,20 @@ describe("PostgreSQL MVP metrics", () => {
     expect(after.adjustments.declined - before.adjustments.declined).toBe(1);
     expect(after.adjustments.educatorsWithAccepted - before.adjustments.educatorsWithAccepted).toBe(1);
   });
+
+  it("chronomètre la préparation de la première séance de chaque éducateur", async () => {
+    const before = await metricsService.get();
+    const fast = await createEducator("premiere-rapide");
+    const slow = await createEducator("premiere-lente");
+    await trainingSessionService.save(fast.id, { ...validSession, preparationSeconds: 300 });
+    // Une deuxième séance, même chronométrée, ne compte pas : seule la première est mesurée.
+    await trainingSessionService.save(fast.id, { ...validSession, slot: 1, preparationSeconds: 5000 });
+    await trainingSessionService.save(slow.id, { ...validSession, preparationSeconds: 900 });
+
+    const after = await metricsService.get();
+
+    expect(after.firstSession.measured - before.firstSession.measured).toBe(2);
+    expect(after.firstSession.underTenMinutes - before.firstSession.underTenMinutes).toBe(1);
+    expect(after.firstSession.medianSeconds).not.toBeNull();
+  });
 });

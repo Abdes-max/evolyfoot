@@ -658,6 +658,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
       meetingAt: Date;
       location?: string | null;
       attendance?: readonly AttendanceEntry[];
+      preparationSeconds?: number;
     },
   ): Promise<PersistedTrainingSession> {
     const blocks = input.blocks as unknown as Prisma.InputJsonValue;
@@ -684,6 +685,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
           meetingAt: input.meetingAt,
           ...location,
           attendance,
+          preparationSeconds: input.preparationSeconds,
         },
         update: {
           title: input.title,

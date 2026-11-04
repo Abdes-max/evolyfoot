@@ -94,6 +94,11 @@ export function SessionBuilder({
   const [openBlockId, setOpenBlockId] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
   const exerciseRef = useRef<HTMLElement>(null);
+  // Début de la préparation (ouverture de l'écran), pour l'indicateur « première séance en moins de 10 minutes ».
+  const preparationStart = useRef<number | null>(null);
+  useEffect(() => {
+    preparationStart.current = Date.now();
+  }, []);
   const openIndex = session.blocks.findIndex((block) => block.id === openBlockId);
   const openBlock = openIndex >= 0 ? session.blocks[openIndex] : undefined;
   const openReason = blockReasons.find((candidate) => candidate.blockId === openBlockId)?.reason;
@@ -169,6 +174,7 @@ export function SessionBuilder({
           weekNumber,
           slot,
           ...(guidedSeason ? { guidedSeason: true } : {}),
+          ...(preparationStart.current !== null ? { preparationSeconds: Math.round((Date.now() - preparationStart.current) / 1000) } : {}),
           ...(attendance.length > 0 ? { attendance } : {}),
         }),
       });

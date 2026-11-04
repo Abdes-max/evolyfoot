@@ -19,6 +19,7 @@ interface MvpMetrics {
   retention: { retainedFourWeeks: number; activeLastFourWeeks: number };
   rosterAdoption: { educatorsWithPlayers: number; totalEducators: number };
   reportEntry: { measured: number; underThreeMinutes: number; medianSeconds: number | null };
+  firstSession: { measured: number; underTenMinutes: number; medianSeconds: number | null };
   adjustments: { accepted: number; declined: number; educatorsWithAccepted: number; educatorsWithObservations: number };
 }
 
@@ -177,6 +178,19 @@ export function MetricsView() {
                 <small> / {metrics.rosterAdoption.totalEducators} comptes</small>
               </p>
               <p className="kpi-hint">A ajouté au moins un joueur nommé sur /equipe — signe d’un usage allant au-delà de la démo.</p>
+            </div>
+            <div className="kpi-card">
+              <p className="kpi-label">Première séance en moins de 10 minutes</p>
+              <p className="kpi-value">
+                {metrics.firstSession.underTenMinutes}
+                <small> / {metrics.firstSession.measured} mesurées</small>
+              </p>
+              <p className="kpi-hint">
+                {metrics.firstSession.medianSeconds === null
+                  ? "Aucune préparation mesurée pour l’instant."
+                  : `Durée médiane : ${formatDuration(metrics.firstSession.medianSeconds)}.`}{" "}
+                De l’ouverture de la séance à son enregistrement, pour la première séance de chaque éducateur.
+              </p>
             </div>
             <div className="kpi-card">
               <p className="kpi-label">Compte rendu en moins de 3 minutes</p>

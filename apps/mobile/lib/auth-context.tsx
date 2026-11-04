@@ -65,6 +65,8 @@ export interface SessionSlotInput {
   slot: number;
   meetingAt: string;
   attendance?: readonly AttendanceEntry[];
+  // Durée de préparation mesurée par l'écran (indicateur MVP).
+  preparationSeconds?: number;
 }
 
 export interface SeasonData {
@@ -360,6 +362,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           slot: slotInput.slot,
           meetingAt: slotInput.meetingAt,
           ...(slotInput.attendance && slotInput.attendance.length > 0 ? { attendance: slotInput.attendance } : {}),
+          ...(slotInput.preparationSeconds !== undefined ? { preparationSeconds: slotInput.preparationSeconds } : {}),
         }),
       });
       if (!response.ok) {

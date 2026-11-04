@@ -26,6 +26,8 @@ export interface TrainingSessionInput {
   attendance?: readonly AttendanceEntry[];
   // Séance préparée depuis la saison guidée : semaine de saison (1 à 36).
   guidedSeason?: boolean;
+  // Durée de préparation mesurée par l'écran (indicateur MVP).
+  preparationSeconds?: number;
 }
 
 export interface PersistedTrainingSession extends Omit<TrainingSessionInput, "meetingAt"> {
@@ -51,6 +53,7 @@ export interface SeasonSessionInput {
   // ISO
   meetingAt: string;
   location: string;
+  preparationSeconds?: number;
 }
 
 export interface TrainingSessionGateway {
@@ -116,6 +119,7 @@ function isTrainingSessionInputShaped(value: Record<string, unknown> | null): va
     value.weekNumber >= 1 &&
     value.weekNumber <= (value.guidedSeason === true ? seasonWeeks : cycleWeekCount) &&
     (value.guidedSeason === undefined || typeof value.guidedSeason === "boolean") &&
+    (value.preparationSeconds === undefined || typeof value.preparationSeconds === "number") &&
     typeof value.slot === "number" &&
     Number.isInteger(value.slot) &&
     value.slot >= 0 &&
@@ -170,7 +174,8 @@ function isSeasonSessionInputShaped(value: Record<string, unknown> | null): valu
     typeof value.playerCount === "number" &&
     typeof value.meetingAt === "string" &&
     !Number.isNaN(new Date(value.meetingAt).getTime()) &&
-    typeof value.location === "string"
+    typeof value.location === "string" &&
+    (value.preparationSeconds === undefined || typeof value.preparationSeconds === "number")
   );
 }
 

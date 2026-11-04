@@ -43,6 +43,12 @@ export interface TrainingSessionInput {
   attendance?: ReadonlyArray<AttendanceEntry>;
   // Séance de la saison guidée : semaine de saison (1 à 36) et cycle réservé (guidedSeasonCycle).
   guidedSeason?: boolean;
+  // Durée de préparation mesurée par l'écran, ignorée si elle n'est pas plausible.
+  preparationSeconds?: number;
+}
+
+function plausibleSeconds(seconds: number | undefined): number | undefined {
+  return seconds !== undefined && Number.isInteger(seconds) && seconds >= 0 && seconds <= 86_400 ? seconds : undefined;
 }
 
 // Pas de constante partagée côté domaine pour les thèmes (contrairement à `ageGroups`) : on la
@@ -155,6 +161,7 @@ export class TrainingSessionService {
       slot: input.slot,
       meetingAt: input.meetingAt,
       ...(input.attendance ? { attendance: input.attendance } : {}),
+      preparationSeconds: plausibleSeconds(input.preparationSeconds),
     });
   }
 
@@ -163,7 +170,16 @@ export class TrainingSessionService {
   // la séance (même upsert que `save`).
   async prepareFromSeason(
     educatorId: string,
-    input: { sessionNumber: number; seasonWeek: number; slot: number; ageGroup: AgeGroup; playerCount: number; meetingAt: Date; location: string },
+    input: {
+      sessionNumber: number;
+      seasonWeek: number;
+      slot: number;
+      ageGroup: AgeGroup;
+      playerCount: number;
+      meetingAt: Date;
+      location: string;
+      preparationSeconds?: number;
+    },
   ): Promise<PersistedTrainingSession> {
     const plan = programSessionPlan(input.sessionNumber);
     if (!plan) {
@@ -200,6 +216,7 @@ export class TrainingSessionService {
       slot: input.slot,
       meetingAt: input.meetingAt,
       location,
+      preparationSeconds: plausibleSeconds(input.preparationSeconds),
     });
   }
 

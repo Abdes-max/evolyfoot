@@ -9,7 +9,7 @@ import {
   situationKindLabels,
 } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { PlaceInput } from "../../../components/place-input";
 import { TacticalDiagramView } from "../../../components/tactical-diagram";
@@ -17,6 +17,11 @@ import { useAuth } from "../../../lib/auth-context";
 
 function meetingLabel(date: Date): string {
   return date.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+}
+
+// Durée écoulée depuis l’ouverture de l’écran (indicateur MVP), rien si elle n’a pas démarré.
+function preparationSeconds(start: number | null): { preparationSeconds?: number } {
+  return start === null ? {} : { preparationSeconds: Math.round((Date.now() - start) / 1000) };
 }
 
 function shifted(date: Date, minutes: number): Date {
@@ -39,6 +44,11 @@ export default function ProgramSessionScreen() {
   const [location, setLocation] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  // Début de la préparation (ouverture de l'écran), pour l'indicateur « première séance en moins de 10 minutes ».
+  const preparationStart = useRef<number | null>(null);
+  useEffect(() => {
+    preparationStart.current = Date.now();
+  }, []);
 
   // Préremplit le rendez-vous (jour d'entraînement de la semaine, 18 h) et le dernier lieu utilisé.
   useEffect(() => {
@@ -98,6 +108,7 @@ export default function ProgramSessionScreen() {
         playerCount: team.playerCount,
         meetingAt: meetingAt.toISOString(),
         location,
+        ...preparationSeconds(preparationStart.current),
       }),
     });
     const body = await response?.json().catch(() => null);
