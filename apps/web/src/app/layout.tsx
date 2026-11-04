@@ -4,6 +4,7 @@ import "./globals.css";
 import "./observation.css";
 import "./session-builder.css";
 import "./tactical-diagram.css";
+import "./guided-season.css";
 import "./bibliotheque.css";
 import "./roster.css";
 import "./metrics.css";

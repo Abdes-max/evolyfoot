@@ -1,0 +1,228 @@
+/* Saison guidée : choix des priorités, semaine en cours et grille des 36 semaines. */
+.guided-season {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+}
+
+.guided-season-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.guided-season h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.guided-picker p,
+.guided-priorities {
+  margin: 12px 0;
+}
+
+.guided-picker-themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.guided-theme {
+  background: var(--surface-2);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 8px 16px;
+}
+
+.guided-theme.is-selected {
+  background: var(--slot-color);
+  border-color: var(--slot-color);
+  color: #0b1018;
+}
+
+.guided-picker-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.guided-this-week {
+  margin: 16px 0;
+}
+
+.guided-this-week ul {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.guided-this-week a {
+  border-left: 6px solid var(--slot-color);
+  border-radius: 12px;
+  color: var(--ink);
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  text-decoration: none;
+  background: var(--surface-2);
+}
+
+.guided-this-week a span {
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.guided-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+}
+
+.guided-grid li {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 6px;
+}
+
+.guided-grid li.current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.guided-grid li > span {
+  color: var(--muted, #9aa4b5);
+  flex-basis: 100%;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.guided-grid .season-slot {
+  border-radius: 4px;
+  flex: 1 1 14px;
+  height: 18px;
+  min-width: 14px;
+}
+
+.season-slot {
+  --slot-color: #8a93a6;
+  background: var(--slot-color);
+  opacity: 0.45;
+}
+
+.guided-this-week .season-slot,
+.guided-theme {
+  background-color: var(--surface-2);
+  opacity: 1;
+}
+
+.season-slot.major,
+.season-slot.evaluation,
+.season-slot.recreational {
+  opacity: 1;
+}
+
+.guided-theme.keep,
+.season-slot.keep {
+  --slot-color: #3ec6f5;
+}
+.guided-theme.progress,
+.season-slot.progress {
+  --slot-color: #2bc4a8;
+}
+.guided-theme.finish,
+.season-slot.finish {
+  --slot-color: #f59e3e;
+}
+.guided-theme.recover,
+.season-slot.recover {
+  --slot-color: #ef5a5a;
+}
+.guided-theme.protect,
+.season-slot.protect {
+  --slot-color: #a678f0;
+}
+.season-slot.evaluation {
+  --slot-color: #8a93a6;
+}
+.season-slot.recreational {
+  --slot-color: #d4b05a;
+}
+
+.guided-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.guided-legend li {
+  border-radius: 999px;
+  color: #0b1018;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+}
+
+.guided-principles {
+  margin-top: 16px;
+}
+
+.guided-principles summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+/* Fiche d'une séance de la saison. */
+.program-session-situations {
+  display: grid;
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.program-situation {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.program-situation-meta {
+  color: var(--muted, #9aa4b5);
+  font-size: 0.85rem;
+}
+
+.program-situation h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.program-situation ul {
+  margin: 0;
+  padding-left: 18px;
+}
