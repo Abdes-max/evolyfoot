@@ -335,10 +335,14 @@ export interface PersistedObservation {
 }
 
 export interface ObservationRepository {
-  create(educatorId: string, report: ObservationReport, matchId?: string): Promise<PersistedObservation>;
+  create(educatorId: string, report: ObservationReport, matchId?: string, entrySeconds?: number): Promise<PersistedObservation>;
   listByEducator(educatorId: string): Promise<PersistedObservation[]>;
   findById(id: string, educatorId: string): Promise<PersistedObservation | null>;
+  // `false` si l'observation n'existe pas ou n'appartient pas à cet éducateur.
+  setAdjustmentDecision(id: string, educatorId: string, decision: AdjustmentDecision | null): Promise<boolean>;
 }
+
+export type AdjustmentDecision = "accepted" | "declined";
 
 // Effectif nominatif de l'éducateur. Rattaché à l'éducateur (pas à Team) : CRUD complet, à
 // l'inverse du patron append-only de TrainingSessionRecord/ObservationRecord ci-dessus. `rename`

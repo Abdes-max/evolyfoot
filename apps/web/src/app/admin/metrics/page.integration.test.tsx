@@ -20,6 +20,8 @@ const metrics = {
   ],
   retention: { retainedFourWeeks: 1, activeLastFourWeeks: 3 },
   rosterAdoption: { educatorsWithPlayers: 2, totalEducators: 10 },
+  reportEntry: { measured: 4, underThreeMinutes: 3, medianSeconds: 150 },
+  adjustments: { accepted: 2, declined: 1, educatorsWithAccepted: 1, educatorsWithObservations: 2 },
 };
 
 describe("admin metrics page", () => {
@@ -68,5 +70,7 @@ describe("admin metrics page", () => {
     expect(screen.getByText("Première observation validée")).toBeInTheDocument();
     expect(screen.getAllByText("10").length).toBeGreaterThan(0);
     expect(screen.getByText(/rétention 4 semaines/i)).toBeInTheDocument();
+    expect(screen.getByText("Compte rendu en moins de 3 minutes")).toBeInTheDocument();
+    expect(screen.getByText(/Durée médiane : 2 min 30 s/)).toBeInTheDocument();
   });
 });

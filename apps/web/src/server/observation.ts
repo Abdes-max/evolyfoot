@@ -10,8 +10,11 @@ export interface ObservationRecord extends ObservationReport {
   createdAt: string;
 }
 
+export type AdjustmentDecision = "accepted" | "declined";
+
 export interface ObservationGateway {
-  save(educatorId: string, draft: ObservationDraft, matchId?: string): Promise<ObservationReport>;
+  save(educatorId: string, draft: ObservationDraft, matchId?: string, entrySeconds?: number): Promise<ObservationReport>;
+  decideAdjustment(educatorId: string, observationId: string, decision: AdjustmentDecision | null): Promise<void>;
   list(educatorId: string): Promise<ObservationRecord[]>;
   get(educatorId: string, observationId: string): Promise<ObservationRecord>;
 }
@@ -99,9 +102,11 @@ export function createSaveObservationHandler(
     // avant d'accepter cet identifiant -- la contrainte de clé étrangère en base garantit
     // seulement qu'un match avec cet id existe, jamais qu'il appartient à qui l'invoque.
     const matchId = typeof body.matchId === "string" ? body.matchId : undefined;
+    // Durée de saisie mesurée par l'appli (indicateur MVP), facultative.
+    const entrySeconds = typeof body.entrySeconds === "number" ? body.entrySeconds : undefined;
 
     try {
-      const report = await observation.save(educator.id, body, matchId);
+      const report = await observation.save(educator.id, body, matchId, entrySeconds);
       return Response.json({ report }, { status: 201 });
     } catch (error) {
       if (error instanceof EducatorNotFoundError) {
@@ -164,6 +169,35 @@ export function createGetObservationHandler(
   };
 }
 
+// Réponse de l'éducateur à la proposition d'ajustement : `{ decision: "accepted" | "declined" | null }`.
+export function createDecideAdjustmentHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  observation: Pick<ObservationGateway, "decideAdjustment">,
+  log: (error: unknown) => void,
+): (request: Request, observationId: string) => Promise<Response> {
+  return async (request, observationId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const body = await readJsonBody(request);
+    const decision = body?.decision;
+    if (decision !== "accepted" && decision !== "declined" && decision !== null) {
+      return Response.json({ error: "Réponse inconnue." }, { status: 400 });
+    }
+    try {
+      await observation.decideAdjustment(educator.id, observationId, decision);
+      return new Response(null, { status: 204 });
+    } catch (error) {
+      if (error instanceof ObservationNotFoundError) {
+        return Response.json({ error: error.message }, { status: 404 });
+      }
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  };
+}
+
 export async function createObservationGateway(): Promise<{
   gateway: ObservationGateway;
   disconnect: () => Promise<void>;
@@ -207,7 +241,8 @@ export async function createObservationGateway(): Promise<{
       async get(educatorId, observationId) {
         return toRecord(await service.get(educatorId, observationId));
       },
-      async save(educatorId, draft, matchId) {
+      decideAdjustment: (educatorId, observationId, decision) => service.decideAdjustment(educatorId, observationId, decision),
+      async save(educatorId, draft, matchId, entrySeconds) {
         if (matchId) {
           // Vérifie l'appartenance réelle avant d'accepter cet identifiant : `MatchService.get`
           // lève `MatchNotFoundError` aussi bien pour un match inexistant que pour un match
@@ -222,7 +257,7 @@ export async function createObservationGateway(): Promise<{
             throw error;
           }
         }
-        const observation = await service.save(educatorId, draft, matchId);
+        const observation = await service.save(educatorId, draft, matchId, entrySeconds);
         return {
           id: observation.id,
           eventType: observation.eventType,

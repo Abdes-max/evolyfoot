@@ -1,7 +1,7 @@
 import { completeObservation } from "@evolyfoot/domain";
 import type { ObservationDraft } from "@evolyfoot/domain";
 import { EducatorNotFoundError, ObservationNotFoundError, ValidationError } from "./errors";
-import type { EducatorRepository, ObservationRepository, PersistedObservation } from "./repositories";
+import type { AdjustmentDecision, EducatorRepository, ObservationRepository, PersistedObservation } from "./repositories";
 
 export class ObservationService {
   constructor(
@@ -21,7 +21,15 @@ export class ObservationService {
     return observation;
   }
 
-  async save(educatorId: string, draft: ObservationDraft, matchId?: string): Promise<PersistedObservation> {
+  async decideAdjustment(educatorId: string, observationId: string, decision: AdjustmentDecision | null): Promise<void> {
+    if (!(await this.observationRepository.setAdjustmentDecision(observationId, educatorId, decision))) {
+      throw new ObservationNotFoundError();
+    }
+  }
+
+  // `entrySeconds` : durée de saisie mesurée par l'appli, ignorée si elle n'est pas plausible
+  // (une journée au plus).
+  async save(educatorId: string, draft: ObservationDraft, matchId?: string, entrySeconds?: number): Promise<PersistedObservation> {
     // Recalcule le rapport (synthèse comprise) côté serveur à partir du brouillon plutôt que
     // de faire confiance à une synthèse déjà calculée côté client.
     let report;
@@ -35,6 +43,7 @@ export class ObservationService {
       throw new EducatorNotFoundError();
     }
 
-    return this.observationRepository.create(educatorId, report, matchId);
+    const measured = entrySeconds !== undefined && Number.isInteger(entrySeconds) && entrySeconds >= 0 && entrySeconds <= 86_400 ? entrySeconds : undefined;
+    return this.observationRepository.create(educatorId, report, matchId, measured);
   }
 }

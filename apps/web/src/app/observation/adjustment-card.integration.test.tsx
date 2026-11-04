@@ -8,7 +8,7 @@ import {
   type DevelopmentWeek,
 } from "@evolyfoot/domain";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AdjustmentCard } from "./adjustment-card";
 
 const currentWeek: DevelopmentWeek = {
@@ -71,5 +71,25 @@ describe("AdjustmentCard", () => {
     const apply = screen.getByRole("button", { name: "Appliquer cet ajustement" });
     expect(screen.getByRole("button", { name: "Garder mon plan" })).toBeEnabled();
     await waitFor(() => expect(apply).toHaveFocus());
+  });
+});
+
+describe("AdjustmentCard enregistrée", () => {
+  it("envoie la réponse de l'éducateur pour l'observation enregistrée", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      render(<AdjustmentCard observationId="obs-1" suggestion={suggestionFromObservationWithPlayerSignal()} />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Appliquer cet ajustement" }));
+      fireEvent.click(screen.getByRole("button", { name: "Annuler" }));
+
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+      const bodies = fetchMock.mock.calls.map((call) => JSON.parse((call as unknown as [string, RequestInit])[1].body as string));
+      expect(bodies).toEqual([{ decision: "accepted" }, { decision: null }]);
+      expect((fetchMock.mock.calls[0] as unknown as [string])[0]).toBe("/api/observations/obs-1/adjustment");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

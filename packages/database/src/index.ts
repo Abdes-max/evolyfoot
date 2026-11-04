@@ -122,3 +122,4 @@ export type {
   TrainingSessionRepository,
 } from "./repositories";
 export type { ClubMember, ClubRecord, SharedClubExercise } from "./repositories";
+export type { AdjustmentDecision } from "./repositories";

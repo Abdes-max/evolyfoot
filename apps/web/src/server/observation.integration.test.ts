@@ -2,6 +2,7 @@ import { EducatorNotFoundError, ObservationNotFoundError } from "@evolyfoot/data
 import { diagnosticCriteria, type ObservationDraft, type ObservationReport } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
 import {
+  createDecideAdjustmentHandler,
   createGetObservationHandler,
   createListObservationsHandler,
   createSaveObservationHandler,
@@ -206,5 +207,49 @@ describe("createGetObservationHandler", () => {
     const response = await handler(getRequest(), "missing");
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe("indicateurs du compte rendu", () => {
+  it("transmet la durée de saisie mesurée par l'appli", async () => {
+    const durations: (number | undefined)[] = [];
+    const handler = createSaveObservationHandler(
+      authenticated,
+      {
+        save: async (_educatorId, _draft, _matchId, entrySeconds) => {
+          durations.push(entrySeconds);
+          return report;
+        },
+      },
+      () => undefined,
+    );
+
+    await handler(jsonRequest({ ...completeDraft, entrySeconds: 140 }));
+    await handler(jsonRequest({ ...completeDraft, entrySeconds: "140" }));
+
+    expect(durations).toEqual([140, undefined]);
+  });
+
+  it("enregistre la réponse à l'ajustement et refuse une valeur inconnue", async () => {
+    const decisions: unknown[] = [];
+    const handler = createDecideAdjustmentHandler(
+      authenticated,
+      {
+        decideAdjustment: async (_educatorId, observationId, decision) => {
+          if (observationId === "missing") {
+            throw new ObservationNotFoundError();
+          }
+          decisions.push(decision);
+        },
+      },
+      () => undefined,
+    );
+    const put = (body: unknown) => new Request("https://evolyfoot.test/api/observations/o-1/adjustment", { method: "PUT", body: JSON.stringify(body) });
+
+    expect((await handler(put({ decision: "accepted" }), "o-1")).status).toBe(204);
+    expect((await handler(put({ decision: null }), "o-1")).status).toBe(204);
+    expect((await handler(put({ decision: "peut-être" }), "o-1")).status).toBe(400);
+    expect((await handler(put({ decision: "declined" }), "missing")).status).toBe(404);
+    expect(decisions).toEqual(["accepted", null]);
   });
 });

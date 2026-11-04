@@ -3,7 +3,7 @@ import type { ObservationDraft } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
 import { ObservationService } from "./observation-service";
 import { EducatorNotFoundError, ObservationNotFoundError, ValidationError } from "./errors";
-import type { EducatorRecord, EducatorRepository, ObservationRepository, PersistedObservation } from "./repositories";
+import type { AdjustmentDecision, EducatorRecord, EducatorRepository, ObservationRepository, PersistedObservation } from "./repositories";
 
 const players = [{ id: "lina", name: "Lina" }];
 
@@ -43,8 +43,16 @@ class InMemoryEducatorRepository implements EducatorRepository {
 
 class InMemoryObservationRepository implements ObservationRepository {
   readonly created: PersistedObservation[] = [];
+  readonly entrySeconds: (number | undefined)[] = [];
+  readonly decisions = new Map<string, AdjustmentDecision | null>();
 
-  async create(educatorId: string, report: Parameters<ObservationRepository["create"]>[1]): Promise<PersistedObservation> {
+  async create(
+    educatorId: string,
+    report: Parameters<ObservationRepository["create"]>[1],
+    _matchId?: string,
+    entrySeconds?: number,
+  ): Promise<PersistedObservation> {
+    this.entrySeconds.push(entrySeconds);
     const record: PersistedObservation = {
       id: `observation-${this.created.length + 1}`,
       educatorId,
@@ -69,7 +77,39 @@ class InMemoryObservationRepository implements ObservationRepository {
   async findById(id: string, educatorId: string): Promise<PersistedObservation | null> {
     return this.created.find((observation) => observation.id === id && observation.educatorId === educatorId) ?? null;
   }
+
+  async setAdjustmentDecision(id: string, educatorId: string, decision: AdjustmentDecision | null): Promise<boolean> {
+    if (!(await this.findById(id, educatorId))) {
+      return false;
+    }
+    this.decisions.set(id, decision);
+    return true;
+  }
 }
+
+describe("indicateurs du compte rendu", () => {
+  it("garde une durée de saisie plausible et ignore les autres", async () => {
+    const observationRepository = new InMemoryObservationRepository();
+    const service = new ObservationService(new InMemoryEducatorRepository(["educator-1"]), observationRepository);
+
+    await service.save("educator-1", completeDraft(), undefined, 95);
+    await service.save("educator-1", completeDraft(), undefined, -3);
+    await service.save("educator-1", completeDraft(), undefined, 1.5);
+    await service.save("educator-1", completeDraft());
+
+    expect(observationRepository.entrySeconds).toEqual([95, undefined, undefined, undefined]);
+  });
+
+  it("enregistre la réponse à l'ajustement, seulement pour l'éducateur de l'observation", async () => {
+    const observationRepository = new InMemoryObservationRepository();
+    const service = new ObservationService(new InMemoryEducatorRepository(["educator-1", "educator-2"]), observationRepository);
+    const saved = await service.save("educator-1", completeDraft());
+
+    await service.decideAdjustment("educator-1", saved.id, "accepted");
+    expect(observationRepository.decisions.get(saved.id)).toBe("accepted");
+    await expect(service.decideAdjustment("educator-2", saved.id, "declined")).rejects.toBeInstanceOf(ObservationNotFoundError);
+  });
+});
 
 describe("ObservationService.save", () => {
   it("rejects an incomplete draft before writing anything", async () => {

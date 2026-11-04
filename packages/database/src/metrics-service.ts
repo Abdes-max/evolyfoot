@@ -1,11 +1,9 @@
 import type { PrismaClient } from "./generated/prisma/client";
 
-// Traduit littéralement deux des quatre indicateurs de docs/mvp.md : l'entonnoir d'activation et
-// l'utilisation hebdomadaire sur quatre semaines consécutives. Les deux autres (« première séance
-// planifiée en moins de 10 minutes », « compte rendu saisi en moins de 3 minutes », « au moins un
-// ajustement accepté par cycle ») nécessiteraient une instrumentation qui n'existe pas encore
-// (chronométrage de l'interaction, persistance de la décision de AdjustmentCard) -- volontairement
-// absents plutôt qu'approximés par une donnée qui mesure autre chose.
+// Traduit les indicateurs de docs/mvp.md : l'entonnoir d'activation, l'utilisation hebdomadaire
+// sur quatre semaines consécutives, la durée de saisie des comptes rendus (mesurée par l'appli
+// depuis le 4 novembre 2026) et les ajustements acceptés. « Première séance planifiée en moins de
+// 10 minutes » n'est pas encore instrumenté : absent plutôt qu'approximé.
 export interface FunnelStep {
   label: string;
   count: number;
@@ -21,7 +19,13 @@ export interface MvpMetrics {
   weeklyActivity: WeeklyActivityPoint[];
   retention: { retainedFourWeeks: number; activeLastFourWeeks: number };
   rosterAdoption: { educatorsWithPlayers: number; totalEducators: number };
+  // Comptes rendus dont l'appli a mesuré la durée de saisie.
+  reportEntry: { measured: number; underThreeMinutes: number; medianSeconds: number | null };
+  // Réponses aux propositions d'ajustement sur les 4 dernières semaines (un cycle).
+  adjustments: { accepted: number; declined: number; educatorsWithAccepted: number; educatorsWithObservations: number };
 }
+
+export const reportEntryTargetSeconds = 180;
 
 // Prend `PrismaClient` directement plutôt qu'un repository comme les autres services de ce
 // fichier : il n'y a ici aucune règle métier à isoler derrière une interface pour des tests unitaires
@@ -89,6 +93,29 @@ export class MetricsService {
 
     const retention = retentionRows[0] ?? { retained_four_weeks: 0, active_last_four_weeks: 0 };
 
+    const entryRows = await this.prisma.$queryRaw<Array<{ measured: number; under_target: number; median_seconds: number | null }>>`
+      select
+        count(*)::int as measured,
+        count(*) filter (where entry_seconds <= ${reportEntryTargetSeconds})::int as under_target,
+        (percentile_cont(0.5) within group (order by entry_seconds))::int as median_seconds
+      from observations
+      where entry_seconds is not null
+    `;
+    const entry = entryRows[0] ?? { measured: 0, under_target: 0, median_seconds: null };
+
+    const adjustmentRows = await this.prisma.$queryRaw<
+      Array<{ accepted: number; declined: number; educators_with_accepted: number; educators_with_observations: number }>
+    >`
+      select
+        count(*) filter (where adjustment_decision = 'accepted')::int as accepted,
+        count(*) filter (where adjustment_decision = 'declined')::int as declined,
+        count(distinct educator_id) filter (where adjustment_decision = 'accepted')::int as educators_with_accepted,
+        count(distinct educator_id)::int as educators_with_observations
+      from observations
+      where created_at >= now() - interval '4 weeks'
+    `;
+    const adjustments = adjustmentRows[0] ?? { accepted: 0, declined: 0, educators_with_accepted: 0, educators_with_observations: 0 };
+
     return {
       funnel,
       weeklyActivity: weeklyRows.map((row) => ({
@@ -102,6 +129,13 @@ export class MetricsService {
       rosterAdoption: {
         educatorsWithPlayers: playerEducators.length,
         totalEducators,
+      },
+      reportEntry: { measured: entry.measured, underThreeMinutes: entry.under_target, medianSeconds: entry.median_seconds },
+      adjustments: {
+        accepted: adjustments.accepted,
+        declined: adjustments.declined,
+        educatorsWithAccepted: adjustments.educators_with_accepted,
+        educatorsWithObservations: adjustments.educators_with_observations,
       },
     };
   }

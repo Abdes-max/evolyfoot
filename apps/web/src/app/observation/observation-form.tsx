@@ -21,7 +21,7 @@ import {
   type PlayerReference,
 } from "@evolyfoot/domain";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AdjustmentCard } from "./adjustment-card";
 
 // Diagnostic de démonstration, utilisé tant qu'aucun diagnostic réel n'est disponible, pour
@@ -70,6 +70,9 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
   const [currentWeek, setCurrentWeek] = useState<DevelopmentWeek>(demoWeek);
   const [authenticated, setAuthenticated] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [savedId, setSavedId] = useState<string>();
+  // Début de la saisie (première modification), pour l'indicateur « compte rendu en moins de 3 minutes ».
+  const startedAt = useRef<number | null>(null);
   const complete = canCompleteObservation(draft);
   const remaining = diagnosticCriteria.length - draft.ratings.length;
 
@@ -142,6 +145,7 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
   }, [matchId]);
 
   function editDraft(nextDraft: ObservationDraft) {
+    startedAt.current ??= Date.now();
     setDraft(nextDraft);
     setReport(undefined);
     setSuggestion(undefined);
@@ -153,6 +157,7 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
     const nextReport = completeObservation(draft);
     setReport(nextReport);
     setSuggestion(suggestAdjustmentFromObservation(nextReport, currentWeek));
+    setSavedId(undefined);
 
     if (!authenticated) {
       setSaveState("auth-required");
@@ -164,9 +169,18 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
       const response = await fetch("/api/observations", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(matchId ? { ...draft, matchId } : draft),
+        body: JSON.stringify({
+          ...draft,
+          ...(matchId ? { matchId } : {}),
+          ...(startedAt.current !== null ? { entrySeconds: Math.round((Date.now() - startedAt.current) / 1000) } : {}),
+        }),
       });
       setSaveState(response.ok ? "success" : "error");
+      if (response.ok) {
+        const body = await response.json().catch(() => null);
+        setSavedId(typeof body?.report?.id === "string" ? body.report.id : undefined);
+        startedAt.current = null;
+      }
     } catch {
       setSaveState("error");
     }
@@ -174,6 +188,8 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
 
   function selectEventType(eventType: ObservationEventType) {
     editDraft(createDraft(eventType, players));
+    // Un nouveau brouillon vierge : la saisie commencera à la première évaluation.
+    startedAt.current = null;
   }
 
   return (
@@ -363,7 +379,7 @@ export function ObservationForm({ initialEventType, matchId }: ObservationFormPr
           {saveState === "error" && <p className="field-error">La sauvegarde a échoué, réessaie.</p>}
         </section>
       )}
-      {suggestion && <AdjustmentCard suggestion={suggestion} />}
+      {suggestion && <AdjustmentCard key={savedId ?? "brouillon"} observationId={savedId} suggestion={suggestion} />}
       {report && (
         <Link className="observation-exit back-link" href="/app">
           Retour au tableau de bord

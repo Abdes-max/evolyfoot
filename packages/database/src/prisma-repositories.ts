@@ -41,6 +41,7 @@ import {
 import { ContactMessageRecord, ContactMessageRepository } from "./contact-message-service";
 import { normalizeEducatorEmail } from "./email";
 import type {
+  AdjustmentDecision,
   ClubRecord,
   ClubRepository,
   SharedClubExercise,
@@ -669,7 +670,15 @@ export class PrismaObservationRepository implements ObservationRepository {
     return record === null ? null : toPersistedObservation(record);
   }
 
-  async create(educatorId: string, report: ObservationReport, matchId?: string): Promise<PersistedObservation> {
+  async setAdjustmentDecision(id: string, educatorId: string, decision: AdjustmentDecision | null): Promise<boolean> {
+    const { count } = await this.prisma.observationRecord.updateMany({
+      where: { id, educatorId },
+      data: { adjustmentDecision: decision, adjustmentDecidedAt: decision ? new Date() : null },
+    });
+    return count > 0;
+  }
+
+  async create(educatorId: string, report: ObservationReport, matchId?: string, entrySeconds?: number): Promise<PersistedObservation> {
     try {
       const record = await this.prisma.observationRecord.create({
         data: {
@@ -683,6 +692,7 @@ export class PrismaObservationRepository implements ObservationRepository {
           note: report.note ?? null,
           summary: report.summary as unknown as Prisma.InputJsonValue,
           matchId: matchId ?? null,
+          entrySeconds: entrySeconds ?? null,
         },
       });
       return toPersistedObservation(record);
