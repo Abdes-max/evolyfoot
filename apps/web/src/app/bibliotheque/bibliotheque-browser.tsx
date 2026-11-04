@@ -1,6 +1,13 @@
 "use client";
 
-import { type DevelopmentTheme, diagramTargets, type TrainingActivity, trainingActivityCatalogue, type TrainingBlockKind } from "@evolyfoot/domain";
+import {
+  developmentThemes,
+  type DevelopmentTheme,
+  diagramTargets,
+  type TrainingActivity,
+  trainingActivityCatalogue,
+  type TrainingBlockKind,
+} from "@evolyfoot/domain";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { TacticalDiagramView } from "../tactical-diagram";
@@ -19,13 +26,7 @@ const kindFilters: ReadonlyArray<{ value: TrainingBlockKind | "all"; label: stri
   { value: "game", label: "Jeu" },
 ];
 
-const themeFilters: ReadonlyArray<DevelopmentTheme | "all"> = [
-  "all",
-  "Conserver le ballon",
-  "Progresser ensemble",
-  "Finir les actions",
-  "Récupérer rapidement",
-];
+const themeFilters: ReadonlyArray<DevelopmentTheme | "all"> = ["all", ...developmentThemes];
 
 function matchesQuery(activity: TrainingActivity, query: string) {
   const haystack = `${activity.title} ${activity.objective}`.toLowerCase();

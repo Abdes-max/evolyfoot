@@ -19,6 +19,7 @@ const intentions: Record<DevelopmentTheme, string> = {
   "Progresser ensemble": "Créer des relations pour avancer sans isoler le porteur.",
   "Finir les actions": "Reconnaître et exploiter le moment pour finir.",
   "Récupérer rapidement": "Agir ensemble dans les premières secondes après la perte.",
+  "Protéger son but": "Se resserrer devant son but pour récupérer ou dégager.",
 };
 export function buildDevelopmentPlan(diagnostic: DiagnosticSummary): DevelopmentPlan {
   if (diagnostic.priorities.length < 2) throw new Error("Deux priorités sont nécessaires pour construire le cycle.");

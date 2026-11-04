@@ -85,6 +85,9 @@ export function TacticalPlayer({ exercise, seed }: { exercise: AnimatedExercise;
           viewBox={`0 0 ${diagram.width} ${diagram.height}`}
         >
           <rect className="tactical-diagram-pitch" height={diagram.height - 8} rx="14" width={diagram.width - 8} x="4" y="4" />
+          {diagram.marks?.map((mark, index) => (
+            <rect className="tactical-diagram-mark" height={mark.height} key={`m-${index}`} rx="4" width={mark.width} x={mark.x} y={mark.y} />
+          ))}
           {diagram.zones.map((zone, index) => (
             <rect className="tactical-diagram-zone" height={zone.height} key={index} rx="8" width={zone.width} x={zone.x} y={zone.y} />
           ))}

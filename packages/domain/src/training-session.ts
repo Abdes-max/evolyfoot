@@ -1,6 +1,8 @@
 import { playStyleNote } from "./coach-style";
 import type { DevelopmentWeek } from "./development-plan";
 import type { AgeGroup, DevelopmentTheme } from "./index";
+import { programSituations } from "./program-situations";
+import { situationToActivity } from "./season-program";
 import { extraActivitySets } from "./training-activities-extra";
 
 export type TrainingBlockKind = "welcome" | "activation" | "main" | "game";
@@ -29,6 +31,8 @@ export interface TacticalDiagram {
   width: number;
   height: number;
   zones: DiagramZone[];
+  // Repères tracés sans délimiter d’aire de jeu (zone centrale, couloirs, bandes).
+  marks?: DiagramZone[];
   tokens: DiagramToken[];
   arrows: DiagramArrow[];
 }
@@ -160,7 +164,8 @@ interface ThemeActivitySet {
   game: ActivityDetails;
 }
 
-const themeActivitySets: Record<DevelopmentTheme, ThemeActivitySet> = {
+// Le thème « Protéger son but » puise uniquement dans les situations de la programmation de saison.
+const themeActivitySets: Record<Exclude<DevelopmentTheme, "Protéger son but">, ThemeActivitySet> = {
   "Conserver le ballon": {
     slug: "conserver",
     welcome: {
@@ -471,7 +476,7 @@ function buildCatalogue(): TrainingActivity[] {
       diagram: buildDiagram(kind, details.defenderCount, details.hasGoalkeeper),
       ...details,
     });
-    const extra = extraActivitySets[theme as DevelopmentTheme];
+    const extra = extraActivitySets[theme as keyof typeof extraActivitySets];
     const createExtras = (kind: TrainingBlockKind, list: ActivityDetails[]) => list.map((details, index) => create(kind, details, `-x${index + 1}`));
     return [
       create("welcome", set.welcome),
@@ -485,7 +490,7 @@ function buildCatalogue(): TrainingActivity[] {
     ];
   });
 }
-const catalogue = buildCatalogue();
+const catalogue = [...buildCatalogue(), ...programSituations.map(situationToActivity)];
 export const trainingActivityCatalogue: readonly TrainingActivity[] = catalogue;
 export function findTrainingActivity(id: string): TrainingActivity | undefined {
   return catalogue.find((activity) => activity.id === id);
@@ -509,6 +514,17 @@ const cloneActivity = (activity: TrainingActivity): TrainingActivity => ({
 // titre ne dépendait que de la semaine du cycle et toutes les séances d'une même semaine
 // affichaient donc le même « Séance N » -- facultatif pour ne pas casser les appelants qui
 // n'ont pas cette notion (app mobile, génération de démonstration).
+// Les situations de la programmation (`cfi-…`) ne remplacent pas le catalogue d’un thème qui a le
+// sien ; un thème sans accueil dédié démarre sur un échauffement.
+function pickActivity(kind: TrainingBlockKind, theme: DevelopmentTheme, rotation: number): TrainingActivity | undefined {
+  const forTheme = catalogue.filter((candidate) => candidate.compatibleThemes.includes(theme));
+  const own = forTheme.filter((candidate) => !candidate.id.startsWith("cfi-"));
+  const pool = own.length > 0 ? own : forTheme;
+  const candidates = pool.filter((candidate) => candidate.kind === kind);
+  const list = candidates.length > 0 ? candidates : pool.filter((candidate) => candidate.kind === "activation");
+  return list[rotation % list.length];
+}
+
 export function generateTrainingSession(
   week: DevelopmentWeek,
   ageGroup: AgeGroup,
@@ -526,8 +542,7 @@ export function generateTrainingSession(
   const title = slot === undefined ? `Séance ${week.week} · ${week.phase}` : `Séance ${slot + 1} · ${week.phase}`;
   const kinds: TrainingBlockKind[] = ["welcome", "activation", "main", "game"];
   const blocks = kinds.map((kind, index) => {
-    const candidates = catalogue.filter((candidate) => candidate.kind === kind && candidate.compatibleThemes.includes(week.theme));
-    const activity = candidates[rotation % candidates.length];
+    const activity = pickActivity(kind, week.theme, rotation);
     if (!activity) throw new Error(`Aucune activité compatible pour le bloc ${kind} et le thème ${week.theme}.`);
     return { id: `${id}-block-${kind}`, activity: cloneActivity(activity), durationMinutes: blockDurations[index] };
   });

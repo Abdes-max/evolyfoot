@@ -1,3 +1,4 @@
+import { developmentThemes } from "./themes";
 import type { DevelopmentTheme } from "./index";
 import { buildDiagram, type TrainingActivity, type TrainingBlockKind } from "./training-session";
 
@@ -8,7 +9,7 @@ export const personalExerciseMaxPerEducator = 200;
 export const personalExerciseMaxPhotoLength = 700_000;
 
 const blockKinds: readonly TrainingBlockKind[] = ["welcome", "activation", "main", "game"];
-const themes: readonly DevelopmentTheme[] = ["Conserver le ballon", "Progresser ensemble", "Finir les actions", "Récupérer rapidement"];
+const themes: readonly DevelopmentTheme[] = developmentThemes;
 
 export interface PersonalExerciseInput {
   kind: TrainingBlockKind;

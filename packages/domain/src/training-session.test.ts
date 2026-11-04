@@ -132,10 +132,10 @@ describe("training session editing", () => {
 });
 
 describe("bibliothèque d'exercices", () => {
-  it("expose vingt activités, chacune avec un schéma tactique et un contenu de coaching complet", () => {
-    expect(trainingActivityCatalogue).toHaveLength(100);
-    expect(new Set(trainingActivityCatalogue.map((activity) => activity.id)).size).toBe(100);
-    expect(new Set(trainingActivityCatalogue.map((activity) => activity.title)).size).toBe(100);
+  it("expose les activités maison et celles de la programmation, chacune avec un schéma tactique et un contenu de coaching complet", () => {
+    expect(trainingActivityCatalogue).toHaveLength(161);
+    expect(new Set(trainingActivityCatalogue.map((activity) => activity.id)).size).toBe(161);
+    expect(new Set(trainingActivityCatalogue.map((activity) => activity.title)).size).toBe(161);
 
     for (const activity of trainingActivityCatalogue) {
       expect(activity.rules.length).toBeGreaterThan(0);

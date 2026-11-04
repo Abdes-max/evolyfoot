@@ -1,6 +1,13 @@
 "use client";
 
-import { parseExerciseText, type DevelopmentTheme, type PersonalExercise, type PersonalExerciseInput, type TrainingBlockKind } from "@evolyfoot/domain";
+import {
+  developmentThemes,
+  parseExerciseText,
+  type DevelopmentTheme,
+  type PersonalExercise,
+  type PersonalExerciseInput,
+  type TrainingBlockKind,
+} from "@evolyfoot/domain";
 import { useEffect, useState, type FormEvent } from "react";
 import { resizeImageToDataUrl } from "../image-resize";
 
@@ -10,7 +17,7 @@ const kindOptions: ReadonlyArray<{ value: TrainingBlockKind; label: string }> = 
   { value: "main", label: "Situation principale" },
   { value: "game", label: "Jeu" },
 ];
-const themeOptions: readonly DevelopmentTheme[] = ["Conserver le ballon", "Progresser ensemble", "Finir les actions", "Récupérer rapidement"];
+const themeOptions: readonly DevelopmentTheme[] = developmentThemes;
 const emptyForm: PersonalExerciseInput = {
   kind: "main",
   theme: "Conserver le ballon",
