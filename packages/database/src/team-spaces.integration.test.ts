@@ -2,6 +2,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { AuthService } from "./auth-service";
 import { createDatabaseClient } from "./client";
 import {
+  PrismaAccountRepository,
   PrismaEducatorRepository,
   PrismaPlayerRepository,
   PrismaSessionRepository,
@@ -78,5 +79,19 @@ describe("plusieurs équipes sur PostgreSQL", () => {
 
     await database.prisma.educator.delete({ where: { id: coach.id } });
     expect(await educators.findById(second.id)).toBeNull();
+  });
+
+  it("exporte les données de toutes les équipes du compte", async () => {
+    const { educator: coach, sessionToken } = await register("d");
+    await players.create(coach.id, "Kylian");
+    const { id } = await service.create(coach, sessionToken);
+    await players.create(id, "Nael");
+
+    const exported = await new PrismaAccountRepository(database.prisma).exportData(coach.id);
+
+    expect((exported?.players as { firstName: string }[]).map((player) => player.firstName)).toEqual(["Kylian"]);
+    const additionalTeams = exported?.additionalTeams as { id: string; players: { firstName: string }[] }[];
+    expect(additionalTeams.map((team) => team.id)).toEqual([id]);
+    expect(additionalTeams[0]?.players.map((player) => player.firstName)).toEqual(["Nael"]);
   });
 });

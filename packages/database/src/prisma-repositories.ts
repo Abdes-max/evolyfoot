@@ -316,33 +316,42 @@ export class PrismaStaffRepository implements StaffRepository {
   }
 }
 
+// Données exportées pour un compte et pour chacune de ses équipes ajoutées.
+const exportedRelations = {
+  team: true,
+  diagnostic: true,
+  players: { include: { evaluations: true } },
+  linkedPlayer: { include: { evaluations: true } },
+  trainingSessions: true,
+  observations: true,
+  matches: true,
+  tournaments: true,
+  plateaux: true,
+  personalExercises: true,
+} as const;
+
 export class PrismaAccountRepository implements AccountRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  // Tout ce qui appartient au compte, sans ses secrets ni les jetons de session et d'invitation.
+  // Tout ce qui appartient au compte, sans ses secrets ni les jetons de session et d'invitation. Les
+  // équipes ajoutées par l'éducateur (espaces d'équipe) suivent, avec leurs propres données.
   async exportData(id: string): Promise<Record<string, unknown> | null> {
-    const account = await this.prisma.educator.findUnique({
-      where: { id },
-      omit: { passwordHash: true },
-      include: {
-        team: true,
-        diagnostic: true,
-        players: { include: { evaluations: true } },
-        linkedPlayer: { include: { evaluations: true } },
-        trainingSessions: true,
-        observations: true,
-        matches: true,
-        tournaments: true,
-        plateaux: true,
-        personalExercises: true,
-      },
-    });
+    const account = await this.prisma.educator.findUnique({ where: { id }, omit: { passwordHash: true }, include: exportedRelations });
     if (!account) {
       return null;
     }
-    const playerIds = account.linkedPlayerId ? [account.linkedPlayerId] : account.players.map((player) => player.id);
+    const additionalTeams =
+      account.role === "coach"
+        ? await this.prisma.educator.findMany({
+            where: { ownerEducatorId: id, role: "team" },
+            orderBy: { createdAt: "asc" },
+            select: { id: true, displayName: true, createdAt: true, ...exportedRelations },
+          })
+        : [];
+    const ownPlayerIds = account.linkedPlayerId ? [account.linkedPlayerId] : account.players.map((player) => player.id);
+    const playerIds = [...ownPlayerIds, ...additionalTeams.flatMap((team) => team.players.map((player) => player.id))];
     const messages = await this.prisma.messageRecord.findMany({ where: { playerId: { in: playerIds } }, orderBy: { createdAt: "asc" } });
-    return { ...account, messages };
+    return { ...account, messages, additionalTeams };
   }
 
   async findPasswordHash(id: string): Promise<string | null> {
