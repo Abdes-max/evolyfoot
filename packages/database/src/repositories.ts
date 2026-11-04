@@ -204,6 +204,17 @@ export interface PersistedDiagnostic {
   updatedAt: Date;
 }
 
+export interface PersistedSeasonProgram {
+  educatorId: string;
+  priorities: DevelopmentTheme[];
+  startDate: Date;
+}
+
+export interface SeasonProgramRepository {
+  upsertForEducator(educatorId: string, priorities: DevelopmentTheme[], startDate: Date): Promise<PersistedSeasonProgram>;
+  findForEducator(educatorId: string): Promise<PersistedSeasonProgram | null>;
+}
+
 export interface DiagnosticRepository {
   upsertForEducator(educatorId: string, scores: DiagnosticScores): Promise<PersistedDiagnostic>;
   findForEducator(educatorId: string): Promise<PersistedDiagnostic | null>;

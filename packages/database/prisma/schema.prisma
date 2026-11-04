@@ -57,63 +57,64 @@ enum MessageAuthorRole {
 // (`educators`) reste, ainsi que `sessions.educator_id`, pour éviter une migration de renommage
 // massive ; c'est bien le modèle de compte pour les deux rôles.
 model Educator {
-  id                String                   @id @default(uuid()) @db.Uuid
-  email             String                   @unique
-  displayName       String                   @map("display_name")
-  passwordHash      String                   @map("password_hash")
+  id                 String                   @id @default(uuid()) @db.Uuid
+  email              String                   @unique
+  displayName        String                   @map("display_name")
+  passwordHash       String                   @map("password_hash")
   // "coach" | "player". `getEducatorForSession` ne résout que les comptes "coach", donc les
   // routes API éducateur rejettent automatiquement un jeton de compte joueur.
-  role              String                   @default("coach")
+  role               String                   @default("coach")
   // Rempli quand le lien reçu par e-mail à l'inscription a été cliqué. `null` = compte non
   // encore confirmé (la session existe déjà -- on ne bloque pas la connexion, voir
   // EmailVerificationService -- mais l'appli affiche un rappel tant que c'est vide).
-  emailVerifiedAt   DateTime?                @map("email_verified_at")
+  emailVerifiedAt    DateTime?                @map("email_verified_at")
   emailVerifications EmailVerification[]
-  passwordResets    PasswordReset[]
+  passwordResets     PasswordReset[]
   // Renseigné uniquement pour un compte "player" : le joueur suivi (dans l'effectif d'un coach).
-  linkedPlayerId    String?                  @unique @db.Uuid @map("linked_player_id")
-  linkedPlayer      Player?                  @relation("PlayerFollowers", fields: [linkedPlayerId], references: [id], onDelete: Cascade)
+  linkedPlayerId     String?                  @unique @map("linked_player_id") @db.Uuid
+  linkedPlayer       Player?                  @relation("PlayerFollowers", fields: [linkedPlayerId], references: [id], onDelete: Cascade)
   // Renseigné pour un compte "assistant" (l'éducateur dont il rejoint l'équipe) et pour un espace
   // d'équipe "team" (l'éducateur qui l'a créé).
-  ownerEducatorId   String?                  @db.Uuid @map("owner_educator_id")
-  owner             Educator?                @relation("TeamStaff", fields: [ownerEducatorId], references: [id], onDelete: Cascade)
-  staff             Educator[]               @relation("TeamStaff")
-  staffInvites      StaffInvite[]
-  invitesCreated    PlayerInvite[]
+  ownerEducatorId    String?                  @map("owner_educator_id") @db.Uuid
+  owner              Educator?                @relation("TeamStaff", fields: [ownerEducatorId], references: [id], onDelete: Cascade)
+  staff              Educator[]               @relation("TeamStaff")
+  staffInvites       StaffInvite[]
+  invitesCreated     PlayerInvite[]
   // Fiche profil de l'éducateur (page /profil). Tous optionnels : renseignés après l'inscription,
   // qui ne demande que nom / e-mail / mot de passe. `birthDate` est stocké en texte ISO
   // (`YYYY-MM-DD`) plutôt qu'en `DateTime` -- une date de naissance n'a pas d'heure ni de fuseau,
   // et l'app manipule déjà ses dates en texte libre ailleurs (MatchRecord.dateLabel).
-  birthDate         String?                  @map("birth_date")
-  club              String?
+  birthDate          String?                  @map("birth_date")
+  club               String?
   // Club rejoint par un code (partage d'exercices entre éducateurs). Indépendant du champ libre
   // `club` du profil, qui ne donne accès à rien.
-  clubId            String?                  @db.Uuid @map("club_id")
-  sharingClub       Club?                    @relation(fields: [clubId], references: [id], onDelete: SetNull)
-  country           String?
-  address           String?
-  phone             String?
-  diploma           String?
-  seasonFormat      String?                  @map("season_format")
+  clubId             String?                  @map("club_id") @db.Uuid
+  sharingClub        Club?                    @relation(fields: [clubId], references: [id], onDelete: SetNull)
+  country            String?
+  address            String?
+  phone              String?
+  diploma            String?
+  seasonFormat       String?                  @map("season_format")
   // Profil de coach : valeurs contrôlées par EducatorProfileService (playStyles côté domaine).
   // Cycle de 4 semaines en cours : les écrans de planification ne lisent que ses séances.
-  currentCycle      Int                      @default(1) @map("current_cycle")
-  playStyle         String?                  @map("play_style")
-  preferredFormation String?                 @map("preferred_formation")
-  team              Team?
-  diagnostic        Diagnostic?
-  sessions          Session[]
-  trainingSessions  TrainingSessionRecord[]
-  observations      ObservationRecord[]
-  players           Player[]
-  matches           MatchRecord[]
-  tournaments       TournamentRecord[]
-  plateaux          PlateauRecord[]
-  personalExercises PersonalExerciseRecord[]
-  playerEvaluations PlayerEvaluationRecord[]
-  messages          MessageRecord[]
-  createdAt         DateTime                 @default(now()) @map("created_at")
-  updatedAt         DateTime                 @updatedAt @map("updated_at")
+  currentCycle       Int                      @default(1) @map("current_cycle")
+  playStyle          String?                  @map("play_style")
+  preferredFormation String?                  @map("preferred_formation")
+  team               Team?
+  diagnostic         Diagnostic?
+  seasonProgram      SeasonProgram?
+  sessions           Session[]
+  trainingSessions   TrainingSessionRecord[]
+  observations       ObservationRecord[]
+  players            Player[]
+  matches            MatchRecord[]
+  tournaments        TournamentRecord[]
+  plateaux           PlateauRecord[]
+  personalExercises  PersonalExerciseRecord[]
+  playerEvaluations  PlayerEvaluationRecord[]
+  messages           MessageRecord[]
+  createdAt          DateTime                 @default(now()) @map("created_at")
+  updatedAt          DateTime                 @updatedAt @map("updated_at")
 
   @@index([ownerEducatorId])
   @@index([clubId])
@@ -133,24 +134,39 @@ model Club {
 }
 
 model Session {
-  id         String   @id @default(uuid()) @db.Uuid
-  educatorId String   @db.Uuid @map("educator_id")
-  educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  tokenHash  String   @unique @map("token_hash")
-  expiresAt  DateTime @map("expires_at")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id           String   @id @default(uuid()) @db.Uuid
+  educatorId   String   @map("educator_id") @db.Uuid
+  educator     Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  tokenHash    String   @unique @map("token_hash")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
   // Équipe choisie par l'éducateur dans cette session : l'un de ses espaces d'équipe (compte
   // "team"), `null` pour sa première équipe. Vérifié à chaque lecture plutôt que par clé étrangère :
   // un espace supprimé ramène simplement sur la première équipe.
-  activeTeamId String? @db.Uuid @map("active_team_id")
+  activeTeamId String?  @map("active_team_id") @db.Uuid
 
   @@index([educatorId])
   @@map("sessions")
 }
 
+// Saison guidée de l'éducateur (ou de l'espace d'équipe) : ses thèmes prioritaires et la semaine
+// de départ. Les 36 semaines se recalculent à partir de là (buildPrioritizedSeason), rien d'autre
+// n'est stocké.
+model SeasonProgram {
+  id         String             @id @default(uuid()) @db.Uuid
+  educatorId String             @unique @map("educator_id") @db.Uuid
+  educator   Educator           @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  priorities DevelopmentTheme[]
+  startDate  DateTime           @map("start_date") @db.Date
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  @@map("season_programs")
+}
+
 model Diagnostic {
   id                String   @id @default(uuid()) @db.Uuid
-  educatorId        String   @unique @db.Uuid @map("educator_id")
+  educatorId        String   @unique @map("educator_id") @db.Uuid
   educator          Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   availability      Int
   scanning          Int
@@ -168,7 +184,7 @@ model Diagnostic {
 // (`findTrainingActivity`) -- pas l'activité complète, déjà dupliquée dans ce catalogue.
 model TrainingSessionRecord {
   id          String           @id @default(uuid()) @db.Uuid
-  educatorId  String           @db.Uuid @map("educator_id")
+  educatorId  String           @map("educator_id") @db.Uuid
   educator    Educator         @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   title       String
   ageGroup    AgeGroup         @map("age_group")
@@ -209,30 +225,30 @@ model TrainingSessionRecord {
 // reste une photo figée d'un instant, pas une vue dynamique sur l'effectif actuel (un joueur
 // renommé ou retiré plus tard ne doit pas modifier les observations passées).
 model ObservationRecord {
-  id         String               @id @default(uuid()) @db.Uuid
-  educatorId String               @db.Uuid @map("educator_id")
-  educator   Educator             @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  eventType  ObservationEventType @map("event_type")
-  title      String
-  dateLabel  String               @map("date_label")
-  players    Json
-  ratings    Json
-  signals    Json
-  note       String?
-  summary    Json
+  id                  String               @id @default(uuid()) @db.Uuid
+  educatorId          String               @map("educator_id") @db.Uuid
+  educator            Educator             @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  eventType           ObservationEventType @map("event_type")
+  title               String
+  dateLabel           String               @map("date_label")
+  players             Json
+  ratings             Json
+  signals             Json
+  note                String?
+  summary             Json
   // Rattache l'observation au match préparé qu'elle concerne, quand elle en vient (voir
   // MatchRecord) -- optionnel : une observation de séance n'a pas de match, et `onDelete:
   // SetNull` plutôt que `Cascade` puisqu'une observation déjà saisie doit survivre à la
   // suppression du match qui l'a motivée.
-  matchId    String?              @db.Uuid @map("match_id")
-  match      MatchRecord?         @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  matchId             String?              @map("match_id") @db.Uuid
+  match               MatchRecord?         @relation(fields: [matchId], references: [id], onDelete: SetNull)
   // Indicateurs MVP (docs/mvp.md) : durée de saisie mesurée par l'appli, de la première
   // évaluation à la validation, et réponse de l'éducateur à la proposition d'ajustement
   // ("accepted" | "declined", `null` tant qu'il n'a pas répondu).
-  entrySeconds        Int?            @map("entry_seconds")
-  adjustmentDecision  String?         @map("adjustment_decision")
-  adjustmentDecidedAt DateTime?       @map("adjustment_decided_at")
-  createdAt  DateTime             @default(now()) @map("created_at")
+  entrySeconds        Int?                 @map("entry_seconds")
+  adjustmentDecision  String?              @map("adjustment_decision")
+  adjustmentDecidedAt DateTime?            @map("adjustment_decided_at")
+  createdAt           DateTime             @default(now()) @map("created_at")
 
   @@index([educatorId])
   @@index([matchId])
@@ -241,7 +257,7 @@ model ObservationRecord {
 
 model Team {
   id              String        @id @default(uuid()) @db.Uuid
-  educatorId      String        @unique @db.Uuid @map("educator_id")
+  educatorId      String        @unique @map("educator_id") @db.Uuid
   educator        Educator      @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   name            String
   ageGroup        AgeGroup      @map("age_group")
@@ -265,40 +281,40 @@ model Team {
 // append-only de TrainingSessionRecord/ObservationRecord) : un joueur peut être renommé ou
 // retiré à tout moment.
 model Player {
-  id         String                  @id @default(uuid()) @db.Uuid
-  educatorId String                  @db.Uuid @map("educator_id")
-  educator   Educator                @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  id            String                   @id @default(uuid()) @db.Uuid
+  educatorId    String                   @map("educator_id") @db.Uuid
+  educator      Educator                 @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   // Prénom et nom séparés (plutôt qu'un `name` unique) : la fiche joueur les distingue désormais
   // (formulaire d'ajout/de fiche détail) ; `lastName` garde un défaut "" pour les joueurs créés
   // avant l'introduction du champ (voir la migration de rétro-compatibilité). Tous les autres
   // usages (composition de match, présence, messagerie...) continuent de ne voir qu'un nom
   // complet, calculé par le mapper (voir toPersistedPlayer côté base).
-  firstName  String                  @map("first_name")
-  lastName   String                  @default("") @map("last_name")
+  firstName     String                   @map("first_name")
+  lastName      String                   @default("") @map("last_name")
   // Fiche joueur : tous optionnels. `photo` stocke une image (data URL) redimensionnée côté
   // client -- pas de stockage d'objets ni de CDN pour l'instant. `birthDate` en texte ISO
   // (`YYYY-MM-DD`), même choix que pour la fiche éducateur.
-  photo      String?
-  birthDate  String?                 @map("birth_date")
-  phone      String?
-  email      String?
+  photo         String?
+  birthDate     String?                  @map("birth_date")
+  phone         String?
+  email         String?
   // Profil sportif, tous optionnels : valeurs contrôlées par RosterService (playerPositions,
   // playerFeet côté domaine). Le numéro reste un texte, jamais utilisé dans un calcul.
   position      String?
-  jerseyNumber  String? @map("jersey_number")
-  preferredFoot String? @map("preferred_foot")
+  jerseyNumber  String?                  @map("jersey_number")
+  preferredFoot String?                  @map("preferred_foot")
   strengths     String?
-  workAreas     String? @map("work_areas")
+  workAreas     String?                  @map("work_areas")
   // Historique borné d'évaluations datées (voir playerEvaluationMaxPerSeason côté domaine),
   // plus « une seule par joueur » : d'où la relation 1-N ci-dessous au lieu d'un `?`.
-  evaluations PlayerEvaluationRecord[]
+  evaluations   PlayerEvaluationRecord[]
   // Comptes tuteur/joueur qui suivent ce joueur (0..1 en pratique via l'unique sur
   // Educator.linkedPlayerId).
-  followers   Educator[]              @relation("PlayerFollowers")
-  invites     PlayerInvite[]
-  messages    MessageRecord[]
-  createdAt  DateTime                @default(now()) @map("created_at")
-  updatedAt  DateTime                @updatedAt @map("updated_at")
+  followers     Educator[]               @relation("PlayerFollowers")
+  invites       PlayerInvite[]
+  messages      MessageRecord[]
+  createdAt     DateTime                 @default(now()) @map("created_at")
+  updatedAt     DateTime                 @updatedAt @map("updated_at")
 
   @@index([educatorId])
   @@map("players")
@@ -310,7 +326,7 @@ model Player {
 // Invitation éducateur -> adjoint. Seule l'empreinte du jeton est stockée.
 model StaffInvite {
   id         String    @id @default(uuid()) @db.Uuid
-  educatorId String    @db.Uuid @map("educator_id")
+  educatorId String    @map("educator_id") @db.Uuid
   educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   tokenHash  String    @unique @map("token_hash")
   expiresAt  DateTime  @map("expires_at")
@@ -323,9 +339,9 @@ model StaffInvite {
 
 model PlayerInvite {
   id         String    @id @default(uuid()) @db.Uuid
-  educatorId String    @db.Uuid @map("educator_id")
+  educatorId String    @map("educator_id") @db.Uuid
   educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  playerId   String    @db.Uuid @map("player_id")
+  playerId   String    @map("player_id") @db.Uuid
   player     Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
   tokenHash  String    @unique @map("token_hash")
   expiresAt  DateTime  @map("expires_at")
@@ -344,9 +360,9 @@ model PlayerInvite {
 // un compte). `educatorId` + `playerId` identifient le fil, comme PlayerInvite ci-dessus.
 model MessageRecord {
   id         String            @id @default(uuid()) @db.Uuid
-  educatorId String            @db.Uuid @map("educator_id")
+  educatorId String            @map("educator_id") @db.Uuid
   educator   Educator          @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  playerId   String            @db.Uuid @map("player_id")
+  playerId   String            @map("player_id") @db.Uuid
   player     Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
   authorRole MessageAuthorRole @map("author_role")
   authorName String            @map("author_name")
@@ -362,7 +378,7 @@ model MessageRecord {
 // (nouvelle demande après expiration), seule la plus récente non consommée est active.
 model EmailVerification {
   id         String    @id @default(uuid()) @db.Uuid
-  educatorId String    @db.Uuid @map("educator_id")
+  educatorId String    @map("educator_id") @db.Uuid
   educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   tokenHash  String    @unique @map("token_hash")
   expiresAt  DateTime  @map("expires_at")
@@ -383,7 +399,7 @@ model EmailVerification {
 // Lien de réinitialisation de mot de passe : seul le hash du jeton est stocké.
 model PasswordReset {
   id         String    @id @default(uuid()) @db.Uuid
-  educatorId String    @db.Uuid @map("educator_id")
+  educatorId String    @map("educator_id") @db.Uuid
   educator   Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   tokenHash  String    @unique @map("token_hash")
   expiresAt  DateTime  @map("expires_at")
@@ -395,54 +411,54 @@ model PasswordReset {
 }
 
 model MatchRecord {
-  id              String              @id @default(uuid()) @db.Uuid
-  educatorId      String              @db.Uuid @map("educator_id")
-  educator        Educator            @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  opponent        String
-  dateLabel       String              @map("date_label")
+  id                   String              @id @default(uuid()) @db.Uuid
+  educatorId           String              @map("educator_id") @db.Uuid
+  educator             Educator            @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  opponent             String
+  dateLabel            String              @map("date_label")
   // Vraie date ET heure du coup d'envoi, dérivée du datepicker de création (datetime-local) --
   // utilisée pour trier/regrouper par semaine (voir PlayerDashboardService et les pages listes
   // côté coach) et pour calculer le rendez-vous (voir meetingOffsetMinutes ci-dessous). Nullable :
   // un match créé avant l'introduction de ce champ n'en a pas, seul `dateLabel` (texte libre saisi
   // à l'époque) reste fiable pour lui.
-  date            DateTime?
+  date                 DateTime?
   // Rendez-vous (avant le coup d'envoi -- échauffement...), calculé automatiquement à
   // `date - meetingOffsetMinutes` quand les deux sont renseignés (voir matchMeetingTime côté
   // domaine) : le coach indique juste "X minutes avant le match" plutôt que de ressaisir une
   // heure. `meetingTime` (texte libre) reste le repli pour un match créé avant l'introduction de
   // `date`/`meetingOffsetMinutes`, ou dont le coach a saisi un rendez-vous à une heure qui ne suit
   // pas cette règle (jour différent, par exemple).
-  meetingOffsetMinutes Int?           @map("meeting_offset_minutes")
-  meetingTime     String?             @map("meeting_time")
-  location        String?
-  description     String?
-  venue           MatchVenue
-  gameFormat      Int                 @map("game_format")
+  meetingOffsetMinutes Int?                @map("meeting_offset_minutes")
+  meetingTime          String?             @map("meeting_time")
+  location             String?
+  description          String?
+  venue                MatchVenue
+  gameFormat           Int                 @map("game_format")
   // Identifiant de la formation choisie (ex. "4-3-3", voir listFormations côté domaine) parmi
   // celles du format de jeu -- nullable : un match préparé avant l'introduction du choix
   // multiple n'en a pas, et doit se replier sur la première formation de son format de jeu
   // plutôt qu'échouer (voir formationSlots côté domaine, et toPersistedMatch côté mappers).
-  formationId     String?             @map("formation_id")
-  status          MatchStatus         @default(scheduled)
-  lineup          Json                @default("[]")
-  captainPlayerId String?             @map("captain_player_id")
+  formationId          String?             @map("formation_id")
+  status               MatchStatus         @default(scheduled)
+  lineup               Json                @default("[]")
+  captainPlayerId      String?             @map("captain_player_id")
   // Sur le banc, sans poste -- tableau d'ids joueur (voir MatchPlan.substitutePlayerIds côté
   // domaine). Nullable : un match préparé avant l'introduction du banc n'en a pas.
-  substitutePlayerIds Json?           @map("substitute_player_ids")
+  substitutePlayerIds  Json?               @map("substitute_player_ids")
   // Présence à ce match -- distincte de `lineup` (qui joueur est *prévu* à quel poste) : un
   // joueur peut être prévu dans la composition et ne pas s'être présenté, ou inversement.
   // Nullable pour la même raison que TrainingSessionRecord.attendance ci-dessus.
-  attendance      Json?
+  attendance           Json?
   // Résultat saisi après le match : nuls tant qu'il n'est pas renseigné. `playerStats` suit
   // MatchPlayerStat côté domaine, noms dupliqués comme dans `lineup`.
   // Système supposé de l'adversaire, pour l'analyse d'avant-match. Facultatif.
-  opponentFormationId String?         @map("opponent_formation_id")
-  goalsFor        Int?                @map("goals_for")
-  goalsAgainst    Int?                @map("goals_against")
-  playerStats     Json?               @map("player_stats")
-  observations    ObservationRecord[]
-  createdAt       DateTime            @default(now()) @map("created_at")
-  updatedAt       DateTime            @updatedAt @map("updated_at")
+  opponentFormationId  String?             @map("opponent_formation_id")
+  goalsFor             Int?                @map("goals_for")
+  goalsAgainst         Int?                @map("goals_against")
+  playerStats          Json?               @map("player_stats")
+  observations         ObservationRecord[]
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
 
   @@index([educatorId])
   @@map("matches")
@@ -458,7 +474,7 @@ model MatchRecord {
 // même forme qu'un match (fiche cliquable, lieu, description).
 model TournamentRecord {
   id          String    @id @default(uuid()) @db.Uuid
-  educatorId  String    @db.Uuid @map("educator_id")
+  educatorId  String    @map("educator_id") @db.Uuid
   educator    Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   name        String
   dateLabel   String    @map("date_label")
@@ -476,7 +492,7 @@ model TournamentRecord {
 // part dans /statistiques.
 model PlateauRecord {
   id          String    @id @default(uuid()) @db.Uuid
-  educatorId  String    @db.Uuid @map("educator_id")
+  educatorId  String    @map("educator_id") @db.Uuid
   educator    Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   name        String
   dateLabel   String    @map("date_label")
@@ -496,7 +512,7 @@ model PlateauRecord {
 // (validatePersonalExercise) ; `photo` est une data URL d'image.
 model PersonalExerciseRecord {
   id           String   @id @default(uuid()) @db.Uuid
-  educatorId   String   @db.Uuid @map("educator_id")
+  educatorId   String   @map("educator_id") @db.Uuid
   educator     Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   kind         String
   theme        String
@@ -534,9 +550,9 @@ model ContactMessage {
 // playerEvaluationMaxPerSeason), plus le patron « un enregistrement remplacé en place ».
 model PlayerEvaluationRecord {
   id         String   @id @default(uuid()) @db.Uuid
-  educatorId String   @db.Uuid @map("educator_id")
+  educatorId String   @map("educator_id") @db.Uuid
   educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  playerId   String   @db.Uuid @map("player_id")
+  playerId   String   @map("player_id") @db.Uuid
   player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
   scores     Json
   // "coach" | "player" : une auto-évaluation reste rattachée à l'éducateur propriétaire du joueur.

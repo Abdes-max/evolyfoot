@@ -28,6 +28,7 @@ import {
   toPersistedTournament,
   toPersistedTrainingSession,
   toPrismaAgeGroup,
+  fromPrismaDevelopmentTheme,
   toPrismaDevelopmentTheme,
   toPrismaMatchStatus,
   toPrismaMatchVenue,
@@ -43,6 +44,8 @@ import { normalizeEducatorEmail } from "./email";
 import type {
   AdjustmentDecision,
   ClubRecord,
+  PersistedSeasonProgram,
+  SeasonProgramRepository,
   ClubRepository,
   SharedClubExercise,
   AccountRole,
@@ -333,6 +336,7 @@ const exportedRelations = {
   tournaments: true,
   plateaux: true,
   personalExercises: true,
+  seasonProgram: true,
 } as const;
 
 export class PrismaAccountRepository implements AccountRepository {
@@ -496,6 +500,23 @@ export class PrismaDiagnosticRepository implements DiagnosticRepository {
   async findForEducator(educatorId: string): Promise<PersistedDiagnostic | null> {
     const diagnostic = await this.prisma.diagnostic.findUnique({ where: { educatorId } });
     return diagnostic === null ? null : toPersistedDiagnostic(diagnostic);
+  }
+}
+
+export class PrismaSeasonProgramRepository implements SeasonProgramRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async upsertForEducator(educatorId: string, priorities: DevelopmentTheme[], startDate: Date): Promise<PersistedSeasonProgram> {
+    const data = { priorities: priorities.map(toPrismaDevelopmentTheme), startDate };
+    const program = await this.prisma.seasonProgram.upsert({ where: { educatorId }, create: { educatorId, ...data }, update: data });
+    return { educatorId: program.educatorId, priorities: program.priorities.map(fromPrismaDevelopmentTheme), startDate: program.startDate };
+  }
+
+  async findForEducator(educatorId: string): Promise<PersistedSeasonProgram | null> {
+    const program = await this.prisma.seasonProgram.findUnique({ where: { educatorId } });
+    return program === null
+      ? null
+      : { educatorId: program.educatorId, priorities: program.priorities.map(fromPrismaDevelopmentTheme), startDate: program.startDate };
   }
 }
 

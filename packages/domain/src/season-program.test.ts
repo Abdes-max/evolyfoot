@@ -5,6 +5,9 @@ import { findProgramSituation, programSituations } from "./program-situations";
 import {
   buildPrioritizedSeason,
   findProgramSession,
+  mondayOf,
+  seasonWeekAt,
+  validateSeasonPriorities,
   programSubThemeIds,
   programSubThemes,
   situationMinutes,
@@ -125,5 +128,24 @@ describe("saison priorisée", () => {
     expect(
       suggestSeasonPriorities({ priorities: [{ theme: "Récupérer rapidement" }, { theme: "Progresser ensemble" }, { theme: "Finir les actions" }] }),
     ).toEqual(["Récupérer rapidement", "Progresser ensemble"]);
+  });
+});
+
+describe("saison guidée : priorités et semaine en cours", () => {
+  it("valide un ou deux thèmes connus, sans doublon", () => {
+    expect(validateSeasonPriorities(["Finir les actions"])).toEqual(["Finir les actions"]);
+    expect(() => validateSeasonPriorities([])).toThrow("Choisis un ou deux thèmes prioritaires.");
+    expect(() => validateSeasonPriorities(["Finir les actions", "Finir les actions"])).toThrow("Thème prioritaire inconnu.");
+    expect(() => validateSeasonPriorities(["Défendre"])).toThrow("Thème prioritaire inconnu.");
+    expect(() => validateSeasonPriorities("Finir les actions")).toThrow();
+  });
+
+  it("compte les semaines depuis le lundi de départ, bornées à la saison", () => {
+    const start = new Date(2026, 8, 9);
+    expect(mondayOf(start)).toEqual(new Date(2026, 8, 7));
+    expect(seasonWeekAt(start, new Date(2026, 8, 13))).toBe(1);
+    expect(seasonWeekAt(start, new Date(2026, 8, 14))).toBe(2);
+    expect(seasonWeekAt(start, new Date(2026, 7, 1))).toBe(1);
+    expect(seasonWeekAt(start, new Date(2027, 11, 1))).toBe(36);
   });
 });

@@ -1,0 +1,99 @@
+import { EducatorNotFoundError } from "@evolyfoot/database";
+import type { DevelopmentTheme } from "@evolyfoot/domain";
+import type { PublicEducator } from "./auth";
+
+export interface SeasonProgramView {
+  priorities: DevelopmentTheme[];
+  // Lundi de la première semaine de la saison guidée, au format AAAA-MM-JJ.
+  startDate: string;
+}
+
+export interface SeasonProgramGateway {
+  get(educatorId: string): Promise<SeasonProgramView | null>;
+  save(educatorId: string, priorities: unknown): Promise<SeasonProgramView>;
+}
+
+async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
+  try {
+    const body: unknown = await request.json();
+    return typeof body === "object" && body !== null ? (body as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function createGetSeasonProgramHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  seasonProgram: Pick<SeasonProgramGateway, "get">,
+  log: (error: unknown) => void,
+): (request: Request) => Promise<Response> {
+  return async (request) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    try {
+      return Response.json({ program: await seasonProgram.get(educator.id) });
+    } catch (error) {
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  };
+}
+
+export function createSaveSeasonProgramHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  seasonProgram: Pick<SeasonProgramGateway, "save">,
+  log: (error: unknown) => void,
+): (request: Request) => Promise<Response> {
+  return async (request) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const body = await readJsonBody(request);
+    try {
+      return Response.json({ program: await seasonProgram.save(educator.id, body?.priorities) });
+    } catch (error) {
+      if (error instanceof EducatorNotFoundError) {
+        return Response.json({ error: error.message }, { status: 401 });
+      }
+      if (error instanceof Error) {
+        // validateSeasonPriorities échoue avec une Error générique et un message pour le coach.
+        return Response.json({ error: error.message }, { status: 400 });
+      }
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  };
+}
+
+function isoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+export async function createSeasonProgramGateway(): Promise<{
+  gateway: SeasonProgramGateway;
+  disconnect: () => Promise<void>;
+}> {
+  const { createDatabaseClient, SeasonProgramService, PrismaEducatorRepository, PrismaSeasonProgramRepository } = await import("@evolyfoot/database");
+  const { mondayOf } = await import("@evolyfoot/domain");
+  const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
+  const service = new SeasonProgramService(new PrismaEducatorRepository(database.prisma), new PrismaSeasonProgramRepository(database.prisma));
+
+  return {
+    gateway: {
+      async get(educatorId) {
+        const program = await service.get(educatorId);
+        return program && { priorities: program.priorities, startDate: isoDate(program.startDate) };
+      },
+      async save(educatorId, priorities) {
+        // Date seule (colonne DATE) : le lundi de la semaine en cours, calculé en UTC.
+        const monday = mondayOf(new Date());
+        const program = await service.save(educatorId, priorities, new Date(Date.UTC(monday.getFullYear(), monday.getMonth(), monday.getDate())));
+        return { priorities: program.priorities, startDate: isoDate(program.startDate) };
+      },
+    },
+    disconnect: database.disconnect,
+  };
+}

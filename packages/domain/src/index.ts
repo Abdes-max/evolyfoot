@@ -193,7 +193,10 @@ export {
   situationMinutes,
   situationToActivity,
   subThemesOf,
+  mondayOf,
+  seasonWeekAt,
   suggestSeasonPriorities,
+  validateSeasonPriorities,
 } from "./season-program";
 export type { ProgramSessionDefinition } from "./program-sessions";
 export { programSessions } from "./program-sessions";

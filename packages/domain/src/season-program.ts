@@ -1,4 +1,5 @@
 import type { DevelopmentTheme } from "./index";
+import { developmentThemes } from "./themes";
 import { programSessions, type ProgramSessionDefinition } from "./program-sessions";
 import type { ActivityDetails, DiagramToken, DiagramZone, TacticalDiagram, TrainingActivity, TrainingBlockKind } from "./training-session";
 
@@ -339,4 +340,29 @@ export function buildPrioritizedSeason(options: SeasonOptions): SeasonWeek[] {
 // Priorités proposées à partir du diagnostic : les deux thèmes les plus faibles.
 export function suggestSeasonPriorities(summary: { priorities: readonly { theme: DevelopmentTheme }[] }): DevelopmentTheme[] {
   return [...new Set(summary.priorities.map((priority) => priority.theme))].slice(0, maxSeasonPriorities);
+}
+
+// Priorités envoyées par le coach : un ou deux thèmes connus, sans doublon.
+export function validateSeasonPriorities(value: unknown): DevelopmentTheme[] {
+  if (!Array.isArray(value) || value.length < 1 || value.length > maxSeasonPriorities) {
+    throw new Error("Choisis un ou deux thèmes prioritaires.");
+  }
+  const themes = [...new Set(value)];
+  if (themes.length !== value.length || !themes.every((theme) => developmentThemes.includes(theme as DevelopmentTheme))) {
+    throw new Error("Thème prioritaire inconnu.");
+  }
+  return themes as DevelopmentTheme[];
+}
+
+// Lundi de la semaine d'une date, à minuit (heure locale).
+export function mondayOf(date: Date): Date {
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  return monday;
+}
+
+// Semaine de saison (1 à 36) d'une date, la saison commençant la semaine de `start`.
+export function seasonWeekAt(start: Date, now: Date, weeks = seasonWeekCount): number {
+  const days = Math.round((mondayOf(now).getTime() - mondayOf(start).getTime()) / 86_400_000);
+  return Math.min(weeks, Math.max(1, Math.floor(days / 7) + 1));
 }
