@@ -274,8 +274,9 @@ export function toEducatorRecord(educator: Educator): EducatorRecord {
     email: educator.email,
     displayName: educator.displayName,
     // `role` est un texte libre en base (voir schema.prisma) : on retombe sur "coach" pour toute
-    // valeur inattendue, jamais "player" par erreur.
-    role: educator.role === "player" || educator.role === "assistant" ? educator.role : "coach",
+    // valeur inattendue, jamais "player" par erreur. Un espace d'équipe doit rester "team" : lu
+    // comme "coach", il pourrait ouvrir une session.
+    role: educator.role === "player" || educator.role === "assistant" || educator.role === "team" ? educator.role : "coach",
     linkedPlayerId: educator.linkedPlayerId,
     ownerEducatorId: educator.ownerEducatorId,
     emailVerifiedAt: educator.emailVerifiedAt,
