@@ -110,7 +110,8 @@ export interface AuthContextValue {
   listPersonalExercises(): Promise<readonly PersonalExercise[]>;
   getPlayStyle(): Promise<string | null>;
   startNextCycle(): Promise<AuthResult>;
-  saveObservation(draft: ObservationDraft, matchId?: string): Promise<AuthResult>;
+  // `entrySeconds` : durée de saisie mesurée par l'écran (indicateur MVP). Renvoie l'id enregistré.
+  saveObservation(draft: ObservationDraft, matchId?: string, entrySeconds?: number): Promise<{ ok: true; id?: string } | { ok: false; error: string }>;
   listObservations(): Promise<readonly ObservationListItem[]>;
   // `null` si les chiffres n'ont pas pu être lus.
   getTeamStats(): Promise<TeamStats | null>;
@@ -474,19 +475,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [sessionToken]);
 
   const saveObservation = useCallback(
-    async (draft: ObservationDraft, matchId?: string): Promise<AuthResult> => {
+    async (draft: ObservationDraft, matchId?: string, entrySeconds?: number): Promise<{ ok: true; id?: string } | { ok: false; error: string }> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour enregistrer cette observation." };
       }
       const response = await apiFetch("/api/observations", {
         method: "POST",
         sessionToken,
-        body: JSON.stringify(matchId ? { ...draft, matchId } : draft),
+        body: JSON.stringify({ ...draft, ...(matchId ? { matchId } : {}), ...(entrySeconds !== undefined ? { entrySeconds } : {}) }),
       });
       if (!response.ok) {
         return { ok: false, error: await readErrorMessage(response) };
       }
-      return { ok: true };
+      const body = await response.json().catch(() => null);
+      return { ok: true, id: typeof body?.report?.id === "string" ? body.report.id : undefined };
     },
     [sessionToken],
   );
