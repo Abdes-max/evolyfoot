@@ -44,6 +44,11 @@ import { normalizeEducatorEmail } from "./email";
 import type {
   AdjustmentDecision,
   ClubRecord,
+  NotificationInput,
+  NotificationKind,
+  NotificationRecord,
+  NotificationRepository,
+  PushDeviceRepository,
   PersistedSeasonProgram,
   SeasonProgramRepository,
   ClubRepository,
@@ -337,6 +342,8 @@ const exportedRelations = {
   plateaux: true,
   personalExercises: true,
   seasonProgram: true,
+  notifications: true,
+  pushDevices: { select: { platform: true, createdAt: true } },
 } as const;
 
 export class PrismaAccountRepository implements AccountRepository {
@@ -447,6 +454,71 @@ export class PrismaPlayerInviteRepository implements PlayerInviteRepository {
 
   async markConsumed(id: string): Promise<void> {
     await this.prisma.playerInvite.update({ where: { id }, data: { consumedAt: new Date() } });
+  }
+}
+
+export class PrismaNotificationRepository implements NotificationRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async coachRecipients(educatorId: string): Promise<string[]> {
+    const educator = await this.prisma.educator.findUnique({ where: { id: educatorId }, select: { id: true, role: true, ownerEducatorId: true } });
+    if (!educator) return [];
+    // Un espace d'équipe ne se connecte pas : on prévient le coach qui le possède.
+    const ownerId = educator.role === "team" && educator.ownerEducatorId ? educator.ownerEducatorId : educator.id;
+    const assistants = await this.prisma.educator.findMany({ where: { ownerEducatorId: ownerId, role: "assistant" }, select: { id: true } });
+    return [ownerId, ...assistants.map((assistant) => assistant.id)];
+  }
+
+  async playerAccountId(playerId: string): Promise<string | null> {
+    const account = await this.prisma.educator.findUnique({ where: { linkedPlayerId: playerId }, select: { id: true } });
+    return account?.id ?? null;
+  }
+
+  async createMany(inputs: NotificationInput[]): Promise<void> {
+    await this.prisma.notification.createMany({ data: inputs.map((input) => ({ ...input, threadPlayerId: input.threadPlayerId ?? null })) });
+  }
+
+  async list(recipientId: string, limit: number): Promise<NotificationRecord[]> {
+    const records = await this.prisma.notification.findMany({ where: { recipientId }, orderBy: { createdAt: "desc" }, take: limit });
+    return records.map((record) => ({ ...record, kind: record.kind as NotificationKind }));
+  }
+
+  countUnread(recipientId: string, kind?: NotificationKind): Promise<number> {
+    return this.prisma.notification.count({ where: { recipientId, readAt: null, ...(kind ? { kind } : {}) } });
+  }
+
+  async markRead(recipientId: string, filter: { ids?: string[]; threadPlayerId?: string; kind?: NotificationKind }): Promise<void> {
+    await this.prisma.notification.updateMany({
+      where: {
+        recipientId,
+        readAt: null,
+        ...(filter.ids ? { id: { in: filter.ids } } : {}),
+        ...(filter.threadPlayerId ? { threadPlayerId: filter.threadPlayerId } : {}),
+        ...(filter.kind ? { kind: filter.kind } : {}),
+      },
+      data: { readAt: new Date() },
+    });
+  }
+}
+
+export class PrismaPushDeviceRepository implements PushDeviceRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  // Un téléphone change de main (déconnexion puis autre compte) : le jeton suit le dernier compte.
+  async register(educatorId: string, token: string, platform: string): Promise<void> {
+    await this.prisma.pushDevice.upsert({ where: { token }, create: { educatorId, token, platform }, update: { educatorId, platform } });
+  }
+
+  async unregister(educatorId: string, token: string): Promise<void> {
+    await this.prisma.pushDevice.deleteMany({ where: { educatorId, token } });
+  }
+
+  async tokensFor(educatorIds: string[]): Promise<Array<{ educatorId: string; token: string }>> {
+    return this.prisma.pushDevice.findMany({ where: { educatorId: { in: educatorIds } }, select: { educatorId: true, token: true } });
+  }
+
+  async removeTokens(tokens: string[]): Promise<void> {
+    await this.prisma.pushDevice.deleteMany({ where: { token: { in: tokens } } });
   }
 }
 

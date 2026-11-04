@@ -126,13 +126,14 @@ export function createSendPlayerMessageHandler(
 }
 
 export async function createMessagingGateway(): Promise<{ gateway: MessagingGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, MessagingService, PrismaEducatorRepository, PrismaMessageRepository, PrismaPlayerRepository } =
+  const { createDatabaseClient, MessagingService, NotifyingMessageRepository, PrismaEducatorRepository, PrismaMessageRepository, PrismaPlayerRepository } =
     await import("@evolyfoot/database");
+  const { notificationServiceFor } = await import("./notifications");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new MessagingService(
     new PrismaEducatorRepository(database.prisma),
     new PrismaPlayerRepository(database.prisma),
-    new PrismaMessageRepository(database.prisma),
+    new NotifyingMessageRepository(new PrismaMessageRepository(database.prisma), await notificationServiceFor(database), console.error),
   );
 
   const toSummary = (message: Awaited<ReturnType<typeof service.sendAsCoach>>): MessageSummary => ({

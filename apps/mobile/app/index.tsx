@@ -11,6 +11,7 @@ import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, Vi
 import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { useAuth } from "../lib/auth-context";
+import { useUnread } from "../lib/push";
 
 function initials(displayName: string): string {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
@@ -32,7 +33,8 @@ function meetingLabel(iso: string): string {
 }
 
 export default function HomeScreen() {
-  const { educator, team, diagnosticScores, listSessions, logout } = useAuth();
+  const { educator, team, diagnosticScores, listSessions, logout, sessionToken } = useAuth();
+  const { unreadCount } = useUnread(sessionToken);
   const [sessions, setSessions] = useState<readonly SavedTrainingSession[]>([]);
   const [now] = useState(() => Date.now());
   const firstName = educator?.displayName.split(" ")[0] ?? "";
@@ -161,6 +163,23 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Link>
 
+        <Link href="/notifications" asChild>
+          <TouchableOpacity
+            accessibilityLabel={`Notifications${unreadCount > 0 ? `, ${unreadCount} non lues` : ""}`}
+            accessibilityRole="button"
+            style={styles.observationButton}
+          >
+            <Text style={styles.observationText}>Notifications</Text>
+            {unreadCount > 0 ? (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadBadgeText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+              </View>
+            ) : (
+              <Text style={styles.observationText}>→</Text>
+            )}
+          </TouchableOpacity>
+        </Link>
+
         <Link href="/seances" asChild>
           <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
             <Text style={styles.observationText}>Toutes mes séances</Text>
@@ -208,6 +227,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  unreadBadge: { minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: "#ef4444" },
+  unreadBadgeText: { fontSize: 11, fontWeight: "800", color: "#ffffff" },
   safe: { flex: 1, backgroundColor: colors.paper },
   page: { padding: spacing.lg, paddingBottom: 48 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xl },

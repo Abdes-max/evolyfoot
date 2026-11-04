@@ -108,14 +108,16 @@ export async function createConvocationGateway(): Promise<{ gateway: Convocation
     PrismaMessageRepository,
     PrismaPlayerRepository,
     PrismaTrainingSessionRepository,
+    NotifyingMessageRepository,
   } = await import("@evolyfoot/database");
+  const { notificationServiceFor } = await import("./notifications");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new ConvocationService(
     new PrismaEducatorRepository(database.prisma),
     new PrismaPlayerRepository(database.prisma),
     new PrismaMatchRepository(database.prisma),
     new PrismaTrainingSessionRepository(database.prisma),
-    new PrismaMessageRepository(database.prisma),
+    new NotifyingMessageRepository(new PrismaMessageRepository(database.prisma), await notificationServiceFor(database), console.error),
   );
 
   return {

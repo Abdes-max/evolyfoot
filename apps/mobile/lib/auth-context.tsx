@@ -19,6 +19,7 @@ import type {
 } from "@evolyfoot/domain";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "./api";
+import { unregisterPush } from "./push";
 import { clearSessionToken, readSessionToken, writeSessionToken } from "./session-storage";
 
 export interface Educator {
@@ -95,6 +96,8 @@ export interface AuthContextValue {
   educator: Educator | null;
   // Vrai le temps de relire la session enregistrée au lancement de l'app.
   restoring: boolean;
+  // Jeton de session, pour les appels faits hors du contexte (notifications push).
+  sessionToken: string | null;
   team: TeamProfile | null;
   diagnosticScores: DiagnosticScores | null;
   roster: readonly RosterPlayer[];
@@ -232,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     if (sessionToken) {
+      await unregisterPush(sessionToken);
       await apiFetch("/api/auth/logout", { method: "POST", sessionToken }).catch(() => undefined);
     }
     setEducator(null);
@@ -651,6 +655,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       educator,
       restoring,
+      sessionToken,
       team,
       diagnosticScores,
       roster,
@@ -685,6 +690,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [
       educator,
       restoring,
+      sessionToken,
       team,
       diagnosticScores,
       roster,

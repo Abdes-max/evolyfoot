@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "./api";
+import { unregisterPush } from "./push";
 import { clearSessionToken, readSessionToken, writeSessionToken } from "./session-storage";
 
 type AuthResult = { ok: true } | { ok: false; error: string };
@@ -48,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     if (sessionToken) {
+      await unregisterPush(sessionToken);
       await apiFetch("/api/auth/logout", { method: "POST", sessionToken }).catch(() => undefined);
     }
     setSessionToken(null);

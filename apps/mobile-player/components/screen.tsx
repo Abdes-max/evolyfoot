@@ -2,6 +2,8 @@ import { colors, spacing } from "@evolyfoot/design-tokens";
 import { Link, usePathname } from "expo-router";
 import type { ReactNode } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useAuth } from "../lib/auth-context";
+import { useUnread } from "../lib/push";
 
 const tabs = [
   { href: "/", label: "Ma carte" },
@@ -12,6 +14,8 @@ const tabs = [
 
 export function TabBar() {
   const pathname = usePathname();
+  const { sessionToken } = useAuth();
+  const { unreadMessages } = useUnread(sessionToken);
   return (
     <View style={styles.tabBar}>
       {tabs.map((tab) => {
@@ -19,7 +23,13 @@ export function TabBar() {
         return (
           <Link asChild href={tab.href} key={tab.href}>
             <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: active }} style={styles.tab}>
-              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{tab.label}</Text>
+              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+                {tab.label}
+                {tab.href === "/messages" && unreadMessages > 0 && !active ? ` · ${unreadMessages > 9 ? "9+" : unreadMessages}` : ""}
+              </Text>
+              {tab.href === "/messages" && unreadMessages > 0 && !active && (
+                <View accessibilityLabel={`${unreadMessages} messages non lus`} style={styles.unreadDot} />
+              )}
               <View style={[styles.tabLine, active && styles.tabLineActive]} />
             </TouchableOpacity>
           </Link>
@@ -46,6 +56,7 @@ export function Screen({ title, action, children }: { title: string; action?: Re
 }
 
 const styles = StyleSheet.create({
+  unreadDot: { position: "absolute", top: 6, right: 14, width: 9, height: 9, borderRadius: 5, backgroundColor: "#ef4444" },
   safe: { flex: 1, backgroundColor: colors.paper },
   page: { padding: spacing.lg, paddingTop: 56, paddingBottom: spacing.xl },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { NotificationBell } from "../notification-bell";
 import { playerLogout } from "./joueur/use-player-dashboard";
 
 export function PlayerSpaceHeader() {
@@ -9,6 +10,7 @@ export function PlayerSpaceHeader() {
       <Link className="onboarding-brand" href="/joueur">
         <span className="brand-mark">EV</span> EvolyFoot
       </Link>
+      <NotificationBell />
       <button className="player-space-logout" onClick={playerLogout} type="button">
         Se déconnecter
       </button>
