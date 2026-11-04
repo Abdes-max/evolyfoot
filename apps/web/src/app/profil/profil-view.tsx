@@ -263,10 +263,10 @@ export function ProfilView() {
                 </div>
               </div>
               <div className="profil-plan">
-                <span className="profil-plan-name">Plan gratuit</span>
-                <span className="profil-plan-note">Toutes les fonctions essentielles</span>
+                <span className="profil-plan-name">Phase de lancement</span>
+                <span className="profil-plan-note">Accès complet, paiement pas encore activé</span>
                 <button className="profil-plan-cta" disabled type="button">
-                  Passer au premium (bientôt)
+                  Abonnement Coach (bientôt)
                 </button>
               </div>
             </div>

@@ -516,21 +516,22 @@ test("un visiteur non connecté découvre la vitrine sur la page d'accueil", asy
   // masqué sous 820px en attendant un menu mobile dédié).
   await page.locator(".m-footer").getByRole("link", { name: "Tarifs" }).click();
   await expect(page).toHaveURL(/\/tarifs$/);
-  await expect(page.getByRole("heading", { name: /tout ce qui existe aujourd’hui est gratuit/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /un prix simple, moins cher à chaque équipe ajoutée/i })).toBeVisible();
 });
 
-test("le visiteur compare les fréquences de paiement Premium sur /tarifs", async ({ page }) => {
+test("le visiteur compare les fréquences de paiement sur /tarifs", async ({ page }) => {
   await page.context().clearCookies();
   await page.route("**/api/auth/session", (route) => route.fulfill({ json: { educator: null, role: null } }));
   await page.goto("/tarifs");
 
-  const premiumPrice = page.locator(".m-plan-featured .m-plan-price");
+  const coachPrice = page.locator(".m-plan-featured .m-plan-price");
 
-  // Sélectionné par défaut : annuel payé en une fois, le moins cher.
-  await expect(premiumPrice).toContainText("4,92");
+  // Sélectionné par défaut : à la saison, le moins cher.
+  await expect(coachPrice).toContainText("59 €");
 
   await page.getByRole("radio", { name: "Mensuel" }).click();
-  await expect(premiumPrice).toContainText("9 €");
+  await expect(coachPrice).toContainText("7,90 €");
+  await expect(page.getByText(/Équipe supplémentaire/)).toContainText("3,90 €");
 });
 
 test("les pages légales sont publiques et affichent leurs sections", async ({ page }) => {
