@@ -1,6 +1,6 @@
 "use client";
 
-import { convocationFeedback as formatConvocationFeedback, type TrainingSession } from "@evolyfoot/domain";
+import { convocationFeedback as formatConvocationFeedback, guidedSeasonCycle, type TrainingSession } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { PlaceInput } from "../../place-input";
@@ -15,7 +15,10 @@ interface RosterPlayer {
 }
 
 type LoadState =
-  { status: "loading" } | { status: "not-found" } | { status: "stale" } | { status: "ready"; session: TrainingSession; weekNumber: number; slot: number };
+  | { status: "loading" }
+  | { status: "not-found" }
+  | { status: "stale" }
+  | { status: "ready"; session: TrainingSession; weekNumber: number; slot: number; guidedSeason: boolean };
 
 export function SavedSessionView({ sessionId }: { sessionId: string }) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -86,7 +89,13 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
         setLocation(record.location ?? "");
         setSavedDetails({ location: record.location ?? "", description: record.description ?? "" });
         setDescription(record.description ?? "");
-        setState({ status: "ready", session: rehydrated, weekNumber: record.weekNumber, slot: record.slot });
+        setState({
+          status: "ready",
+          session: rehydrated,
+          weekNumber: record.weekNumber,
+          slot: record.slot,
+          guidedSeason: record.cycleNumber === guidedSeasonCycle,
+        });
       } catch {
         if (!cancelled) {
           setState({ status: "not-found" });
@@ -184,7 +193,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
         {state.status === "ready" ? (
           <>
             <span className="eyebrow light">
-              {cycleWeekLabel(state.weekNumber)} · Séance {state.slot + 1}
+              {state.guidedSeason ? `Semaine ${state.weekNumber} de la saison` : cycleWeekLabel(state.weekNumber)} · Séance {state.slot + 1}
             </span>
             <h1>Ajuste ta séance.</h1>
             <p>{state.session.intention}</p>
@@ -227,6 +236,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
             personalExercises={personalExercises}
             roster={roster}
             session={state.session}
+            guidedSeason={state.guidedSeason}
             slot={state.slot}
             weekNumber={state.weekNumber}
           />

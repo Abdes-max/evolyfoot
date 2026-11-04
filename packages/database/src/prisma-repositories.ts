@@ -584,10 +584,12 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
       weekNumber: number;
       slot: number;
       meetingAt: Date;
+      location?: string | null;
       attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedTrainingSession> {
     const blocks = input.blocks as unknown as Prisma.InputJsonValue;
+    const location = input.location !== undefined ? { location: input.location } : {};
     const attendance = input.attendance ? (input.attendance as unknown as Prisma.InputJsonValue) : undefined;
     try {
       // Upsert sur le créneau : (re)générer la séance d'un créneau déjà occupé la remplace, y
@@ -608,6 +610,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
           weekNumber: input.weekNumber,
           slot: input.slot,
           meetingAt: input.meetingAt,
+          ...location,
           attendance,
         },
         update: {
@@ -618,6 +621,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
           intention: input.intention,
           blocks,
           meetingAt: input.meetingAt,
+          ...location,
           ...(attendance !== undefined ? { attendance } : {}),
         },
       });

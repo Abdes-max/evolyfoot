@@ -1,8 +1,9 @@
-import { EducatorNotFoundError } from "@evolyfoot/database";
+import { EducatorNotFoundError, ValidationError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
 import {
   createGetTrainingSessionHandler,
   createListTrainingSessionsHandler,
+  createPrepareSeasonSessionHandler,
   createSaveTrainingSessionHandler,
   createUpdateTrainingSessionDetailsHandler,
   type PersistedTrainingSession,
@@ -29,6 +30,7 @@ const persisted: PersistedTrainingSession = {
   id: "session-1",
   location: null,
   description: null,
+  cycleNumber: 1,
   createdAt: "2026-08-29T12:00:00.000Z",
 };
 
@@ -153,7 +155,7 @@ describe("createSaveTrainingSessionHandler", () => {
   it("saves and returns the session on success", async () => {
     const handler = createSaveTrainingSessionHandler(
       authenticated,
-      { save: async (_id, input) => ({ ...input, id: "session-1", location: null, description: null, createdAt: "2026-08-29T12:00:00.000Z" }) },
+      { save: async (_id, input) => ({ ...input, id: "session-1", location: null, description: null, cycleNumber: 1, createdAt: "2026-08-29T12:00:00.000Z" }) },
       () => undefined,
     );
 
@@ -242,5 +244,55 @@ describe("createUpdateTrainingSessionDetailsHandler", () => {
     await handler(jsonRequest({ location: null }), "session-1");
 
     expect(received).toEqual([{ meetingAt: undefined, location: null, description: undefined }]);
+  });
+});
+
+describe("createPrepareSeasonSessionHandler", () => {
+  const prepareInput = {
+    sessionNumber: 3,
+    seasonWeek: 9,
+    slot: 0,
+    ageGroup: "U11",
+    playerCount: 16,
+    meetingAt: "2026-11-04T17:00:00.000Z",
+    location: "Stade municipal",
+  };
+
+  it("prépare la séance de la saison avec son lieu", async () => {
+    const received: unknown[] = [];
+    const handler = createPrepareSeasonSessionHandler(
+      authenticated,
+      {
+        prepareFromSeason: async (_id, input) => {
+          received.push(input);
+          return { ...persisted, cycleNumber: 0, weekNumber: 9, location: input.location };
+        },
+      },
+      () => undefined,
+    );
+
+    const response = await handler(jsonRequest(prepareInput));
+
+    expect(response.status).toBe(201);
+    expect((await response.json()).session.location).toBe("Stade municipal");
+    expect(received).toEqual([prepareInput]);
+  });
+
+  it("refuse une séance sans lieu ou sans date", async () => {
+    const handler = createPrepareSeasonSessionHandler(
+      authenticated,
+      {
+        prepareFromSeason: async () => {
+          throw new ValidationError("Indique le lieu de la séance.");
+        },
+      },
+      () => undefined,
+    );
+
+    expect((await handler(jsonRequest({ ...prepareInput, meetingAt: "pas une date" }))).status).toBe(400);
+    expect((await handler(jsonRequest({ ...prepareInput, location: undefined }))).status).toBe(400);
+    const empty = await handler(jsonRequest({ ...prepareInput, location: "" }));
+    expect(empty.status).toBe(400);
+    expect(await empty.json()).toEqual({ error: "Indique le lieu de la séance." });
   });
 });

@@ -64,6 +64,8 @@ export interface SavedTrainingSession {
   blocks: ReadonlyArray<{ id: string; activityId: string; durationMinutes: number }>;
   weekNumber: number;
   slot: number;
+  // 0 pour une séance préparée depuis la saison guidée (voir guidedSeasonCycle).
+  cycleNumber?: number;
   // Rendez-vous (ISO), lieu et description, transportés jusqu'à l'appelant sans servir à la
   // reconstruction ci-dessous.
   meetingAt?: string | null;

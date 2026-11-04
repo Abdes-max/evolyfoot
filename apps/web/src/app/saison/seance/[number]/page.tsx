@@ -12,9 +12,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SidebarNav } from "../../../sidebar-nav";
 import { TacticalDiagramView } from "../../../tactical-diagram";
+import { PrepareSeasonSession } from "./prepare-season-session";
 
 interface ProgramSessionPageProps {
   params: Promise<{ number: string }>;
+  // Créneau de la saison d'où la séance est ouverte : permet de la préparer.
+  searchParams?: Promise<{ semaine?: string; creneau?: string }>;
 }
 
 export function generateStaticParams() {
@@ -32,8 +35,12 @@ const evaluationFocus = {
   },
 } as const;
 
-export default async function ProgramSessionPage({ params }: ProgramSessionPageProps) {
+export default async function ProgramSessionPage({ params, searchParams }: ProgramSessionPageProps) {
   const { number } = await params;
+  const query = (await searchParams) ?? {};
+  const week = Number(query.semaine);
+  const slot = Number(query.creneau);
+  const preparable = Number.isInteger(week) && week >= 1 && week <= 36 && Number.isInteger(slot) && slot >= 0 && slot <= 3;
   const session = findProgramSession(Number(number));
   if (!session) notFound();
 
@@ -64,6 +71,7 @@ export default async function ProgramSessionPage({ params }: ProgramSessionPageP
           <p>
             <Link href="/saison">← Retour à ma saison</Link>
           </p>
+          {preparable && <PrepareSeasonSession sessionNumber={session.number} slot={slot} week={week} />}
 
           {session.type === "evaluation" ? (
             <article className="program-situation">

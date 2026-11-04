@@ -226,3 +226,19 @@
   margin: 0;
   padding-left: 18px;
 }
+
+.prepare-season-session label {
+  display: grid;
+  gap: 4px;
+}
+
+.prepare-season-fields {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.prepare-season-session input[type="date"],
+.prepare-season-session input[type="time"] {
+  min-height: 44px;
+}

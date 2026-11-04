@@ -246,3 +246,56 @@ describe("TrainingSessionService.save", () => {
     expect(await service.getById("educator-2", saved.id)).toBeNull();
   });
 });
+
+describe("TrainingSessionService.prepareFromSeason", () => {
+  const input = {
+    sessionNumber: 3,
+    seasonWeek: 9,
+    slot: 1,
+    ageGroup: "U11" as const,
+    playerCount: 16,
+    meetingAt: new Date("2026-11-04T17:00:00.000Z"),
+    location: "  Stade municipal, terrain 2 ",
+  };
+
+  it("enregistre la séance type dans le cycle réservé, avec son lieu et ses situations", async () => {
+    const repository = new InMemoryTrainingSessionRepository();
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), repository);
+
+    const session = await service.prepareFromSeason("educator-1", input);
+
+    expect(session).toMatchObject({ cycleNumber: 0, weekNumber: 9, slot: 1, location: "Stade municipal, terrain 2", theme: "Conserver le ballon" });
+    expect(session.title).toBe("Séance 3 · Créer et utiliser les espaces");
+    expect(session.blocks.map((block) => block.activityId)[0]).toBe("cfi-espaces-jonglage");
+    expect(session.blocks.reduce((sum, block) => sum + block.durationMinutes, 0)).toBe(75);
+  });
+
+  it("exige un lieu, une date et une semaine de saison valides", async () => {
+    const repository = new InMemoryTrainingSessionRepository();
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), repository);
+
+    await expect(service.prepareFromSeason("educator-1", { ...input, location: "  " })).rejects.toThrow("Indique le lieu de la séance.");
+    await expect(service.prepareFromSeason("educator-1", { ...input, meetingAt: new Date("x") })).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.prepareFromSeason("educator-1", { ...input, seasonWeek: 37 })).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.prepareFromSeason("educator-1", { ...input, sessionNumber: 99 })).rejects.toThrow("Séance de la saison inconnue.");
+    await expect(service.prepareFromSeason("inconnu", input)).rejects.toBeInstanceOf(EducatorNotFoundError);
+    expect(repository.created).toHaveLength(0);
+  });
+
+  it("ré-enregistre une séance modifiée dans sa semaine de saison", async () => {
+    const repository = new InMemoryTrainingSessionRepository();
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), repository);
+    const prepared = await service.prepareFromSeason("educator-1", input);
+
+    await service.save("educator-1", {
+      ...validInput,
+      blocks: prepared.blocks,
+      weekNumber: 9,
+      slot: 1,
+      guidedSeason: true,
+    });
+
+    expect(repository.created).toHaveLength(1);
+    await expect(service.save("educator-1", { ...validInput, weekNumber: 9 })).rejects.toThrow("La semaine du cycle doit être comprise entre 1 et 4.");
+  });
+});
