@@ -1,6 +1,8 @@
 import type { DevelopmentTheme } from "./index";
+import { sortTrainingDays, type TrainingDay } from "./team";
 import { developmentThemes } from "./themes";
 import { programSessions, type ProgramSessionDefinition } from "./program-sessions";
+import { programSituations } from "./program-situations";
 import type { ActivityDetails, DiagramToken, DiagramZone, TacticalDiagram, TrainingActivity, TrainingBlockKind } from "./training-session";
 
 // Programmation de saison en sous-thèmes de jeu, inspirée de la programmation CFI U10-U11 (FFF) :
@@ -365,4 +367,66 @@ export function mondayOf(date: Date): Date {
 export function seasonWeekAt(start: Date, now: Date, weeks = seasonWeekCount): number {
   const days = Math.round((mondayOf(now).getTime() - mondayOf(start).getTime()) / 86_400_000);
   return Math.min(weeks, Math.max(1, Math.floor(days / 7) + 1));
+}
+
+// Les séances préparées depuis la saison guidée sont rangées hors des cycles de 4 semaines : cycle
+// réservé 0, semaine = semaine de saison (1 à 36), créneau = rang de la séance dans la semaine.
+export const guidedSeasonCycle = 0;
+
+export interface ProgramSessionPlan {
+  readonly title: string;
+  readonly theme: DevelopmentTheme;
+  readonly intention: string;
+  readonly blocks: ReadonlyArray<{ readonly activityId: string; readonly durationMinutes: number }>;
+}
+
+// Une évaluation se joue en matchs à 8 contre 8 après un échauffement préventif.
+const evaluationBlocks = [
+  { activityId: "cfi-freiner-gammes", durationMinutes: 15 },
+  { activityId: "cfi-recre-futsal", durationMinutes: 20 },
+  { activityId: "cfi-recre-futsal", durationMinutes: 20 },
+  { activityId: "cfi-recre-futsal", durationMinutes: 20 },
+];
+
+export function programSessionPlan(number: number): ProgramSessionPlan | null {
+  const session = findProgramSession(number);
+  if (!session) return null;
+  if (session.type === "evaluation") {
+    const attack = session.focus === "attack";
+    return {
+      title: `Séance ${number} · Évaluation collective (${attack ? "attaque" : "défense"})`,
+      theme: attack ? "Finir les actions" : "Protéger son but",
+      intention: "Trois matchs dans les mêmes conditions pour mesurer la progression de l’équipe.",
+      blocks: evaluationBlocks,
+    };
+  }
+  const blocks = session.situations.map((id) => {
+    const situation = programSituations.find((candidate) => candidate.id === id)!;
+    return { activityId: id, durationMinutes: situationMinutes(situation) };
+  });
+  const missing = 75 - blocks.reduce((sum, block) => sum + block.durationMinutes, 0);
+  if (missing > 0) blocks[blocks.length - 1] = { ...blocks[blocks.length - 1]!, durationMinutes: blocks[blocks.length - 1]!.durationMinutes + missing };
+  if (session.type === "recreational") {
+    return {
+      title: `Séance ${number} · Séance récréative`,
+      theme: "Conserver le ballon",
+      intention: "Jouer, s’amuser et attaquer-défendre en continu.",
+      blocks,
+    };
+  }
+  const info = programSubThemes[session.subTheme];
+  return { title: `Séance ${number} · ${info.label}`, theme: info.theme, intention: info.label, blocks };
+}
+
+const weekdayOffsets: Readonly<Record<TrainingDay, number>> = { Lundi: 0, Mardi: 1, Mercredi: 2, Jeudi: 3, Vendredi: 4 };
+
+// Rendez-vous proposé pour un créneau de la saison : le jour d'entraînement correspondant au rang
+// de la séance dans la semaine (mercredi par défaut), à 18 h.
+export function seasonSlotDate(startDate: Date, week: number, slot: number, trainingDays: readonly TrainingDay[]): Date {
+  const days = sortTrainingDays(trainingDays);
+  const day = days[slot] ?? days[days.length - 1] ?? "Mercredi";
+  const date = mondayOf(startDate);
+  date.setDate(date.getDate() + (week - 1) * 7 + weekdayOffsets[day]);
+  date.setHours(18, 0, 0, 0);
+  return date;
 }

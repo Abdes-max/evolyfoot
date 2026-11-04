@@ -1,4 +1,14 @@
-import { ageGroups, canValidateSession, developmentThemes, findTrainingActivity, isPersonalActivityId, personalExerciseToActivity } from "@evolyfoot/domain";
+import {
+  ageGroups,
+  canValidateSession,
+  developmentThemes,
+  findTrainingActivity,
+  guidedSeasonCycle,
+  isPersonalActivityId,
+  personalExerciseToActivity,
+  programSessionPlan,
+  seasonWeekCount,
+} from "@evolyfoot/domain";
 import type { AgeGroup, AttendanceEntry, DevelopmentTheme, TrainingBlock, TrainingSession } from "@evolyfoot/domain";
 import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
 import type { EducatorRepository, PersistedTrainingSession, PersonalExerciseRepository, TrainingSessionRepository } from "./repositories";
@@ -31,6 +41,8 @@ export interface TrainingSessionInput {
   // formulaire "Détails" (voir updateDetails ci-dessous, toujours disponible pour la corriger).
   meetingAt: Date;
   attendance?: ReadonlyArray<AttendanceEntry>;
+  // Séance de la saison guidée : semaine de saison (1 à 36) et cycle réservé (guidedSeasonCycle).
+  guidedSeason?: boolean;
 }
 
 // Pas de constante partagée côté domaine pour les thèmes (contrairement à `ageGroups`) : on la
@@ -80,8 +92,11 @@ export class TrainingSessionService {
     if (!developmentThemes.includes(input.theme)) {
       throw new ValidationError("Le thème de la séance est invalide.");
     }
-    if (!Number.isInteger(input.weekNumber) || input.weekNumber < 1 || input.weekNumber > trainingCycleWeekCount) {
-      throw new ValidationError("La semaine du cycle doit être comprise entre 1 et 4.");
+    const weekCount = input.guidedSeason ? seasonWeekCount : trainingCycleWeekCount;
+    if (!Number.isInteger(input.weekNumber) || input.weekNumber < 1 || input.weekNumber > weekCount) {
+      throw new ValidationError(
+        input.guidedSeason ? "La semaine de la saison doit être comprise entre 1 et 36." : "La semaine du cycle doit être comprise entre 1 et 4.",
+      );
     }
     if (!Number.isInteger(input.slot) || input.slot < 0) {
       throw new ValidationError("Le créneau de la séance est invalide.");
@@ -135,11 +150,56 @@ export class TrainingSessionService {
         activityId: block.activityId,
         durationMinutes: block.durationMinutes,
       })),
-      cycleNumber: await this.trainingSessionRepository.currentCycle(educatorId),
+      cycleNumber: input.guidedSeason ? guidedSeasonCycle : await this.trainingSessionRepository.currentCycle(educatorId),
       weekNumber: input.weekNumber,
       slot: input.slot,
       meetingAt: input.meetingAt,
       ...(input.attendance ? { attendance: input.attendance } : {}),
+    });
+  }
+
+  // Séance type de la saison guidée, préparée pour un créneau (semaine de saison + rang) avec son
+  // rendez-vous et son lieu, tous deux obligatoires. Préparer à nouveau le même créneau remplace
+  // la séance (même upsert que `save`).
+  async prepareFromSeason(
+    educatorId: string,
+    input: { sessionNumber: number; seasonWeek: number; slot: number; ageGroup: AgeGroup; playerCount: number; meetingAt: Date; location: string },
+  ): Promise<PersistedTrainingSession> {
+    const plan = programSessionPlan(input.sessionNumber);
+    if (!plan) {
+      throw new ValidationError("Séance de la saison inconnue.");
+    }
+    if (!Number.isInteger(input.seasonWeek) || input.seasonWeek < 1 || input.seasonWeek > seasonWeekCount) {
+      throw new ValidationError("La semaine de la saison doit être comprise entre 1 et 36.");
+    }
+    if (!Number.isInteger(input.slot) || input.slot < 0 || input.slot > 3) {
+      throw new ValidationError("Le créneau de la séance est invalide.");
+    }
+    if (!ageGroups.includes(input.ageGroup)) {
+      throw new ValidationError("Choisis une catégorie U10 à U13.");
+    }
+    if (!(input.meetingAt instanceof Date) || Number.isNaN(input.meetingAt.getTime())) {
+      throw new ValidationError("Indique la date et l’heure de la séance.");
+    }
+    const location = normalizeOptionalText(input.location);
+    if (!location) {
+      throw new ValidationError("Indique le lieu de la séance.");
+    }
+    if (!(await this.educatorRepository.existsById(educatorId))) {
+      throw new EducatorNotFoundError();
+    }
+    return this.trainingSessionRepository.create(educatorId, {
+      title: plan.title,
+      ageGroup: input.ageGroup,
+      playerCount: input.playerCount,
+      theme: plan.theme,
+      intention: plan.intention,
+      blocks: plan.blocks.map((block, index) => ({ id: `saison-${input.seasonWeek}-${input.slot}-${index + 1}`, ...block })),
+      cycleNumber: guidedSeasonCycle,
+      weekNumber: input.seasonWeek,
+      slot: input.slot,
+      meetingAt: input.meetingAt,
+      location,
     });
   }
 

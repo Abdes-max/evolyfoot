@@ -10,6 +10,7 @@ export interface TrainingSessionBlockInput {
 
 // Cycle du plan de progression : 4 semaines (aligné sur trainingCycleWeekCount côté base).
 const cycleWeekCount = 4;
+const seasonWeeks = 36;
 
 export interface TrainingSessionInput {
   title: string;
@@ -23,6 +24,8 @@ export interface TrainingSessionInput {
   // ISO, obligatoire -- voir le commentaire sur TrainingSessionInput.meetingAt côté base.
   meetingAt: string;
   attendance?: readonly AttendanceEntry[];
+  // Séance préparée depuis la saison guidée : semaine de saison (1 à 36).
+  guidedSeason?: boolean;
 }
 
 export interface PersistedTrainingSession extends Omit<TrainingSessionInput, "meetingAt"> {
@@ -34,11 +37,25 @@ export interface PersistedTrainingSession extends Omit<TrainingSessionInput, "me
   meetingAt: string | null;
   location: string | null;
   description: string | null;
+  // 0 pour une séance préparée depuis la saison guidée (voir guidedSeasonCycle).
+  cycleNumber: number;
   createdAt: string;
+}
+
+export interface SeasonSessionInput {
+  sessionNumber: number;
+  seasonWeek: number;
+  slot: number;
+  ageGroup: AgeGroup;
+  playerCount: number;
+  // ISO
+  meetingAt: string;
+  location: string;
 }
 
 export interface TrainingSessionGateway {
   save(educatorId: string, input: TrainingSessionInput): Promise<PersistedTrainingSession>;
+  prepareFromSeason(educatorId: string, input: SeasonSessionInput): Promise<PersistedTrainingSession>;
   list(educatorId: string, scope?: "cycle" | "season"): Promise<PersistedTrainingSession[]>;
   currentCycle(educatorId: string): Promise<number>;
   startNextCycle(educatorId: string): Promise<number>;
@@ -97,7 +114,8 @@ function isTrainingSessionInputShaped(value: Record<string, unknown> | null): va
     typeof value.weekNumber === "number" &&
     Number.isInteger(value.weekNumber) &&
     value.weekNumber >= 1 &&
-    value.weekNumber <= cycleWeekCount &&
+    value.weekNumber <= (value.guidedSeason === true ? seasonWeeks : cycleWeekCount) &&
+    (value.guidedSeason === undefined || typeof value.guidedSeason === "boolean") &&
     typeof value.slot === "number" &&
     Number.isInteger(value.slot) &&
     value.slot >= 0 &&
@@ -133,6 +151,51 @@ export function createSaveTrainingSessionHandler(
       if (error instanceof Error) {
         // La validation métier (durée, activité inconnue, énumération invalide) échoue avec une
         // Error générique.
+        return Response.json({ error: error.message }, { status: 400 });
+      }
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  };
+}
+
+function isSeasonSessionInputShaped(value: Record<string, unknown> | null): value is Record<string, unknown> & SeasonSessionInput {
+  return (
+    value !== null &&
+    typeof value.sessionNumber === "number" &&
+    typeof value.seasonWeek === "number" &&
+    typeof value.slot === "number" &&
+    typeof value.ageGroup === "string" &&
+    ageGroups.includes(value.ageGroup as AgeGroup) &&
+    typeof value.playerCount === "number" &&
+    typeof value.meetingAt === "string" &&
+    !Number.isNaN(new Date(value.meetingAt).getTime()) &&
+    typeof value.location === "string"
+  );
+}
+
+// Prépare une séance type de la saison guidée : date, heure et lieu obligatoires.
+export function createPrepareSeasonSessionHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  trainingSession: Pick<TrainingSessionGateway, "prepareFromSeason">,
+  log: (error: unknown) => void,
+): (request: Request) => Promise<Response> {
+  return async (request) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const body = await readJsonBody(request);
+    if (!isSeasonSessionInputShaped(body)) {
+      return Response.json({ error: "Indique la date, l’heure et le lieu de la séance." }, { status: 400 });
+    }
+    try {
+      return Response.json({ session: await trainingSession.prepareFromSeason(educator.id, body) }, { status: 201 });
+    } catch (error) {
+      if (error instanceof EducatorNotFoundError) {
+        return Response.json({ error: error.message }, { status: 401 });
+      }
+      if (error instanceof ValidationError) {
         return Response.json({ error: error.message }, { status: 400 });
       }
       log(error);
@@ -261,6 +324,7 @@ export async function createTrainingSessionGateway(): Promise<{
     meetingAt: session.meetingAt ? session.meetingAt.toISOString() : null,
     location: session.location,
     description: session.description,
+    cycleNumber: session.cycleNumber,
     ...(session.attendance ? { attendance: session.attendance } : {}),
     createdAt: session.createdAt.toISOString(),
   });
@@ -269,6 +333,9 @@ export async function createTrainingSessionGateway(): Promise<{
     gateway: {
       async save(educatorId, input) {
         return toSummary(await service.save(educatorId, { ...input, meetingAt: new Date(input.meetingAt) }));
+      },
+      async prepareFromSeason(educatorId, input) {
+        return toSummary(await service.prepareFromSeason(educatorId, { ...input, meetingAt: new Date(input.meetingAt) }));
       },
       async list(educatorId, scope = "cycle") {
         return (await (scope === "season" ? service.listSeason(educatorId) : service.list(educatorId))).map(toSummary);

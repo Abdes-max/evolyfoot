@@ -35,6 +35,8 @@ interface SessionBuilderProps {
   // Créneau du cycle où la séance est enregistrée (upsert sur (éducateur, semaine, slot)).
   weekNumber: number;
   slot: number;
+  // Séance préparée depuis la saison guidée : se ré-enregistre dans son cycle réservé.
+  guidedSeason?: boolean;
   // Rendez-vous (date + heure), obligatoire -- ISO si la séance en a déjà un (mode "edit"), sinon
   // `null` (mode "create", à renseigner avant de pouvoir valider). Un seul input pour ce champ,
   // ici plutôt que dans le formulaire "Détails" de saved-session-view.tsx (qui ne garde que
@@ -69,6 +71,7 @@ export function SessionBuilder({
   session,
   weekNumber,
   slot,
+  guidedSeason = false,
   meetingAt,
   blockReasons = [],
   personalExercises = [],
@@ -165,6 +168,7 @@ export function SessionBuilder({
           meetingAt: meetingAtDate.toISOString(),
           weekNumber,
           slot,
+          ...(guidedSeason ? { guidedSeason: true } : {}),
           ...(attendance.length > 0 ? { attendance } : {}),
         }),
       });

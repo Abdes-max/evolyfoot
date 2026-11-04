@@ -303,6 +303,7 @@ export interface TrainingSessionRepository {
       // TrainingSessionService.save), contrairement à `location`/`description`, réservés au
       // formulaire "Détails" une fois la séance déjà enregistrée.
       meetingAt: Date;
+      location?: string | null;
       attendance?: readonly AttendanceEntry[];
     },
   ): Promise<PersistedTrainingSession>;

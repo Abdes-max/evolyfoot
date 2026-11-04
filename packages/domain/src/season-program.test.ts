@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { developmentThemes, generateTrainingSession } from "./index";
+import { developmentThemes, findTrainingActivity, generateTrainingSession } from "./index";
 import { programSessions } from "./program-sessions";
 import { findProgramSituation, programSituations } from "./program-situations";
 import {
   buildPrioritizedSeason,
   findProgramSession,
   mondayOf,
+  programSessionPlan,
+  seasonSlotDate,
   seasonWeekAt,
   validateSeasonPriorities,
   programSubThemeIds,
@@ -147,5 +149,28 @@ describe("saison guidée : priorités et semaine en cours", () => {
     expect(seasonWeekAt(start, new Date(2026, 8, 14))).toBe(2);
     expect(seasonWeekAt(start, new Date(2026, 7, 1))).toBe(1);
     expect(seasonWeekAt(start, new Date(2027, 11, 1))).toBe(36);
+  });
+});
+
+describe("préparer une séance de la saison", () => {
+  it("cale chaque séance type sur 75 minutes avec des exercices existants", () => {
+    for (const session of programSessions) {
+      const plan = programSessionPlan(session.number)!;
+      const total = plan.blocks.reduce((sum, block) => sum + block.durationMinutes, 0);
+      expect(total, `séance ${session.number}`).toBeGreaterThanOrEqual(60);
+      expect(total, `séance ${session.number}`).toBeLessThanOrEqual(90);
+      for (const block of plan.blocks) {
+        expect(findTrainingActivity(block.activityId), block.activityId).toBeDefined();
+      }
+    }
+    expect(programSessionPlan(1)?.title).toBe("Séance 1 · Évaluation collective (attaque)");
+    expect(programSessionPlan(99)).toBeNull();
+  });
+
+  it("propose le jour d’entraînement de la semaine à 18 h", () => {
+    const start = new Date(2026, 8, 7);
+    expect(seasonSlotDate(start, 1, 0, ["Vendredi", "Mardi"])).toEqual(new Date(2026, 8, 8, 18));
+    expect(seasonSlotDate(start, 2, 1, ["Vendredi", "Mardi"])).toEqual(new Date(2026, 8, 18, 18));
+    expect(seasonSlotDate(start, 1, 0, [])).toEqual(new Date(2026, 8, 9, 18));
   });
 });

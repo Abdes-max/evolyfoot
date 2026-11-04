@@ -3,6 +3,7 @@
 import {
   buildPrioritizedSeason,
   developmentThemes,
+  guidedSeasonCycle,
   maxSeasonPriorities,
   programPrinciples,
   programSource,
@@ -16,6 +17,26 @@ import {
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+
+interface PreparedSession {
+  id: string;
+  cycleNumber: number;
+  weekNumber: number;
+  slot: number;
+  meetingAt: string | null;
+  location: string | null;
+}
+
+function seanceHref(sessionNumber: number, week: number, slot: number): string {
+  return `/saison/seance/${sessionNumber}?semaine=${week}&creneau=${slot}`;
+}
+
+function preparedLabel(session: PreparedSession): string {
+  const when = session.meetingAt
+    ? new Date(session.meetingAt).toLocaleString("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+    : "";
+  return [when, session.location].filter(Boolean).join(" · ");
+}
 
 interface Program {
   priorities: DevelopmentTheme[];
@@ -101,12 +122,13 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
   const [sessionsPerWeek, setSessionsPerWeek] = useState(2);
   const [suggested, setSuggested] = useState<DevelopmentTheme[]>([]);
   const [editing, setEditing] = useState(false);
+  const [prepared, setPrepared] = useState<PreparedSession[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [programBody, teamBody, diagnosticBody] = await Promise.all(
-        ["/api/season-program", "/api/team", "/api/diagnostic"].map((url) =>
+      const [programBody, teamBody, diagnosticBody, sessionsBody] = await Promise.all(
+        ["/api/season-program", "/api/team", "/api/diagnostic", "/api/sessions?scope=season"].map((url) =>
           fetch(url)
             .then((response) => (response.ok ? response.json() : null))
             .catch(() => null),
@@ -116,6 +138,7 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
       setSessionsPerWeek(teamBody?.profile?.sessionsPerWeek ?? 2);
       const scores: DiagnosticScores | null = diagnosticBody?.scores ?? null;
       setSuggested(scores ? suggestSeasonPriorities(summarizeDiagnostic(scores)) : []);
+      setPrepared(((sessionsBody?.sessions ?? []) as PreparedSession[]).filter((session) => session.cycleNumber === guidedSeasonCycle));
       setProgram(programBody?.program ?? null);
     })();
     return () => {
@@ -162,15 +185,18 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
                   Semaine {currentWeek} sur {weeks.length}
                 </span>
                 <ul>
-                  {thisWeek.slots.map((slot, index) => (
-                    <li key={`${slot.sessionNumber}-${index}`}>
-                      <Link className={slotClass(slot)} href={`/saison/seance/${slot.sessionNumber}`}>
-                        <small>Séance {index + 1}</small>
-                        <strong>{slotLabel(slot)}</strong>
-                        <span>Ouvrir la séance</span>
-                      </Link>
-                    </li>
-                  ))}
+                  {thisWeek.slots.map((slot, index) => {
+                    const done = prepared.find((session) => session.weekNumber === currentWeek && session.slot === index);
+                    return (
+                      <li key={`${slot.sessionNumber}-${index}`}>
+                        <Link className={slotClass(slot)} href={done ? `/session/${done.id}` : seanceHref(slot.sessionNumber, currentWeek, index)}>
+                          <small>Séance {index + 1}</small>
+                          <strong>{slotLabel(slot)}</strong>
+                          <span>{done ? `Préparée · ${preparedLabel(done)}` : "Préparer la séance"}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}
@@ -183,7 +209,7 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
                     <Link
                       aria-label={`Semaine ${week.week}, séance ${index + 1} : ${slotLabel(slot)}`}
                       className={slotClass(slot)}
-                      href={`/saison/seance/${slot.sessionNumber}`}
+                      href={seanceHref(slot.sessionNumber, week.week, index)}
                       key={`${slot.sessionNumber}-${index}`}
                       title={slotLabel(slot)}
                     />
