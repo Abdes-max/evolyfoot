@@ -20,7 +20,7 @@ import {
 } from "@evolyfoot/domain";
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { Link, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { TacticalDiagramView } from "../components/tactical-diagram";
 import { TacticalPlayer } from "../components/tactical-player";
@@ -68,6 +68,11 @@ export default function SessionScreen() {
   const [playStyle, setPlayStyle] = useState<string | null>(null);
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [meetingAt, setMeetingAt] = useState(tomorrowEvening);
+  // Début de la préparation (ouverture de l'écran), pour l'indicateur « première séance en moins de 10 minutes ».
+  const preparationStart = useRef<number | null>(null);
+  useEffect(() => {
+    preparationStart.current = Date.now();
+  }, []);
   const [absentPlayerIds, setAbsentPlayerIds] = useState<ReadonlySet<string>>(new Set());
   // Lieu tel que saisi, et tel qu'enregistré : la convocation reprend le lieu enregistré, on
   // enregistre donc la saisie avant chaque envoi.
@@ -166,7 +171,13 @@ export default function SessionScreen() {
     const attendance: AttendanceEntry[] = capturesAttendance
       ? roster.map((player) => ({ playerId: player.id, playerName: player.name, present: !absentPlayerIds.has(player.id) }))
       : [];
-    const result = await saveTrainingSession(session, { weekNumber, slot, meetingAt, attendance });
+    const result = await saveTrainingSession(session, {
+      weekNumber,
+      slot,
+      meetingAt,
+      attendance,
+      ...(preparationStart.current !== null ? { preparationSeconds: Math.round((Date.now() - preparationStart.current) / 1000) } : {}),
+    });
     if (result.ok) {
       setSavedId(result.id);
     }

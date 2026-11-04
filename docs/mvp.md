@@ -30,7 +30,7 @@ Messagerie parents/joueurs et convocations ont été livrées après coup, voir 
 
 ## Indicateurs de réussite
 
-- Première séance planifiée en moins de 10 minutes. _(non mesuré — demande un chronométrage de l'interaction, non instrumenté)_
+- Première séance planifiée en moins de 10 minutes. _(mesuré depuis le 6 novembre 2026 sur le web et dans EvolyFoot Coach : durée de l'ouverture de la séance à son enregistrement, pour la première séance de chaque éducateur, page /admin/metrics)_
 - Compte rendu saisi en moins de 3 minutes. _(mesuré depuis le 4 novembre 2026 sur le web et dans EvolyFoot Coach : durée de la première évaluation à la validation, page /admin/metrics)_
 - Au moins une suggestion d'ajustement acceptée par cycle. _(mesuré depuis le 4 novembre 2026 sur le web et dans EvolyFoot Coach : la réponse à la carte d'ajustement est enregistrée avec l'observation, page /admin/metrics)_
 - Utilisation hebdomadaire pendant quatre semaines consécutives. _(mesuré — voir `/admin/metrics`, section « Rétention 4 semaines »)_

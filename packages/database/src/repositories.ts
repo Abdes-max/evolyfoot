@@ -305,6 +305,7 @@ export interface TrainingSessionRepository {
       meetingAt: Date;
       location?: string | null;
       attendance?: readonly AttendanceEntry[];
+      preparationSeconds?: number;
     },
   ): Promise<PersistedTrainingSession>;
   listByEducator(educatorId: string): Promise<PersistedTrainingSession[]>;

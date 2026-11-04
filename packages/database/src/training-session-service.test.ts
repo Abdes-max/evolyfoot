@@ -299,3 +299,16 @@ describe("TrainingSessionService.prepareFromSeason", () => {
     await expect(service.save("educator-1", { ...validInput, weekNumber: 9 })).rejects.toThrow("La semaine du cycle doit être comprise entre 1 et 4.");
   });
 });
+
+describe("TrainingSessionService : durée de préparation", () => {
+  it("garde une durée plausible et ignore les autres", async () => {
+    const repository = new InMemoryTrainingSessionRepository();
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), repository);
+
+    await service.save("educator-1", { ...validInput, preparationSeconds: 420 });
+    await service.save("educator-1", { ...validInput, slot: 1, preparationSeconds: -5 });
+    await service.save("educator-1", { ...validInput, slot: 2, preparationSeconds: 12.5 });
+
+    expect(repository.created.map((session) => (session as { preparationSeconds?: number }).preparationSeconds)).toEqual([420, undefined, undefined]);
+  });
+});

@@ -248,6 +248,9 @@ model TrainingSessionRecord {
   // l'introduction du suivi de présence n'en a pas, distingué d'une liste vide (`[]`, présence
   // saisie mais personne de présent) dans les agrégats de /statistiques.
   attendance  Json?
+  // Durée de préparation mesurée par l'écran (indicateur MVP « première séance en moins de 10 min »),
+  // gardée de la création : ré-enregistrer la séance ne la change pas.
+  preparationSeconds Int? @map("preparation_seconds")
   createdAt   DateTime         @default(now()) @map("created_at")
 
   @@unique([educatorId, cycleNumber, weekNumber, slot], name: "training_session_slot")

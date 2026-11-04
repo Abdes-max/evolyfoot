@@ -14,6 +14,7 @@ import {
   type TrainingSession,
 } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useEffect, useMemo, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, Vibration, View } from "react-native";
 import { TacticalPlayer } from "../../components/tactical-player";
@@ -48,6 +49,15 @@ export default function FieldModeScreen() {
     if (!state?.running) return;
     const timer = setInterval(() => setState((current) => (current ? tickField(current) : current)), 1000);
     return () => clearInterval(timer);
+  }, [state?.running]);
+
+  // L’écran reste allumé pendant que le minuteur tourne.
+  useEffect(() => {
+    if (!state?.running) return;
+    activateKeepAwakeAsync("terrain").catch(() => undefined);
+    return () => {
+      deactivateKeepAwake("terrain").catch(() => undefined);
+    };
   }, [state?.running]);
 
   const ended = state?.remaining === 0;

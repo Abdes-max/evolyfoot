@@ -2,7 +2,7 @@
 
 import { seasonSlotDate, type AgeGroup, type TrainingDay } from "@evolyfoot/domain";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { PlaceInput } from "../../../place-input";
 
 interface PrepareSeasonSessionProps {
@@ -34,6 +34,11 @@ export function PrepareSeasonSession({ sessionNumber, week, slot }: PrepareSeaso
   const [location, setLocation] = useState("");
   const [state, setState] = useState<"idle" | "saving" | "error">("idle");
   const [error, setError] = useState("");
+  // Début de la préparation (ouverture de l'écran), pour l'indicateur « première séance en moins de 10 minutes ».
+  const preparationStart = useRef<number | null>(null);
+  useEffect(() => {
+    preparationStart.current = Date.now();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +90,7 @@ export function PrepareSeasonSession({ sessionNumber, week, slot }: PrepareSeaso
         playerCount: team.playerCount,
         meetingAt: new Date(`${date}T${time}`).toISOString(),
         location,
+        ...(preparationStart.current !== null ? { preparationSeconds: Math.round((Date.now() - preparationStart.current) / 1000) } : {}),
       }),
     }).catch(() => null);
     const body = await response?.json().catch(() => null);
