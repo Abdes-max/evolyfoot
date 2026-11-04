@@ -19,9 +19,12 @@ const free = [
   "Progression de chaque joueur d’une saison à l’autre",
 ];
 
-// Rien de cette liste n'existe encore dans l'app : ne rien y ajouter avant que ce soit livré sans
-// la marquer "à venir" dans la page.
-const premium = ["Plusieurs équipes sur un même compte", "Partage entre éducateurs d’un même club"];
+// `available` : déjà dans l'app, ouvert à tous tant qu'aucun paiement n'est activé. Le reste est
+// signalé "à venir" : ne rien y ajouter sans le marquer ainsi.
+const premium = [
+  { label: "Plusieurs équipes sur un même compte", available: true },
+  { label: "Partage entre éducateurs d’un même club", available: false },
+];
 
 export default function TarifsPage() {
   return (
@@ -54,12 +57,14 @@ export default function TarifsPage() {
           </article>
 
           <article className="m-plan m-plan-featured">
-            <h3>Premium · à venir</h3>
+            <h3>Premium · en préparation</h3>
             <PricingToggle />
-            <p className="m-plan-desc">Fonctionnalités à venir, pas encore disponibles dans l’application.</p>
+            <p className="m-plan-desc">Ce qui est déjà disponible reste gratuit jusqu’au lancement de Premium.</p>
             <ul>
               {premium.map((item) => (
-                <li key={item}>{item} (à venir)</li>
+                <li key={item.label}>
+                  {item.label} {item.available ? "(disponible, gratuit pour l’instant)" : "(à venir)"}
+                </li>
               ))}
             </ul>
             <Link className="m-btn m-btn-primary" href="/contact">

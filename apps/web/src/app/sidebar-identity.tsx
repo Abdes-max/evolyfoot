@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { addTeam, listTeams, switchTeam, teamChoiceLabel, type TeamChoice } from "./team-switch";
 
 interface Educator {
   id: string;
@@ -15,6 +16,8 @@ interface TeamProfile {
   ageGroup: string;
   gameFormat: number;
 }
+
+const newTeamValue = "nouvelle-equipe";
 
 function initials(displayName: string): string {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
@@ -35,6 +38,9 @@ export function SidebarIdentity() {
   // n'existe (voir roadmap.md, phase 2), qui se désynchronise dès qu'un joueur est ajouté/retiré.
   const [playerCount, setPlayerCount] = useState<number | null>(null);
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+  // Équipes de l'éducateur titulaire (un adjoint suit seulement l'équipe qui l'a invité).
+  const [teams, setTeams] = useState<TeamChoice[]>([]);
+  const [teamError, setTeamError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -49,12 +55,17 @@ export function SidebarIdentity() {
         setEducator(sessionBody.educator ?? null);
 
         if (sessionBody.educator) {
-          const [teamResponse, rosterResponse] = await Promise.all([fetch("/api/team"), fetch("/api/roster")]);
+          const [teamResponse, rosterResponse, teamChoices] = await Promise.all([
+            fetch("/api/team"),
+            fetch("/api/roster"),
+            sessionBody.role === "coach" ? listTeams() : Promise.resolve([]),
+          ]);
           const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
           const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
           if (!cancelled) {
             setTeam(teamBody.profile ?? null);
             setPlayerCount(Array.isArray(rosterBody.players) ? rosterBody.players.length : 0);
+            setTeams(teamChoices);
           }
         }
       } catch {
@@ -78,6 +89,14 @@ export function SidebarIdentity() {
       setResendState(response.ok ? "sent" : "failed");
     } catch {
       setResendState("failed");
+    }
+  }
+
+  async function chooseTeam(value: string) {
+    setTeamError("");
+    const error = value === newTeamValue ? await addTeam() : (await switchTeam(value)) ? null : "L’équipe n’a pas pu être ouverte.";
+    if (error) {
+      setTeamError(error);
     }
   }
 
@@ -142,6 +161,26 @@ export function SidebarIdentity() {
               Configurer mon équipe →
             </Link>
           </>
+        )}
+        {teams.length > 0 && (
+          <select
+            aria-label="Changer d’équipe"
+            className="team-switch"
+            onChange={(event) => chooseTeam(event.target.value)}
+            value={teams.find((choice) => choice.active)?.id ?? ""}
+          >
+            {teams.map((choice) => (
+              <option key={choice.id} value={choice.id}>
+                {teamChoiceLabel(choice)}
+              </option>
+            ))}
+            <option value={newTeamValue}>+ Ajouter une équipe</option>
+          </select>
+        )}
+        {teamError && (
+          <span className="team-switch-error" role="alert">
+            {teamError}
+          </span>
         )}
       </div>
       <div className="coach">

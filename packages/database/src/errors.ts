@@ -5,6 +5,13 @@ export class EducatorNotFoundError extends Error {
   }
 }
 
+export class TeamSpaceNotFoundError extends Error {
+  constructor() {
+    super("Équipe introuvable.");
+    this.name = "TeamSpaceNotFoundError";
+  }
+}
+
 export class TeamNotFoundError extends Error {
   constructor() {
     super("Profil d’équipe introuvable.");

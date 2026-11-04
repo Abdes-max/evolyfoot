@@ -116,6 +116,8 @@ export interface AuthContextValue {
   getTeamStats(): Promise<TeamStats | null>;
   // Appel authentifié brut, `null` sans réseau : pour les écrans qui lisent eux-mêmes la réponse.
   apiRequest(path: string, init?: Omit<RequestInit, "headers">): Promise<Response | null>;
+  // Relit l'équipe, le diagnostic et l'effectif après un changement d'équipe.
+  reloadTeamData(): Promise<void>;
   getObservation(id: string): Promise<{ ok: true; observation: ObservationDetail } | { ok: false; error: string }>;
   addPlayer(firstName: string, lastName: string): Promise<AuthResult>;
   renamePlayer(id: string, firstName: string, lastName: string): Promise<AuthResult>;
@@ -407,6 +409,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [sessionToken]);
 
+  const reloadTeamData = useCallback(async () => {
+    if (sessionToken) {
+      await Promise.all([fetchTeam(sessionToken), fetchDiagnostic(sessionToken), fetchRoster(sessionToken)]);
+    }
+  }, [sessionToken, fetchTeam, fetchDiagnostic, fetchRoster]);
+
   const apiRequest = useCallback(
     (path: string, init: Omit<RequestInit, "headers"> = {}): Promise<Response | null> => apiFetch(path, { ...init, sessionToken }).catch(() => null),
     [sessionToken],
@@ -661,6 +669,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       getObservation,
       getTeamStats,
       apiRequest,
+      reloadTeamData,
       addPlayer,
       renamePlayer,
       removePlayer,
@@ -692,6 +701,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       getObservation,
       getTeamStats,
       apiRequest,
+      reloadTeamData,
       addPlayer,
       renamePlayer,
       removePlayer,

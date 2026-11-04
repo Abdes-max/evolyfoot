@@ -21,7 +21,8 @@ import type {
   MatchPlayerStat,
 } from "@evolyfoot/domain";
 
-export type AccountRole = "coach" | "player" | "assistant";
+// "team" : espace d'une équipe supplémentaire d'un éducateur, sans connexion possible.
+export type AccountRole = "coach" | "player" | "assistant" | "team";
 
 export interface EducatorRecord {
   id: string;
@@ -211,6 +212,8 @@ export interface DiagnosticRepository {
 export interface SessionRecord {
   id: string;
   educatorId: string;
+  // Espace d'équipe choisi pour cette session, `null` ou absent pour la première équipe.
+  activeTeamId?: string | null;
   expiresAt: Date;
   createdAt: Date;
 }
@@ -226,6 +229,14 @@ export interface SessionRepository {
   findValidByTokenHash(tokenHash: string): Promise<SessionRecord | null>;
   deleteByTokenHash(tokenHash: string): Promise<void>;
   deleteOthers(educatorId: string, keptTokenHash: string | null): Promise<void>;
+  setActiveTeam(tokenHash: string, activeTeamId: string | null): Promise<void>;
+}
+
+// Espaces d'équipe (comptes "team") d'un éducateur.
+export interface TeamSpaceRepository {
+  listForOwner(ownerId: string): Promise<EducatorRecord[]>;
+  // `false` si l'espace n'appartient pas à cet éducateur.
+  remove(ownerId: string, teamSpaceId: string): Promise<boolean>;
 }
 
 // Historique des séances validées (contrairement à Team/Diagnostic, plusieurs par éducateur).

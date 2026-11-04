@@ -2,7 +2,7 @@ import { DuplicateEducatorEmailError, InvalidCredentialsError, ValidationError }
 
 export const SESSION_COOKIE_NAME = "evolyfoot_session";
 
-export type AccountRole = "coach" | "player" | "assistant";
+export type AccountRole = "coach" | "player" | "assistant" | "team";
 
 export interface PublicEducator {
   id: string;
@@ -244,6 +244,24 @@ export async function resolveAccountFromRequest(request: Request): Promise<Publi
 export async function resolveOwnAccountFromRequest(request: Request): Promise<PublicAccount | null> {
   const account = await resolveAccountFromRequest(request);
   return account?.role === "player" ? null : account;
+}
+
+// Compte connecté, mais avec l'identifiant de l'équipe sur laquelle il travaille : l'espace de
+// l'équipe choisie pour un éducateur qui en gère plusieurs. Pour ce qui appartient à l'équipe sans
+// passer par getEducatorForSession (son staff).
+export async function resolveTeamOwnerFromRequest(request: Request): Promise<PublicAccount | null> {
+  const token = readSessionToken(request);
+  const account = await resolveAccountFromRequest(request);
+  if (!token || !account || account.role !== "coach") {
+    return account;
+  }
+  const { gateway, disconnect } = await createAuthGateway();
+  try {
+    const team = await gateway.getEducatorForSession(token);
+    return team ? { ...account, id: team.id } : account;
+  } finally {
+    await disconnect();
+  }
 }
 
 export async function resolvePlayerAccountFromRequest(request: Request): Promise<PublicAccount | null> {
