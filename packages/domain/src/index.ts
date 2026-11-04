@@ -205,3 +205,14 @@ export {
 export type { ProgramSessionDefinition } from "./program-sessions";
 export { programSessions } from "./program-sessions";
 export { findProgramSituation, programSituations } from "./program-situations";
+export type { FieldState, FieldStep } from "./field-timer";
+export {
+  clock as fieldClock,
+  fieldSteps,
+  goTo as goToFieldStep,
+  next as nextFieldStep,
+  score as scoreField,
+  startField,
+  tick as tickField,
+  toggle as toggleField,
+} from "./field-timer";

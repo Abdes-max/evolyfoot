@@ -1,4 +1,4 @@
-import { findTrainingActivity } from "@evolyfoot/domain";
+import { findTrainingActivity } from "./training-session";
 import { describe, expect, it } from "vitest";
 import { clock, fieldSteps, goTo, next, score, startField, tick, toggle } from "./field-timer";
 

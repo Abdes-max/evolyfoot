@@ -1,4 +1,5 @@
-import { findProgramSituation, type TrainingSession } from "@evolyfoot/domain";
+import { findProgramSituation } from "./program-situations";
+import type { TrainingSession } from "./training-session";
 
 // Mode terrain : chaque bloc de la séance se joue en séquences chronométrées. Une situation de la
 // saison guidée garde ses séquences (« 4 × 2 min ») ; un autre exercice se joue d'une traite.
