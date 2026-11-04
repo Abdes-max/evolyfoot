@@ -1068,10 +1068,13 @@ export class PrismaClubRepository implements ClubRepository {
   }
 
   async listSharedExercises(clubId: string, accountId: string): Promise<SharedClubExercise[]> {
+    // Liste explicite plutôt qu'un NOT sur owner_educator_id : NULL pour un éducateur, la
+    // comparaison exclurait tous les membres.
+    const ownSpaces = await this.prisma.educator.findMany({ where: { ownerEducatorId: accountId, role: "team" }, select: { id: true } });
     const records = await this.prisma.personalExerciseRecord.findMany({
       where: {
         OR: [{ educator: { clubId } }, { educator: { role: "team", owner: { clubId } } }],
-        NOT: [{ educatorId: accountId }, { educator: { ownerEducatorId: accountId } }],
+        educatorId: { notIn: [accountId, ...ownSpaces.map((space) => space.id)] },
       },
       include: { educator: { select: { displayName: true } } },
       orderBy: { createdAt: "desc" },
