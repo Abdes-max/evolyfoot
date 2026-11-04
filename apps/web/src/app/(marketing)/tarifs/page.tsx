@@ -23,7 +23,7 @@ const free = [
 // signalé "à venir" : ne rien y ajouter sans le marquer ainsi.
 const premium = [
   { label: "Plusieurs équipes sur un même compte", available: true },
-  { label: "Partage entre éducateurs d’un même club", available: false },
+  { label: "Partage entre éducateurs d’un même club", available: true },
 ];
 
 export default function TarifsPage() {

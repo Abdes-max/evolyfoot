@@ -89,6 +89,13 @@ export class InvalidCredentialsError extends Error {
   }
 }
 
+export class ClubNotFoundError extends Error {
+  constructor() {
+    super("Aucun club ne correspond à ce code.");
+    this.name = "ClubNotFoundError";
+  }
+}
+
 export class ValidationError extends Error {
   constructor(message: string) {
     super(message);
