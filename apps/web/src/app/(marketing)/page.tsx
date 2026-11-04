@@ -52,8 +52,8 @@ const faq = [
   { q: "Web ou mobile ?", a: "Les deux. L’application web pour préparer, l’application mobile pour le bord du terrain." },
   { q: "Combien de temps pour démarrer ?", a: "Le diagnostic et le premier cycle se font en quelques minutes, avant ta prochaine séance." },
   {
-    q: "C’est vraiment gratuit ?",
-    a: "Oui. Le plan gratuit couvre aujourd’hui toutes les fonctionnalités disponibles pour une équipe, sans limite de séances.",
+    q: "Combien ça coûte ?",
+    a: "14 jours d’essai gratuit sans carte bancaire, puis 7,90 € par mois ou 59 € la saison pour un coach et une équipe. Chaque équipe ou coach en plus coûte moins cher.",
   },
 ];
 
@@ -84,7 +84,7 @@ export default function MarketingHome() {
               Voir la méthode
             </Link>
           </div>
-          <p className="m-hero-note">Sans carte bancaire · Web et mobile</p>
+          <p className="m-hero-note">14 jours d’essai, sans carte bancaire · Web et mobile</p>
         </div>
 
         <div className="m-impact-visual">
