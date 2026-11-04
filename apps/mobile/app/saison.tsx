@@ -3,6 +3,7 @@ import { buildSeasonCalendar, buildSeasonPlan, currentCycleWeek, type SeasonEven
 import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { GuidedSeason } from "../components/guided-season";
 import { useAuth, type SeasonData } from "../lib/auth-context";
 
 const typeLabels: Record<SeasonEventType, string> = {
@@ -85,31 +86,36 @@ export default function SaisonScreen() {
         <Text style={styles.step}>{calendar.label.toUpperCase()}</Text>
         <Text style={styles.title}>Toute ta saison, mois par mois.</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Le plan de ta saison</Text>
-          {diagnosticScores ? (
-            <>
-              <Text style={styles.muted}>Tes priorités reviennent à tour de rôle jusqu’en juin. Ce plan se met à jour à chaque nouveau diagnostic.</Text>
-              {cycles.map((cycle) => (
-                <View key={cycle.number} style={[styles.cycle, cycle.current && styles.cycleCurrent]}>
-                  <Text style={styles.cycleLabel}>
-                    CYCLE {cycle.number}
-                    {cycle.current ? " · EN COURS" : ""} · {shortDate(cycle.start)} – {shortDate(cycle.end)}
-                  </Text>
-                  <Text style={styles.cycleTheme}>{cycle.theme}</Text>
-                  <Text style={styles.muted}>{cycle.intent}</Text>
-                  <Text style={styles.muted}>En soutien : {cycle.supportTheme}</Text>
-                </View>
-              ))}
-            </>
-          ) : (
-            <Link asChild href="/diagnostic">
-              <TouchableOpacity accessibilityRole="button">
-                <Text style={styles.link}>Fais ton diagnostic pour obtenir le plan de ta saison →</Text>
-              </TouchableOpacity>
-            </Link>
-          )}
-        </View>
+        <GuidedSeason
+          fallback={
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Le plan de ta saison</Text>
+              {diagnosticScores ? (
+                <>
+                  <Text style={styles.muted}>Tes priorités reviennent à tour de rôle jusqu’en juin. Ce plan se met à jour à chaque nouveau diagnostic.</Text>
+                  {cycles.map((cycle) => (
+                    <View key={cycle.number} style={[styles.cycle, cycle.current && styles.cycleCurrent]}>
+                      <Text style={styles.cycleLabel}>
+                        CYCLE {cycle.number}
+                        {cycle.current ? " · EN COURS" : ""} · {shortDate(cycle.start)} – {shortDate(cycle.end)}
+                      </Text>
+                      <Text style={styles.cycleTheme}>{cycle.theme}</Text>
+                      <Text style={styles.muted}>{cycle.intent}</Text>
+                      <Text style={styles.muted}>En soutien : {cycle.supportTheme}</Text>
+                    </View>
+                  ))}
+                </>
+              ) : (
+                <Link asChild href="/diagnostic">
+                  <TouchableOpacity accessibilityRole="button">
+                    <Text style={styles.link}>Fais ton diagnostic pour obtenir le plan de ta saison →</Text>
+                  </TouchableOpacity>
+                </Link>
+              )}
+            </View>
+          }
+          now={now}
+        />
 
         {season === null && <Text style={styles.muted}>Chargement…</Text>}
         {season?.failed && <Text style={styles.error}>La saison n’a pas pu être chargée entièrement.</Text>}

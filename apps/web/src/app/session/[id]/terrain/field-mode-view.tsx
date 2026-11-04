@@ -1,10 +1,22 @@
 "use client";
 
-import { rehydrateTrainingSession, type SavedTrainingSession, type TrainingSession } from "@evolyfoot/domain";
+import {
+  fieldClock as clock,
+  fieldSteps,
+  goToFieldStep as goTo,
+  nextFieldStep as next,
+  rehydrateTrainingSession,
+  scoreField as score,
+  startField,
+  tickField as tick,
+  toggleField as toggle,
+  type FieldState,
+  type SavedTrainingSession,
+  type TrainingSession,
+} from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TacticalPlayer } from "../../../tactical-player";
-import { clock, fieldSteps, goTo, next, score, startField, tick, toggle, type FieldState } from "./field-timer";
 
 // Écran du bord de terrain : une situation à la fois, gros minuteur, défi entre les deux équipes.
 export function FieldModeView({ sessionId }: { sessionId: string }) {
