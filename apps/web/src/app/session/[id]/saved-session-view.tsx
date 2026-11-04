@@ -197,6 +197,9 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
             </span>
             <h1>Ajuste ta séance.</h1>
             <p>{state.session.intention}</p>
+            <Link className="primary-button session-field-link" href={`/session/${sessionId}/terrain`}>
+              Lancer le mode terrain
+            </Link>
           </>
         ) : (
           <>
