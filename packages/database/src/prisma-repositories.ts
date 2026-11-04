@@ -41,6 +41,9 @@ import {
 import { ContactMessageRecord, ContactMessageRepository } from "./contact-message-service";
 import { normalizeEducatorEmail } from "./email";
 import type {
+  ClubRecord,
+  ClubRepository,
+  SharedClubExercise,
   AccountRole,
   StaffInviteRecord,
   StaffMember,
@@ -318,6 +321,7 @@ export class PrismaStaffRepository implements StaffRepository {
 
 // Données exportées pour un compte et pour chacune de ses équipes ajoutées.
 const exportedRelations = {
+  sharingClub: { select: { name: true } },
   team: true,
   diagnostic: true,
   players: { include: { evaluations: true } },
@@ -1030,6 +1034,50 @@ export class PrismaPersonalExerciseRepository implements PersonalExerciseReposit
 
   async remove(id: string, educatorId: string): Promise<void> {
     await this.prisma.personalExerciseRecord.deleteMany({ where: { id, educatorId } });
+  }
+}
+
+const clubWithMembers = {
+  members: { where: { role: "coach" }, orderBy: { createdAt: "asc" }, select: { id: true, displayName: true } },
+} as const;
+
+export class PrismaClubRepository implements ClubRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async findForMember(accountId: string): Promise<ClubRecord | null> {
+    const account = await this.prisma.educator.findUnique({ where: { id: accountId }, select: { sharingClub: { include: clubWithMembers } } });
+    const club = account?.sharingClub;
+    return club ? { id: club.id, name: club.name, joinCode: club.joinCode, members: club.members } : null;
+  }
+
+  async findIdByJoinCode(joinCode: string): Promise<string | null> {
+    return (await this.prisma.club.findUnique({ where: { joinCode }, select: { id: true } }))?.id ?? null;
+  }
+
+  async create(accountId: string, name: string, joinCode: string): Promise<ClubRecord> {
+    const club = await this.prisma.club.create({ data: { name, joinCode, members: { connect: { id: accountId } } }, include: clubWithMembers });
+    return { id: club.id, name: club.name, joinCode: club.joinCode, members: club.members };
+  }
+
+  async setMembership(accountId: string, clubId: string | null): Promise<void> {
+    await this.prisma.educator.update({ where: { id: accountId }, data: { clubId } });
+  }
+
+  async deleteIfEmpty(clubId: string): Promise<void> {
+    await this.prisma.club.deleteMany({ where: { id: clubId, members: { none: {} } } });
+  }
+
+  async listSharedExercises(clubId: string, accountId: string): Promise<SharedClubExercise[]> {
+    const records = await this.prisma.personalExerciseRecord.findMany({
+      where: {
+        OR: [{ educator: { clubId } }, { educator: { role: "team", owner: { clubId } } }],
+        NOT: [{ educatorId: accountId }, { educator: { ownerEducatorId: accountId } }],
+      },
+      include: { educator: { select: { displayName: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+    return records.map((record) => ({ ...toPersonalExercise(record), authorName: record.educator.displayName }));
   }
 }
 

@@ -1,9 +1,11 @@
 export { AccountService } from "./account-service";
+export { ClubService, clubJoinCodeLength, generateClubJoinCode, normalizeClubJoinCode } from "./club-service";
 export { maxStaffMembers, StaffService } from "./staff-service";
 export { maxTeamsPerEducator, TeamSpaceService, type TeamChoice, type TeamOwner } from "./team-space-service";
 export { createDatabaseClient } from "./client";
 export { normalizeEducatorEmail } from "./email";
 export {
+  ClubNotFoundError,
   DiagnosticNotFoundError,
   DuplicateEducatorEmailError,
   EducatorNotFoundError,
@@ -21,6 +23,7 @@ export {
 } from "./errors";
 export {
   PrismaAccountRepository,
+  PrismaClubRepository,
   PrismaStaffRepository,
   PrismaTeamSpaceRepository,
   PrismaDiagnosticRepository,
@@ -118,3 +121,4 @@ export type {
   TournamentRepository,
   TrainingSessionRepository,
 } from "./repositories";
+export type { ClubMember, ClubRecord, SharedClubExercise } from "./repositories";

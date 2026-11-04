@@ -574,6 +574,33 @@ export interface PlayerEvaluationRepository {
   remove(id: string, educatorId: string): Promise<void>;
 }
 
+export interface ClubMember {
+  id: string;
+  displayName: string;
+}
+
+export interface ClubRecord {
+  id: string;
+  name: string;
+  joinCode: string;
+  members: ClubMember[];
+}
+
+// Exercice personnel d'un autre membre du club, avec le nom de son auteur.
+export interface SharedClubExercise extends PersonalExercise {
+  authorName: string;
+}
+
+export interface ClubRepository {
+  findForMember(accountId: string): Promise<ClubRecord | null>;
+  findIdByJoinCode(joinCode: string): Promise<string | null>;
+  create(accountId: string, name: string, joinCode: string): Promise<ClubRecord>;
+  setMembership(accountId: string, clubId: string | null): Promise<void>;
+  deleteIfEmpty(clubId: string): Promise<void>;
+  // Exercices des autres membres et de leurs équipes ajoutées, jamais ceux du compte demandeur.
+  listSharedExercises(clubId: string, accountId: string): Promise<SharedClubExercise[]>;
+}
+
 export interface PersonalExerciseRepository {
   listByEducator(educatorId: string): Promise<PersonalExercise[]>;
   create(educatorId: string, input: PersonalExerciseInput): Promise<PersonalExercise>;

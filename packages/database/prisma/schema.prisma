@@ -85,6 +85,10 @@ model Educator {
   // et l'app manipule déjà ses dates en texte libre ailleurs (MatchRecord.dateLabel).
   birthDate         String?                  @map("birth_date")
   club              String?
+  // Club rejoint par un code (partage d'exercices entre éducateurs). Indépendant du champ libre
+  // `club` du profil, qui ne donne accès à rien.
+  clubId            String?                  @db.Uuid @map("club_id")
+  sharingClub       Club?                    @relation(fields: [clubId], references: [id], onDelete: SetNull)
   country           String?
   address           String?
   phone             String?
@@ -111,7 +115,20 @@ model Educator {
   updatedAt         DateTime                 @updatedAt @map("updated_at")
 
   @@index([ownerEducatorId])
+  @@index([clubId])
   @@map("educators")
+}
+
+// Club partagé entre éducateurs : chacun voit les exercices personnels des autres membres et peut
+// les copier dans sa bibliothèque. On le rejoint avec `joinCode`, transmis par un membre.
+model Club {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String
+  joinCode  String     @unique @map("join_code")
+  members   Educator[]
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@map("clubs")
 }
 
 model Session {

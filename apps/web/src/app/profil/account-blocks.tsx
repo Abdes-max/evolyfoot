@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { AccountPrivacy } from "../account-privacy";
+import { loadClub, saveClub, type ClubInfo } from "../club-api";
 import { addTeam, listTeams, reloadAt, switchTeam, teamChoiceLabel, type TeamChoice } from "../team-switch";
 
 interface StaffMember {
@@ -88,6 +89,124 @@ function TeamsPanel() {
         <button className="profil-primary" onClick={add} type="button">
           Ajouter une équipe
         </button>
+        {error && (
+          <p className="profil-error" role="alert">
+            {error}
+          </p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function ClubPanel() {
+  const [club, setClub] = useState<ClubInfo | null | undefined>(undefined);
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [confirmingLeave, setConfirmingLeave] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    loadClub().then((loaded) => {
+      if (!cancelled) {
+        setClub(loaded);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function save(event: FormEvent, body: { code: string } | { name: string }) {
+    event.preventDefault();
+    setError("");
+    const result = await saveClub(body);
+    if (typeof result === "string") {
+      setError(result);
+      return;
+    }
+    setClub(result);
+    setName("");
+    setCode("");
+  }
+
+  async function leave() {
+    setError("");
+    if (!confirmingLeave) {
+      setConfirmingLeave(true);
+      return;
+    }
+    setConfirmingLeave(false);
+    const response = await fetch("/api/club", { method: "DELETE" }).catch(() => null);
+    if (response?.ok) {
+      setClub(null);
+    } else {
+      setError("Tu n’as pas pu quitter le club.");
+    }
+  }
+
+  async function copyCode(joinCode: string) {
+    try {
+      await navigator.clipboard.writeText(joinCode);
+      setCopied(true);
+    } catch {
+      // Le code reste lisible et sélectionnable.
+    }
+  }
+
+  if (club === undefined) {
+    return null;
+  }
+
+  return (
+    <div className="profil-block">
+      <section aria-labelledby="club-title" className="staff-panel">
+        <h3 id="club-title">Mon club</h3>
+        {club ? (
+          <>
+            <p>
+              Les éducateurs de <strong>{club.name}</strong> voient tes exercices personnels, ceux de toutes tes équipes, et peuvent les copier. Tu vois les
+              leurs dans la bibliothèque.
+            </p>
+            <ul>
+              {club.members.map((member) => (
+                <li key={member.id}>
+                  <span>
+                    <strong>{member.displayName}</strong>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="staff-invite">
+              <input aria-label="Code du club" readOnly value={club.joinCode} />
+              <button className="profil-ghost" onClick={() => copyCode(club.joinCode)} type="button">
+                {copied ? "Copié" : "Copier"}
+              </button>
+              <small>Donne ce code à tes collègues éducateurs : il suffit pour rejoindre le club.</small>
+            </div>
+            <button className="profil-ghost" onClick={leave} type="button">
+              {confirmingLeave ? "Confirmer : quitter le club" : "Quitter le club"}
+            </button>
+          </>
+        ) : (
+          <>
+            <p>Partage tes exercices avec les autres éducateurs de ton club. Rejoins le club d’un collègue avec son code, ou crée-le.</p>
+            <form className="staff-invite" onSubmit={(event) => save(event, { code })}>
+              <input aria-label="Code d’un club" onChange={(event) => setCode(event.target.value)} placeholder="Code reçu d’un collègue" value={code} />
+              <button className="profil-primary" disabled={!code.trim()} type="submit">
+                Rejoindre
+              </button>
+            </form>
+            <form className="staff-invite" onSubmit={(event) => save(event, { name })}>
+              <input aria-label="Nom du club" onChange={(event) => setName(event.target.value)} placeholder="Nom du club" value={name} />
+              <button className="profil-ghost" disabled={!name.trim()} type="submit">
+                Créer le club
+              </button>
+            </form>
+          </>
+        )}
         {error && (
           <p className="profil-error" role="alert">
             {error}
@@ -228,6 +347,7 @@ export function ProfileAccountBlocks() {
     <>
       {role === "coach" && <TeamsPanel />}
       {role === "coach" && <StaffPanel />}
+      {role === "coach" && <ClubPanel />}
       <div className="profil-block">
         <AccountPrivacy
           warning={
