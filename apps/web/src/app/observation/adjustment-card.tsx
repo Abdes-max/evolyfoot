@@ -7,10 +7,23 @@ type Decision = "pending" | "accepted" | "declined";
 
 interface AdjustmentCardProps {
   suggestion: AdjustmentSuggestion;
+  // Observation enregistrée : la réponse y est conservée pour l'indicateur « ajustements acceptés ».
+  observationId?: string;
 }
 
-export function AdjustmentCard({ suggestion }: AdjustmentCardProps) {
-  const [decision, setDecision] = useState<Decision>("pending");
+export function AdjustmentCard({ suggestion, observationId }: AdjustmentCardProps) {
+  const [decision, setDecisionState] = useState<Decision>("pending");
+
+  function setDecision(next: Decision) {
+    setDecisionState(next);
+    if (observationId) {
+      fetch(`/api/observations/${observationId}/adjustment`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ decision: next === "pending" ? null : next }),
+      }).catch(() => undefined);
+    }
+  }
   const applyButton = useRef<HTMLButtonElement>(null);
   const decisionButton = useRef<HTMLButtonElement>(null);
   const isInitialRender = useRef(true);

@@ -18,6 +18,14 @@ interface MvpMetrics {
   weeklyActivity: WeeklyActivityPoint[];
   retention: { retainedFourWeeks: number; activeLastFourWeeks: number };
   rosterAdoption: { educatorsWithPlayers: number; totalEducators: number };
+  reportEntry: { measured: number; underThreeMinutes: number; medianSeconds: number | null };
+  adjustments: { accepted: number; declined: number; educatorsWithAccepted: number; educatorsWithObservations: number };
+}
+
+function formatDuration(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return minutes > 0 ? `${minutes} min ${String(rest).padStart(2, "0")} s` : `${rest} s`;
 }
 
 type Status = "loading" | "denied" | "error" | "ready";
@@ -169,6 +177,30 @@ export function MetricsView() {
                 <small> / {metrics.rosterAdoption.totalEducators} comptes</small>
               </p>
               <p className="kpi-hint">A ajouté au moins un joueur nommé sur /equipe — signe d’un usage allant au-delà de la démo.</p>
+            </div>
+            <div className="kpi-card">
+              <p className="kpi-label">Compte rendu en moins de 3 minutes</p>
+              <p className="kpi-value">
+                {metrics.reportEntry.underThreeMinutes}
+                <small> / {metrics.reportEntry.measured} mesurés</small>
+              </p>
+              <p className="kpi-hint">
+                {metrics.reportEntry.medianSeconds === null
+                  ? "Aucune durée mesurée pour l’instant."
+                  : `Durée médiane : ${formatDuration(metrics.reportEntry.medianSeconds)}.`}{" "}
+                Mesurée de la première évaluation à la validation, depuis le 4 novembre 2026.
+              </p>
+            </div>
+            <div className="kpi-card">
+              <p className="kpi-label">Ajustement accepté sur le cycle</p>
+              <p className="kpi-value">
+                {metrics.adjustments.educatorsWithAccepted}
+                <small> / {metrics.adjustments.educatorsWithObservations} éducateurs</small>
+              </p>
+              <p className="kpi-hint">
+                Sur les 4 dernières semaines : {metrics.adjustments.accepted} proposition(s) appliquée(s), {metrics.adjustments.declined} écartée(s). Parmi les
+                éducateurs ayant saisi au moins un compte rendu.
+              </p>
             </div>
           </section>
         </div>

@@ -144,4 +144,23 @@ describe("PostgreSQL MVP metrics", () => {
     expect(metrics.rosterAdoption.totalEducators).toBeGreaterThanOrEqual(2);
     void withoutRoster;
   });
+
+  it("mesure la durée de saisie des comptes rendus et les ajustements acceptés", async () => {
+    const before = await metricsService.get();
+    const educator = await createEducator("compte-rendu");
+    const quick = await observationService.save(educator.id, completeDraft(), undefined, 120);
+    const slow = await observationService.save(educator.id, completeDraft(), undefined, 400);
+    await observationService.save(educator.id, completeDraft());
+    await observationService.decideAdjustment(educator.id, quick.id, "accepted");
+    await observationService.decideAdjustment(educator.id, slow.id, "declined");
+
+    const after = await metricsService.get();
+
+    expect(after.reportEntry.measured - before.reportEntry.measured).toBe(2);
+    expect(after.reportEntry.underThreeMinutes - before.reportEntry.underThreeMinutes).toBe(1);
+    expect(after.reportEntry.medianSeconds).not.toBeNull();
+    expect(after.adjustments.accepted - before.adjustments.accepted).toBe(1);
+    expect(after.adjustments.declined - before.adjustments.declined).toBe(1);
+    expect(after.adjustments.educatorsWithAccepted - before.adjustments.educatorsWithAccepted).toBe(1);
+  });
 });

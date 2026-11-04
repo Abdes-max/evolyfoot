@@ -15,6 +15,8 @@ const sampleMetrics: MvpMetrics = {
   weeklyActivity: [{ weekStart: "2026-08-24", activeEducators: 3 }],
   retention: { retainedFourWeeks: 1, activeLastFourWeeks: 3 },
   rosterAdoption: { educatorsWithPlayers: 2, totalEducators: 10 },
+  reportEntry: { measured: 4, underThreeMinutes: 3, medianSeconds: 150 },
+  adjustments: { accepted: 2, declined: 1, educatorsWithAccepted: 1, educatorsWithObservations: 2 },
 };
 
 const authenticatedAsAdmin = async () => admin;

@@ -225,6 +225,12 @@ model ObservationRecord {
   // suppression du match qui l'a motivée.
   matchId    String?              @db.Uuid @map("match_id")
   match      MatchRecord?         @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  // Indicateurs MVP (docs/mvp.md) : durée de saisie mesurée par l'appli, de la première
+  // évaluation à la validation, et réponse de l'éducateur à la proposition d'ajustement
+  // ("accepted" | "declined", `null` tant qu'il n'a pas répondu).
+  entrySeconds        Int?            @map("entry_seconds")
+  adjustmentDecision  String?         @map("adjustment_decision")
+  adjustmentDecidedAt DateTime?       @map("adjustment_decided_at")
   createdAt  DateTime             @default(now()) @map("created_at")
 
   @@index([educatorId])

@@ -37,7 +37,7 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 ### Produit
 
 - [ ] Faire relire les 80 exercices ajoutés en novembre par un éducateur.
-- [ ] Mesurer les indicateurs MVP restants (voir docs/mvp.md) : temps de préparation, temps de compte rendu, ajustements acceptés.
+- [ ] Mesurer les indicateurs MVP restants (voir docs/mvp.md) : temps de préparation de la première séance. Le temps de compte rendu et les ajustements acceptés sont mesurés sur le web depuis le 4 novembre 2026 (/admin/metrics) ; reste aussi à instrumenter EvolyFoot Coach.
 - [ ] Ajouter de vrais témoignages à la vitrine dès que des éducateurs utilisent l’application, sans chiffres inventés.
 
 ### Offre payante et clubs (non commencé)
