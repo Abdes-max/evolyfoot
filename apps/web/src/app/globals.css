@@ -146,6 +146,20 @@ nav {
   color: var(--muted);
   font-size: 12px;
 }
+.team-switch {
+  margin-top: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+}
+.season-card > .team-switch-error {
+  color: var(--bad);
+}
 
 .email-reminder {
   margin-top: 10px;

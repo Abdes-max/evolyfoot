@@ -32,8 +32,9 @@ export class MetricsService {
 
   async get(): Promise<MvpMetrics> {
     const [totalEducators, educatorsWithTeam, educatorsWithDiagnostic, sessionEducators, observationEducators, playerEducators] = await Promise.all([
-      this.prisma.educator.count(),
-      this.prisma.team.count(),
+      // Les espaces d'équipe supplémentaires ne sont pas des comptes.
+      this.prisma.educator.count({ where: { role: { not: "team" } } }),
+      this.prisma.team.count({ where: { educator: { role: { not: "team" } } } }),
       this.prisma.diagnostic.count(),
       this.prisma.trainingSessionRecord.groupBy({ by: ["educatorId"] }),
       this.prisma.observationRecord.groupBy({ by: ["educatorId"] }),

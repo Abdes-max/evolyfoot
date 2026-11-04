@@ -40,7 +40,7 @@ export class PasswordResetService {
       return null;
     }
     const account = await this.educatorRepository.findByEmail(email);
-    if (!account) {
+    if (!account || account.role === "team") {
       return null;
     }
     const windowStart = new Date(this.now().getTime() - REQUEST_WINDOW_MS);

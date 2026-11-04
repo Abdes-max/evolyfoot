@@ -76,6 +76,13 @@ class InMemorySessionRepository implements SessionRepository {
     this.byTokenHash.clear();
   }
 
+  async setActiveTeam(tokenHash: string, activeTeamId: string | null): Promise<void> {
+    const session = this.byTokenHash.get(tokenHash);
+    if (session) {
+      this.byTokenHash.set(tokenHash, { ...session, activeTeamId });
+    }
+  }
+
   async deleteByTokenHash(tokenHash: string): Promise<void> {
     this.deleteCount += 1;
     this.byTokenHash.delete(tokenHash);

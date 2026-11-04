@@ -22,6 +22,21 @@ interface Profile {
 type EditableKey = Exclude<keyof Profile, "email">;
 type FormState = Record<EditableKey, string>;
 
+interface TeamChoice {
+  id: string;
+  name: string | null;
+  ageGroup: string | null;
+  primary: boolean;
+  active: boolean;
+}
+
+function teamLabel(team: TeamChoice): string {
+  if (!team.name) {
+    return "Nouvelle équipe (à configurer)";
+  }
+  return team.ageGroup ? `${team.name} · ${team.ageGroup}` : team.name;
+}
+
 interface StaffMember {
   id: string;
   displayName: string;
@@ -63,6 +78,97 @@ function Section({ title, children, action }: { title: string; children: ReactNo
       </View>
       {children}
     </View>
+  );
+}
+
+// Comme le bloc « Mes équipes » du profil web : chaque équipe a son effectif, ses séances, ses
+// matchs et son staff ; l'équipe ouverte vaut pour toute l'appli.
+function TeamsSection() {
+  const { apiRequest, reloadTeamData } = useAuth();
+  const [teams, setTeams] = useState<TeamChoice[]>([]);
+  const [error, setError] = useState("");
+
+  const load = useCallback(async () => {
+    const response = await apiRequest("/api/teams");
+    const body = response?.ok ? await response.json().catch(() => null) : null;
+    setTeams(Array.isArray(body?.teams) ? body.teams : []);
+  }, [apiRequest]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  async function open(team: TeamChoice) {
+    setError("");
+    const response = await apiRequest("/api/teams/active", { method: "PUT", body: JSON.stringify({ id: team.id }) });
+    if (!response?.ok) {
+      setError(await errorOf(response, "L’équipe n’a pas pu être ouverte."));
+      return;
+    }
+    await reloadTeamData();
+    router.replace("/");
+  }
+
+  async function add() {
+    setError("");
+    const response = await apiRequest("/api/teams", { method: "POST" });
+    if (!response?.ok) {
+      setError(await errorOf(response, "L’équipe n’a pas pu être créée."));
+      return;
+    }
+    await reloadTeamData();
+    router.push("/onboarding");
+  }
+
+  function remove(team: TeamChoice) {
+    Alert.alert(`Supprimer ${teamLabel(team)} ?`, "Son effectif, ses séances, ses matchs et son staff seront supprimés définitivement.", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          const response = await apiRequest(`/api/teams/${team.id}`, { method: "DELETE" });
+          if (!response?.ok) {
+            setError(await errorOf(response, "L’équipe n’a pas pu être supprimée."));
+            return;
+          }
+          if (team.active) {
+            await reloadTeamData();
+          }
+          await load();
+        },
+      },
+    ]);
+  }
+
+  return (
+    <Section title="Mes équipes">
+      <Text style={styles.muted}>Chaque équipe a son effectif, ses séances, ses matchs et son staff.</Text>
+      {teams.map((team) => (
+        <View key={team.id} style={styles.member}>
+          <View style={styles.memberText}>
+            <Text style={styles.value}>{teamLabel(team)}</Text>
+            <Text style={styles.muted}>{team.active ? "Équipe affichée" : team.primary ? "Première équipe" : "Équipe ajoutée"}</Text>
+          </View>
+          {!team.active && (
+            <TouchableOpacity accessibilityLabel={`Ouvrir ${teamLabel(team)}`} accessibilityRole="button" onPress={() => open(team)}>
+              <Text style={styles.link}>Ouvrir</Text>
+            </TouchableOpacity>
+          )}
+          {!team.primary && (
+            <TouchableOpacity accessibilityLabel={`Supprimer ${teamLabel(team)}`} accessibilityRole="button" onPress={() => remove(team)}>
+              <Text style={styles.danger}>Supprimer</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ))}
+      <TouchableOpacity accessibilityRole="button" onPress={add} style={styles.primary}>
+        <Text style={styles.primaryText}>Ajouter une équipe</Text>
+      </TouchableOpacity>
+      {error ? <Text style={styles.danger}>{error}</Text> : null}
+    </Section>
   );
 }
 
@@ -114,7 +220,10 @@ function StaffSection() {
 
   return (
     <Section title="Mon staff">
-      <Text style={styles.muted}>Tes adjoints ont leur propre compte. Ils préparent les séances et les matchs et évaluent les joueurs de ton équipe.</Text>
+      <Text style={styles.muted}>
+        Tes adjoints ont leur propre compte. Ils préparent les séances et les matchs et évaluent les joueurs de l’équipe affichée : chaque équipe a son propre
+        staff.
+      </Text>
       {members.map((member) => (
         <View key={member.id} style={styles.member}>
           <View style={styles.memberText}>
@@ -315,6 +424,7 @@ export default function ProfilScreen() {
           </TouchableOpacity>
         </Section>
 
+        {educator?.role !== "assistant" && <TeamsSection />}
         {educator?.role !== "assistant" && <StaffSection />}
 
         <TouchableOpacity accessibilityRole="button" onPress={signOut} style={styles.ghost}>

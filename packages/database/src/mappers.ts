@@ -336,6 +336,7 @@ export function toSessionRecord(session: Session): SessionRecord {
   return Object.freeze({
     id: session.id,
     educatorId: session.educatorId,
+    activeTeamId: session.activeTeamId,
     expiresAt: session.expiresAt,
     createdAt: session.createdAt,
   });

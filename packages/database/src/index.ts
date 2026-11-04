@@ -1,5 +1,6 @@
 export { AccountService } from "./account-service";
 export { maxStaffMembers, StaffService } from "./staff-service";
+export { maxTeamsPerEducator, TeamSpaceService, type TeamChoice, type TeamOwner } from "./team-space-service";
 export { createDatabaseClient } from "./client";
 export { normalizeEducatorEmail } from "./email";
 export {
@@ -13,6 +14,7 @@ export {
   PlayerEvaluationNotFoundError,
   PlayerNotFoundError,
   TeamNotFoundError,
+  TeamSpaceNotFoundError,
   TournamentNotFoundError,
   TrainingSessionNotFoundError,
   ValidationError,
@@ -20,6 +22,7 @@ export {
 export {
   PrismaAccountRepository,
   PrismaStaffRepository,
+  PrismaTeamSpaceRepository,
   PrismaDiagnosticRepository,
   PrismaEducatorRepository,
   PrismaMatchRepository,

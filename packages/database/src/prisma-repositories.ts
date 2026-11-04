@@ -82,6 +82,7 @@ import type {
   SessionRecord,
   SessionRepository,
   TeamRepository,
+  TeamSpaceRepository,
   TournamentRepository,
   TrainingSessionRepository,
 } from "./repositories";
@@ -210,6 +211,10 @@ export class PrismaEducatorRepository implements EducatorRepository, EducatorPro
 
   async updateProfile(id: string, patch: EducatorProfilePatch): Promise<EducatorProfile> {
     const educator = await this.prisma.educator.update({ where: { id }, data: patch });
+    // Les espaces de ses autres équipes portent son nom (messages, convocations, espace joueur).
+    if (patch.displayName !== undefined) {
+      await this.prisma.educator.updateMany({ where: { ownerEducatorId: id, role: "team" }, data: { displayName: patch.displayName } });
+    }
     return toEducatorProfile(educator);
   }
 
@@ -379,6 +384,24 @@ export class PrismaSessionRepository implements SessionRepository {
     await this.prisma.session.deleteMany({
       where: { educatorId, ...(keptTokenHash ? { tokenHash: { not: keptTokenHash } } : {}) },
     });
+  }
+
+  async setActiveTeam(tokenHash: string, activeTeamId: string | null): Promise<void> {
+    await this.prisma.session.updateMany({ where: { tokenHash }, data: { activeTeamId } });
+  }
+}
+
+export class PrismaTeamSpaceRepository implements TeamSpaceRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async listForOwner(ownerId: string): Promise<EducatorRecord[]> {
+    const spaces = await this.prisma.educator.findMany({ where: { ownerEducatorId: ownerId, role: "team" }, orderBy: { createdAt: "asc" } });
+    return spaces.map(toEducatorRecord);
+  }
+
+  async remove(ownerId: string, teamSpaceId: string): Promise<boolean> {
+    const { count } = await this.prisma.educator.deleteMany({ where: { id: teamSpaceId, ownerEducatorId: ownerId, role: "team" } });
+    return count > 0;
   }
 }
 

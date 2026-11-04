@@ -43,8 +43,9 @@ Web et API en production sur `evolyfoot.com`, déploiement automatique à chaque
 ### Offre payante et clubs (non commencé)
 
 - [ ] Paiement Premium : tarifs seulement proposés, aucun contrôle d'accès ni facturation.
-- [ ] Fonctions annoncées « à venir » sur la page Tarifs : plusieurs équipes, partage entre éducateurs d’un même club. L’historique multi-saisons est livré le 2 novembre 2026 (limite de 10 évaluations par saison et non plus à vie, progression par saison sur le web et Coach) et la page Tarifs le range dans le plan gratuit, avec les adjoints.
-- [ ] Offre club, écartée pour l'instant. Plusieurs équipes par compte demande de revoir le modèle de données (un éducateur n'a aujourd'hui qu'une équipe).
+- [ ] Fonction annoncée « à venir » sur la page Tarifs : partage entre éducateurs d’un même club. L’historique multi-saisons est livré le 2 novembre 2026 (limite de 10 évaluations par saison et non plus à vie, progression par saison sur le web et Coach) et la page Tarifs le range dans le plan gratuit, avec les adjoints.
+- [x] Plusieurs équipes par compte — 4 novembre 2026. Chaque équipe ajoutée vit dans un espace d'équipe (compte `team` rattaché à l'éducateur, sans connexion possible) ; la session retient l'équipe choisie (`sessions.active_team_id`) et `getEducatorForSession` renvoie l'espace correspondant, donc effectif, séances, matchs, cycles et staff suivent l'équipe sans autre changement. Choix de l'équipe dans le menu (web), bloc « Mes équipes » du profil (web et Coach), 10 équipes au plus. Rangée dans Premium sur la page Tarifs, mais ouverte à tous tant qu'aucun paiement n'est activé. Reste : l'export RGPD ne contient que la première équipe.
+- [ ] Offre club, écartée pour l'instant.
 
 ### Technique
 

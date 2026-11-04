@@ -74,7 +74,7 @@ export class AuthService {
       await verifyPassword(input.password, await absentAccountHash());
       throw new InvalidCredentialsError();
     }
-    if (!(await verifyPassword(input.password, record.passwordHash))) {
+    if (!(await verifyPassword(input.password, record.passwordHash)) || record.role === "team") {
       throw new InvalidCredentialsError();
     }
     const educator: EducatorRecord = {
@@ -97,25 +97,38 @@ export class AuthService {
   // Compte lié à la session, quel que soit son rôle -- utilisé par /api/auth/session pour dire
   // au client quel type de compte est connecté (et donc vers quel tableau de bord aller).
   async getAccountForSession(sessionToken: string): Promise<EducatorRecord | null> {
+    return (await this.sessionAccount(sessionToken))?.account ?? null;
+  }
+
+  private async sessionAccount(sessionToken: string): Promise<{ account: EducatorRecord; activeTeamId: string | null } | null> {
     const session = await this.sessionRepository.findValidByTokenHash(hashSessionToken(sessionToken));
     if (!session) {
       return null;
     }
-    return this.educatorRepository.findById(session.educatorId);
+    const account = await this.educatorRepository.findById(session.educatorId);
+    return account ? { account, activeTeamId: session.activeTeamId ?? null } : null;
   }
 
   // Ne résout QUE les comptes "coach" : un jeton de compte joueur renvoie `null`, donc toutes les
   // routes API éducateur (qui appellent cette méthode) rejettent automatiquement un compte joueur.
   // `role` absent ⇒ coach (comptes créés avant l'introduction du rôle).
   async getEducatorForSession(sessionToken: string): Promise<EducatorRecord | null> {
-    const account = await this.getAccountForSession(sessionToken);
-    if (!account || account.role === "player") {
+    const resolved = await this.sessionAccount(sessionToken);
+    const account = resolved?.account;
+    if (!account || account.role === "player" || account.role === "team") {
       return null;
     }
     // Un adjoint travaille sur les données de son éducateur : toutes les routes d'équipe reçoivent
     // donc le compte titulaire. Ce qui touche au compte lui-même passe par getAccountForSession.
     if (account.role === "assistant") {
       return account.ownerEducatorId ? this.educatorRepository.findById(account.ownerEducatorId) : null;
+    }
+    // Un éducateur qui a choisi une autre de ses équipes travaille sur l'espace de cette équipe.
+    if (resolved.activeTeamId) {
+      const teamSpace = await this.educatorRepository.findById(resolved.activeTeamId);
+      if (teamSpace?.role === "team" && teamSpace.ownerEducatorId === account.id) {
+        return teamSpace;
+      }
     }
     return account;
   }
