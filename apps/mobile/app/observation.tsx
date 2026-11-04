@@ -20,7 +20,7 @@ import {
 } from "@evolyfoot/domain";
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { Link, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AdjustmentCard } from "../components/adjustment-card";
@@ -57,7 +57,7 @@ function createDraft(type: ObservationEventType, players: readonly PlayerReferen
 
 export default function ObservationScreen() {
   const { type, matchId, week } = useLocalSearchParams<{ type?: string; matchId?: string; week?: string }>();
-  const { diagnosticScores, roster, saveObservation, getMatch } = useAuth();
+  const { diagnosticScores, roster, saveObservation, getMatch, apiRequest } = useAuth();
   const initialEventType: ObservationEventType = type === "match" ? "match" : "training";
   // Un match préparé (voir /match) restreint la liste aux joueurs réellement alignés -- plus
   // pertinent que l'effectif complet pour se souvenir de qui a joué ce match précis. Le repli sur
@@ -71,6 +71,12 @@ export default function ObservationScreen() {
   const [report, setReport] = useState<ObservationReport>();
   const [suggestion, setSuggestion] = useState<AdjustmentSuggestion>();
   const [saveError, setSaveError] = useState("");
+  // Indicateurs MVP, comme côté web : durée depuis la première modification, et réponse à la
+  // proposition d'ajustement transmise une fois l'observation enregistrée (l'enregistrement peut
+  // se terminer après la réponse du coach).
+  const startedAt = useRef<number | null>(null);
+  const [savedId, setSavedId] = useState<string>();
+  const [decision, setDecision] = useState<"accepted" | "declined" | null>();
   const complete = canCompleteObservation(draft);
   const remaining = diagnosticCriteria.length - draft.ratings.length;
   // Résolu depuis le diagnostic déjà enregistré (comme dans plan.tsx et session.tsx), avec repli
@@ -101,10 +107,19 @@ export default function ObservationScreen() {
     };
   }, [matchId, getMatch]);
 
+  useEffect(() => {
+    if (savedId && decision !== undefined) {
+      void apiRequest(`/api/observations/${savedId}/adjustment`, { method: "PUT", body: JSON.stringify({ decision }) });
+    }
+  }, [savedId, decision, apiRequest]);
+
   function editDraft(nextDraft: ObservationDraft) {
+    startedAt.current ??= Date.now();
     setDraft(nextDraft);
     setReport(undefined);
     setSuggestion(undefined);
+    setSavedId(undefined);
+    setDecision(undefined);
     setSaveError("");
   }
 
@@ -119,10 +134,14 @@ export default function ObservationScreen() {
       AccessibilityInfo.announceForAccessibility(`Observation validée. Tendance ${levelText[nextReport.summary.trend]}.`);
     }
 
-    const result = await saveObservation(draft, matchId);
+    const entrySeconds = startedAt.current !== null ? Math.round((Date.now() - startedAt.current) / 1000) : undefined;
+    const result = await saveObservation(draft, matchId, entrySeconds);
     if (!result.ok) {
       setSaveError(result.error);
+      return;
     }
+    startedAt.current = null;
+    setSavedId(result.id);
   }
 
   return (
@@ -283,7 +302,7 @@ export default function ObservationScreen() {
             {saveError ? <Text style={styles.saveError}>{saveError}</Text> : null}
           </View>
         )}
-        {suggestion && <AdjustmentCard suggestion={suggestion} />}
+        {suggestion && <AdjustmentCard onDecision={setDecision} suggestion={suggestion} />}
       </ScrollView>
     </SafeAreaView>
   );

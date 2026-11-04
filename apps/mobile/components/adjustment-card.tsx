@@ -7,14 +7,17 @@ type Decision = "pending" | "accepted" | "declined";
 
 interface AdjustmentCardProps {
   suggestion: AdjustmentSuggestion;
+  // Appelé à chaque réponse (null = retour à « en attente »), pour l'indicateur « ajustements acceptés ».
+  onDecision?: (decision: "accepted" | "declined" | null) => void;
 }
 
-export function AdjustmentCard({ suggestion }: AdjustmentCardProps) {
+export function AdjustmentCard({ suggestion, onDecision }: AdjustmentCardProps) {
   const [decision, setDecision] = useState<Decision>("pending");
   const status = decision === "accepted" ? "Ajustement appliqué à la prochaine séance" : decision === "declined" ? "Plan actuel conservé" : "";
 
   function decide(nextDecision: Decision) {
     setDecision(nextDecision);
+    onDecision?.(nextDecision === "pending" ? null : nextDecision);
     if (Platform.OS === "ios" && nextDecision !== "pending") {
       AccessibilityInfo.announceForAccessibility(nextDecision === "accepted" ? "Ajustement appliqué à la prochaine séance" : "Plan actuel conservé");
     }
