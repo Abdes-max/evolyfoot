@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { NotificationBell } from "./notification-bell";
 import { useEffect, useState } from "react";
 import { addTeam, listTeams, switchTeam, teamChoiceLabel, type TeamChoice } from "./team-switch";
 
@@ -191,6 +192,7 @@ export function SidebarIdentity() {
             <span>Voir mon profil</span>
           </div>
         </Link>
+        <NotificationBell />
         <button aria-label="Se déconnecter" onClick={logout} type="button">
           Déconnexion
         </button>

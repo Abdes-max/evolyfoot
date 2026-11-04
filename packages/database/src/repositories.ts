@@ -636,6 +636,42 @@ export interface PersistedMessage {
   createdAt: Date;
 }
 
+export type NotificationKind = "message" | "evaluation";
+
+export interface NotificationInput {
+  recipientId: string;
+  kind: NotificationKind;
+  title: string;
+  body: string;
+  link: string;
+  threadPlayerId?: string | null;
+}
+
+export interface NotificationRecord extends Required<NotificationInput> {
+  id: string;
+  readAt: Date | null;
+  createdAt: Date;
+}
+
+export interface NotificationRepository {
+  // Personnes à prévenir côté coach : le titulaire de l'équipe (le coach derrière un espace d'équipe)
+  // et ses adjoints.
+  coachRecipients(educatorId: string): Promise<string[]>;
+  // Compte joueur/tuteur rattaché au joueur, `null` s'il n'a pas encore été invité.
+  playerAccountId(playerId: string): Promise<string | null>;
+  createMany(inputs: NotificationInput[]): Promise<void>;
+  list(recipientId: string, limit: number): Promise<NotificationRecord[]>;
+  countUnread(recipientId: string, kind?: NotificationKind): Promise<number>;
+  markRead(recipientId: string, filter: { ids?: string[]; threadPlayerId?: string; kind?: NotificationKind }): Promise<void>;
+}
+
+export interface PushDeviceRepository {
+  register(educatorId: string, token: string, platform: string): Promise<void>;
+  unregister(educatorId: string, token: string): Promise<void>;
+  tokensFor(educatorIds: string[]): Promise<Array<{ educatorId: string; token: string }>>;
+  removeTokens(tokens: string[]): Promise<void>;
+}
+
 export interface MessageRepository {
   listByPlayer(educatorId: string, playerId: string): Promise<PersistedMessage[]>;
   create(input: { educatorId: string; playerId: string; authorRole: MessageAuthorRole; authorName: string; text: string }): Promise<PersistedMessage>;

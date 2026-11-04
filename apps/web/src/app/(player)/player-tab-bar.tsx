@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UnreadBadge, useNotifications } from "../notification-bell";
 
 // Barre de navigation fixe de l'espace joueur/tuteur -- même principe que la barre du bas de
 // l'appli coach (.sidebar en position:fixed sous 950px, voir globals.css), mais toujours affichée
@@ -17,6 +18,7 @@ const tabs = [
 
 export function PlayerTabBar() {
   const pathname = usePathname() ?? "";
+  const [feed] = useNotifications();
   if (pathname.startsWith("/joueur/matches/") || pathname.startsWith("/joueur/seances/")) {
     return null;
   }
@@ -26,6 +28,7 @@ export function PlayerTabBar() {
       {tabs.map((tab) => (
         <Link className={tab.match(pathname) ? "player-tab active" : "player-tab"} href={tab.href} key={tab.href}>
           {tab.label}
+          {tab.href === "/joueur/messages" && !tab.match(pathname) && <UnreadBadge count={feed.unreadMessages} label="messages non lus" />}
         </Link>
       ))}
     </nav>

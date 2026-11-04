@@ -1,14 +1,20 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { PlayerCard } from "../components/player-card";
 import { Screen } from "../components/screen";
 import { useAuth } from "../lib/auth-context";
 import { buildAgenda, useDashboard } from "../lib/dashboard";
+import { markEvaluationsRead } from "../lib/push";
 
 export default function MyCardScreen() {
-  const { logout } = useAuth();
+  const { logout, sessionToken } = useAuth();
+  useFocusEffect(
+    useCallback(() => {
+      if (sessionToken) void markEvaluationsRead(sessionToken);
+    }, [sessionToken]),
+  );
   const { dashboard, status } = useDashboard();
   const [now] = useState(() => Date.now());
 

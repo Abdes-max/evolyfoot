@@ -103,6 +103,8 @@ model Educator {
   team               Team?
   diagnostic         Diagnostic?
   seasonProgram      SeasonProgram?
+  notifications     Notification[]
+  pushDevices       PushDevice[]
   sessions           Session[]
   trainingSessions   TrainingSessionRecord[]
   observations       ObservationRecord[]
@@ -152,6 +154,39 @@ model Session {
 // Saison guidée de l'éducateur (ou de l'espace d'équipe) : ses thèmes prioritaires et la semaine
 // de départ. Les 36 semaines se recalculent à partir de là (buildPrioritizedSeason), rien d'autre
 // n'est stocké.
+// Alerte affichée dans l'app (cloche, pastilles « non lu ») et envoyée en push sur le téléphone.
+// `threadPlayerId` : fil de messages concerné, pour tout marquer lu à l'ouverture du fil.
+model Notification {
+  id             String    @id @default(uuid()) @db.Uuid
+  recipientId    String    @map("recipient_id") @db.Uuid
+  recipient      Educator  @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  kind           String
+  title          String
+  body           String
+  link           String
+  threadPlayerId String?   @map("thread_player_id") @db.Uuid
+  readAt         DateTime? @map("read_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([recipientId, readAt])
+  @@index([recipientId, createdAt])
+  @@map("notifications")
+}
+
+// Téléphone qui reçoit les notifications push (jeton Expo).
+model PushDevice {
+  id         String   @id @default(uuid()) @db.Uuid
+  educatorId String   @map("educator_id") @db.Uuid
+  educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  platform   String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([educatorId])
+  @@map("push_devices")
+}
+
 model SeasonProgram {
   id         String             @id @default(uuid()) @db.Uuid
   educatorId String             @unique @map("educator_id") @db.Uuid

@@ -146,6 +146,7 @@ export async function createPlayerEvaluationGateway(): Promise<{
 }> {
   const { createDatabaseClient, PlayerEvaluationService, PrismaEducatorRepository, PrismaPlayerEvaluationRepository, PrismaPlayerRepository } =
     await import("@evolyfoot/database");
+  const { notificationServiceFor } = await import("./notifications");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new PlayerEvaluationService(
     new PrismaEducatorRepository(database.prisma),
@@ -172,7 +173,11 @@ export async function createPlayerEvaluationGateway(): Promise<{
         return (await service.listByPlayer(educatorId, playerId)).map(toSummary);
       },
       async add(educatorId, playerId, scores) {
-        return toSummary(await service.add(educatorId, playerId, scores));
+        const evaluation = toSummary(await service.add(educatorId, playerId, scores));
+        await notificationServiceFor(database)
+          .then((notifications) => notifications.onEvaluation(playerId))
+          .catch(console.error);
+        return evaluation;
       },
       async update(educatorId, evaluationId, input) {
         return toSummary(

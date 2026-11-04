@@ -332,3 +332,107 @@
   gap: 12px;
   grid-template-columns: 1fr 1fr;
 }
+
+/* Notifications : cloche, panneau et pastilles « non lu ». */
+.notification-bell {
+  position: relative;
+}
+
+.notification-bell > button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  position: relative;
+  width: 40px;
+}
+
+.unread-badge {
+  background: #ef4444;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 18px;
+  padding: 3px 5px;
+  text-align: center;
+}
+
+.notification-bell .unread-badge {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+}
+
+.player-tab .unread-badge {
+  margin-left: 6px;
+}
+
+.notification-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  bottom: 48px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 40%);
+  left: 0;
+  max-height: 70vh;
+  overflow: auto;
+  position: absolute;
+  width: min(340px, calc(100vw - 32px));
+  z-index: 50;
+}
+
+.player-space-header .notification-panel {
+  bottom: auto;
+  left: auto;
+  right: 0;
+  top: 48px;
+}
+
+.notification-panel-head {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.notification-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.notification-panel li a {
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+.notification-panel li.unread a {
+  background: var(--surface-2);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.notification-panel li span {
+  font-size: 0.85rem;
+}
+
+.notification-panel li small,
+.notification-empty {
+  color: var(--muted, #9aa4b5);
+  font-size: 0.75rem;
+}
+
+.notification-empty {
+  padding: 14px;
+}

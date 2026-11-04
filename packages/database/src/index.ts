@@ -28,6 +28,8 @@ export {
   PrismaTeamSpaceRepository,
   PrismaDiagnosticRepository,
   PrismaSeasonProgramRepository,
+  PrismaNotificationRepository,
+  PrismaPushDeviceRepository,
   PrismaEducatorRepository,
   PrismaMatchRepository,
   PrismaMessageRepository,
@@ -49,6 +51,7 @@ export { AuthService } from "./auth-service";
 export { ConvocationService } from "./convocation-service";
 export { DiagnosticService } from "./diagnostic-service";
 export { SeasonProgramService } from "./season-program-service";
+export { NotificationService, NotifyingMessageRepository, type PushSender } from "./notification-service";
 export { EducatorProfileService, seasonFormats } from "./educator-profile-service";
 export { MatchService } from "./match-service";
 export { matchKickoffTime, matchMeetingTime } from "./match-time";
