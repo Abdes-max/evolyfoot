@@ -2,7 +2,7 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { trainingActivityCatalogue, type DevelopmentTheme, type PersonalExercise, type TrainingBlockKind } from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { kindLabels } from "../lib/exercise-labels";
 
@@ -55,9 +55,17 @@ function Card({ id, kind, meta, title, objective }: { id: string; kind: Training
   );
 }
 
+// Exercice personnel d'un autre éducateur du club (GET /api/club/exercises).
+interface SharedExercise extends PersonalExercise {
+  authorName: string;
+}
+
 export default function BibliothequeScreen() {
-  const { listPersonalExercises } = useAuth();
+  const { apiRequest, listPersonalExercises } = useAuth();
   const [personal, setPersonal] = useState<readonly PersonalExercise[]>([]);
+  const [shared, setShared] = useState<readonly SharedExercise[]>([]);
+  const [copied, setCopied] = useState<readonly string[]>([]);
+  const [copyError, setCopyError] = useState("");
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<TrainingBlockKind | "all">("all");
   const [theme, setTheme] = useState<DevelopmentTheme | "all">("all");
@@ -70,11 +78,36 @@ export default function BibliothequeScreen() {
           setPersonal(list);
         }
       });
+      // Vide hors club et pour un adjoint (403).
+      apiRequest("/api/club/exercises")
+        .then((response) => (response?.ok ? response.json() : null))
+        .then((body) => {
+          if (!cancelled) {
+            setShared(Array.isArray(body?.exercises) ? body.exercises : []);
+          }
+        })
+        .catch(() => undefined);
       return () => {
         cancelled = true;
       };
-    }, [listPersonalExercises]),
+    }, [apiRequest, listPersonalExercises]),
   );
+
+  async function copy(exercise: SharedExercise) {
+    setCopyError("");
+    const { kind, theme, title, objective, organization, instruction, observable, photo } = exercise;
+    const response = await apiRequest("/api/personal-exercises", {
+      method: "POST",
+      body: JSON.stringify({ kind, theme, title, objective, organization, instruction, observable, photo }),
+    });
+    if (!response?.ok) {
+      const body = await response?.json().catch(() => null);
+      setCopyError(typeof body?.error === "string" ? body.error : "L’exercice n’a pas pu être copié.");
+      return;
+    }
+    setCopied((current) => [...current, exercise.id]);
+    setPersonal(await listPersonalExercises());
+  }
 
   const activities = useMemo(
     () =>
@@ -84,6 +117,9 @@ export default function BibliothequeScreen() {
     [kind, query, theme],
   );
   const mine = personal.filter(
+    (exercise) => (kind === "all" || exercise.kind === kind) && (theme === "all" || exercise.theme === theme) && matches(exercise, query),
+  );
+  const fromClub = shared.filter(
     (exercise) => (kind === "all" || exercise.kind === kind) && (theme === "all" || exercise.theme === theme) && matches(exercise, query),
   );
 
@@ -112,9 +148,34 @@ export default function BibliothequeScreen() {
             {mine.map((exercise) => (
               <Card id={exercise.id} key={exercise.id} kind={exercise.kind} meta={exercise.theme} objective={exercise.objective} title={exercise.title} />
             ))}
-            <Text style={styles.section}>Le catalogue EvolyFoot</Text>
           </>
         )}
+        {fromClub.length > 0 && (
+          <>
+            <Text style={styles.section}>Exercices du club</Text>
+            {fromClub.map((exercise) => (
+              <View key={exercise.id} style={styles.card}>
+                <Text style={styles.meta}>
+                  {kindLabels[exercise.kind].toUpperCase()} · {exercise.authorName}
+                </Text>
+                <Text style={styles.cardTitle}>{exercise.title}</Text>
+                <Text numberOfLines={3} style={styles.muted}>
+                  {exercise.objective || exercise.organization}
+                </Text>
+                <TouchableOpacity
+                  accessibilityLabel={`Copier ${exercise.title}`}
+                  accessibilityRole="button"
+                  disabled={copied.includes(exercise.id)}
+                  onPress={() => copy(exercise)}
+                >
+                  <Text style={styles.copy}>{copied.includes(exercise.id) ? "Ajouté à mes exercices" : "Copier dans ma bibliothèque"}</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            {copyError ? <Text style={styles.error}>{copyError}</Text> : null}
+          </>
+        )}
+        {(mine.length > 0 || fromClub.length > 0) && <Text style={styles.section}>Le catalogue EvolyFoot</Text>}
         {activities.length === 0 && mine.length === 0 && <Text style={styles.muted}>Aucune situation ne correspond à ta recherche.</Text>}
         {activities.map((activity) => (
           <Card id={activity.id} key={activity.id} kind={activity.kind} meta={activity.fieldSize} objective={activity.objective} title={activity.title} />
@@ -140,4 +201,6 @@ const styles = StyleSheet.create({
   meta: { fontSize: 9, fontWeight: "800", color: colors.primary, letterSpacing: 0.6 },
   cardTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginTop: 5 },
   muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4 },
+  copy: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 10 },
+  error: { fontSize: 12, fontWeight: "800", color: colors.danger, marginTop: 8 },
 });

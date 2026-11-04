@@ -37,6 +37,12 @@ function teamLabel(team: TeamChoice): string {
   return team.ageGroup ? `${team.name} · ${team.ageGroup}` : team.name;
 }
 
+interface ClubInfo {
+  name: string;
+  joinCode: string;
+  members: { id: string; displayName: string }[];
+}
+
 interface StaffMember {
   id: string;
   displayName: string;
@@ -167,6 +173,137 @@ function TeamsSection() {
       <TouchableOpacity accessibilityRole="button" onPress={add} style={styles.primary}>
         <Text style={styles.primaryText}>Ajouter une équipe</Text>
       </TouchableOpacity>
+      {error ? <Text style={styles.danger}>{error}</Text> : null}
+    </Section>
+  );
+}
+
+// Comme le bloc « Mon club » du profil web : les membres voient les exercices personnels des
+// autres dans la bibliothèque. `undefined` tant que le club n'est pas chargé, `null` hors club.
+function ClubSection() {
+  const { apiRequest } = useAuth();
+  const [club, setClub] = useState<ClubInfo | null | undefined>(undefined);
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+
+  const load = useCallback(async () => {
+    const response = await apiRequest("/api/club");
+    const body = response?.ok ? await response.json().catch(() => null) : null;
+    setClub(response?.ok ? (body?.club ?? null) : undefined);
+  }, [apiRequest]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  async function save(body: { code: string } | { name: string }) {
+    setError("");
+    const response = await apiRequest("/api/club", { method: "POST", body: JSON.stringify(body) });
+    if (!response?.ok) {
+      setError(await errorOf(response, "Le club n’a pas pu être enregistré."));
+      return;
+    }
+    const result = await response.json().catch(() => null);
+    setClub(result?.club ?? null);
+    setCode("");
+    setName("");
+  }
+
+  function share(current: ClubInfo) {
+    Share.share({ message: `Rejoins le club « ${current.name} » sur EvolyFoot (Profil › Mon club) avec le code ${current.joinCode}` }).catch(() => undefined);
+  }
+
+  function leave() {
+    Alert.alert("Quitter le club ?", "Tes exercices ne seront plus partagés et tu ne verras plus ceux des autres membres.", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Quitter",
+        style: "destructive",
+        onPress: async () => {
+          const response = await apiRequest("/api/club", { method: "DELETE" });
+          if (response?.ok) {
+            setClub(null);
+          } else {
+            setError("Tu n’as pas pu quitter le club.");
+          }
+        },
+      },
+    ]);
+  }
+
+  if (club === undefined) {
+    return null;
+  }
+
+  return (
+    <Section title="Mon club">
+      {club ? (
+        <>
+          <Text style={styles.muted}>
+            Les éducateurs de {club.name} voient tes exercices personnels, ceux de toutes tes équipes, et peuvent les copier. Tu vois les leurs dans la
+            bibliothèque.
+          </Text>
+          {club.members.map((member) => (
+            <View key={member.id} style={styles.member}>
+              <Text style={styles.value}>{member.displayName}</Text>
+            </View>
+          ))}
+          <View style={styles.row}>
+            <Text style={styles.label}>CODE DU CLUB</Text>
+            <Text selectable style={styles.value}>
+              {club.joinCode}
+            </Text>
+          </View>
+          <TouchableOpacity accessibilityRole="button" onPress={() => share(club)} style={styles.primary}>
+            <Text style={styles.primaryText}>Partager le code</Text>
+          </TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" onPress={leave} style={styles.ghost}>
+            <Text style={styles.danger}>Quitter le club</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <Text style={styles.muted}>
+            Partage tes exercices avec les autres éducateurs de ton club. Rejoins le club d’un collègue avec son code, ou crée-le.
+          </Text>
+          <TextInput
+            accessibilityLabel="Code d’un club"
+            autoCapitalize="characters"
+            onChangeText={setCode}
+            placeholder="Code reçu d’un collègue"
+            placeholderTextColor={colors.muted}
+            style={[styles.input, styles.field]}
+            value={code}
+          />
+          <TouchableOpacity
+            accessibilityRole="button"
+            disabled={!code.trim()}
+            onPress={() => save({ code })}
+            style={[styles.primary, !code.trim() && styles.disabled]}
+          >
+            <Text style={styles.primaryText}>Rejoindre</Text>
+          </TouchableOpacity>
+          <TextInput
+            accessibilityLabel="Nom du club"
+            onChangeText={setName}
+            placeholder="Nom du club"
+            placeholderTextColor={colors.muted}
+            style={[styles.input, styles.field]}
+            value={name}
+          />
+          <TouchableOpacity
+            accessibilityRole="button"
+            disabled={!name.trim()}
+            onPress={() => save({ name })}
+            style={[styles.ghost, !name.trim() && styles.disabled]}
+          >
+            <Text style={styles.link}>Créer le club</Text>
+          </TouchableOpacity>
+        </>
+      )}
       {error ? <Text style={styles.danger}>{error}</Text> : null}
     </Section>
   );
@@ -426,6 +563,7 @@ export default function ProfilScreen() {
 
         {educator?.role !== "assistant" && <TeamsSection />}
         {educator?.role !== "assistant" && <StaffSection />}
+        {educator?.role !== "assistant" && <ClubSection />}
 
         <TouchableOpacity accessibilityRole="button" onPress={signOut} style={styles.ghost}>
           <Text style={styles.link}>Se déconnecter</Text>
