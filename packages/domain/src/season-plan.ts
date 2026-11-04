@@ -1,3 +1,4 @@
+import { developmentThemes } from "./themes";
 import { diagnosticCriteria, type DiagnosticScores } from "./diagnostic";
 import type { DevelopmentTheme } from "./index";
 import { seasonStartYear } from "./season";
@@ -18,7 +19,7 @@ export interface SeasonPlanCycle {
 const dayMs = 24 * 60 * 60 * 1000;
 const seasonLastMonth = 5; // juin, en index JavaScript
 const intents = ["Découvrir et installer", "Renforcer sous pression", "Confirmer en match"] as const;
-const allThemes: readonly DevelopmentTheme[] = ["Conserver le ballon", "Progresser ensemble", "Finir les actions", "Récupérer rapidement"];
+const allThemes: readonly DevelopmentTheme[] = developmentThemes;
 
 function startOfWeek(date: Date): Date {
   const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());

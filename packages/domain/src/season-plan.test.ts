@@ -17,10 +17,10 @@ describe("plan de saison", () => {
 
   it("passe par chaque thème une fois par tour", () => {
     const themes = buildSeasonPlan(scores, 1, 1, new Date(2026, 8, 7))
-      .slice(0, 4)
+      .slice(0, 5)
       .map((cycle) => cycle.theme);
 
-    expect(new Set(themes).size).toBe(4);
+    expect(new Set(themes).size).toBe(5);
   });
 
   it("recule au début du cycle selon la semaine en cours", () => {
@@ -34,9 +34,8 @@ describe("plan de saison", () => {
 
     expect(cycles.at(-1)!.start.getTime()).toBeLessThan(new Date(2027, 5, 30).getTime());
     expect(cycles[0]?.intent).toBe("Découvrir et installer");
-    expect(cycles[4]?.intent).toBe("Renforcer sous pression");
-    expect(cycles[4]?.theme).toBe(cycles[0]?.theme);
-    expect(cycles[8]?.intent).toBe("Confirmer en match");
+    expect(cycles[5]?.intent).toBe("Renforcer sous pression");
+    expect(cycles[5]?.theme).toBe(cycles[0]?.theme);
   });
 
   it("garde le cycle en cours même en toute fin de saison", () => {

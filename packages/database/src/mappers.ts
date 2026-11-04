@@ -148,6 +148,8 @@ export function toPrismaDevelopmentTheme(theme: DomainDevelopmentTheme): PrismaD
       return PrismaDevelopmentTheme.FINISHING;
     case "Récupérer rapidement":
       return PrismaDevelopmentTheme.RECOVERING;
+    case "Protéger son but":
+      return PrismaDevelopmentTheme.PROTECTING;
     default:
       return exhaustive(theme);
   }
@@ -163,6 +165,8 @@ export function fromPrismaDevelopmentTheme(theme: PrismaDevelopmentTheme): Domai
       return "Finir les actions";
     case PrismaDevelopmentTheme.RECOVERING:
       return "Récupérer rapidement";
+    case PrismaDevelopmentTheme.PROTECTING:
+      return "Protéger son but";
     default:
       return exhaustive(theme);
   }

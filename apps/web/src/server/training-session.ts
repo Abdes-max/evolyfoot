@@ -1,5 +1,5 @@
 import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "@evolyfoot/database";
-import { ageGroups, type AgeGroup, type AttendanceEntry, type DevelopmentTheme } from "@evolyfoot/domain";
+import { ageGroups, developmentThemes, type AgeGroup, type AttendanceEntry, type DevelopmentTheme } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface TrainingSessionBlockInput {
@@ -53,7 +53,6 @@ export interface TrainingSessionGateway {
 // Pas de constante partagée côté domaine pour les thèmes (contrairement à `ageGroups`) : on la
 // duplique ici, alignée sur `DevelopmentTheme`, pour rejeter une forme invalide avant même
 // d'appeler le service métier.
-const developmentThemes: ReadonlyArray<DevelopmentTheme> = ["Conserver le ballon", "Progresser ensemble", "Finir les actions", "Récupérer rapidement"];
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
   try {

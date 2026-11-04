@@ -27,6 +27,7 @@ enum DevelopmentTheme {
   PROGRESSING  @map("Progresser ensemble")
   FINISHING    @map("Finir les actions")
   RECOVERING   @map("Récupérer rapidement")
+  PROTECTING   @map("Protéger son but")
 }
 
 enum ObservationEventType {

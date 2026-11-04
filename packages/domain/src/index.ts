@@ -2,7 +2,9 @@ import type { GameFormat } from "./team";
 
 export type AgeGroup = "U10" | "U11" | "U12" | "U13";
 
-export type DevelopmentTheme = "Conserver le ballon" | "Progresser ensemble" | "Finir les actions" | "Récupérer rapidement";
+export type { DevelopmentTheme } from "./themes";
+import type { DevelopmentTheme } from "./themes";
+export { developmentThemes } from "./themes";
 
 export interface WeeklyFocus {
   id: string;
@@ -162,3 +164,37 @@ export type { Message, MessageAuthorRole } from "./message";
 export { buildTeamStatsReport, pluralize } from "./team-stats-report";
 export type { AttendanceStats, TeamStats } from "./team-stats-report";
 export { convocationFeedback } from "./convocation";
+
+export type {
+  FieldMarks,
+  GamePhase,
+  ProgramSituation,
+  ProgramSubTheme,
+  ProgramSubThemeInfo,
+  SeasonOptions,
+  SeasonSlot,
+  SeasonWeek,
+  SituationKind,
+  SituationLayout,
+} from "./season-program";
+export {
+  buildPrioritizedSeason,
+  buildSituationDiagram,
+  findProgramSession,
+  majorShare,
+  maxSeasonPriorities,
+  programPrinciples,
+  programSource,
+  programSubThemeIds,
+  programSubThemes,
+  programValues,
+  seasonWeekCount,
+  situationKindLabels,
+  situationMinutes,
+  situationToActivity,
+  subThemesOf,
+  suggestSeasonPriorities,
+} from "./season-program";
+export type { ProgramSessionDefinition } from "./program-sessions";
+export { programSessions } from "./program-sessions";
+export { findProgramSituation, programSituations } from "./program-situations";

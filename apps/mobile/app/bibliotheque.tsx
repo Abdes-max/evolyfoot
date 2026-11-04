@@ -1,5 +1,5 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { trainingActivityCatalogue, type DevelopmentTheme, type PersonalExercise, type TrainingBlockKind } from "@evolyfoot/domain";
+import { developmentThemes, trainingActivityCatalogue, type DevelopmentTheme, type PersonalExercise, type TrainingBlockKind } from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -7,7 +7,7 @@ import { useAuth } from "../lib/auth-context";
 import { kindLabels } from "../lib/exercise-labels";
 
 const kindFilters: readonly (TrainingBlockKind | "all")[] = ["all", "welcome", "activation", "main", "game"];
-const themeFilters: readonly (DevelopmentTheme | "all")[] = ["all", "Conserver le ballon", "Progresser ensemble", "Finir les actions", "Récupérer rapidement"];
+const themeFilters: readonly (DevelopmentTheme | "all")[] = ["all", ...developmentThemes];
 
 function matches(item: { title: string; objective: string }, query: string): boolean {
   return `${item.title} ${item.objective}`.toLowerCase().includes(query.trim().toLowerCase());

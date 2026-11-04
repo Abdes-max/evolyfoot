@@ -60,6 +60,7 @@ const summaries: Readonly<Record<DevelopmentTheme, string>> = {
   "Conserver le ballon": "Ton surnombre au milieu est ton atout : prépare l’équipe à garder le ballon.",
   "Finir les actions": "Tu auras du monde devant : travaille la finition.",
   "Progresser ensemble": "Les lignes s’équilibrent : la différence se fera par le jeu collectif vers l’avant.",
+  "Protéger son but": "Ta défense sera exposée : prépare l’équipe à se resserrer devant son but.",
 };
 
 export function analyzeMatchup(gameFormat: GameFormat, ourFormationId: string, opponentFormationId: string): MatchupAnalysis {

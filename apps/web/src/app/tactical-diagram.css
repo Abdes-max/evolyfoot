@@ -22,6 +22,11 @@
   stroke: #2c463b;
   stroke-width: 2;
 }
+.tactical-diagram-mark {
+  fill: #5b8def;
+  opacity: 0.22;
+}
+
 .tactical-diagram-zone {
   fill: none;
   stroke: #2c463b;

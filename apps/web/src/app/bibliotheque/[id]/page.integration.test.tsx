@@ -11,7 +11,7 @@ describe("détail d’un exercice", () => {
     expect(screen.getByText("01")).toBeVisible();
     expect(screen.getByText(/Rondo 4 contre 1 dans chaque carré/)).toBeVisible();
     expect(screen.getByText("Réagir à la perte dans les deux secondes.")).toBeVisible();
-    expect(screen.getByText("76 / 100")).toBeVisible();
+    expect(screen.getByText("76 / 161")).toBeVisible();
   });
 
   it("permet de donner un avis sur l’exercice", async () => {

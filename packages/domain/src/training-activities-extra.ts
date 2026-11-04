@@ -27,7 +27,7 @@ function exercise(
 
 // Les identifiants dérivent de la position dans chaque liste et sont enregistrés avec les séances :
 // ajouter en fin de liste, ne jamais réordonner ni retirer.
-export const extraActivitySets: Record<DevelopmentTheme, ExtraActivitySet> = {
+export const extraActivitySets: Record<Exclude<DevelopmentTheme, "Protéger son but">, ExtraActivitySet> = {
   "Conserver le ballon": {
     welcome: [
       exercise(

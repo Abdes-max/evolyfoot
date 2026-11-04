@@ -93,6 +93,9 @@ export function TacticalPlayer({ exercise, seed, label = "SchÃ©ma tactique animÃ
       >
         <Svg height="100%" preserveAspectRatio="xMidYMid meet" viewBox={`0 0 ${diagram.width} ${diagram.height}`} width="100%">
           <Rect fill={pitch.fill} height={diagram.height - 8} rx={14} stroke={pitch.stroke} strokeWidth={2} width={diagram.width - 8} x={4} y={4} />
+          {diagram.marks?.map((mark, index) => (
+            <Rect fill="#5b8def" fillOpacity={0.22} height={mark.height} key={`m-${index}`} rx={4} width={mark.width} x={mark.x} y={mark.y} />
+          ))}
           {diagram.zones.map((zone, index) => (
             <Rect
               fill="none"
