@@ -242,3 +242,93 @@
 .prepare-season-session input[type="time"] {
   min-height: 44px;
 }
+
+/* Mode terrain : lisible en plein soleil, gros boutons pour le pouce. */
+.field-mode {
+  display: grid;
+  gap: 16px;
+  margin: 0 auto;
+  max-width: 640px;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.field-mode-head {
+  display: flex;
+  font-weight: 700;
+  justify-content: space-between;
+}
+
+.field-mode h1 {
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.field-mode-instruction {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.field-mode-timer {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  display: grid;
+  justify-items: center;
+  padding: 16px;
+}
+
+.field-mode-timer strong {
+  font-size: clamp(4rem, 22vw, 7rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.field-mode-timer strong.is-ended {
+  color: var(--accent);
+}
+
+.field-mode-actions .primary-button {
+  font-size: 1.2rem;
+  min-height: 64px;
+  width: 100%;
+}
+
+.field-mode-score {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.field-mode-score > div {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  justify-items: center;
+  padding: 12px;
+}
+
+.field-mode-score span,
+.field-mode-score strong {
+  grid-column: 1 / -1;
+}
+
+.field-mode-score strong {
+  font-size: 2.5rem;
+}
+
+.field-mode-score button,
+.field-mode-nav button {
+  min-height: 48px;
+  width: 100%;
+}
+
+.field-mode-nav {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
