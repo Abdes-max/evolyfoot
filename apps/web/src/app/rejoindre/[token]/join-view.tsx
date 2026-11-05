@@ -17,18 +17,25 @@ export function JoinView({ token }: { token: string }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // Déjà connecté avec un compte tuteur/joueur : on ajoute l’enfant à ce compte plutôt que d’en créer un.
+  const [playerAccount, setPlayerAccount] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch(`/api/invites/${encodeURIComponent(token)}`);
+        const [response, sessionResponse] = await Promise.all([
+          fetch(`/api/invites/${encodeURIComponent(token)}`),
+          fetch("/api/auth/session").catch(() => null),
+        ]);
         const body = await response.json().catch(() => ({ invite: null }));
+        const session = sessionResponse?.ok ? await sessionResponse.json().catch(() => null) : null;
         if (cancelled) {
           return;
         }
         if (response.ok && body.invite) {
           setInvite(body.invite);
+          setPlayerAccount(session?.role === "player");
           setStatus("ready");
         } else {
           setStatus("invalid");
@@ -43,6 +50,23 @@ export function JoinView({ token }: { token: string }) {
       cancelled = true;
     };
   }, [token]);
+
+  async function attach() {
+    setError("");
+    setSubmitting(true);
+    const response = await fetch("/api/joueur/enfants", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token }),
+    }).catch(() => null);
+    setSubmitting(false);
+    if (!response?.ok) {
+      const body = await response?.json().catch(() => ({}));
+      setError(typeof body?.error === "string" ? body.error : "Une erreur est survenue.");
+      return;
+    }
+    window.location.href = "/joueur";
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -94,7 +118,27 @@ export function JoinView({ token }: { token: string }) {
         </div>
       </section>
 
-      {status === "ready" && (
+      {status === "ready" && playerAccount && (
+        <section className="onboarding-panel">
+          <div className="team-form">
+            <header>
+              <span className="eyebrow">TU AS DÉJÀ UN COMPTE</span>
+              <h2>Ajoute {invite?.playerName} à ton compte.</h2>
+            </header>
+            <p>Tu pourras passer d’un enfant à l’autre depuis ton espace ; chacun a sa propre discussion avec son éducateur.</p>
+            {error && (
+              <p className="field-error" role="alert">
+                {error}
+              </p>
+            )}
+            <button className="continue-button" disabled={submitting} onClick={() => void attach()} type="button">
+              {submitting ? "Ajout…" : `Ajouter ${invite?.playerName ?? "cet enfant"}`} <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </section>
+      )}
+
+      {status === "ready" && !playerAccount && (
         <section className="onboarding-panel">
           <form className="team-form" onSubmit={submit} noValidate>
             <header>

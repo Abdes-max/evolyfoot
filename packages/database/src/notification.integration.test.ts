@@ -51,7 +51,7 @@ describe("PostgreSQL notifications", () => {
     expect((await service.list(assistant.id)).unreadMessages).toBe(1);
     expect((await service.list(team.id)).unreadCount).toBe(0);
     const tutorFeed = await service.list(tutor.id);
-    expect(tutorFeed.notifications[0]).toMatchObject({ title: "Message de Coach", link: "/joueur/messages", threadPlayerId: player.id });
+    expect(tutorFeed.notifications[0]).toMatchObject({ title: "Message de Coach", link: `/joueur/messages?enfant=${player.id}`, threadPlayerId: player.id });
 
     await service.markRead(coach.id, { threadPlayerId: player.id });
     expect((await service.list(coach.id)).unreadCount).toBe(0);
