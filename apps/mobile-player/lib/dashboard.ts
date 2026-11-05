@@ -48,6 +48,7 @@ export interface Dashboard {
   trainingAttendance: { rate: number; total: number };
   matchAttendance: { rate: number; total: number };
   upcomingMatches: UpcomingMatch[];
+  pastMatches?: UpcomingMatch[];
   trainingSessions: TrainingSession[];
 }
 
@@ -67,9 +68,9 @@ export interface AgendaEvent {
 
 // Matchs et séances à venir, du plus proche au plus lointain. Un événement sans date réelle ferme
 // la liste plutôt que de disparaître.
-export function buildAgenda(dashboard: Dashboard, now: number): AgendaEvent[] {
+export function buildAgenda(dashboard: Dashboard, now: number, scope: "upcoming" | "past" = "upcoming"): AgendaEvent[] {
   const events: AgendaEvent[] = [
-    ...dashboard.upcomingMatches.map((match) => ({
+    ...[...dashboard.upcomingMatches, ...(dashboard.pastMatches ?? [])].map((match) => ({
       key: `match-${match.id}`,
       kind: "match" as const,
       id: match.id,
@@ -94,9 +95,27 @@ export function buildAgenda(dashboard: Dashboard, now: number): AgendaEvent[] {
       canRespond: true,
     })),
   ];
+  if (scope === "past") {
+    return events
+      .filter((event) => event.date && new Date(event.date).getTime() < now)
+      .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime());
+  }
   return events
     .filter((event) => !event.date || new Date(event.date).getTime() >= now)
     .sort((a, b) => (a.date ? new Date(a.date).getTime() : Infinity) - (b.date ? new Date(b.date).getTime() : Infinity));
+}
+
+// Fin de la semaine en cours (dimanche soir) : « Ma carte » n’affiche que ce qui tombe d’ici là.
+export function endOfCurrentWeek(now: number): number {
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+  end.setDate(end.getDate() + ((7 - end.getDay()) % 7));
+  return end.getTime();
+}
+
+// Convocations à venir encore sans réponse : pastille de l’onglet Calendrier.
+export function pendingResponses(dashboard: Dashboard, now: number): number {
+  return buildAgenda(dashboard, now).filter((event) => event.canRespond && event.myStatus === null).length;
 }
 
 export function useDashboard() {

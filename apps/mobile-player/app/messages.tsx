@@ -14,6 +14,13 @@ interface Message {
   createdAt: string;
 }
 
+function formatTime(iso: string): string {
+  const parsed = new Date(iso);
+  return Number.isNaN(parsed.getTime())
+    ? ""
+    : parsed.toLocaleString("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
 export default function MessagesScreen() {
   const { sessionToken } = useAuth();
   const [messages, setMessages] = useState<readonly Message[]>([]);
@@ -65,7 +72,7 @@ export default function MessagesScreen() {
   }
 
   return (
-    <Screen title="Messages">
+    <Screen stickToBottom title="Messages">
       {messages.length === 0 && !error ? <Text style={styles.note}>Écris ici à ton éducateur.</Text> : null}
       {messages.map((message) => {
         const mine = message.authorRole === "player";
@@ -73,6 +80,7 @@ export default function MessagesScreen() {
           <View key={message.id} style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
             {!mine ? <Text style={styles.author}>{message.authorName}</Text> : null}
             <Text style={[styles.text, mine && styles.textMine]}>{message.text}</Text>
+            <Text style={[styles.time, mine && styles.timeMine]}>{formatTime(message.createdAt)}</Text>
           </View>
         );
       })}
@@ -106,6 +114,8 @@ const styles = StyleSheet.create({
   author: { color: colors.lime, fontSize: 11, fontWeight: "800", marginBottom: 2 },
   text: { color: colors.ink, fontSize: 14, lineHeight: 20 },
   textMine: { color: colors.primaryInk, fontWeight: "600" },
+  time: { marginTop: 4, color: colors.muted, fontSize: 10.5, fontWeight: "700" },
+  timeMine: { color: "rgba(6,35,48,0.65)", textAlign: "right" },
   error: { color: colors.danger, fontSize: 13, marginVertical: spacing.sm },
   input: {
     minHeight: 76,

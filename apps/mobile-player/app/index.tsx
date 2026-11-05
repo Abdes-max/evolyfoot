@@ -5,7 +5,7 @@ import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { PlayerCard } from "../components/player-card";
 import { Screen } from "../components/screen";
 import { useAuth } from "../lib/auth-context";
-import { buildAgenda, useDashboard } from "../lib/dashboard";
+import { buildAgenda, endOfCurrentWeek, useDashboard } from "../lib/dashboard";
 import { openInMaps } from "../lib/open-in-maps";
 import { markEvaluationsRead } from "../lib/push";
 
@@ -28,7 +28,8 @@ export default function MyCardScreen() {
   }
 
   const latestCoach = dashboard?.evaluations.find((evaluation) => evaluation.source !== "player");
-  const agenda = dashboard ? buildAgenda(dashboard, now).slice(0, 3) : [];
+  // Seulement la semaine en cours : le reste est dans l’onglet Calendrier.
+  const agenda = dashboard ? buildAgenda(dashboard, now).filter((event) => event.date && new Date(event.date).getTime() <= endOfCurrentWeek(now)) : [];
 
   return (
     <Screen
@@ -59,8 +60,8 @@ export default function MyCardScreen() {
             season={dashboard.season}
           />
 
-          <Text style={styles.section}>À venir</Text>
-          {agenda.length === 0 ? <Text style={styles.note}>Rien de prévu pour l’instant.</Text> : null}
+          <Text style={styles.section}>Cette semaine</Text>
+          {agenda.length === 0 ? <Text style={styles.note}>Rien de prévu cette semaine.</Text> : null}
           {agenda.map((event) => (
             <View key={event.key} style={styles.event}>
               <Text style={styles.eventTitle}>{event.title}</Text>

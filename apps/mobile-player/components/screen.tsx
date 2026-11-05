@@ -1,8 +1,9 @@
 import { colors, spacing } from "@evolyfoot/design-tokens";
 import { Link, router, usePathname } from "expo-router";
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { pendingResponses, useDashboard } from "../lib/dashboard";
 import { useUnread } from "../lib/push";
 
 const tabs = [
@@ -15,7 +16,17 @@ const tabs = [
 export function TabBar() {
   const pathname = usePathname();
   const { sessionToken } = useAuth();
-  const { unreadMessages } = useUnread(sessionToken);
+  const { unreadCount, unreadMessages } = useUnread(sessionToken);
+  const { dashboard } = useDashboard();
+  const [now] = useState(() => Date.now());
+  // Notifications non lues hors messages : les nouvelles évaluations (Ma carte, Progrès).
+  const unreadEvaluations = Math.max(unreadCount - unreadMessages, 0);
+  const badges: Record<string, number> = {
+    "/": unreadEvaluations,
+    "/calendrier": dashboard ? pendingResponses(dashboard, now) : 0,
+    "/progression": unreadEvaluations,
+    "/messages": unreadMessages,
+  };
   return (
     <View style={styles.tabBar}>
       {tabs.map((tab) => {
@@ -23,13 +34,14 @@ export function TabBar() {
         return (
           <Link asChild href={tab.href} key={tab.href}>
             <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: active }} style={styles.tab}>
-              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
-                {tab.label}
-                {tab.href === "/messages" && unreadMessages > 0 && !active ? ` · ${unreadMessages > 9 ? "9+" : unreadMessages}` : ""}
-              </Text>
-              {tab.href === "/messages" && unreadMessages > 0 && !active && (
-                <View accessibilityLabel={`${unreadMessages} messages non lus`} style={styles.unreadDot} />
-              )}
+              <View>
+                <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{tab.label}</Text>
+                {(badges[tab.href] ?? 0) > 0 && !active ? (
+                  <View accessibilityLabel={`${badges[tab.href]} nouveautés`} style={styles.badge}>
+                    <Text style={styles.badgeText}>{badges[tab.href]! > 99 ? "99+" : badges[tab.href]}</Text>
+                  </View>
+                ) : null}
+              </View>
               <View style={[styles.tabLine, active && styles.tabLineActive]} />
             </TouchableOpacity>
           </Link>
@@ -39,11 +51,26 @@ export function TabBar() {
   );
 }
 
-export function Screen({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+export function Screen({
+  title,
+  action,
+  children,
+  stickToBottom = false,
+}: {
+  title: string;
+  action?: ReactNode;
+  children: ReactNode;
+  stickToBottom?: boolean;
+}) {
+  const scroll = useRef<ScrollView>(null);
   const pathname = usePathname();
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.page}>
+      <ScrollView
+        contentContainerStyle={styles.page}
+        onContentSizeChange={() => stickToBottom && scroll.current?.scrollToEnd({ animated: false })}
+        ref={scroll}
+      >
         {/* Retour sur chaque page sauf la carte (accueil) ; sans historique, ramène à l'accueil. */}
         {pathname !== "/" ? (
           <TouchableOpacity
@@ -69,7 +96,21 @@ export function Screen({ title, action, children }: { title: string; action?: Re
 }
 
 const styles = StyleSheet.create({
-  unreadDot: { position: "absolute", top: 6, right: 14, width: 9, height: 9, borderRadius: 5, backgroundColor: "#ef4444" },
+  badge: {
+    position: "absolute",
+    top: -12,
+    right: -14,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 5,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#e5383b",
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  badgeText: { color: "#ffffff", fontSize: 11, fontWeight: "900" },
   safe: { flex: 1, backgroundColor: colors.paper },
   page: { padding: spacing.lg, paddingTop: 56, paddingBottom: spacing.xl },
   back: { alignSelf: "flex-start", marginTop: -36, marginBottom: spacing.sm, paddingVertical: 6 },

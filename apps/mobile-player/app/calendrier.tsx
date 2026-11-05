@@ -15,6 +15,7 @@ export default function CalendarScreen() {
   const { dashboard, status, reload } = useDashboard();
   const [now] = useState(() => Date.now());
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [scope, setScope] = useState<"upcoming" | "past">("upcoming");
 
   async function respond(event: AgendaEvent, response: AttendanceStatus) {
     setBusyKey(event.key);
@@ -39,12 +40,32 @@ export default function CalendarScreen() {
     ]);
   }
 
-  const agenda = dashboard ? buildAgenda(dashboard, now) : [];
+  const agenda = dashboard ? buildAgenda(dashboard, now, scope) : [];
 
   return (
     <Screen title="Calendrier">
+      <View accessibilityRole="tablist" style={styles.filters}>
+        {(
+          [
+            ["upcoming", "À venir"],
+            ["past", "Passés"],
+          ] as const
+        ).map(([value, label]) => (
+          <TouchableOpacity
+            accessibilityRole="tab"
+            accessibilityState={{ selected: scope === value }}
+            key={value}
+            onPress={() => setScope(value)}
+            style={[styles.filter, scope === value && styles.filterActive]}
+          >
+            <Text style={[styles.filterText, scope === value && styles.filterTextActive]}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       {status === "error" && !dashboard ? <Text style={styles.note}>Impossible de charger ton calendrier.</Text> : null}
-      {dashboard && agenda.length === 0 ? <Text style={styles.note}>Rien de prévu pour l’instant.</Text> : null}
+      {dashboard && agenda.length === 0 ? (
+        <Text style={styles.note}>{scope === "past" ? "Aucun événement passé." : "Rien de prévu pour l’instant."}</Text>
+      ) : null}
       {agenda.map((event) => {
         const present = event.myStatus === "present";
         const absent = event.myStatus !== null && !present;
@@ -59,7 +80,11 @@ export default function CalendarScreen() {
                 <Text style={styles.placeLink}>Y aller (Plans, Google Maps, Waze…) →</Text>
               </TouchableOpacity>
             ) : null}
-            {event.canRespond ? (
+            {scope === "past" ? (
+              event.myStatus ? (
+                <Text style={styles.meta}>Ta réponse : {attendanceStatusLabels[event.myStatus]}</Text>
+              ) : null
+            ) : event.canRespond ? (
               <View style={styles.choices}>
                 <TouchableOpacity
                   accessibilityRole="button"
@@ -107,6 +132,11 @@ const styles = StyleSheet.create({
   placeText: { color: colors.ink, fontSize: 13, fontWeight: "700" },
   placeLink: { color: colors.primary, fontSize: 12, fontWeight: "800", marginTop: 2 },
   choices: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+  filters: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md },
+  filter: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+  filterActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  filterText: { color: colors.muted, fontSize: 13, fontWeight: "800" },
+  filterTextActive: { color: colors.primaryInk },
   choice: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
   choicePresent: { backgroundColor: colors.primary, borderColor: colors.primary },
   choiceAbsent: { backgroundColor: colors.dangerSoft, borderColor: colors.danger },
