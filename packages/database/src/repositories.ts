@@ -175,9 +175,17 @@ export interface EducatorRepository {
   existsById(id: string): Promise<boolean>;
   findById(id: string): Promise<EducatorRecord | null>;
   findByEmail(email: string): Promise<EducatorAuthRecord | null>;
-  // Compte "player" lié à ce joueur, s'il existe (0..1 via l'unique sur linked_player_id).
-  findByLinkedPlayerId(playerId: string): Promise<EducatorRecord | null>;
+  // Comptes tuteur/joueur qui suivent ce joueur (les deux parents, par exemple).
+  findFollowers(playerId: string): Promise<EducatorRecord[]>;
   markEmailVerified(id: string): Promise<void>;
+}
+
+// Enfants suivis par un compte tuteur/joueur (table player_followers) et enfant affiché
+// (Educator.linkedPlayerId).
+export interface PlayerFollowerRepository {
+  followedPlayerIds(accountId: string): Promise<string[]>;
+  follow(accountId: string, playerId: string): Promise<void>;
+  setDisplayedPlayer(accountId: string, playerId: string): Promise<void>;
 }
 
 // Lecture/écriture de la fiche profil et du mot de passe -- interface distincte d'EducatorRepository
@@ -658,8 +666,8 @@ export interface NotificationRepository {
   // Personnes à prévenir côté coach : le titulaire de l'équipe (le coach derrière un espace d'équipe)
   // et ses adjoints.
   coachRecipients(educatorId: string): Promise<string[]>;
-  // Compte joueur/tuteur rattaché au joueur, `null` s'il n'a pas encore été invité.
-  playerAccountId(playerId: string): Promise<string | null>;
+  // Comptes joueur/tuteur qui suivent ce joueur (aucun s'il n'a pas encore été invité).
+  playerAccountIds(playerId: string): Promise<string[]>;
   createMany(inputs: NotificationInput[]): Promise<void>;
   list(recipientId: string, limit: number): Promise<NotificationRecord[]>;
   countUnread(recipientId: string, kind?: NotificationKind): Promise<number>;

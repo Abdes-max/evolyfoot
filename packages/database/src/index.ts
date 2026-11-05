@@ -65,6 +65,7 @@ export { PlateauService } from "./plateau-service";
 export { PlayerDashboardService } from "./player-dashboard-service";
 export { PlayerRsvpService } from "./player-rsvp-service";
 export { PlayerInviteService, InviteInvalidError, PlayerAccountExistsError } from "./player-invite-service";
+export { PlayerChildrenService, type FollowedChild } from "./player-children-service";
 export { PlayerEvaluationService } from "./player-evaluation-service";
 export { RosterService } from "./roster-service";
 export { StatsService } from "./stats-service";

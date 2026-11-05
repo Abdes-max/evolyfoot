@@ -47,33 +47,33 @@ export class NotificationService {
       );
       return;
     }
-    const account = await this.notificationRepository.playerAccountId(message.playerId);
-    if (account) {
-      await this.notify([
-        {
-          recipientId: account,
-          kind: "message",
+    const accounts = await this.notificationRepository.playerAccountIds(message.playerId);
+    if (accounts.length > 0) {
+      await this.notify(
+        accounts.map((recipientId) => ({
+          recipientId,
+          kind: "message" as const,
           title: `Message de ${message.authorName}`,
           body: excerpt(message.text),
           link: "/joueur/messages",
           threadPlayerId: message.playerId,
-        },
-      ]);
+        })),
+      );
     }
   }
 
   async onEvaluation(playerId: string): Promise<void> {
-    const account = await this.notificationRepository.playerAccountId(playerId);
-    if (account) {
-      await this.notify([
-        {
-          recipientId: account,
-          kind: "evaluation",
+    const accounts = await this.notificationRepository.playerAccountIds(playerId);
+    if (accounts.length > 0) {
+      await this.notify(
+        accounts.map((recipientId) => ({
+          recipientId,
+          kind: "evaluation" as const,
           title: "Nouvelle évaluation",
           body: "Ton coach a ajouté une évaluation. Regarde ta progression !",
           link: "/joueur",
-        },
-      ]);
+        })),
+      );
     }
   }
 

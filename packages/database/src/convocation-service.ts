@@ -121,12 +121,11 @@ export class ConvocationService {
   }
 
   private async recipientsFor(players: readonly PersistedPlayer[]): Promise<ConvocationRecipient[]> {
-    const accounts = await Promise.all(players.map((player) => this.educatorRepository.findByLinkedPlayerId(player.id)));
+    const followers = await Promise.all(players.map((player) => this.educatorRepository.findFollowers(player.id)));
     const byEmail = new Map<string, ConvocationRecipient>();
     players.forEach((player, index) => {
-      const account = accounts[index];
       for (const candidate of [
-        account ? { email: account.email, name: account.displayName } : null,
+        ...(followers[index] ?? []).map((account) => ({ email: account.email, name: account.displayName })),
         player.email ? { email: player.email, name: player.firstName } : null,
       ]) {
         const key = candidate?.email.trim().toLowerCase();

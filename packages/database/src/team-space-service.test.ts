@@ -39,8 +39,8 @@ class InMemoryEducators implements EducatorRepository, TeamSpaceRepository {
     return [...this.byId.values()].find((educator) => educator.email === email) ?? null;
   }
 
-  async findByLinkedPlayerId(): Promise<null> {
-    return null;
+  async findFollowers(): Promise<never[]> {
+    return [];
   }
 
   async markEmailVerified(): Promise<void> {}

@@ -19,8 +19,8 @@ class InMemoryNotifications implements NotificationRepository {
   async coachRecipients(educatorId: string) {
     return this.coaches[educatorId] ?? [];
   }
-  async playerAccountId(playerId: string) {
-    return this.accounts[playerId] ?? null;
+  async playerAccountIds(playerId: string) {
+    return this.accounts[playerId] ? [this.accounts[playerId]!] : [];
   }
   async createMany(inputs: NotificationInput[]) {
     for (const input of inputs) {

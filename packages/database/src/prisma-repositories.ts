@@ -86,6 +86,7 @@ import type {
   PlateauRepository,
   PlayerDetailsPatch,
   PlayerEvaluationRepository,
+  PlayerFollowerRepository,
   PersonalExerciseRepository,
   PlayerEvaluationSource,
   PlayerRepository,
@@ -158,7 +159,7 @@ function translateDiagnosticWriteError(error: unknown): never {
   throw error;
 }
 
-export class PrismaEducatorRepository implements EducatorRepository, EducatorProfileRepository {
+export class PrismaEducatorRepository implements EducatorRepository, EducatorProfileRepository, PlayerFollowerRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async create(input: {
@@ -176,7 +177,8 @@ export class PrismaEducatorRepository implements EducatorRepository, EducatorPro
           displayName: input.displayName,
           passwordHash: input.passwordHash,
           ...(input.role ? { role: input.role } : {}),
-          ...(input.linkedPlayerId ? { linkedPlayerId: input.linkedPlayerId } : {}),
+          // L'enfant affiché est aussi le premier enfant suivi.
+          ...(input.linkedPlayerId ? { linkedPlayerId: input.linkedPlayerId, followedPlayers: { create: { playerId: input.linkedPlayerId } } } : {}),
           ...(input.ownerEducatorId ? { ownerEducatorId: input.ownerEducatorId } : {}),
         },
       });
@@ -206,9 +208,22 @@ export class PrismaEducatorRepository implements EducatorRepository, EducatorPro
     return educator === null ? null : toEducatorAuthRecord(educator);
   }
 
-  async findByLinkedPlayerId(playerId: string): Promise<EducatorRecord | null> {
-    const educator = await this.prisma.educator.findUnique({ where: { linkedPlayerId: playerId } });
-    return educator === null ? null : toEducatorRecord(educator);
+  async findFollowers(playerId: string): Promise<EducatorRecord[]> {
+    const links = await this.prisma.playerFollowerLink.findMany({ where: { playerId }, include: { account: true }, orderBy: { createdAt: "asc" } });
+    return links.map((link) => toEducatorRecord(link.account));
+  }
+
+  async followedPlayerIds(accountId: string): Promise<string[]> {
+    const links = await this.prisma.playerFollowerLink.findMany({ where: { accountId }, orderBy: { createdAt: "asc" }, select: { playerId: true } });
+    return links.map((link) => link.playerId);
+  }
+
+  async follow(accountId: string, playerId: string): Promise<void> {
+    await this.prisma.playerFollowerLink.upsert({ where: { accountId_playerId: { accountId, playerId } }, create: { accountId, playerId }, update: {} });
+  }
+
+  async setDisplayedPlayer(accountId: string, playerId: string): Promise<void> {
+    await this.prisma.educator.update({ where: { id: accountId }, data: { linkedPlayerId: playerId } });
   }
 
   async findProfileById(id: string): Promise<EducatorProfile | null> {
@@ -335,6 +350,7 @@ const exportedRelations = {
   diagnostic: true,
   players: { include: { evaluations: true } },
   linkedPlayer: { include: { evaluations: true } },
+  followedPlayers: { include: { player: { include: { evaluations: true } } } },
   trainingSessions: true,
   observations: true,
   matches: true,
@@ -364,7 +380,8 @@ export class PrismaAccountRepository implements AccountRepository {
             select: { id: true, displayName: true, createdAt: true, ...exportedRelations },
           })
         : [];
-    const ownPlayerIds = account.linkedPlayerId ? [account.linkedPlayerId] : account.players.map((player) => player.id);
+    // Compte tuteur : tous les enfants suivis ; compte coach : son effectif.
+    const ownPlayerIds = account.followedPlayers.length > 0 ? account.followedPlayers.map((link) => link.playerId) : account.players.map((player) => player.id);
     const playerIds = [...ownPlayerIds, ...additionalTeams.flatMap((team) => team.players.map((player) => player.id))];
     const messages = await this.prisma.messageRecord.findMany({ where: { playerId: { in: playerIds } }, orderBy: { createdAt: "asc" } });
     return { ...account, messages, additionalTeams };
@@ -469,9 +486,9 @@ export class PrismaNotificationRepository implements NotificationRepository {
     return [ownerId, ...assistants.map((assistant) => assistant.id)];
   }
 
-  async playerAccountId(playerId: string): Promise<string | null> {
-    const account = await this.prisma.educator.findUnique({ where: { linkedPlayerId: playerId }, select: { id: true } });
-    return account?.id ?? null;
+  async playerAccountIds(playerId: string): Promise<string[]> {
+    const links = await this.prisma.playerFollowerLink.findMany({ where: { playerId }, select: { accountId: true } });
+    return links.map((link) => link.accountId);
   }
 
   async createMany(inputs: NotificationInput[]): Promise<void> {
