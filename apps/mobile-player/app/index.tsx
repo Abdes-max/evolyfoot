@@ -6,6 +6,7 @@ import { PlayerCard } from "../components/player-card";
 import { Screen } from "../components/screen";
 import { useAuth } from "../lib/auth-context";
 import { buildAgenda, useDashboard } from "../lib/dashboard";
+import { openInMaps } from "../lib/open-in-maps";
 import { markEvaluationsRead } from "../lib/push";
 
 export default function MyCardScreen() {
@@ -63,7 +64,17 @@ export default function MyCardScreen() {
           {agenda.map((event) => (
             <View key={event.key} style={styles.event}>
               <Text style={styles.eventTitle}>{event.title}</Text>
-              <Text style={styles.eventMeta}>{[event.dateLabel, event.time, event.location].filter(Boolean).join(" · ")}</Text>
+              <Text style={styles.eventMeta}>{[event.dateLabel, event.time].filter(Boolean).join(" · ")}</Text>
+              {event.location ? (
+                <TouchableOpacity
+                  accessibilityHint="Ouvre le lieu dans une appli de cartes"
+                  accessibilityRole="link"
+                  hitSlop={6}
+                  onPress={() => void openInMaps(event.location!)}
+                >
+                  <Text style={styles.eventPlace}>📍 {event.location}</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           ))}
         </>
@@ -88,4 +99,5 @@ const styles = StyleSheet.create({
   },
   eventTitle: { color: colors.ink, fontSize: 15, fontWeight: "800" },
   eventMeta: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 3 },
+  eventPlace: { color: colors.primary, fontSize: 12, fontWeight: "800", lineHeight: 18, marginTop: 3, textDecorationLine: "underline" },
 });
