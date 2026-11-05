@@ -4,15 +4,16 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../lib/auth-context";
 import { useUnread } from "../lib/push";
+import { BallIcon, CalendarIcon, HomeIcon, MessageIcon, UsersIcon } from "./icons";
 
 // Écrans racines de l'appli Coach, toujours visibles en bas comme dans l'appli Player. Les autres
 // écrans s'ouvrent par-dessus avec l'en-tête natif (bouton Retour, glissement depuis le bord).
 export const coachTabs = [
-  { href: "/", label: "Accueil" },
-  { href: "/seances", label: "Séances" },
-  { href: "/match", label: "Matchs" },
-  { href: "/messages", label: "Messages" },
-  { href: "/equipe", label: "Équipe" },
+  { href: "/", label: "Accueil", icon: HomeIcon },
+  { href: "/seances", label: "Séances", icon: CalendarIcon },
+  { href: "/match", label: "Matchs", icon: BallIcon },
+  { href: "/messages", label: "Messages", icon: MessageIcon },
+  { href: "/equipe", label: "Équipe", icon: UsersIcon },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -41,9 +42,11 @@ export function CoachTabBar() {
             onPress={() => (active ? undefined : router.replace(tab.href))}
             style={styles.tab}
           >
+            <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
+              <tab.icon color={active ? colors.primary : colors.muted} size={22} />
+            </View>
             <Text style={[styles.label, active && styles.labelActive]}>{tab.label}</Text>
             {badge ? <View style={styles.dot} /> : null}
-            <View style={[styles.line, active && styles.lineActive]} />
           </TouchableOpacity>
         );
       })}
@@ -53,10 +56,12 @@ export function CoachTabBar() {
 
 const styles = StyleSheet.create({
   bar: { flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.primaryDark, backgroundColor: colors.surface, paddingTop: spacing.xs },
-  tab: { flex: 1, minHeight: 50, alignItems: "center", justifyContent: "center", gap: 6 },
-  label: { color: colors.muted, fontSize: 11.5, fontWeight: "800" },
+  tab: { flex: 1, minHeight: 56, alignItems: "center", justifyContent: "center", gap: 3 },
+  iconWrap: { width: 46, height: 30, alignItems: "center", justifyContent: "center", borderRadius: 15 },
+  iconWrapActive: { backgroundColor: colors.primarySoft },
+  label: { color: colors.muted, fontSize: 10.5, fontWeight: "800" },
   labelActive: { color: colors.primary },
   line: { width: 24, height: 2, backgroundColor: "transparent" },
   lineActive: { backgroundColor: colors.lime },
-  dot: { position: "absolute", top: 6, right: 12, width: 9, height: 9, borderRadius: 5, backgroundColor: "#ef4444" },
+  dot: { position: "absolute", top: 4, right: 14, width: 9, height: 9, borderRadius: 5, backgroundColor: "#ef4444" },
 });

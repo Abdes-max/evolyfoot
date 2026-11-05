@@ -7,6 +7,8 @@ import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CalendarImport } from "../components/calendar-import";
 import { CompetitionsPanel } from "../components/competitions-panel";
+import { CalendarIcon, LineupIcon, PinIcon } from "../components/icons";
+import { DateTimeField } from "../components/date-time-field";
 import { PlaceInput } from "../components/place-input";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
 
@@ -18,7 +20,7 @@ export default function MatchListScreen() {
   const [matches, setMatches] = useState<MobileMatch[]>([]);
   const [creating, setCreating] = useState(false);
   const [opponent, setOpponent] = useState("");
-  const [dateLabel, setDateLabel] = useState("");
+  const [date, setDate] = useState<Date | null>(null);
   const [venue, setVenue] = useState<MatchVenue>("home");
   const [location, setLocation] = useState("");
   // `null` tant que le coach n'a pas explicitement choisi un format : dérivé du format de
@@ -45,7 +47,16 @@ export default function MatchListScreen() {
   async function submitCreate() {
     setSubmitting(true);
     setCreateError("");
-    const result = await createMatch({ opponent, dateLabel, venue, gameFormat, formationId, ...(location.trim() ? { location: location.trim() } : {}) });
+    const result = await createMatch({
+      opponent,
+      // Même libellé que le web (frenchDateLabel) : « samedi 12 septembre », l’heure reste dans `date`.
+      dateLabel: date ? date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) : "",
+      date: date ? date.toISOString() : null,
+      venue,
+      gameFormat,
+      formationId,
+      ...(location.trim() ? { location: location.trim() } : {}),
+    });
     setSubmitting(false);
     if (!result.ok) {
       setCreateError(result.error);
@@ -82,7 +93,7 @@ export default function MatchListScreen() {
             <Text style={styles.label}>Équipe adverse</Text>
             <TextInput onChangeText={setOpponent} placeholder="Ex. US Vallée" style={styles.input} value={opponent} />
             <Text style={styles.label}>Date</Text>
-            <TextInput onChangeText={setDateLabel} placeholder="Ex. Samedi 12 septembre · 10:30" style={styles.input} value={dateLabel} />
+            <DateTimeField label="Date et heure du match" onChange={setDate} value={date} />
 
             <Text style={styles.label}>Lieu</Text>
             <View style={styles.choiceRow}>
@@ -161,13 +172,24 @@ export default function MatchListScreen() {
                 <Text style={styles.cardFormat}>Foot à {match.gameFormat}</Text>
               </View>
               <Text style={styles.cardTitle}>{match.opponent}</Text>
-              <Text style={styles.cardBody}>
-                {match.dateLabel} · {venueLabel[match.venue]}
-                {match.location ? ` · ${match.location}` : ""}
-              </Text>
-              <Text style={styles.cardLineup}>
-                {match.lineup.length}/{match.gameFormat} postes pourvus
-              </Text>
+              <View style={styles.metaRow}>
+                <CalendarIcon color={colors.primary} size={16} />
+                <Text style={styles.cardBody}>
+                  {match.dateLabel} · {venueLabel[match.venue]}
+                </Text>
+              </View>
+              {match.location ? (
+                <View style={styles.metaRow}>
+                  <PinIcon color={colors.primary} size={16} />
+                  <Text style={styles.cardBody}>{match.location}</Text>
+                </View>
+              ) : null}
+              <View style={styles.metaRow}>
+                <LineupIcon color={colors.primary} size={16} />
+                <Text style={styles.cardLineup}>
+                  {match.lineup.length}/{match.gameFormat} postes pourvus
+                </Text>
+              </View>
               <Text style={styles.cardLink}>{match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}</Text>
             </TouchableOpacity>
           ))
@@ -181,6 +203,7 @@ export default function MatchListScreen() {
 }
 
 const styles = StyleSheet.create({
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
   safe: { flex: 1, backgroundColor: colors.paper },
   page: { padding: spacing.lg, paddingBottom: 50 },
   step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
