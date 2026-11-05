@@ -88,6 +88,8 @@ export interface PlayerDashboard {
   trainingAttendance: AttendanceSummary;
   matchAttendance: AttendanceSummary;
   upcomingMatches: PlayerDashboardMatch[];
+  // Matchs déjà joués : le calendrier du joueur les montre dans « Passés ».
+  pastMatches: PlayerDashboardMatch[];
   trainingSlots: PlayerDashboardTrainingSlot[];
   trainingSessions: PlayerDashboardTrainingSession[];
   competitions: PlayerDashboardCompetition[];
@@ -157,24 +159,24 @@ export class PlayerDashboardService {
     const trainingEntries: AttendanceEntry[] = sessions.flatMap((session) => (session.attendance ?? []).filter((entry) => entry.playerId === playerId));
     const matchEntries: AttendanceEntry[] = matches.flatMap((match) => (match.attendance ?? []).filter((entry) => entry.playerId === playerId));
 
-    const upcomingMatches: PlayerDashboardMatch[] = matches
-      .filter((match) => match.status === "scheduled")
-      .map((match) => {
-        const myEntry = match.attendance?.find((entry) => entry.playerId === playerId);
-        return {
-          id: match.id,
-          opponent: match.opponent,
-          dateLabel: match.dateLabel,
-          date: match.date,
-          kickoffTime: matchKickoffTime(match.date),
-          meetingTime: matchMeetingTime(match.date, match.meetingOffsetMinutes, match.meetingTime),
-          location: match.location,
-          description: match.description,
-          venue: match.venue,
-          convoked: match.lineup.some((assignment) => assignment.playerId === playerId),
-          myStatus: myEntry ? attendanceStatusOf(myEntry) : null,
-        };
-      });
+    const toDashboardMatch = (match: (typeof matches)[number]): PlayerDashboardMatch => {
+      const myEntry = match.attendance?.find((entry) => entry.playerId === playerId);
+      return {
+        id: match.id,
+        opponent: match.opponent,
+        dateLabel: match.dateLabel,
+        date: match.date,
+        kickoffTime: matchKickoffTime(match.date),
+        meetingTime: matchMeetingTime(match.date, match.meetingOffsetMinutes, match.meetingTime),
+        location: match.location,
+        description: match.description,
+        venue: match.venue,
+        convoked: match.lineup.some((assignment) => assignment.playerId === playerId),
+        myStatus: myEntry ? attendanceStatusOf(myEntry) : null,
+      };
+    };
+    const upcomingMatches = matches.filter((match) => match.status === "scheduled").map(toDashboardMatch);
+    const pastMatches = matches.filter((match) => match.status === "played").map(toDashboardMatch);
 
     return {
       player: {
@@ -196,6 +198,7 @@ export class PlayerDashboardService {
       trainingAttendance: summarizeAttendance(trainingEntries),
       matchAttendance: summarizeAttendance(matchEntries),
       upcomingMatches,
+      pastMatches,
       trainingSlots: sessions
         .filter((session) => session.cycleNumber === currentCycle)
         .map((session) => ({ weekNumber: session.weekNumber, slot: session.slot })),
