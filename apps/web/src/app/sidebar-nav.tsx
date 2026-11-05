@@ -2,47 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { BallIcon, CalendarIcon, HomeIcon, MessageIcon, PlusIcon, UsersIcon } from "./icons";
+import { BallIcon, CalendarIcon, ChartIcon, EyeIcon, HomeIcon, MessageIcon, UsersIcon } from "./icons";
 import { SidebarIdentity } from "./sidebar-identity";
 
-// Menu principal, partagé par chaque page de l'appli coach. Six entrées : les pages proches sont
-// regroupées sous une même entrée et se retrouvent dans ses sous-onglets (voir section-tabs.tsx) --
-// Saison couvre la saison guidée, le calendrier des séances et le plan ; Équipe couvre l'effectif,
-// les statistiques et les observations.
-const navItems: ReadonlyArray<{ href: string; label: string; icon: typeof HomeIcon; matches: readonly string[] }> = [
-  { href: "/app", label: "Accueil", icon: HomeIcon, matches: ["/app"] },
-  { href: "/saison", label: "Saison", icon: CalendarIcon, matches: ["/saison", "/seances", "/plan", "/session"] },
-  { href: "/match", label: "Matchs", icon: BallIcon, matches: ["/match"] },
-  { href: "/equipe", label: "Équipe", icon: UsersIcon, matches: ["/equipe", "/statistiques", "/observations", "/observation"] },
-  { href: "/messagerie", label: "Messagerie", icon: MessageIcon, matches: ["/messagerie"] },
+// Auparavant définie une seule fois, en dur, dans page.tsx (l'accueil) : chaque autre page
+// (`/plan`, `/bibliotheque`, `/equipe`...) reconstruisait son propre en-tête "retour à l'accueil"
+// sans cette navigation, qui disparaissait donc dès qu'on quittait le tableau de bord. Partagée
+// ici et rendue sur chaque page qui fait partie de la navigation principale.
+// Le plan de progression (/plan) n’est plus dans le menu : ses 4 semaines se retrouvent dans
+// Séances ; on y accède depuis la vue d’ensemble et le diagnostic.
+const navItems: ReadonlyArray<{ href: string; label: string; icon: typeof HomeIcon }> = [
+  { href: "/app", label: "Vue d'ensemble", icon: HomeIcon },
+  // La bibliothèque d'exercices n'est pas dans le menu : on y accède depuis la page Séances
+  // (elle sert à composer une séance, pas de destination autonome).
+  { href: "/seances", label: "Séances", icon: CalendarIcon },
+  { href: "/match", label: "Matchs", icon: BallIcon },
+  { href: "/observations", label: "Observations", icon: EyeIcon },
+  { href: "/messagerie", label: "Messagerie", icon: MessageIcon },
+  { href: "/statistiques", label: "Statistiques", icon: ChartIcon },
+  { href: "/equipe", label: "Mon équipe", icon: UsersIcon },
 ];
-
-// « Créer » : les points d'entrée de création, auparavant dispersés dans chaque page.
-const createItems: ReadonlyArray<{ href: string; label: string }> = [
-  { href: "/session", label: "Une séance" },
-  { href: "/match?nouveau=1", label: "Un match" },
-  { href: "/observation", label: "Une observation" },
-  { href: "/bibliotheque#personal-exercises-title", label: "Un exercice" },
-];
-
-function isActive(pathname: string, matches: readonly string[]): boolean {
-  return matches.some((prefix) => (prefix === "/app" ? pathname === "/app" : pathname === prefix || pathname.startsWith(`${prefix}/`)));
-}
 
 export function SidebarNav() {
   // usePathname() est typé comme retournant toujours une chaîne, mais rend `null` hors d'un
   // contexte App Router réel -- notamment en test unitaire (@testing-library/react sans harnais
   // Next), où ce composant est rendu directement sans passer par le routeur.
   const pathname = usePathname() ?? "";
-  const [createOpen, setCreateOpen] = useState(false);
-
-  const [home, ...rest] = navItems;
-  const renderItem = ({ href, label, icon: Icon, matches }: (typeof navItems)[number]) => (
-    <Link className={isActive(pathname, matches) ? "nav-item active" : "nav-item"} href={href} key={href}>
-      <Icon /> <span className="nav-label">{label}</span>
-    </Link>
-  );
 
   return (
     <aside className="sidebar">
@@ -51,24 +36,14 @@ export function SidebarNav() {
         <span>EvolyFoot</span>
       </div>
       <nav aria-label="Navigation principale">
-        {renderItem(home!)}
-        <div className="nav-create">
-          <button aria-expanded={createOpen} className="nav-item nav-create-toggle" onClick={() => setCreateOpen((open) => !open)} type="button">
-            <PlusIcon /> <span className="nav-label">Créer</span>
-          </button>
-          {createOpen && (
-            <ul className="nav-create-menu">
-              {createItems.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} onClick={() => setCreateOpen(false)}>
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        {rest.map(renderItem)}
+        {navItems.map(({ href, label, icon: Icon }) => {
+          const isActive = href === "/app" ? pathname === "/app" : pathname.startsWith(href);
+          return (
+            <Link className={isActive ? "nav-item active" : "nav-item"} href={href} key={href}>
+              <Icon /> <span className="nav-label">{label}</span>
+            </Link>
+          );
+        })}
       </nav>
       <SidebarIdentity />
     </aside>

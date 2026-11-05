@@ -128,77 +128,6 @@ nav {
   background: var(--accent);
 }
 
-/* Bouton « Créer » (sidebar-nav.tsx) : même apparence qu’une entrée, avec ses liens de création
-   dépliés juste en dessous. */
-.nav-create {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-button.nav-item {
-  width: 100%;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 650;
-  text-align: left;
-  cursor: pointer;
-}
-.nav-create-toggle[aria-expanded="true"] {
-  color: var(--ink);
-  background: var(--surface-2);
-}
-.nav-create-menu {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 4px 0 4px 44px;
-  display: grid;
-  gap: 2px;
-}
-.nav-create-menu a {
-  display: block;
-  padding: 7px 10px;
-  border-radius: 9px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 650;
-  text-decoration: none;
-}
-.nav-create-menu a:hover {
-  color: var(--ink);
-  background: var(--surface-2);
-}
-
-/* Sous-onglets (section-tabs.tsx) en haut des pages regroupées sous Saison ou Équipe. */
-/* nav.section-tabs : l’emporte sur la règle générique `nav` (colonne) plus haut. */
-nav.section-tabs {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  padding: 14px max(25px, calc((100% - 264px - 1280px) / 2)) 0 calc(264px + max(25px, calc((100% - 264px - 1280px) / 2)));
-  background: var(--paper);
-}
-.section-tab {
-  padding: 8px 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--muted);
-  font-size: 12.5px;
-  font-weight: 700;
-  text-decoration: none;
-}
-.section-tab:hover {
-  color: var(--ink);
-}
-.section-tab.active {
-  color: var(--accent-ink);
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
 .season-card {
   margin-top: auto;
   padding: 16px;
@@ -910,30 +839,6 @@ button.week-calendar-badge:focus-visible {
   .nav-item svg {
     width: 20px;
     height: 20px;
-  }
-  nav.section-tabs {
-    flex: none;
-    justify-content: flex-start;
-    padding: 12px 16px 0;
-  }
-  /* Sur la barre du bas, le menu « Créer » s’ouvre au-dessus du bouton. */
-  .nav-create {
-    flex: 1;
-  }
-  button.nav-item {
-    text-align: center;
-  }
-  .nav-create-menu {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    width: 190px;
-    padding: 6px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: var(--surface);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
   }
   .nav-label {
     position: absolute;
