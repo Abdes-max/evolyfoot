@@ -2,24 +2,55 @@
 
 import {
   buildDevelopmentPlan,
+  buildPrioritizedSeason,
   currentCycleWeek,
   diagnosticCriteria,
   firstFreeCycleSlot,
+  formationSlots,
+  guidedSeasonCycle,
+  seasonWeekAt,
   summarizeDiagnostic,
   suggestAdjustmentFromObservation,
   trainingCycleWeekCount,
   type DiagnosticScores,
+  type GameFormat,
+  type MatchLineupAssignment,
   type ObservationReport,
   type SavedTrainingSession,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { MatchPitch } from "../match/match-pitch";
 import { TodayDate } from "../today-date";
 import { WeeklyCalendar } from "../weekly-calendar";
+
+interface UpcomingMatch {
+  id: string;
+  opponent: string;
+  dateLabel: string;
+  date: string | null;
+  venue: "home" | "away";
+  location?: string | null;
+  gameFormat: number;
+  formationId: string;
+  status: "scheduled" | "played";
+  lineup: readonly MatchLineupAssignment[];
+  captainPlayerId: string | null;
+}
+
+interface SeasonProgram {
+  priorities: string[];
+  startDate: string;
+}
 
 interface DashboardData {
   displayName: string;
   hasTeam: boolean;
+  teamName: string | null;
+  sessionsPerWeek: number;
+  matches: readonly UpcomingMatch[];
+  seasonProgram: SeasonProgram | null;
+  seasonPreparedCount: number;
   trainingDayCount: number;
   scores: DiagnosticScores | null;
   sessions: readonly SavedTrainingSession[];
@@ -55,16 +86,23 @@ export function DashboardView() {
           return;
         }
 
-        const [teamResponse, diagnosticResponse, sessionsResponse, observationsResponse] = await Promise.all([
-          fetch("/api/team"),
-          fetch("/api/diagnostic"),
-          fetch("/api/sessions"),
-          fetch("/api/observations"),
-        ]);
+        const [teamResponse, diagnosticResponse, sessionsResponse, observationsResponse, matchesResponse, seasonResponse, seasonSessionsResponse] =
+          await Promise.all([
+            fetch("/api/team"),
+            fetch("/api/diagnostic"),
+            fetch("/api/sessions"),
+            fetch("/api/observations"),
+            fetch("/api/matches"),
+            fetch("/api/season-program"),
+            fetch("/api/sessions?scope=season"),
+          ]);
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
         const sessionsBody = await sessionsResponse.json().catch(() => ({ sessions: [] }));
         const observationsBody = await observationsResponse.json().catch(() => ({ observations: [] }));
+        const matchesBody = await matchesResponse.json().catch(() => ({ matches: [] }));
+        const seasonBody = await seasonResponse.json().catch(() => ({ program: null }));
+        const seasonSessionsBody = await seasonSessionsResponse.json().catch(() => ({ sessions: [] }));
         if (cancelled) {
           return;
         }
@@ -72,6 +110,13 @@ export function DashboardView() {
         setData({
           displayName: sessionBody.educator.displayName,
           hasTeam: Boolean(teamBody.profile),
+          teamName: teamBody.profile?.name ?? null,
+          sessionsPerWeek: teamBody.profile?.sessionsPerWeek ?? 2,
+          matches: matchesBody.matches ?? [],
+          seasonProgram: seasonBody.program ?? null,
+          seasonPreparedCount: ((seasonSessionsBody.sessions ?? []) as Array<{ cycleNumber: number }>).filter(
+            (session) => session.cycleNumber === guidedSeasonCycle,
+          ).length,
           trainingDayCount: teamBody.profile?.trainingDays?.length ?? 0,
           scores: diagnosticBody.scores ?? null,
           sessions: sessionsBody.sessions ?? [],
@@ -114,6 +159,17 @@ export function DashboardView() {
     : [];
   const suggestion = latestObservation && week ? suggestAdjustmentFromObservation(latestObservation, week) : null;
 
+  // Prochain match à jouer : le plus proche à venir, sinon le premier sans date.
+  const nextMatch = [...(data?.matches ?? [])]
+    .filter((match) => match.status === "scheduled" && (!match.date || new Date(match.date).getTime() >= now - 3 * 3600_000))
+    .sort((a, b) => (a.date ? new Date(a.date).getTime() : Infinity) - (b.date ? new Date(b.date).getTime() : Infinity))[0];
+  const nextMatchSlots = nextMatch ? formationSlots(nextMatch.gameFormat as GameFormat, nextMatch.formationId) : [];
+
+  const season = data?.seasonProgram ?? null;
+  const seasonWeeks = season ? buildPrioritizedSeason({ priorities: season.priorities as never, sessionsPerWeek: data?.sessionsPerWeek ?? 2 }) : [];
+  const seasonWeek = season ? seasonWeekAt(new Date(`${season.startDate}T00:00:00`), new Date(now)) : 0;
+  const seasonSlots = seasonWeeks.reduce((sum, seasonWeekItem) => sum + seasonWeekItem.slots.length, 0);
+
   return (
     <section className="content">
       <header className="topbar">
@@ -126,7 +182,61 @@ export function DashboardView() {
 
       {data && (
         <>
-          <section className="hero-grid">
+          <section className="hero-grid home-hero">
+            <Link
+              aria-label={upcoming ? `Ouvrir la séance : ${upcoming.title}` : "Préparer ma prochaine séance"}
+              className="session-card home-primary card-link"
+              href={upcoming ? `/session/${upcoming.id}` : freeSlot ? `/session?week=${freeSlot.weekNumber}&slot=${freeSlot.slot}` : "/seances"}
+              id="session"
+            >
+              <div className="card-top">
+                <span className="eyebrow">PROCHAINE SÉANCE</span>
+                {upcoming?.meetingAt && <span className="date-chip">{meetingLabel(upcoming.meetingAt)}</span>}
+              </div>
+              <h2>{upcoming ? upcoming.title : freeSlot ? "Ta prochaine séance t’attend" : "Toutes tes séances sont prêtes"}</h2>
+              {upcoming ? (
+                <div className="session-meta">
+                  <span>{sessionDuration(upcoming)} min</span>
+                  <span>{upcoming.playerCount} joueurs</span>
+                  <span>{upcoming.theme}</span>
+                </div>
+              ) : (
+                <p>{freeSlot ? "Une séance prête en un geste, à partir de ton plan." : "Retrouve-les semaine par semaine."}</p>
+              )}
+              <span aria-hidden="true" className="primary-button">
+                {upcoming ? "Ouvrir la séance" : freeSlot ? "Préparer ma séance" : "Voir mes séances"} <span>→</span>
+              </span>
+            </Link>
+
+            <article className="home-match">
+              <div className="card-top">
+                <span className="eyebrow">PROCHAIN MATCH</span>
+                {nextMatch && <span className="date-chip">{nextMatch.dateLabel}</span>}
+              </div>
+              {nextMatch ? (
+                <>
+                  <div className="home-versus">
+                    <strong>{nextMatch.venue === "home" ? (data.teamName ?? "Mon équipe") : nextMatch.opponent}</strong>
+                    <span aria-hidden="true">VS</span>
+                    <strong>{nextMatch.venue === "home" ? nextMatch.opponent : (data.teamName ?? "Mon équipe")}</strong>
+                  </div>
+                  {nextMatch.location && <p className="home-match-place">📍 {nextMatch.location}</p>}
+                  <Link className="small-primary" href={`/match/${nextMatch.id}`}>
+                    Préparer le match
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <h2>Aucun match prévu</h2>
+                  <Link className="small-primary" href="/match">
+                    Ajouter un match
+                  </Link>
+                </>
+              )}
+            </article>
+          </section>
+
+          <section className="home-trio">
             {plan && week ? (
               <Link aria-label="Voir le plan de progression" className="focus-card card-link" href="/plan">
                 <div className="card-top">
@@ -166,29 +276,36 @@ export function DashboardView() {
               </Link>
             )}
 
-            <Link
-              aria-label={upcoming ? `Ouvrir la séance : ${upcoming.title}` : "Préparer ma prochaine séance"}
-              className="session-card card-link"
-              href={upcoming ? `/session/${upcoming.id}` : freeSlot ? `/session?week=${freeSlot.weekNumber}&slot=${freeSlot.slot}` : "/seances"}
-              id="session"
-            >
-              <div className="card-top">
-                <span className="eyebrow">PROCHAINE SÉANCE</span>
-                {upcoming?.meetingAt && <span className="date-chip">{meetingLabel(upcoming.meetingAt)}</span>}
-              </div>
-              <h2>{upcoming ? upcoming.title : freeSlot ? "Ta prochaine séance t’attend" : "Toutes tes séances sont prêtes"}</h2>
-              {upcoming ? (
-                <div className="session-meta">
-                  <span>{sessionDuration(upcoming)} min</span>
-                  <span>{upcoming.playerCount} joueurs</span>
-                  <span>{upcoming.theme}</span>
+            <Link aria-label="Voir la composition du prochain match" className="home-card card-link" href={nextMatch ? `/match/${nextMatch.id}` : "/match"}>
+              <span className="eyebrow">COMPOSITION</span>
+              {nextMatch ? (
+                <div className="home-pitch">
+                  <MatchPitch captainPlayerId={nextMatch.captainPlayerId} lineup={nextMatch.lineup} slots={nextMatchSlots} />
                 </div>
               ) : (
-                <p>{freeSlot ? "Une séance prête en un geste, à partir de ton plan." : "Retrouve-les semaine par semaine."}</p>
+                <p>Ta composition s’affichera ici dès ton prochain match.</p>
               )}
-              <span aria-hidden="true" className="primary-button">
-                {upcoming ? "Ouvrir la séance" : freeSlot ? "Préparer ma séance" : "Voir mes séances"} <span>→</span>
-              </span>
+            </Link>
+
+            <Link aria-label="Voir ma saison" className="home-card card-link" href="/saison">
+              <span className="eyebrow">MA SAISON</span>
+              {season ? (
+                <>
+                  <h2>
+                    Semaine {Math.min(seasonWeek, seasonWeeks.length)} sur {seasonWeeks.length}
+                  </h2>
+                  <p>Priorités : {season.priorities.join(" · ")}</p>
+                  <p className="home-card-figure">
+                    {data.seasonPreparedCount} séance{data.seasonPreparedCount > 1 ? "s" : ""} préparée{data.seasonPreparedCount > 1 ? "s" : ""} sur{" "}
+                    {seasonSlots}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2>Lance ta saison guidée</h2>
+                  <p>Choisis tes priorités : la saison se construit semaine par semaine.</p>
+                </>
+              )}
             </Link>
           </section>
 

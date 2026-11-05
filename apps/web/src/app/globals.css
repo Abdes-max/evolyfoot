@@ -366,6 +366,111 @@ nav {
   background: var(--surface);
   border: 1px solid var(--line);
 }
+/* Accueil : la prochaine séance en action principale (dégradé de la marque), le prochain match à
+   côté, puis trois cartes — thème du moment, composition, saison. */
+.session-card.home-primary {
+  border: 0;
+  color: var(--accent-ink);
+  background: radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.35), transparent 55%), linear-gradient(135deg, #7fdcff, var(--accent) 55%, #1aa7d8);
+  box-shadow: 0 18px 40px rgba(62, 198, 245, 0.25);
+}
+.session-card.home-primary .eyebrow,
+.session-card.home-primary p,
+.session-card.home-primary .session-meta {
+  color: rgba(6, 35, 48, 0.75);
+}
+.session-card.home-primary .date-chip {
+  background: rgba(6, 35, 48, 0.12);
+  color: var(--accent-ink);
+}
+.session-card.home-primary .primary-button {
+  background: var(--accent-ink);
+  color: #fff;
+}
+.home-match {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 190px;
+  padding: 19px 22px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: radial-gradient(80% 120% at 50% 50%, rgba(62, 198, 245, 0.08), transparent 70%), var(--surface);
+}
+.home-match h2 {
+  margin: 6px 0 0;
+  font-size: 19px;
+}
+.home-match .small-primary {
+  justify-self: start;
+}
+.home-versus {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.home-versus strong {
+  font-size: 15px;
+}
+.home-versus span {
+  color: var(--muted);
+  font-size: 26px;
+  font-style: italic;
+  font-weight: 900;
+}
+.home-match-place {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.home-trio {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.home-trio .focus-card {
+  min-height: 0;
+}
+.home-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 19px 22px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+.home-card h2 {
+  margin: 4px 0 0;
+  font-size: 19px;
+}
+.home-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.home-card-figure {
+  color: var(--accent) !important;
+  font-weight: 800;
+}
+.home-pitch {
+  max-width: 220px;
+  justify-self: center;
+  width: 100%;
+  pointer-events: none;
+}
+@media (max-width: 1100px) {
+  .home-trio {
+    grid-template-columns: 1fr;
+  }
+}
 .card-top {
   display: flex;
   justify-content: space-between;
