@@ -8,6 +8,7 @@ import {
   programPrinciples,
   programSource,
   programSubThemes,
+  seasonThemeCounts,
   seasonWeekAt,
   suggestSeasonPriorities,
   summarizeDiagnostic,
@@ -147,8 +148,15 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
   }, []);
 
   const weeks = useMemo(() => (program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek }) : []), [program, sessionsPerWeek]);
+  const counts = useMemo(() => seasonThemeCounts(weeks), [weeks]);
   const currentWeek = program ? seasonWeekAt(new Date(`${program.startDate}T00:00:00`), now) : 1;
-  const thisWeek = weeks[currentWeek - 1];
+  // Semaine affichée en détail : la semaine en cours tant que le coach n'en choisit pas une autre.
+  const [pickedWeek, setPickedWeek] = useState<number | null>(null);
+  const shownWeek = pickedWeek ?? currentWeek;
+  const thisWeek = weeks[shownWeek - 1];
+  const totalSlots = weeks.reduce((sum, week) => sum + week.slots.length, 0);
+  const preparedFor = (week: number, slot: number) => prepared.find((session) => session.weekNumber === week && session.slot === slot);
+  const preparedCount = weeks.reduce((sum, week) => sum + week.slots.filter((_, index) => preparedFor(week.week, index)).length, 0);
 
   if (program === undefined) return null;
 
@@ -177,23 +185,45 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
           <>
             <p className="guided-priorities">
               Priorités : <strong>{program.priorities.join(" · ")}</strong>
+              <span className="guided-progress">
+                {preparedCount} séance{preparedCount > 1 ? "s" : ""} préparée{preparedCount > 1 ? "s" : ""} sur {totalSlots}
+              </span>
             </p>
 
             {thisWeek && (
               <div className="guided-this-week">
-                <span className="eyebrow">
-                  Semaine {currentWeek} sur {weeks.length}
-                </span>
+                <div className="guided-week-nav">
+                  <button aria-label="Semaine précédente" disabled={shownWeek <= 1} onClick={() => setPickedWeek(shownWeek - 1)} type="button">
+                    ‹
+                  </button>
+                  <span className="eyebrow">
+                    Semaine {shownWeek} sur {weeks.length}
+                    {shownWeek === currentWeek ? " · cette semaine" : ""}
+                  </span>
+                  <button aria-label="Semaine suivante" disabled={shownWeek >= weeks.length} onClick={() => setPickedWeek(shownWeek + 1)} type="button">
+                    ›
+                  </button>
+                  {shownWeek !== currentWeek && (
+                    <button className="text-button" onClick={() => setPickedWeek(null)} type="button">
+                      Revenir à cette semaine
+                    </button>
+                  )}
+                </div>
                 <ul>
                   {thisWeek.slots.map((slot, index) => {
-                    const done = prepared.find((session) => session.weekNumber === currentWeek && session.slot === index);
+                    const done = preparedFor(shownWeek, index);
                     return (
                       <li key={`${slot.sessionNumber}-${index}`}>
-                        <Link className={slotClass(slot)} href={done ? `/session/${done.id}` : seanceHref(slot.sessionNumber, currentWeek, index)}>
+                        <Link className={slotClass(slot)} href={done ? `/session/${done.id}` : seanceHref(slot.sessionNumber, shownWeek, index)}>
                           <small>Séance {index + 1}</small>
                           <strong>{slotLabel(slot)}</strong>
                           <span>{done ? `Préparée · ${preparedLabel(done)}` : "Préparer la séance"}</span>
                         </Link>
+                        {done && (
+                          <Link className="guided-field-link" href={`/session/${done.id}/terrain`}>
+                            Mode terrain
+                          </Link>
+                        )}
                       </li>
                     );
                   })}
@@ -203,30 +233,46 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
 
             <ol className="guided-grid" aria-label="Les 36 semaines de la saison">
               {weeks.map((week) => (
-                <li className={week.week === currentWeek ? "current" : undefined} key={week.week}>
-                  <span>S{week.week}</span>
-                  {week.slots.map((slot, index) => (
-                    <Link
-                      aria-label={`Semaine ${week.week}, séance ${index + 1} : ${slotLabel(slot)}`}
-                      className={slotClass(slot)}
-                      href={seanceHref(slot.sessionNumber, week.week, index)}
-                      key={`${slot.sessionNumber}-${index}`}
-                      title={slotLabel(slot)}
-                    />
-                  ))}
+                <li
+                  className={
+                    [week.week === currentWeek && "current", week.week < currentWeek && "past", week.week === shownWeek && "shown"].filter(Boolean).join(" ") ||
+                    undefined
+                  }
+                  key={week.week}
+                >
+                  <button
+                    aria-label={`Voir la semaine ${week.week}`}
+                    aria-pressed={week.week === shownWeek}
+                    onClick={() => setPickedWeek(week.week)}
+                    type="button"
+                  >
+                    S{week.week}
+                  </button>
+                  {week.slots.map((slot, index) => {
+                    const done = preparedFor(week.week, index);
+                    return (
+                      <Link
+                        aria-label={`Semaine ${week.week}, séance ${index + 1} : ${slotLabel(slot)}${done ? " (préparée)" : ""}`}
+                        className={`${slotClass(slot)}${done ? " is-prepared" : ""}`}
+                        href={done ? `/session/${done.id}` : seanceHref(slot.sessionNumber, week.week, index)}
+                        key={`${slot.sessionNumber}-${index}`}
+                        title={slotLabel(slot)}
+                      />
+                    );
+                  })}
                 </li>
               ))}
             </ol>
 
-            <ul className="guided-legend">
+            <ul className="guided-legend" aria-label="Répartition de la saison">
               {developmentThemes.map((theme) => (
                 <li className={`season-slot ${themeSlugs[theme]}${program.priorities.includes(theme) ? " major" : ""}`} key={theme}>
                   {theme}
-                  {program.priorities.includes(theme) ? " (prioritaire)" : ""}
+                  {program.priorities.includes(theme) ? " (prioritaire)" : ""} · {counts.themes[theme]}
                 </li>
               ))}
-              <li className="season-slot evaluation">Évaluation</li>
-              <li className="season-slot recreational">Récréative</li>
+              <li className="season-slot evaluation">Évaluation · {counts.evaluation}</li>
+              <li className="season-slot recreational">Récréative · {counts.recreational}</li>
             </ul>
 
             <details className="guided-principles">

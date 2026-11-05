@@ -8,6 +8,7 @@ import {
   mondayOf,
   programSessionPlan,
   seasonSlotDate,
+  seasonThemeCounts,
   seasonWeekAt,
   validateSeasonPriorities,
   programSubThemeIds,
@@ -149,6 +150,18 @@ describe("saison guidée : priorités et semaine en cours", () => {
     expect(seasonWeekAt(start, new Date(2026, 8, 14))).toBe(2);
     expect(seasonWeekAt(start, new Date(2026, 7, 1))).toBe(1);
     expect(seasonWeekAt(start, new Date(2027, 11, 1))).toBe(36);
+  });
+
+  it("compte les séances de chaque thème, priorités en tête", () => {
+    const weeks = buildPrioritizedSeason({ priorities: ["Finir les actions"], sessionsPerWeek: 2 });
+    const counts = seasonThemeCounts(weeks);
+    const total = Object.values(counts.themes).reduce((sum, count) => sum + count, 0);
+    expect(total + counts.recreational + counts.evaluation).toBe(72);
+    expect(counts.evaluation).toBeGreaterThanOrEqual(3);
+    expect(counts.recreational).toBeGreaterThan(0);
+    for (const theme of developmentThemes) {
+      if (theme !== "Finir les actions") expect(counts.themes["Finir les actions"]).toBeGreaterThan(counts.themes[theme]);
+    }
   });
 });
 

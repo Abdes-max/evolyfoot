@@ -369,6 +369,20 @@ export function seasonWeekAt(start: Date, now: Date, weeks = seasonWeekCount): n
   return Math.min(weeks, Math.max(1, Math.floor(days / 7) + 1));
 }
 
+// Répartition de la saison par thème, pour montrer au coach la place des priorités et des
+// thèmes mineurs ; récréatives et évaluations sont comptées à part.
+export function seasonThemeCounts(weeks: readonly SeasonWeek[]): { themes: Record<DevelopmentTheme, number>; recreational: number; evaluation: number } {
+  const themes = Object.fromEntries(developmentThemes.map((theme) => [theme, 0])) as Record<DevelopmentTheme, number>;
+  let recreational = 0;
+  let evaluation = 0;
+  for (const slot of weeks.flatMap((week) => week.slots)) {
+    if (slot.type === "recreational") recreational += 1;
+    else if (slot.type === "evaluation") evaluation += 1;
+    else themes[programSubThemes[slot.subTheme!].theme] += 1;
+  }
+  return { themes, recreational, evaluation };
+}
+
 // Les séances préparées depuis la saison guidée sont rangées hors des cycles de 4 semaines : cycle
 // réservé 0, semaine = semaine de saison (1 à 36), créneau = rang de la séance dans la semaine.
 export const guidedSeasonCycle = 0;
