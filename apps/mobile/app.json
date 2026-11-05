@@ -43,11 +43,7 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "LSApplicationQueriesSchemes": [
-          "comgooglemaps",
-          "waze",
-          "citymapper"
-        ]
+        "LSApplicationQueriesSchemes": ["comgooglemaps", "waze", "citymapper"]
       }
     },
     "android": {
