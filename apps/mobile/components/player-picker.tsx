@@ -38,6 +38,8 @@ export function PlayerPicker({
   onPick,
   onClear,
   onClose,
+  captainPlayerId,
+  onToggleCaptain,
 }: {
   visible: boolean;
   title: string;
@@ -47,6 +49,8 @@ export function PlayerPicker({
   onPick: (playerId: string) => void;
   onClear?: () => void;
   onClose: () => void;
+  captainPlayerId?: string | null;
+  onToggleCaptain?: (playerId: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const needle = query.trim().toLocaleLowerCase("fr");
@@ -70,6 +74,23 @@ export function PlayerPicker({
             style={styles.search}
             value={query}
           />
+          {currentPlayerId && onToggleCaptain ? (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ selected: captainPlayerId === currentPlayerId }}
+              onPress={() => onToggleCaptain(currentPlayerId)}
+              style={[styles.captain, captainPlayerId === currentPlayerId && styles.captainActive]}
+            >
+              <View style={styles.captainBadge}>
+                <Text style={styles.captainBadgeText}>C</Text>
+              </View>
+              <Text style={styles.captainText}>
+                {captainPlayerId === currentPlayerId
+                  ? `${players.find((player) => player.id === currentPlayerId)?.name ?? "Ce joueur"} est capitaine · retirer le brassard`
+                  : `Nommer ${players.find((player) => player.id === currentPlayerId)?.name ?? "ce joueur"} capitaine`}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
           <ScrollView>
             {currentPlayerId && onClear ? (
               <TouchableOpacity accessibilityRole="button" onPress={onClear} style={styles.clear}>
@@ -152,5 +173,20 @@ const styles = StyleSheet.create({
   meta: { color: colors.muted, fontSize: 12, marginTop: 2 },
   status: { color: colors.primary, fontWeight: "800" },
   number: { color: "rgba(255,255,255,0.28)", fontSize: 24, fontWeight: "900", fontStyle: "italic" },
+  captain: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 12,
+    marginBottom: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.warn,
+  },
+  captainActive: { borderStyle: "solid", backgroundColor: "rgba(245,169,62,0.12)" },
+  captainBadge: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: colors.warn },
+  captainBadgeText: { color: colors.primaryInk, fontSize: 12, fontWeight: "900" },
+  captainText: { flex: 1, color: colors.ink, fontSize: 13, fontWeight: "700" },
   empty: { color: colors.muted, fontSize: 13, textAlign: "center", padding: spacing.md },
 });

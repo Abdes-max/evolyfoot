@@ -14,12 +14,12 @@ interface MatchPitchProps {
   roster?: ReadonlyArray<RosterPlayer>;
   // Remplaçants actuels, signalés dans la fenêtre de choix.
   substitutePlayerIds?: ReadonlyArray<string>;
-  // Liste des postes à côté du terrain (fiche match) ; absente sur le mini-terrain de l’accueil.
-  showList?: boolean;
   // Affecte (ou change) le joueur d'un poste.
   onSlotAssign?: (slotId: string, playerId: string) => void;
   // Vide le poste (« Laisser le poste libre » ou « × » dans la liste).
   onSlotClear?: (slotId: string) => void;
+  // Nomme (ou retire) le capitaine depuis la fenêtre de choix ; `null` retire le brassard.
+  onCaptainChange?: (playerId: string | null) => void;
 }
 
 // Réutilisé par les pastilles rondes du banc (match-prep-view.tsx), qui montrent des initiales
@@ -39,7 +39,7 @@ export function initials(name: string): string {
 // terrain vertical plutôt qu'une zone d'entraînement horizontale : plus lisible sur un écran de
 // téléphone en portrait pour une composition complète (gardien à but).
 //
-// Toucher un poste (sur le terrain ou dans la liste à côté) ouvre la fenêtre « Choisir un joueur »
+// Toucher un poste sur le terrain ouvre la fenêtre « Choisir un joueur »
 // (player-picker.tsx) : recherche, poste et numéro de chaque joueur. Un poste occupé affiche le
 // numéro de maillot du joueur (ses initiales à défaut), un poste libre un « + ».
 export function MatchPitch({
@@ -50,7 +50,7 @@ export function MatchPitch({
   substitutePlayerIds = [],
   onSlotAssign,
   onSlotClear,
-  showList = false,
+  onCaptainChange,
 }: MatchPitchProps) {
   const readOnly = !onSlotAssign;
   const [pickingSlotId, setPickingSlotId] = useState<string | null>(null);
@@ -69,7 +69,7 @@ export function MatchPitch({
   }
 
   return (
-    <div className={showList ? "match-pitch-with-list" : undefined}>
+    <div>
       <div className="match-pitch">
         <svg aria-hidden="true" preserveAspectRatio="xMidYMid meet" viewBox="0 0 300 460">
           <rect className="match-pitch-turf" height="452" rx="16" width="292" x="4" y="4" />
@@ -102,33 +102,6 @@ export function MatchPitch({
         </div>
       </div>
 
-      {showList && (
-        <ol aria-label="Postes de la composition" className="match-lineup-list">
-          {slots.map((slot) => {
-            const assignment = lineup.find((candidate) => candidate.slotId === slot.id);
-            const code = slot.roleLabel === "Gardien" ? "G" : slot.roleLabel.slice(0, 3).toUpperCase();
-            return (
-              <li key={slot.id}>
-                <button className="match-lineup-row" disabled={readOnly} onClick={() => setPickingSlotId(slot.id)} type="button">
-                  <span className="match-lineup-code">{code}</span>
-                  <span className={assignment ? "match-lineup-name" : "match-lineup-name free"}>{assignment ? assignment.playerName : "Poste libre"}</span>
-                </button>
-                {assignment && onSlotClear && (
-                  <button
-                    aria-label={`Retirer ${assignment.playerName} de ce poste`}
-                    className="match-lineup-remove"
-                    onClick={() => onSlotClear(slot.id)}
-                    type="button"
-                  >
-                    ×
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ol>
-      )}
-
       {pickingSlot && onSlotAssign && (
         <PlayerPicker
           currentPlayerId={pickingAssignment?.playerId ?? null}
@@ -146,6 +119,8 @@ export function MatchPitch({
             setPickingSlotId(null);
           }}
           players={roster}
+          captainPlayerId={captainPlayerId}
+          onToggleCaptain={onCaptainChange ? (playerId) => onCaptainChange(captainPlayerId === playerId ? null : playerId) : undefined}
           statusOf={statusOf}
           title={`Choisir un joueur · ${pickingSlot.roleLabel}`}
         />

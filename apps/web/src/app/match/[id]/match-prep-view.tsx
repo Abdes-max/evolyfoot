@@ -464,9 +464,10 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             captainPlayerId={match.captainPlayerId}
             lineup={match.lineup}
             onSlotAssign={readOnly ? undefined : assignSlot}
+            onCaptainChange={readOnly ? undefined : (playerId) => setCaptainPlayer(playerId ?? "")}
             onSlotClear={readOnly ? undefined : (slotId) => assignSlot(slotId, "")}
             roster={roster}
-            showList
+
             slots={slots}
             substitutePlayerIds={match.substitutePlayerIds}
           />
@@ -542,18 +543,6 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               </button>
             )}
           </form>
-
-          <label className="match-captain-row">
-            <span>Capitaine</span>
-            <select disabled={readOnly} onChange={(event) => setCaptainPlayer(event.target.value)} value={match.captainPlayerId ?? ""}>
-              <option value="">— Aucun —</option>
-              {match.lineup.map((assignment) => (
-                <option key={assignment.playerId} value={assignment.playerId}>
-                  {assignment.playerName}
-                </option>
-              ))}
-            </select>
-          </label>
 
           <MatchAnalysis
             formationId={match.formationId}

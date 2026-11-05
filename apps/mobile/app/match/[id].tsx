@@ -3,7 +3,7 @@ import { assignPlayerToSlot, canFinalizeMatchPlan, clearSlot, formationSlots, li
 import type { GameFormat, MatchLineupSlot, MatchPlan, MatchVenue } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MatchAnalysis } from "../../components/match-analysis";
 import { PlayerPicker } from "../../components/player-picker";
@@ -159,7 +159,6 @@ export default function MatchDetailScreen() {
   const [saveError, setSaveError] = useState("");
   const [finalizing, setFinalizing] = useState(false);
   const [pickerSlotId, setPickerSlotId] = useState<string | null>(null);
-  const [pickerCaptain, setPickerCaptain] = useState(false);
   const [location, setLocation] = useState("");
   const [locationFeedback, setLocationFeedback] = useState("");
 
@@ -313,7 +312,6 @@ export default function MatchDetailScreen() {
               readOnly
                 ? undefined
                 : (slotId) => {
-                    setPickerCaptain(false);
                     setPickerSlotId(slotId);
                   }
             }
@@ -323,19 +321,6 @@ export default function MatchDetailScreen() {
 
         {/* La composition se fait directement sur le terrain : pas de liste des postes en dessous. */}
         {!readOnly && <Text style={styles.sectionHint}>Touche un poste sur le terrain pour y affecter un joueur.</Text>}
-
-        <TouchableOpacity
-          accessibilityRole="button"
-          disabled={readOnly}
-          onPress={() => {
-            setPickerSlotId(null);
-            setPickerCaptain(true);
-          }}
-          style={styles.captainRow}
-        >
-          <Text style={styles.slotLabel}>Capitaine</Text>
-          <Text style={styles.slotValue}>{match.lineup.find((a) => a.playerId === match.captainPlayerId)?.playerName ?? "— Aucun —"}</Text>
-        </TouchableOpacity>
 
         {saveError ? <Text style={styles.fieldError}>{saveError}</Text> : null}
 
@@ -359,6 +344,8 @@ export default function MatchDetailScreen() {
       </ScrollView>
 
       <PlayerPicker
+        captainPlayerId={match.captainPlayerId}
+        onToggleCaptain={readOnly ? undefined : (playerId) => setCaptain(match.captainPlayerId === playerId ? null : playerId)}
         currentPlayerId={match.lineup.find((assignment) => assignment.slotId === pickerSlotId)?.playerId ?? null}
         onClear={() => {
           if (pickerSlotId) assignSlot(pickerSlotId, null);
@@ -378,40 +365,6 @@ export default function MatchDetailScreen() {
         title={`Choisir un joueur${slots.find((slot) => slot.id === pickerSlotId) ? ` · ${slots.find((slot) => slot.id === pickerSlotId)!.roleLabel}` : ""}`}
         visible={pickerSlotId !== null}
       />
-
-      <Modal animationType="slide" onRequestClose={() => setPickerCaptain(false)} transparent visible={pickerCaptain}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Choisir un capitaine</Text>
-            <ScrollView>
-              <TouchableOpacity
-                onPress={() => {
-                  setCaptain(null);
-                  setPickerCaptain(false);
-                }}
-                style={styles.modalOption}
-              >
-                <Text style={styles.modalOptionText}>— Aucun —</Text>
-              </TouchableOpacity>
-              {match.lineup.map((assignment) => (
-                <TouchableOpacity
-                  key={assignment.playerId}
-                  onPress={() => {
-                    setCaptain(assignment.playerId);
-                    setPickerCaptain(false);
-                  }}
-                  style={styles.modalOption}
-                >
-                  <Text style={styles.modalOptionText}>{assignment.playerName}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity onPress={() => setPickerCaptain(false)} style={styles.modalClose}>
-              <Text style={styles.modalCloseText}>Fermer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -450,30 +403,10 @@ const styles = StyleSheet.create({
   pitchWrap: { marginTop: 16 },
 
   sectionHint: { fontSize: 11, color: colors.muted, marginBottom: 8 },
-
-  slotLabel: { color: colors.muted, fontSize: 11.5, fontWeight: "700" },
-  slotValue: { color: colors.ink, fontSize: 12.5, fontWeight: "700" },
-  captainRow: {
-    minHeight: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radii.sm,
-    backgroundColor: colors.primarySoft,
-    marginTop: 18,
-  },
   fieldError: { color: colors.danger, fontSize: 11, marginTop: 14 },
   finalizeButton: { minHeight: 48, marginTop: 20, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
   finalizeButtonDisabled: { opacity: 0.45 },
   finalizeButtonText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
-  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,.5)" },
-  modalSheet: { maxHeight: "70%", padding: spacing.lg, backgroundColor: colors.surface, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg },
-  modalTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginBottom: 12 },
-  modalOption: { minHeight: 44, justifyContent: "center", paddingHorizontal: 6, borderTopWidth: 1, borderTopColor: colors.line },
-  modalOptionText: { color: colors.ink, fontSize: 13, fontWeight: "700" },
   modalClose: {
     minHeight: 44,
     marginTop: 10,
@@ -483,5 +416,4 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: radii.sm,
   },
-  modalCloseText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
 });

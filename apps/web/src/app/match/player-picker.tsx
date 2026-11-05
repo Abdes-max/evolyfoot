@@ -20,6 +20,9 @@ interface PlayerPickerProps {
   currentPlayerId?: string | null;
   onPick: (playerId: string) => void;
   onClear?: () => void;
+  // Brassard : nommer (ou retirer) le joueur du poste comme capitaine, sans quitter la fenêtre.
+  captainPlayerId?: string | null;
+  onToggleCaptain?: (playerId: string) => void;
   onClose: () => void;
 }
 
@@ -43,7 +46,7 @@ function positionLabel(position: string | null | undefined): string {
 // Fenêtre « Choisir un joueur » de la composition : recherche, puis une ligne par joueur avec sa
 // photo ou ses initiales, son poste et son numéro de maillot. Remplace l'ancien <select> natif,
 // qui ne montrait que les noms.
-export function PlayerPicker({ title, players, statusOf, currentPlayerId, onPick, onClear, onClose }: PlayerPickerProps) {
+export function PlayerPicker({ title, players, statusOf, currentPlayerId, onPick, onClear, onClose, captainPlayerId, onToggleCaptain }: PlayerPickerProps) {
   const [query, setQuery] = useState("");
   const dialog = useRef<HTMLDivElement>(null);
 
@@ -76,6 +79,21 @@ export function PlayerPicker({ title, players, statusOf, currentPlayerId, onPick
           type="search"
           value={query}
         />
+        {currentPlayerId && onToggleCaptain && (
+          <button
+            aria-pressed={captainPlayerId === currentPlayerId}
+            className={captainPlayerId === currentPlayerId ? "player-picker-captain active" : "player-picker-captain"}
+            onClick={() => onToggleCaptain(currentPlayerId)}
+            type="button"
+          >
+            <span aria-hidden="true" className="player-picker-captain-badge">
+              C
+            </span>
+            {captainPlayerId === currentPlayerId
+              ? `${players.find((player) => player.id === currentPlayerId)?.name ?? "Ce joueur"} est capitaine · retirer le brassard`
+              : `Nommer ${players.find((player) => player.id === currentPlayerId)?.name ?? "ce joueur"} capitaine`}
+          </button>
+        )}
         <ul className="player-picker-list">
           {currentPlayerId && onClear && (
             <li>
@@ -103,7 +121,10 @@ export function PlayerPicker({ title, players, statusOf, currentPlayerId, onPick
                     )}
                   </span>
                   <span className="player-picker-identity">
-                    <strong>{player.name}</strong>
+                    <strong>
+                      {player.name}
+                      {player.id === captainPlayerId && <span className="player-picker-captain-badge small">C</span>}
+                    </strong>
                     <small>
                       {positionLabel(player.position)}
                       {status && <em> · {status}</em>}

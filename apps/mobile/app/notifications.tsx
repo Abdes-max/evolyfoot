@@ -15,8 +15,9 @@ interface NotificationItem {
 }
 
 function routeFor(link: string): string | null {
-  const player = link.match(/^\/equipe\/([^/?#]+)/);
-  return player ? `/messages/${player[1]}` : null;
+  // /messagerie?joueur=:id (ou /equipe/:id pour les anciennes alertes) → fil de ce joueur.
+  const player = link.match(/[?&]joueur=([^&#]+)/)?.[1] ?? link.match(/^\/equipe\/([^/?#]+)/)?.[1];
+  return player ? `/messages/${player}` : null;
 }
 
 // Alertes du coach : messages des joueurs et de leurs parents. Toucher une alerte ouvre le fil.

@@ -9,8 +9,9 @@ import { usePushNotifications } from "../lib/push";
 
 // Lien web d’une notification → écran de l’appli Coach.
 function routeForLink(link: string): string {
-  const player = link.match(/^\/equipe\/([^/?#]+)/);
-  return player ? `/messages/${player[1]}` : "/notifications";
+  // /messagerie?joueur=:id (ou /equipe/:id pour les anciennes alertes) → fil de ce joueur.
+  const player = link.match(/[?&]joueur=([^&#]+)/)?.[1] ?? link.match(/^\/equipe\/([^/?#]+)/)?.[1];
+  return player ? `/messages/${player}` : "/notifications";
 }
 
 const PUBLIC_ROUTES = ["/connexion", "/inscription"];
