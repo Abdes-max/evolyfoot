@@ -49,8 +49,8 @@ class InMemoryEducatorRepository implements EducatorRepository {
     return null;
   }
 
-  async findByLinkedPlayerId(): Promise<null> {
-    return null;
+  async findFollowers(): Promise<never[]> {
+    return [];
   }
 
   async markEmailVerified(): Promise<void> {}

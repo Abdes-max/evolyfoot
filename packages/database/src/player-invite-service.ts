@@ -42,15 +42,12 @@ export class PlayerInviteService {
     private readonly now: () => Date = () => new Date(),
   ) {}
 
-  // Génère une invitation pour un joueur de l'effectif du coach. Refuse si le joueur a déjà un
-  // compte lié ou une invitation encore active.
+  // Génère une invitation pour un joueur de l'effectif du coach. Plusieurs comptes peuvent suivre
+  // le même enfant (les deux parents) ; refuse seulement si une invitation est encore active.
   async create(educatorId: string, playerId: string): Promise<CreatedInvite> {
     const player = await this.playerRepository.findById(playerId, educatorId);
     if (!player) {
       throw new PlayerNotFoundError();
-    }
-    if (await this.educatorRepository.findByLinkedPlayerId(playerId)) {
-      throw new PlayerAccountExistsError();
     }
     if (await this.playerInviteRepository.findActiveForPlayer(playerId)) {
       throw new InviteInvalidError("Une invitation est déjà active pour ce joueur.");
@@ -106,10 +103,6 @@ export class PlayerInviteService {
     if (!player) {
       throw new PlayerNotFoundError();
     }
-    if (await this.educatorRepository.findByLinkedPlayerId(invite.playerId)) {
-      throw new PlayerAccountExistsError();
-    }
-
     const account = await this.educatorRepository.create({
       email,
       displayName,

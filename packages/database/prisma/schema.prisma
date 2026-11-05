@@ -70,8 +70,9 @@ model Educator {
   emailVerifiedAt    DateTime?                @map("email_verified_at")
   emailVerifications EmailVerification[]
   passwordResets     PasswordReset[]
-  // Renseigné uniquement pour un compte "player" : le joueur suivi (dans l'effectif d'un coach).
-  linkedPlayerId     String?                  @unique @map("linked_player_id") @db.Uuid
+  // Renseigné uniquement pour un compte "player" : l'enfant actuellement affiché parmi ceux que le
+  // compte suit (voir PlayerFollowerLink). Plus unique : deux parents peuvent suivre le même enfant.
+  linkedPlayerId     String?                  @map("linked_player_id") @db.Uuid
   linkedPlayer       Player?                  @relation("PlayerFollowers", fields: [linkedPlayerId], references: [id], onDelete: Cascade)
   // Renseigné pour un compte "assistant" (l'éducateur dont il rejoint l'équipe) et pour un espace
   // d'équipe "team" (l'éducateur qui l'a créé).
@@ -80,6 +81,7 @@ model Educator {
   staff              Educator[]               @relation("TeamStaff")
   staffInvites       StaffInvite[]
   invitesCreated     PlayerInvite[]
+  followedPlayers    PlayerFollowerLink[]
   // Fiche profil de l'éducateur (page /profil). Tous optionnels : renseignés après l'inscription,
   // qui ne demande que nom / e-mail / mot de passe. `birthDate` est stocké en texte ISO
   // (`YYYY-MM-DD`) plutôt qu'en `DateTime` -- une date de naissance n'a pas d'heure ni de fuseau,
@@ -103,8 +105,8 @@ model Educator {
   team               Team?
   diagnostic         Diagnostic?
   seasonProgram      SeasonProgram?
-  notifications     Notification[]
-  pushDevices       PushDevice[]
+  notifications      Notification[]
+  pushDevices        PushDevice[]
   sessions           Session[]
   trainingSessions   TrainingSessionRecord[]
   observations       ObservationRecord[]
@@ -218,40 +220,40 @@ model Diagnostic {
 // `blocks` ne stocke que de quoi retrouver chaque activité dans le catalogue du domaine
 // (`findTrainingActivity`) -- pas l'activité complète, déjà dupliquée dans ce catalogue.
 model TrainingSessionRecord {
-  id          String           @id @default(uuid()) @db.Uuid
-  educatorId  String           @map("educator_id") @db.Uuid
-  educator    Educator         @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  title       String
-  ageGroup    AgeGroup         @map("age_group")
-  playerCount Int              @map("player_count")
-  theme       DevelopmentTheme
-  intention   String
-  blocks      Json
+  id                 String           @id @default(uuid()) @db.Uuid
+  educatorId         String           @map("educator_id") @db.Uuid
+  educator           Educator         @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  title              String
+  ageGroup           AgeGroup         @map("age_group")
+  playerCount        Int              @map("player_count")
+  theme              DevelopmentTheme
+  intention          String
+  blocks             Json
   // Créneau de la séance dans le cycle de 4 semaines du plan de progression : `weekNumber` (1 à 4,
   // aligné sur DevelopmentPlan.weeks) et `slot` (index 0-basé dans les jours d'entraînement de
   // l'équipe). Une seule séance par créneau (contrainte d'unicité) : la (re)générer remplace la
   // précédente. Le calendrier du tableau de bord s'en sert pour ouvrir la bonne séance ou signaler
   // « non générée ».
-  cycleNumber Int              @default(1) @map("cycle_number")
-  weekNumber  Int              @default(1) @map("week_number")
-  slot        Int              @default(0)
+  cycleNumber        Int              @default(1) @map("cycle_number")
+  weekNumber         Int              @default(1) @map("week_number")
+  slot               Int              @default(0)
   // Rendez-vous réel (date + heure), lieu et description -- même principe que MatchRecord
   // ci-dessous, affichés sur la fiche détail que voit le joueur/tuteur. `meetingAt` est un vrai
   // horodatage (saisi via un datepicker+heure côté coach) et non un horaire en texte libre comme
   // MatchRecord.meetingTime : contrairement au match, une séance n'a par ailleurs aucune autre
   // date (weekNumber/slot ne placent la séance que dans le cycle, jamais sur un jour précis).
-  meetingAt   DateTime?        @map("meeting_at")
-  location    String?
-  description String?
+  meetingAt          DateTime?        @map("meeting_at")
+  location           String?
+  description        String?
   // Présence à cette séance (id + nom de joueur dupliqués, voir AttendanceEntry côté domaine et
   // MatchRecord.lineup pour le même principe) -- nullable : une séance validée avant
   // l'introduction du suivi de présence n'en a pas, distingué d'une liste vide (`[]`, présence
   // saisie mais personne de présent) dans les agrégats de /statistiques.
-  attendance  Json?
+  attendance         Json?
   // Durée de préparation mesurée par l'écran (indicateur MVP « première séance en moins de 10 min »),
   // gardée de la création : ré-enregistrer la séance ne la change pas.
-  preparationSeconds Int? @map("preparation_seconds")
-  createdAt   DateTime         @default(now()) @map("created_at")
+  preparationSeconds Int?             @map("preparation_seconds")
+  createdAt          DateTime         @default(now()) @map("created_at")
 
   @@unique([educatorId, cycleNumber, weekNumber, slot], name: "training_session_slot")
   @@index([educatorId])
@@ -346,9 +348,10 @@ model Player {
   // Historique borné d'évaluations datées (voir playerEvaluationMaxPerSeason côté domaine),
   // plus « une seule par joueur » : d'où la relation 1-N ci-dessous au lieu d'un `?`.
   evaluations   PlayerEvaluationRecord[]
-  // Comptes tuteur/joueur qui suivent ce joueur (0..1 en pratique via l'unique sur
-  // Educator.linkedPlayerId).
+  // Comptes dont c'est l'enfant affiché (Educator.linkedPlayerId) ; la liste complète des comptes
+  // qui suivent ce joueur est dans `followerLinks`.
   followers     Educator[]               @relation("PlayerFollowers")
+  followerLinks PlayerFollowerLink[]
   invites       PlayerInvite[]
   messages      MessageRecord[]
   createdAt     DateTime                 @default(now()) @map("created_at")
@@ -356,6 +359,20 @@ model Player {
 
   @@index([educatorId])
   @@map("players")
+}
+
+// Enfants suivis par un compte tuteur/joueur : un compte peut suivre plusieurs enfants (une
+// discussion par enfant), et un enfant peut être suivi par plusieurs comptes (les deux parents).
+model PlayerFollowerLink {
+  accountId String   @map("account_id") @db.Uuid
+  account   Educator @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  playerId  String   @map("player_id") @db.Uuid
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([accountId, playerId])
+  @@index([playerId])
+  @@map("player_followers")
 }
 
 // Invitation générée par un coach pour qu'un tuteur crée un compte lié à un joueur de son

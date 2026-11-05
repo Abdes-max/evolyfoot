@@ -2,7 +2,9 @@ import { createEmptyPlayerEvaluationScores } from "@evolyfoot/domain";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { AuthService } from "./auth-service";
 import { createDatabaseClient } from "./client";
-import { InviteInvalidError, PlayerAccountExistsError } from "./player-invite-service";
+import { PlayerNotFoundError } from "./errors";
+import { PlayerChildrenService } from "./player-children-service";
+import { InviteInvalidError } from "./player-invite-service";
 import { PlayerInviteService } from "./player-invite-service";
 import { PlayerDashboardService } from "./player-dashboard-service";
 import { PlayerEvaluationService } from "./player-evaluation-service";
@@ -92,17 +94,38 @@ describe("PostgreSQL player accounts", () => {
     expect(await authService.getPlayerAccountForSession(session.sessionToken)).not.toBeNull();
   });
 
-  it("refuses a second invitation once a player already has a linked account", async () => {
-    const coach = await createCoach("dup");
-    const player = await playerRepository.create(coach.id, "Léo");
-    const { token } = await inviteService.create(coach.id, player.id);
-    await inviteService.consume(token, {
-      email: `${testRun}-t2@example.test`,
-      password: "tutor-password",
-      displayName: "Tuteur",
-    });
+  it("lets both parents follow the same child, and one parent follow several children", async () => {
+    const children = new PlayerChildrenService(educatorRepository, educatorRepository, playerRepository, teamRepository, playerInviteRepository);
+    const coach = await createCoach("family");
+    const leo = await playerRepository.create(coach.id, "Léo");
+    const ines = await playerRepository.create(coach.id, "Inès");
 
-    await expect(inviteService.create(coach.id, player.id)).rejects.toBeInstanceOf(PlayerAccountExistsError);
+    // Premier parent : compte créé par l'invitation de Léo.
+    const first = await inviteService.consume((await inviteService.create(coach.id, leo.id)).token, {
+      email: `${testRun}-parent1@example.test`,
+      password: "tutor-password",
+      displayName: "Parent 1",
+    });
+    // Second parent : un autre compte sur le même enfant, désormais autorisé.
+    const second = await inviteService.consume((await inviteService.create(coach.id, leo.id)).token, {
+      email: `${testRun}-parent2@example.test`,
+      password: "tutor-password",
+      displayName: "Parent 2",
+    });
+    expect((await educatorRepository.findFollowers(leo.id)).map((account) => account.displayName).sort()).toEqual(["Parent 1", "Parent 2"]);
+
+    // Le premier parent ajoute Inès avec son compte existant : elle devient l'enfant affiché.
+    await children.attachInvite(first.educator.id, (await inviteService.create(coach.id, ines.id)).token);
+    const list = await children.list(first.educator.id);
+    expect(list.map((child) => [child.name, child.displayed])).toEqual([
+      ["Léo", false],
+      ["Inès", true],
+    ]);
+
+    await children.select(first.educator.id, leo.id);
+    expect((await children.list(first.educator.id)).find((child) => child.displayed)?.name).toBe("Léo");
+    // Le second parent ne suit pas Inès : il ne peut pas la choisir.
+    await expect(children.select(second.educator.id, ines.id)).rejects.toBeInstanceOf(PlayerNotFoundError);
   });
 
   it("rejects a consumed or unknown invite token", async () => {
