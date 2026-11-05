@@ -243,6 +243,9 @@ export function RosterView() {
                 <Link href="/profil?onglet=equipe">
                   Staff et invitations <span aria-hidden="true">›</span>
                 </Link>
+                <Link href="/statistiques">
+                  Statistiques de l’équipe <span aria-hidden="true">›</span>
+                </Link>
                 <Link href="/messagerie">
                   Messagerie <span aria-hidden="true">›</span>
                 </Link>

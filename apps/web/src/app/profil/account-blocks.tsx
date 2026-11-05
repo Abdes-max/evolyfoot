@@ -193,18 +193,23 @@ function ClubPanel() {
         ) : (
           <>
             <p>Partage tes exercices avec les autres éducateurs de ton club. Rejoins le club d’un collègue avec son code, ou crée-le.</p>
-            <form className="staff-invite" onSubmit={(event) => save(event, { code })}>
-              <input aria-label="Code d’un club" onChange={(event) => setCode(event.target.value)} placeholder="Code reçu d’un collègue" value={code} />
-              <button className="profil-primary" disabled={!code.trim()} type="submit">
-                Rejoindre
-              </button>
-            </form>
-            <form className="staff-invite" onSubmit={(event) => save(event, { name })}>
-              <input aria-label="Nom du club" onChange={(event) => setName(event.target.value)} placeholder="Nom du club" value={name} />
-              <button className="profil-ghost" disabled={!name.trim()} type="submit">
-                Créer le club
-              </button>
-            </form>
+            {/* Deux options côte à côte, chacune avec son titre, son champ et son bouton. */}
+            <div className="club-options">
+              <form className="club-option" onSubmit={(event) => save(event, { code })}>
+                <h4>Rejoindre un club</h4>
+                <input aria-label="Code d’un club" onChange={(event) => setCode(event.target.value)} placeholder="Code reçu d’un collègue" value={code} />
+                <button className="profil-primary" disabled={!code.trim()} type="submit">
+                  Rejoindre
+                </button>
+              </form>
+              <form className="club-option" onSubmit={(event) => save(event, { name })}>
+                <h4>Créer mon club</h4>
+                <input aria-label="Nom du club" onChange={(event) => setName(event.target.value)} placeholder="Nom du club" value={name} />
+                <button className="profil-primary" disabled={!name.trim()} type="submit">
+                  Créer le club
+                </button>
+              </form>
+            </div>
           </>
         )}
         {error && (

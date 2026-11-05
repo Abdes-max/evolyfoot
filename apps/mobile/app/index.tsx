@@ -241,13 +241,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Link>
 
-        <Link href="/statistiques" asChild>
-          <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
-            <Text style={styles.observationText}>Statistiques</Text>
-            <Text style={styles.observationText}>→</Text>
-          </TouchableOpacity>
-        </Link>
-
         <Link href="/onboarding" asChild>
           <TouchableOpacity style={styles.setupButton}>
             <Text style={styles.setupText}>{team ? "Modifier mon équipe" : "Configurer mon équipe"}</Text>

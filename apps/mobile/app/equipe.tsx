@@ -102,6 +102,11 @@ export default function EquipeScreen() {
           </Link>
         )}
 
+        <TouchableOpacity accessibilityRole="link" onPress={() => router.push("/statistiques")} style={styles.statsLink}>
+          <Text style={styles.statsLinkText}>Statistiques de l’équipe</Text>
+          <Text style={styles.statsLinkText}>→</Text>
+        </TouchableOpacity>
+
         <Text style={styles.label}>Ajouter un joueur</Text>
         <View style={styles.addRow}>
           <TextInput accessibilityLabel="Prénom du joueur" onChangeText={setNewFirstName} placeholder="Prénom" style={styles.input} value={newFirstName} />
@@ -220,6 +225,17 @@ const styles = StyleSheet.create({
   crestText: { color: colors.primary, fontSize: 16, fontWeight: "900" },
   teamName: { color: colors.ink, fontSize: 17, fontWeight: "900" },
   teamSummary: { fontSize: 12, color: colors.muted, marginTop: 3 },
+  statsLink: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+  },
+  statsLinkText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
   groupTitle: { fontSize: 15, fontWeight: "900", color: colors.ink, marginTop: 22, marginBottom: 2 },
   avatar: {
     width: 40,
