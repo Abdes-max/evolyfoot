@@ -67,10 +67,14 @@
 }
 .roster-add-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
 }
+/* min-width: 0 -- sans lui, un champ ne rétrécit pas sous sa largeur par défaut et le second
+   déborde du cadre sur un écran étroit ; sous ~320px, chaque champ passe sur sa propre ligne. */
 .roster-add-row input {
-  flex: 1;
+  flex: 1 1 140px;
+  min-width: 0;
   border: 1px solid var(--line);
   background: var(--surface-2);
   border-radius: 9px;
