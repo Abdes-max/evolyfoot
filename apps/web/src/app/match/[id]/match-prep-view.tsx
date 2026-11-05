@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { parseDatetimeInputValue, toDatetimeInputValue } from "../../date-format";
 import { initials, MatchPitch } from "../match-pitch";
+import { PlayerPicker } from "../player-picker";
 import { PlaceInput } from "../../place-input";
 import { MatchAnalysis } from "./match-analysis";
 import { MatchResultForm } from "./match-result-form";
@@ -51,6 +52,9 @@ interface MatchRecord {
 interface RosterPlayer {
   id: string;
   name: string;
+  photo?: string | null;
+  position?: string | null;
+  jerseyNumber?: string | null;
 }
 
 const venueLabel: Record<MatchVenue, string> = { home: "Domicile", away: "Extérieur" };
@@ -66,6 +70,8 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   const [match, setMatch] = useState<MatchRecord | null>(null);
   const [roster, setRoster] = useState<RosterPlayer[]>([]);
   const [loadError, setLoadError] = useState("");
+  // Place du banc en cours de choix (fenêtre « Choisir un joueur »).
+  const [pickingBenchIndex, setPickingBenchIndex] = useState<number | null>(null);
   const [saveError, setSaveError] = useState("");
   const [finalizing, setFinalizing] = useState(false);
   // Même principe que session-builder.tsx : un ensemble d'absents plutôt qu'une carte complète
@@ -460,7 +466,9 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             onSlotAssign={readOnly ? undefined : assignSlot}
             onSlotClear={readOnly ? undefined : (slotId) => assignSlot(slotId, "")}
             roster={roster}
+            showList
             slots={slots}
+            substitutePlayerIds={match.substitutePlayerIds}
           />
           {!readOnly && <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur.</p>}
 
@@ -470,35 +478,33 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               {benchSlots.map((playerId, index) => {
                 const player = playerId ? roster.find((candidate) => candidate.id === playerId) : null;
                 const label = player ? `Remplaçant : ${player.name}` : "Remplaçant : aucun joueur, toucher pour affecter";
-                const availableForBench = roster.filter(
-                  (candidate) => !assignedPlayerIds.has(candidate.id) && !match.substitutePlayerIds.includes(candidate.id),
-                );
+
                 return (
                   <div aria-label={label} className={`match-pitch-token ${player ? "filled" : "empty"}`} key={index}>
-                    {!readOnly && (
-                      <select
-                        aria-label={label}
-                        className="match-pitch-token-select"
-                        onChange={(event) => setBenchSlot(index, event.target.value)}
-                        value={playerId ?? ""}
-                      >
-                        <option value="">— Aucun joueur —</option>
-                        {playerId ? (
-                          <option value={playerId}>{player?.name ?? "Joueur"}</option>
-                        ) : (
-                          availableForBench.map((candidate) => (
-                            <option key={candidate.id} value={candidate.id}>
-                              {candidate.name}
-                            </option>
-                          ))
-                        )}
-                      </select>
-                    )}
+                    {!readOnly && <button aria-label={label} className="match-pitch-token-hit" onClick={() => setPickingBenchIndex(index)} type="button" />}
                     <span aria-hidden="true">{player ? initials(player.name) : "+"}</span>
                   </div>
                 );
               })}
             </div>
+            {pickingBenchIndex !== null && (
+              <PlayerPicker
+                currentPlayerId={benchSlots[pickingBenchIndex] ?? null}
+                onClear={() => {
+                  setBenchSlot(pickingBenchIndex, "");
+                  setPickingBenchIndex(null);
+                }}
+                onClose={() => setPickingBenchIndex(null)}
+                onPick={(playerId) => {
+                  setBenchSlot(pickingBenchIndex, playerId);
+                  setPickingBenchIndex(null);
+                }}
+                // Une place déjà occupée ne propose que « Laisser le poste libre » (voir setBenchSlot).
+                players={benchSlots[pickingBenchIndex] ? [] : roster.filter((candidate) => !match.substitutePlayerIds.includes(candidate.id))}
+                statusOf={(playerId) => (assignedPlayerIds.has(playerId) ? "déjà titulaire" : null)}
+                title="Choisir un remplaçant"
+              />
+            )}
           </section>
         </div>
 

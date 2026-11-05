@@ -948,3 +948,250 @@
     margin: 0 auto;
   }
 }
+
+/* Poste du terrain : la face (bouton, ou simple pastille en lecture seule) montre le numéro du
+   joueur, ses initiales à défaut, ou « + » quand le poste est libre (match-pitch.tsx). */
+.match-pitch-token.filled {
+  width: 44px;
+  max-width: none;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  justify-content: center;
+  box-shadow: 0 0 0 6px rgba(62, 198, 245, 0.14);
+}
+.match-pitch-token-face {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+span.match-pitch-token-face {
+  cursor: default;
+}
+.match-pitch-token.filled .match-pitch-token-face {
+  color: var(--accent-ink);
+}
+.match-pitch-token.empty .match-pitch-token-face {
+  color: var(--muted);
+  font-size: 20px;
+  font-weight: 500;
+}
+.match-pitch-token .match-pitch-captain {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+}
+/* Place du banc : bouton transparent sur toute la pastille, qui ouvre la fenêtre de choix. */
+.match-pitch-token-hit {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Liste des postes sous le terrain sur la fiche match : la colonne est trop étroite pour les deux
+   côte à côte. */
+.match-pitch-with-list {
+  display: grid;
+  gap: 14px;
+}
+.match-lineup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.match-lineup-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.match-lineup-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.match-lineup-row:disabled {
+  cursor: default;
+}
+.match-lineup-row:not(:disabled):hover {
+  border-color: var(--accent);
+}
+.match-lineup-code {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.match-lineup-name {
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+}
+.match-lineup-name.free {
+  color: var(--muted);
+  font-weight: 500;
+}
+.match-lineup-remove {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+/* Fenêtre « Choisir un joueur » (player-picker.tsx). */
+.player-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(3, 6, 10, 0.7);
+  backdrop-filter: blur(4px);
+}
+.player-picker {
+  width: min(460px, 100%);
+  max-height: min(720px, calc(100vh - 32px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+.player-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 18px 12px;
+}
+.player-picker-head h2 {
+  margin: 0;
+  font-size: 17px;
+}
+.player-picker-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 18px;
+  cursor: pointer;
+}
+.player-picker-search {
+  margin: 0 18px 12px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+.player-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 8px 10px;
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+}
+.player-picker-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.player-picker-row:hover,
+.player-picker-row.current {
+  background: var(--surface-2);
+}
+.player-picker-clear {
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.player-picker-avatar {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+.player-picker-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.player-picker-identity {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.player-picker-identity strong {
+  font-size: 14px;
+}
+.player-picker-identity small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.player-picker-identity em {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: 700;
+}
+.player-picker-number {
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 26px;
+  font-style: italic;
+  font-weight: 900;
+}
+.player-picker-empty {
+  padding: 16px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
