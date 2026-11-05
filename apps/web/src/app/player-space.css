@@ -661,3 +661,29 @@
   color: var(--muted);
   font-size: 12px;
 }
+
+/* Choix de l’enfant suivi dans l’en-tête (child-switcher.tsx). */
+nav.child-switcher {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+  margin-right: 12px;
+}
+.child-switcher-chip {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.child-switcher-chip.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}

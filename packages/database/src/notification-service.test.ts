@@ -97,7 +97,7 @@ describe("NotificationService", () => {
     await service.onEvaluation("sans-compte");
 
     expect(notifications.records.map((record) => [record.recipientId, record.kind, record.link])).toEqual([
-      ["account-1", "message", "/joueur/messages"],
+      ["account-1", "message", "/joueur/messages?enfant=player-1"],
       ["account-1", "evaluation", "/joueur"],
     ]);
     expect(devices.devices.map((device) => device.token)).toEqual(["ExponentPushToken[coach]"]);

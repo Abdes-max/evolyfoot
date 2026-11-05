@@ -55,7 +55,8 @@ export class NotificationService {
           kind: "message" as const,
           title: `Message de ${message.authorName}`,
           body: excerpt(message.text),
-          link: "/joueur/messages",
+          // L’enfant concerné : un compte qui suit plusieurs enfants ouvre la bonne discussion.
+          link: `/joueur/messages?enfant=${message.playerId}`,
           threadPlayerId: message.playerId,
         })),
       );

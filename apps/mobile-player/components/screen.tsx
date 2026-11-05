@@ -3,6 +3,7 @@ import { Link, router, usePathname } from "expo-router";
 import { useRef, useState, type ReactNode } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { ChildSwitcher } from "./child-switcher";
 import { pendingResponses, useDashboard } from "../lib/dashboard";
 import { useUnread } from "../lib/push";
 
@@ -64,6 +65,8 @@ export function Screen({
 }) {
   const scroll = useRef<ScrollView>(null);
   const pathname = usePathname();
+  // Changer d’enfant recharge le contenu de l’écran (chaque écran relit ses données au montage).
+  const [childVersion, setChildVersion] = useState(0);
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
@@ -88,7 +91,8 @@ export function Screen({
           {action}
         </View>
         <View style={styles.horizon} />
-        {children}
+        <ChildSwitcher onChange={() => setChildVersion((version) => version + 1)} />
+        <View key={childVersion}>{children}</View>
       </ScrollView>
       <TabBar />
     </SafeAreaView>
