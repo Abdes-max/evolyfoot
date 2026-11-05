@@ -29,6 +29,16 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@evolyfoot/domain"],
+  // Détourage des photos (onnxruntime et sharp, binaires natifs + modèles) : chargé tel quel par
+  // Node plutôt que regroupé, et ses fichiers copiés dans la sortie autonome.
+  serverExternalPackages: ["@imgly/background-removal-node", "onnxruntime-node", "sharp"],
+  outputFileTracingIncludes: {
+    "/api/photos/detourage": [
+      "../../node_modules/.pnpm/@imgly+background-removal-node@*/node_modules/**/*",
+      "../../node_modules/.pnpm/onnxruntime-node@*/node_modules/**/*",
+      "../../node_modules/.pnpm/sharp@*/node_modules/**/*",
+    ],
+  },
   // Sortie autonome : produit .next/standalone avec un serveur Node minimal et son propre
   // node_modules tracé, condition pour une image Docker de production légère.
   output: "standalone",

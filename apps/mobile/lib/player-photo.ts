@@ -1,9 +1,9 @@
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { launchImageLibraryAsync } from "expo-image-picker";
 
-// Même côté maximal que la fiche joueur du web : la photo reste une petite data URL stockée
-// telle quelle, sous le plafond de taille du serveur.
-const playerPhotoMaxSide = 320;
+// Même côté maximal que la fiche joueur du web : assez de détail pour un détourage net, la photo
+// restant une petite data URL stockée telle quelle, sous le plafond de taille du serveur.
+const playerPhotoMaxSide = 400;
 
 // Ouvre la galerie, recadre au carré et renvoie une data URL JPEG, ou `null` si l'éducateur annule.
 export async function pickPlayerPhoto(): Promise<string | null> {

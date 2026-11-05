@@ -1,7 +1,10 @@
-import { EducatorNotFoundError, PlayerNotFoundError } from "./errors";
+import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "./errors";
 import { InviteInvalidError } from "./player-invite-service";
 import { hashSessionToken } from "./session-token";
 import type { EducatorRepository, PlayerFollowerRepository, PlayerInviteRepository, PlayerRepository, TeamRepository } from "./repositories";
+
+// Même plafond que la photo posée par l’éducateur (RosterService).
+const maxPhotoLength = 700_000;
 
 export interface FollowedChild {
   playerId: string;
@@ -79,5 +82,22 @@ export class PlayerChildrenService {
     await this.followerRepository.follow(accountId, invite.playerId);
     await this.followerRepository.setDisplayedPlayer(accountId, invite.playerId);
     await this.playerInviteRepository.markConsumed(invite.id);
+  }
+
+  // Le joueur (ou son tuteur) change la photo de l’enfant affiché : la même que voit l’éducateur.
+  async setPhoto(accountId: string, photo: string | null): Promise<void> {
+    const account = await this.playerAccount(accountId);
+    const playerId = account.linkedPlayerId;
+    if (!playerId || !(await this.followerRepository.followedPlayerIds(accountId)).includes(playerId)) {
+      throw new PlayerNotFoundError();
+    }
+    if (photo !== null && (!photo.startsWith("data:image/") || photo.length > maxPhotoLength)) {
+      throw new ValidationError("La photo est invalide ou trop lourde.");
+    }
+    const player = await this.playerRepository.findAnyById(playerId);
+    if (!player) {
+      throw new PlayerNotFoundError();
+    }
+    await this.playerRepository.update(playerId, player.educatorId, { photo });
   }
 }

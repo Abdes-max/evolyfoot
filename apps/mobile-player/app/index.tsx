@@ -2,11 +2,14 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { PhotoChoice } from "../components/photo-choice";
 import { PlayerCard } from "../components/player-card";
 import { Screen } from "../components/screen";
 import { useAuth } from "../lib/auth-context";
 import { buildAgenda, endOfCurrentWeek, useDashboard } from "../lib/dashboard";
+import { apiFetch } from "../lib/api";
 import { openInMaps } from "../lib/open-in-maps";
+import { pickPhoto } from "../lib/photo";
 import { markEvaluationsRead } from "../lib/push";
 
 export default function MyCardScreen() {
@@ -16,8 +19,39 @@ export default function MyCardScreen() {
       if (sessionToken) void markEvaluationsRead(sessionToken);
     }, [sessionToken]),
   );
-  const { dashboard, status } = useDashboard();
+  const { dashboard, status, reload } = useDashboard();
   const [now] = useState(() => Date.now());
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoChoice, setPhotoChoice] = useState<{ original: string; cutout: string } | null>(null);
+
+  async function savePhoto(photo: string) {
+    const response = await apiFetch("/api/joueur/photo", { method: "PUT", sessionToken, body: JSON.stringify({ photo }) }).catch(() => null);
+    if (!response?.ok) {
+      Alert.alert("La photo n’a pas été enregistrée.", "Réessaie dans un instant.");
+      return;
+    }
+    await reload();
+  }
+
+  // Photo choisie dans la galerie, détourée par le serveur ; on propose les deux versions.
+  async function changePhoto() {
+    setPhotoBusy(true);
+    try {
+      const photo = await pickPhoto();
+      if (!photo) return;
+      const response = await apiFetch("/api/photos/detourage", { method: "POST", sessionToken, body: JSON.stringify({ image: photo }) }).catch(() => null);
+      const body = response?.ok ? await response.json().catch(() => null) : null;
+      if (typeof body?.image === "string") {
+        setPhotoChoice({ original: photo, cutout: body.image });
+      } else {
+        await savePhoto(photo);
+      }
+    } catch {
+      Alert.alert("Impossible de traiter cette image.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   function confirmLogout() {
     Alert.alert("Mon compte", undefined, [
@@ -59,6 +93,18 @@ export default function MyCardScreen() {
             scores={latestCoach?.scores ?? null}
             season={dashboard.season}
           />
+          <TouchableOpacity accessibilityRole="button" disabled={photoBusy} onPress={() => void changePhoto()} style={styles.photoButton}>
+            <Text style={styles.photoButtonText}>{photoBusy ? "Détourage…" : dashboard.player.photo ? "Changer ma photo" : "Ajouter ma photo"}</Text>
+          </TouchableOpacity>
+          <PhotoChoice
+            cutout={photoChoice?.cutout ?? null}
+            onCancel={() => setPhotoChoice(null)}
+            onChoose={(photo) => {
+              setPhotoChoice(null);
+              void savePhoto(photo);
+            }}
+            original={photoChoice?.original ?? null}
+          />
 
           <Text style={styles.section}>Cette semaine</Text>
           {agenda.length === 0 ? <Text style={styles.note}>Rien de prévu cette semaine.</Text> : null}
@@ -85,6 +131,16 @@ export default function MyCardScreen() {
 }
 
 const styles = StyleSheet.create({
+  photoButton: {
+    alignSelf: "center",
+    marginTop: spacing.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  photoButtonText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
   logout: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
   logoutText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
   note: { color: colors.muted, fontSize: 14, lineHeight: 20 },

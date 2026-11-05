@@ -32,7 +32,8 @@
   "pnpm": {
     "overrides": {
       "sharp": "0.35.5",
-      "shell-quote": "1.12.0"
+      "shell-quote": "1.12.0",
+      "@imgly/background-removal-node>@types/node": "26.6.6"
     }
   }
 }

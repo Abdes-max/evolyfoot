@@ -16,6 +16,7 @@ import { EvaluationRadar } from "../../components/evaluation-radar";
 import { PlayerDetailsForm } from "../../components/player-details-form";
 import { useAuth } from "../../lib/auth-context";
 import { playerReportHtml, sharePdf, type ReportPlayer } from "../../lib/pdf-export";
+import { PhotoChoice } from "../../components/photo-choice";
 import { birthDateFromIso, pickPlayerPhoto } from "../../lib/player-photo";
 
 interface Evaluation {
@@ -51,6 +52,8 @@ export default function PlayerScreen() {
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  // Photo choisie, en attente du choix « sans fond » / « avec le fond ».
+  const [photoChoice, setPhotoChoice] = useState<{ original: string; cutout: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,7 +138,15 @@ export default function PlayerScreen() {
     setPhotoBusy(true);
     try {
       const photo = await pickPlayerPhoto();
-      const failure = photo ? await patchPlayer({ photo }) : null;
+      if (!photo) return;
+      // Détourage sur le serveur ; en cas d’échec, la photo d’origine est enregistrée telle quelle.
+      const response = await apiRequest("/api/photos/detourage", { method: "POST", body: JSON.stringify({ image: photo }) });
+      const body = response?.ok ? await response.json().catch(() => null) : null;
+      if (typeof body?.image === "string") {
+        setPhotoChoice({ original: photo, cutout: body.image });
+        return;
+      }
+      const failure = await patchPlayer({ photo });
       if (failure) {
         Alert.alert(failure);
       }
@@ -389,6 +400,16 @@ export default function PlayerScreen() {
           </>
         )}
       </ScrollView>
+      <PhotoChoice
+        cutout={photoChoice?.cutout ?? null}
+        onCancel={() => setPhotoChoice(null)}
+        onChoose={async (photo) => {
+          setPhotoChoice(null);
+          const failure = await patchPlayer({ photo });
+          if (failure) Alert.alert(failure);
+        }}
+        original={photoChoice?.original ?? null}
+      />
     </SafeAreaView>
   );
 }

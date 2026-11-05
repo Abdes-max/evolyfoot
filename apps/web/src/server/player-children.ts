@@ -1,4 +1,4 @@
-import { EducatorNotFoundError, InviteInvalidError, PlayerNotFoundError } from "@evolyfoot/database";
+import { EducatorNotFoundError, InviteInvalidError, PlayerNotFoundError, ValidationError } from "@evolyfoot/database";
 import type { FollowedChild } from "@evolyfoot/database";
 import type { PublicAccount } from "./auth";
 
@@ -6,6 +6,7 @@ export interface PlayerChildrenGateway {
   list(accountId: string): Promise<FollowedChild[]>;
   select(accountId: string, playerId: string): Promise<void>;
   attachInvite(accountId: string, token: string): Promise<void>;
+  setPhoto(accountId: string, photo: string | null): Promise<void>;
 }
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
@@ -21,7 +22,7 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   if (error instanceof EducatorNotFoundError || error instanceof PlayerNotFoundError) {
     return Response.json({ error: "Enfant introuvable." }, { status: 404 });
   }
-  if (error instanceof InviteInvalidError) {
+  if (error instanceof InviteInvalidError || error instanceof ValidationError) {
     return Response.json({ error: error.message }, { status: 400 });
   }
   log(error);
@@ -67,6 +68,16 @@ export function createPlayerChildrenHandlers(
         await children.attachInvite(account.id, body.token);
         return Response.json({ children: await children.list(account.id) }, { status: 201 });
       }),
+    // PUT { photo: data URL | null } : photo de l’enfant affiché.
+    photo: (request: Request) =>
+      guard(request, async (account) => {
+        const body = await readJsonBody(request);
+        if (!body || !(typeof body.photo === "string" || body.photo === null)) {
+          return Response.json({ error: "Photo manquante." }, { status: 400 });
+        }
+        await children.setPhoto(account.id, body.photo as string | null);
+        return Response.json({ status: "ok" });
+      }),
   };
 }
 
@@ -87,6 +98,7 @@ export async function createPlayerChildrenGateway(): Promise<{ gateway: PlayerCh
       list: (accountId) => service.list(accountId),
       select: (accountId, playerId) => service.select(accountId, playerId),
       attachInvite: (accountId, token) => service.attachInvite(accountId, token),
+      setPhoto: (accountId, photo) => service.setPhoto(accountId, photo),
     },
     disconnect: database.disconnect,
   };

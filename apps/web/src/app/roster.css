@@ -1043,3 +1043,59 @@
   color: var(--bad);
   font-weight: 800;
 }
+
+/* Choix après détourage d’une photo de joueur (photo-choice.tsx) : deux vignettes sur le fond de
+   la carte joueur. */
+.photo-choice {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.photo-choice p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.photo-choice-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.photo-choice-option {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(47, 212, 255, 0.35), transparent 60%), linear-gradient(160deg, #123349, #0a1219);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.photo-choice-option:hover {
+  border-color: var(--accent);
+}
+.photo-choice-option img {
+  width: 100%;
+  max-width: 150px;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+.photo-choice-cancel {
+  justify-self: start;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -17,6 +17,14 @@
       "expo-router",
       "expo-secure-store",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "EvolyFoot Player accède à tes photos pour mettre ta photo sur ta carte joueur.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-notifications",
         {
           "color": "#2fd4ff",
