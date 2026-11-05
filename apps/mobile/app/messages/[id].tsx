@@ -1,6 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { messageMaxLength, validateMessageText, type MessageAuthorRole } from "@evolyfoot/domain";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../lib/auth-context";
@@ -88,9 +88,6 @@ export default function MessagesScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.safe}>
         <View style={styles.top}>
-          <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-            <Text style={styles.back}>← Fiche</Text>
-          </TouchableOpacity>
           <Text style={styles.step}>MESSAGES</Text>
           <Text style={styles.title}>{name ?? "Joueur"}</Text>
           <Text style={styles.muted}>Le joueur ou son tuteur lit et répond depuis EvolyFoot Player.</Text>

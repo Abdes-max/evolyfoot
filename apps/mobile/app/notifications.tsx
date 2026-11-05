@@ -53,9 +53,6 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-          <Text style={styles.back}>← Retour</Text>
-        </TouchableOpacity>
         <Text style={styles.title}>Notifications</Text>
         {unread > 0 && (
           <TouchableOpacity accessibilityRole="button" onPress={() => markRead({ all: true })}>

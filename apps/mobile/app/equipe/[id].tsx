@@ -187,9 +187,6 @@ export default function PlayerScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-          <Text style={styles.back}>← Effectif</Text>
-        </TouchableOpacity>
         {status === "loading" && <Text style={styles.muted}>Chargement…</Text>}
         {status === "missing" && <Text style={styles.error}>Ce joueur est introuvable.</Text>}
         {player && (

@@ -1,8 +1,8 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { findTrainingActivity, type PersonalExercise, type TrainingActivity } from "@evolyfoot/domain";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { TacticalPlayer } from "../../components/tactical-player";
 import { useAuth } from "../../lib/auth-context";
 import { kindLabels } from "../../lib/exercise-labels";
@@ -51,9 +51,6 @@ export default function ExerciseScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-          <Text style={styles.back}>← Bibliothèque</Text>
-        </TouchableOpacity>
         {personal === undefined && <Text style={styles.muted}>Chargement…</Text>}
         {personal === null && !activity && <Text style={styles.error}>Cette situation est introuvable.</Text>}
         {exercise && (

@@ -458,9 +458,6 @@ export default function ProfilScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-          <Text style={styles.back}>← Retour</Text>
-        </TouchableOpacity>
         <Text style={styles.step}>{educator?.role === "assistant" ? "ADJOINT" : "MON PROFIL"}</Text>
         <Text style={styles.title}>{profile?.displayName ?? educator?.displayName ?? ""}</Text>
         {loadError ? <Text style={styles.danger}>{loadError}</Text> : null}

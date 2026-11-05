@@ -104,9 +104,6 @@ export default function CompetitionDetailScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.page}>
           <Text style={styles.fieldError}>{loadError}</Text>
-          <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-            <Text style={styles.back}>← Retour</Text>
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -119,9 +116,6 @@ export default function CompetitionDetailScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-          <Text style={styles.back}>← Matchs</Text>
-        </TouchableOpacity>
         <Text style={styles.step}>{`${singular.toUpperCase()} ${isPastCompetition(item) ? "PASSÉ" : "À VENIR"}`}</Text>
         <Text style={styles.title}>{item.name}</Text>
         <Text style={styles.body}>{item.dateLabel}</Text>
