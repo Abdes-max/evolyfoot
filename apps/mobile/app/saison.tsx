@@ -82,10 +82,6 @@ export default function SaisonScreen() {
       <ScrollView contentContainerStyle={styles.page}>
         <Text style={styles.step}>{calendar.label.toUpperCase()}</Text>
         <Text style={styles.title}>Toute ta saison, mois par mois.</Text>
-        {/* Même regroupement que le menu web : le calendrier des séances se trouve sous Saison. */}
-        <TouchableOpacity accessibilityRole="link" onPress={() => router.push("/seances")} style={styles.sessionsLink}>
-          <Text style={styles.sessionsLinkText}>Calendrier des séances →</Text>
-        </TouchableOpacity>
 
         <GuidedSeason
           fallback={
@@ -146,17 +142,7 @@ const styles = StyleSheet.create({
   page: { padding: spacing.lg, paddingBottom: 48 },
   back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
   step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 12 },
-  sessionsLink: {
-    alignSelf: "flex-start",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    marginBottom: 18,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  sessionsLinkText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+  title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 20 },
   card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12 },
   monthCurrent: { borderColor: colors.primary },
   cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink, marginBottom: 6 },

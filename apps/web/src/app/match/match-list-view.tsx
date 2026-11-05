@@ -4,7 +4,7 @@ import { gameFormats, listFormations } from "@evolyfoot/domain";
 import type { GameFormat, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { frenchDateLabel, parseDatetimeInputValue, sortChronologically } from "../date-format";
 import { PlaceInput } from "../place-input";
 import { CalendarImport } from "./calendar-import";
@@ -39,12 +39,10 @@ async function readErrorMessage(response: Response): Promise<string> {
 
 export function MatchListView() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [authenticated, setAuthenticated] = useState<boolean | undefined>(undefined);
   const [matches, setMatches] = useState<MatchSummary[]>([]);
   const [teamName, setTeamName] = useState("");
-  // « Créer › Un match » du menu ouvre directement le formulaire (/match?nouveau=1).
-  const [creating, setCreating] = useState(searchParams?.get("nouveau") === "1");
+  const [creating, setCreating] = useState(false);
   const [opponent, setOpponent] = useState("");
   // "YYYY-MM-DDTHH:mm" (valeur brute d'un <input type="datetime-local">) -- dateLabel ("Samedi 12
   // septembre") est dérivé automatiquement à l'envoi, voir createMatch ci-dessous ; l'heure elle-
