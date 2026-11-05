@@ -1,5 +1,6 @@
 "use client";
 
+import { playerPositionCodes, playerPositions } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -8,6 +9,27 @@ import { MessagingThread } from "../messaging-thread";
 interface RosterPlayer {
   id: string;
   name: string;
+  photo?: string | null;
+  position?: string | null;
+  jerseyNumber?: string | null;
+}
+
+function initials(name: string): string {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]!.toUpperCase())
+      .join("") || "?"
+  );
+}
+
+// Même ligne que la liste de Mon équipe : initiales ou photo, nom, poste et numéro.
+function positionLabel(position: string | null | undefined): string {
+  if (!position || !(playerPositions as readonly string[]).includes(position)) return "Joueur ou tuteur";
+  return `${position} (${playerPositionCodes[position as keyof typeof playerPositionCodes]})`;
 }
 
 interface MessageNotification {
@@ -83,8 +105,25 @@ export function MessagerieView() {
                     aria-current={player.id === selectedId ? "true" : undefined}
                     onClick={() => open(player.id)}
                   >
-                    <span>{player.name}</span>
-                    {unread.has(player.id) ? <span className="messagerie-unread">Nouveau</span> : null}
+                    <span aria-hidden="true" className="messagerie-avatar">
+                      {player.photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img alt="" src={player.photo} />
+                      ) : (
+                        initials(player.name)
+                      )}
+                    </span>
+                    <span className="messagerie-identity">
+                      <strong>{player.name}</strong>
+                      <small>{positionLabel(player.position)}</small>
+                    </span>
+                    {unread.has(player.id) ? (
+                      <span className="messagerie-unread">Nouveau</span>
+                    ) : (
+                      <span aria-hidden="true" className="messagerie-number">
+                        {player.jerseyNumber || ""}
+                      </span>
+                    )}
                   </button>
                 </li>
               ))}

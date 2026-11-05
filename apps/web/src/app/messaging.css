@@ -106,30 +106,26 @@
 }
 .messagerie-layout {
   display: grid;
-  grid-template-columns: minmax(220px, 300px) 1fr;
+  grid-template-columns: minmax(260px, 360px) 1fr;
   gap: 20px;
   align-items: start;
 }
 .messagerie-players {
   list-style: none;
   margin: 0;
-  padding: 8px;
+  padding: 0;
   display: grid;
-  gap: 4px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 16px;
+  gap: 6px;
 }
 .messagerie-player {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
   color: var(--ink);
   font: inherit;
   font-size: 13.5px;
@@ -204,4 +200,48 @@
   .messagerie-back {
     display: inline;
   }
+}
+
+/* Ligne d’un interlocuteur : même présentation que la liste de Mon équipe. */
+.messagerie-avatar {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+}
+.messagerie-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.messagerie-identity {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.messagerie-identity strong {
+  overflow: hidden;
+  font-size: 13.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.messagerie-identity small {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.messagerie-number {
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 900;
 }
