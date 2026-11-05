@@ -1,7 +1,6 @@
 import { attendanceStatusOf, playerSeasonTotals, summarizeAttendance } from "@evolyfoot/domain";
-import { playerEvaluationMaxPerSeason, seasonStartDate, validatePlayerEvaluationScores } from "@evolyfoot/domain";
 import type { AttendanceEntry, AttendanceStatus, AttendanceSummary, PlayerEvaluationScores, PlayerSeasonTotals, TrainingDay } from "@evolyfoot/domain";
-import { EducatorNotFoundError, ValidationError } from "./errors";
+import { EducatorNotFoundError } from "./errors";
 import { matchKickoffTime, matchMeetingTime } from "./match-time";
 import type {
   EducatorRepository,
@@ -138,21 +137,6 @@ export class PlayerDashboardService {
       throw new EducatorNotFoundError();
     }
     return owned;
-  }
-
-  // Le joueur ne désigne jamais qui il évalue : tout découle de son compte, comme pour `get`.
-  async addSelfEvaluation(playerAccountId: string, scores: PlayerEvaluationScores): Promise<PlayerDashboardEvaluation> {
-    const error = validatePlayerEvaluationScores(scores);
-    if (error) {
-      throw new ValidationError(error);
-    }
-    const owned = await this.resolveOwnedPlayer(playerAccountId);
-    const existing = await this.playerEvaluationRepository.countByPlayer(owned.id, owned.educatorId, "player", seasonStartDate(new Date()));
-    if (existing >= playerEvaluationMaxPerSeason) {
-      throw new ValidationError(`Tu as déjà ${playerEvaluationMaxPerSeason} auto-évaluations cette saison.`);
-    }
-    const evaluation = await this.playerEvaluationRepository.create(owned.educatorId, owned.id, scores, "player");
-    return { id: evaluation.id, scores: evaluation.scores, source: evaluation.source, createdAt: evaluation.createdAt };
   }
 
   async get(playerAccountId: string): Promise<PlayerDashboard> {

@@ -1198,7 +1198,9 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
 
   async listByEducator(educatorId: string): Promise<PersistedPlayerEvaluation[]> {
     const records = await this.prisma.playerEvaluationRecord.findMany({
-      where: { educatorId },
+      // Les auto-évaluations des joueurs (source "player") ne sont plus proposées : seules les
+      // notes de l’éducateur sont relues, les anciennes restent en base sans être affichées.
+      where: { educatorId, source: "coach" },
       orderBy: { createdAt: "desc" },
     });
     return records.map(toPersistedPlayerEvaluation);
@@ -1206,7 +1208,7 @@ export class PrismaPlayerEvaluationRepository implements PlayerEvaluationReposit
 
   async listByPlayer(playerId: string, educatorId: string): Promise<PersistedPlayerEvaluation[]> {
     const records = await this.prisma.playerEvaluationRecord.findMany({
-      where: { playerId, educatorId },
+      where: { playerId, educatorId, source: "coach" },
       orderBy: { createdAt: "desc" },
     });
     return records.map(toPersistedPlayerEvaluation);

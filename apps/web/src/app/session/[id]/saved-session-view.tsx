@@ -247,37 +247,39 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
           {/* Classes réutilisées de match.css (match-details-form/-save, match-slot-hint) --
               même formulaire que côté match, voir match-prep-view.tsx. Le rendez-vous se règle
               directement dans <SessionBuilder> ci-dessus (voir son commentaire), pas ici. */}
-          <form className="match-details-form" onSubmit={saveDetails}>
-            <h2>Détails</h2>
-            <p className="match-slot-hint">Affichés sur la fiche que voit le joueur/tuteur.</p>
-            <label>
-              <span>Lieu</span>
-              <PlaceInput onChange={setLocation} value={location} />
-            </label>
-            <label>
-              <span>Description</span>
-              <textarea onChange={(event) => setDescription(event.target.value)} value={description} />
-            </label>
-            {detailsError && (
-              <p className="field-error" role="alert">
-                {detailsError}
-              </p>
-            )}
-            <button className="match-details-save" disabled={savingDetails} type="submit">
-              {savingDetails ? "Enregistrement…" : "Enregistrer les détails"}
-            </button>
-          </form>
+          <section className="session-details">
+            <form className="match-details-form" onSubmit={saveDetails}>
+              <h2>Détails</h2>
+              <p className="match-slot-hint">Affichés sur la fiche que voit le joueur/tuteur.</p>
+              <label>
+                <span>Lieu</span>
+                <PlaceInput onChange={setLocation} value={location} />
+              </label>
+              <label>
+                <span>Description</span>
+                <textarea onChange={(event) => setDescription(event.target.value)} value={description} />
+              </label>
+              {detailsError && (
+                <p className="field-error" role="alert">
+                  {detailsError}
+                </p>
+              )}
+              <button className="match-details-save" disabled={savingDetails} type="submit">
+                {savingDetails ? "Enregistrement…" : "Enregistrer les détails"}
+              </button>
+            </form>
 
-          <div className="match-convocation">
-            <button className="match-convocation-send" disabled={sendingConvocation} onClick={sendConvocation} type="button">
-              {sendingConvocation ? "Envoi…" : confirmingNoLocation && !location.trim() ? "Envoyer sans lieu" : "Envoyer la convocation"}
-            </button>
-            <p className="match-slot-hint">
-              {location.trim() ? `Lieu indiqué : ${location.trim()}.` : "Aucun lieu renseigné : ajoutez-le ci-dessus pour qu’il figure dans la convocation."}{" "}
-              Envoyée à tout l’effectif -- une séance n’a pas de composition retenue.
-            </p>
-            {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
-          </div>
+            <div className="match-convocation">
+              <button className="match-convocation-send" disabled={sendingConvocation} onClick={sendConvocation} type="button">
+                {sendingConvocation ? "Envoi…" : confirmingNoLocation && !location.trim() ? "Envoyer sans lieu" : "Envoyer la convocation"}
+              </button>
+              <p className="match-slot-hint">
+                {location.trim() ? `Lieu indiqué : ${location.trim()}.` : "Aucun lieu renseigné : ajoutez-le ci-dessus pour qu’il figure dans la convocation."}{" "}
+                Envoyée à tout l’effectif -- une séance n’a pas de composition retenue.
+              </p>
+              {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
+            </div>
+          </section>
         </>
       )}
     </main>

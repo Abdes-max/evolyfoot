@@ -87,3 +87,121 @@
 .messaging-form-actions button:disabled {
   opacity: 0.55;
 }
+
+/* Onglet Messagerie du coach (/messagerie) : la liste des joueurs à gauche, le fil à droite ; sur
+   mobile, l'un ou l'autre. Même gabarit de page que /observations. */
+.messagerie-shell {
+  min-height: 100vh;
+  background: var(--paper);
+  padding-left: 264px;
+}
+.messagerie-header {
+  padding-left: max(25px, calc((100% - 1280px) / 2));
+  padding-right: max(25px, calc((100% - 1280px) / 2));
+}
+.messagerie-content {
+  width: min(1280px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 24px 0 48px;
+}
+.messagerie-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.messagerie-players {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.messagerie-player {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.messagerie-player:hover {
+  background: var(--surface-2);
+}
+.messagerie-player.active {
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+.messagerie-unread {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.messagerie-thread {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.messagerie-thread-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.messagerie-thread-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.messagerie-thread-head a {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.messagerie-back {
+  display: none;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+@media (max-width: 950px) {
+  .messagerie-shell {
+    padding-left: 0;
+    padding-bottom: 90px;
+  }
+}
+
+@media (max-width: 760px) {
+  .messagerie-layout {
+    grid-template-columns: 1fr;
+  }
+  .messagerie-layout.has-thread .messagerie-players,
+  .messagerie-layout:not(.has-thread) .messagerie-thread {
+    display: none;
+  }
+  .messagerie-back {
+    display: inline;
+  }
+}
