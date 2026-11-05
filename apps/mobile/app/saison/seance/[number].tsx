@@ -11,21 +11,14 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { DateTimeField } from "../../../components/date-time-field";
 import { PlaceInput } from "../../../components/place-input";
 import { TacticalDiagramView } from "../../../components/tactical-diagram";
 import { useAuth } from "../../../lib/auth-context";
 
-function meetingLabel(date: Date): string {
-  return date.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
-}
-
 // Durée écoulée depuis l’ouverture de l’écran (indicateur MVP), rien si elle n’a pas démarré.
 function preparationSeconds(start: number | null): { preparationSeconds?: number } {
   return start === null ? {} : { preparationSeconds: Math.round((Date.now() - start) / 1000) };
-}
-
-function shifted(date: Date, minutes: number): Date {
-  return new Date(date.getTime() + minutes * 60_000);
 }
 
 const evaluationCount = {
@@ -130,27 +123,7 @@ export default function ProgramSessionScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Préparer cette séance</Text>
             <Text style={styles.label}>RENDEZ-VOUS</Text>
-            <Text style={styles.body}>{meetingLabel(meetingAt)}</Text>
-            <View style={styles.actions}>
-              {(
-                [
-                  ["− 1 jour", -1440],
-                  ["+ 1 jour", 1440],
-                  ["− 30 min", -30],
-                  ["+ 30 min", 30],
-                ] as const
-              ).map(([label, minutes]) => (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  hitSlop={8}
-                  key={label}
-                  onPress={() => setMeetingAt(shifted(meetingAt, minutes))}
-                  style={styles.action}
-                >
-                  <Text style={styles.actionText}>{label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <DateTimeField label="Rendez-vous" onChange={setMeetingAt} value={meetingAt} />
             <Text style={styles.label}>LIEU</Text>
             <PlaceInput onChange={setLocation} value={location} />
             <TouchableOpacity accessibilityRole="button" disabled={saving} onPress={prepare} style={[styles.primary, saving && styles.disabled]}>

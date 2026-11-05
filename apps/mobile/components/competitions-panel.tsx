@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { competitionDateLabel, competitionKinds, isPastCompetition, sortCompetitions, type Competition, type CompetitionKind } from "../lib/competitions";
-import { birthDateToIso } from "../lib/player-photo";
+import { DateTimeField } from "./date-time-field";
 import { PlaceInput } from "./place-input";
 
 async function readError(response: Response | null): Promise<string> {
@@ -20,7 +20,7 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
   const [items, setItems] = useState<Competition[]>([]);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
-  const [dateInput, setDateInput] = useState("");
+  const [dateValue, setDateValue] = useState<Date | null>(null);
   const [result, setResult] = useState("");
   const [location, setLocation] = useState("");
   const [error, setError] = useState("");
@@ -44,9 +44,12 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
   );
 
   async function add() {
-    const date = birthDateToIso(dateInput);
+    // Jour choisi à l’heure locale, enregistré à minuit UTC comme avant (format de l’API).
+    const date = dateValue
+      ? `${dateValue.getFullYear()}-${String(dateValue.getMonth() + 1).padStart(2, "0")}-${String(dateValue.getDate()).padStart(2, "0")}`
+      : null;
     if (!name.trim() || !date) {
-      setError("Indique un nom et une date au format JJ/MM/AAAA.");
+      setError("Indique un nom et une date.");
       return;
     }
     setSubmitting(true);
@@ -70,7 +73,7 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
     const body = await response.json();
     setItems((current) => [body[itemKey], ...current]);
     setName("");
-    setDateInput("");
+    setDateValue(null);
     setResult("");
     setLocation("");
     setAdding(false);
@@ -90,14 +93,7 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
       {adding && (
         <View style={styles.form}>
           <TextInput accessibilityLabel={`Nom du ${singular}`} onChangeText={setName} placeholder={`Nom du ${singular}`} style={styles.input} value={name} />
-          <TextInput
-            accessibilityLabel="Date"
-            keyboardType="numbers-and-punctuation"
-            onChangeText={setDateInput}
-            placeholder="Date (JJ/MM/AAAA)"
-            style={styles.input}
-            value={dateInput}
-          />
+          <DateTimeField label="Date" mode="date" onChange={setDateValue} value={dateValue} />
           <PlaceInput onChange={setLocation} value={location} />
           <TextInput accessibilityLabel="Bilan" onChangeText={setResult} placeholder="Bilan (optionnel)" style={styles.input} value={result} />
           {error ? <Text style={styles.fieldError}>{error}</Text> : null}

@@ -24,6 +24,7 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { TacticalDiagramView } from "../components/tactical-diagram";
 import { TacticalPlayer } from "../components/tactical-player";
+import { DateTimeField } from "../components/date-time-field";
 import { PlaceInput } from "../components/place-input";
 import { useAuth } from "../lib/auth-context";
 import { sessionHtml, sharePdf } from "../lib/pdf-export";
@@ -49,10 +50,6 @@ function tomorrowEvening(): string {
 
 function meetingLabel(iso: string): string {
   return new Date(iso).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
-}
-
-function shiftMeeting(iso: string, minutes: number): string {
-  return new Date(new Date(iso).getTime() + minutes * 60_000).toISOString();
 }
 
 export default function SessionScreen() {
@@ -362,41 +359,7 @@ export default function SessionScreen() {
 
         <View style={styles.card}>
           <Text style={styles.summaryLabel}>RENDEZ-VOUS</Text>
-          <Text style={styles.cardTitle}>{meetingLabel(meetingAt)}</Text>
-          <View style={styles.actions}>
-            <TouchableOpacity
-              accessibilityLabel="Un jour plus tôt"
-              hitSlop={8}
-              onPress={() => setMeetingAt(shiftMeeting(meetingAt, -1440))}
-              style={styles.action}
-            >
-              <Text style={styles.actionText}>− 1 jour</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityLabel="Un jour plus tard"
-              hitSlop={8}
-              onPress={() => setMeetingAt(shiftMeeting(meetingAt, 1440))}
-              style={styles.action}
-            >
-              <Text style={styles.actionText}>+ 1 jour</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityLabel="30 minutes plus tôt"
-              hitSlop={8}
-              onPress={() => setMeetingAt(shiftMeeting(meetingAt, -30))}
-              style={styles.action}
-            >
-              <Text style={styles.actionText}>− 30 min</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityLabel="30 minutes plus tard"
-              hitSlop={8}
-              onPress={() => setMeetingAt(shiftMeeting(meetingAt, 30))}
-              style={styles.action}
-            >
-              <Text style={styles.actionText}>+ 30 min</Text>
-            </TouchableOpacity>
-          </View>
+          <DateTimeField label="Rendez-vous" onChange={(value) => setMeetingAt(value.toISOString())} value={new Date(meetingAt)} />
         </View>
 
         <View style={styles.card}>

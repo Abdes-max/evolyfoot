@@ -12,6 +12,7 @@ import {
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
+import { CalendarIcon, ClockIcon, PinIcon } from "../components/icons";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
 import { useUnread } from "../lib/push";
 
@@ -113,7 +114,10 @@ export default function HomeScreen() {
         <View style={styles.sessionCard}>
           {upcoming?.meetingAt ? (
             <>
-              <Text style={styles.eyebrow}>{meetingLabel(upcoming.meetingAt).toUpperCase()}</Text>
+              <View style={styles.metaRow}>
+                <ClockIcon color={colors.muted} size={14} />
+                <Text style={styles.eyebrow}>{meetingLabel(upcoming.meetingAt).toUpperCase()}</Text>
+              </View>
               <Text style={styles.cardTitle}>{upcoming.title}</Text>
               <Text style={styles.cardBody}>
                 {sessionDuration(upcoming)} min · {upcoming.playerCount} joueurs · {upcoming.theme}
@@ -142,13 +146,21 @@ export default function HomeScreen() {
         >
           {nextMatch ? (
             <>
-              <Text style={styles.eyebrow}>{nextMatch.dateLabel.toUpperCase()}</Text>
+              <View style={styles.metaRow}>
+                <CalendarIcon color={colors.muted} size={14} />
+                <Text style={styles.eyebrow}>{nextMatch.dateLabel.toUpperCase()}</Text>
+              </View>
               <View style={styles.versus}>
                 <Text style={styles.versusTeam}>{nextMatch.venue === "home" ? (team?.name ?? "Mon équipe") : nextMatch.opponent}</Text>
                 <Text style={styles.versusMark}>VS</Text>
                 <Text style={styles.versusTeam}>{nextMatch.venue === "home" ? nextMatch.opponent : (team?.name ?? "Mon équipe")}</Text>
               </View>
-              {nextMatch.location ? <Text style={styles.cardBody}>📍 {nextMatch.location}</Text> : null}
+              {nextMatch.location ? (
+                <View style={styles.metaRow}>
+                  <PinIcon color={colors.primary} size={16} />
+                  <Text style={styles.cardBody}>{nextMatch.location}</Text>
+                </View>
+              ) : null}
             </>
           ) : (
             <>
@@ -253,6 +265,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   unreadBadge: { minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: "#ef4444" },
   unreadBadgeText: { fontSize: 11, fontWeight: "800", color: "#ffffff" },
   safe: { flex: 1, backgroundColor: colors.paper },
