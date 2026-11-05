@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { frenchDateLabel, parseDatetimeInputValue, sortChronologically } from "../date-format";
+import { PlaceInput } from "../place-input";
 import { CalendarImport } from "./calendar-import";
 import { CompetitionsPanel } from "./competitions-panel";
 
@@ -15,6 +16,7 @@ interface MatchSummary {
   dateLabel: string;
   date: string | null;
   venue: MatchVenue;
+  location?: string | null;
   gameFormat: number;
   status: MatchStatus;
   lineup: ReadonlyArray<unknown>;
@@ -47,6 +49,7 @@ export function MatchListView() {
   // même reste dans `date` (coup d'envoi réel).
   const [dateInput, setDateInput] = useState("");
   const [venue, setVenue] = useState<MatchVenue>("home");
+  const [location, setLocation] = useState("");
   const [gameFormat, setGameFormat] = useState<GameFormat>(8);
   // `null` tant que le coach n'a pas explicitement choisi une formation : reprend la première du
   // format de jeu courant au moment de la création plutôt que d'être copiée dans un état séparé à
@@ -113,6 +116,7 @@ export function MatchListView() {
           dateLabel: date ? frenchDateLabel(date) : dateInput,
           date: date ? date.toISOString() : null,
           venue,
+          ...(location.trim() ? { location: location.trim() } : {}),
           gameFormat,
           formationId,
         }),
@@ -199,6 +203,10 @@ export function MatchListView() {
                   </select>
                 </label>
               </div>
+              <label>
+                Adresse du terrain
+                <PlaceInput onChange={setLocation} value={location} />
+              </label>
               <fieldset>
                 <legend>Formation</legend>
                 <div className="choice-grid">
@@ -249,6 +257,7 @@ export function MatchListView() {
                     <h2 aria-hidden="true">{match.opponent}</h2>
                     <p aria-hidden="true">
                       {match.dateLabel} · {venueLabel[match.venue]}
+                      {match.location ? ` · ${match.location}` : ""}
                     </p>
                     <p aria-hidden="true" className="match-card-lineup">
                       {typeof match.goalsFor === "number"

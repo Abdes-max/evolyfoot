@@ -36,13 +36,15 @@ describe("PostgreSQL plateau persistence", () => {
   it("creates and lists plateaux most recent first", async () => {
     const educator = await createEducator("list");
     await service.create(educator.id, { name: "Plateau de rentrée", dateLabel: "14 septembre 2026" });
-    await service.create(educator.id, { name: "Plateau d’hiver", dateLabel: "10 janvier 2027", result: "3 victoires" });
+    await service.create(educator.id, { name: "Plateau d’hiver", dateLabel: "10 janvier 2027", location: "  Gymnase Jean Moulin  ", result: "3 victoires" });
 
     const plateaux = await service.list(educator.id);
 
     expect(plateaux.map((plateau) => plateau.name)).toEqual(["Plateau d’hiver", "Plateau de rentrée"]);
     expect(plateaux[0]!.result).toBe("3 victoires");
     expect(plateaux[1]!.result).toBeNull();
+    expect(plateaux[0]!.location).toBe("Gymnase Jean Moulin");
+    expect(plateaux[1]!.location).toBeNull();
   });
 
   it("rejects a plateau without a name", async () => {

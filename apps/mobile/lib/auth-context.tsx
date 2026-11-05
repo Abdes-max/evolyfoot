@@ -44,6 +44,7 @@ export interface MobileMatch {
   opponentFormationId?: string | null;
   // ISO, absent pour un match sans date réelle.
   date?: string | null;
+  location?: string | null;
 }
 
 // `PlayerReference` (domaine) reste { id, name } -- générique, utilisé aussi pour les signaux

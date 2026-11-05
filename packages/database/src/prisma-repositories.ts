@@ -997,9 +997,19 @@ export class PrismaTournamentRepository implements TournamentRepository {
     return record === null ? null : toPersistedTournament(record);
   }
 
-  async create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedTournament> {
+  async create(
+    educatorId: string,
+    input: { name: string; dateLabel: string; date?: Date | null; location?: string; result?: string },
+  ): Promise<PersistedTournament> {
     const record = await this.prisma.tournamentRecord.create({
-      data: { educatorId, name: input.name, dateLabel: input.dateLabel, date: input.date ?? null, result: input.result ?? null },
+      data: {
+        educatorId,
+        name: input.name,
+        dateLabel: input.dateLabel,
+        date: input.date ?? null,
+        location: input.location ?? null,
+        result: input.result ?? null,
+      },
     });
     return toPersistedTournament(record);
   }
@@ -1049,9 +1059,19 @@ export class PrismaPlateauRepository implements PlateauRepository {
     return record === null ? null : toPersistedPlateau(record);
   }
 
-  async create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedPlateau> {
+  async create(
+    educatorId: string,
+    input: { name: string; dateLabel: string; date?: Date | null; location?: string; result?: string },
+  ): Promise<PersistedPlateau> {
     const record = await this.prisma.plateauRecord.create({
-      data: { educatorId, name: input.name, dateLabel: input.dateLabel, date: input.date ?? null, result: input.result ?? null },
+      data: {
+        educatorId,
+        name: input.name,
+        dateLabel: input.dateLabel,
+        date: input.date ?? null,
+        location: input.location ?? null,
+        result: input.result ?? null,
+      },
     });
     return toPersistedPlateau(record);
   }

@@ -5,6 +5,7 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-nativ
 import { useAuth } from "../lib/auth-context";
 import { competitionDateLabel, competitionKinds, isPastCompetition, sortCompetitions, type Competition, type CompetitionKind } from "../lib/competitions";
 import { birthDateToIso } from "../lib/player-photo";
+import { PlaceInput } from "./place-input";
 
 async function readError(response: Response | null): Promise<string> {
   const body = response ? await response.json().catch(() => ({})) : {};
@@ -21,6 +22,7 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
   const [name, setName] = useState("");
   const [dateInput, setDateInput] = useState("");
   const [result, setResult] = useState("");
+  const [location, setLocation] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,7 +54,13 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
     const iso = `${date}T00:00:00.000Z`;
     const response = await apiRequest(endpoint, {
       method: "POST",
-      body: JSON.stringify({ name: name.trim(), dateLabel: competitionDateLabel(iso), date: iso, result: result.trim() || undefined }),
+      body: JSON.stringify({
+        name: name.trim(),
+        dateLabel: competitionDateLabel(iso),
+        date: iso,
+        location: location.trim() || undefined,
+        result: result.trim() || undefined,
+      }),
     });
     setSubmitting(false);
     if (!response?.ok) {
@@ -64,6 +72,7 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
     setName("");
     setDateInput("");
     setResult("");
+    setLocation("");
     setAdding(false);
   }
 
@@ -89,6 +98,7 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
             style={styles.input}
             value={dateInput}
           />
+          <PlaceInput onChange={setLocation} value={location} />
           <TextInput accessibilityLabel="Bilan" onChangeText={setResult} placeholder="Bilan (optionnel)" style={styles.input} value={result} />
           {error ? <Text style={styles.fieldError}>{error}</Text> : null}
           <View style={styles.actions}>
