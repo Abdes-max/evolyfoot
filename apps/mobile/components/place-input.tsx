@@ -1,14 +1,11 @@
 import { colors, radii } from "@evolyfoot/design-tokens";
 import { useEffect, useState } from "react";
-import { Linking, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { openInMaps } from "../lib/open-in-maps";
 
 const searchDelayMs = 300;
 const minQueryLength = 3;
-
-export function mapsUrl(address: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-}
 
 // Champ « Lieu » du web (place-input.tsx) : propose des adresses pendant la frappe, sans obliger à
 // en choisir une -- un terrain annexe sans adresse se saisit librement.
@@ -67,8 +64,8 @@ export function PlaceInput({ value, onChange }: { value: string; onChange: (valu
         </View>
       )}
       {value.trim() && !(typing && places.length > 0) ? (
-        <TouchableOpacity accessibilityRole="link" hitSlop={6} onPress={() => Linking.openURL(mapsUrl(value.trim())).catch(() => undefined)}>
-          <Text style={styles.map}>📍 Voir sur la carte</Text>
+        <TouchableOpacity accessibilityRole="link" hitSlop={6} onPress={() => void openInMaps(value)}>
+          <Text style={styles.map}>📍 Ouvrir dans une appli de cartes</Text>
         </TouchableOpacity>
       ) : null}
     </View>

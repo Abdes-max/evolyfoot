@@ -32,6 +32,9 @@
       "bundleIdentifier": "com.evolyfoot.player",
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["comgooglemaps", "waze", "citymapper"]
       }
     },
     "android": {

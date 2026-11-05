@@ -1,11 +1,12 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { attendanceStatusLabels, attendanceStatuses, type AttendanceStatus } from "@evolyfoot/domain";
 import { useState } from "react";
-import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Screen } from "../components/screen";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { buildAgenda, useDashboard, type AgendaEvent } from "../lib/dashboard";
+import { openInMaps } from "../lib/open-in-maps";
 
 const absenceReasons = attendanceStatuses.filter((status) => status !== "present");
 
@@ -53,13 +54,9 @@ export default function CalendarScreen() {
             <Text style={styles.title}>{event.title}</Text>
             <Text style={styles.meta}>{[event.dateLabel, event.time].filter(Boolean).join(" · ")}</Text>
             {event.location ? (
-              <TouchableOpacity
-                accessibilityRole="link"
-                onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location!)}`)}
-                style={styles.place}
-              >
+              <TouchableOpacity accessibilityRole="link" onPress={() => void openInMaps(event.location!)} style={styles.place}>
                 <Text style={styles.placeText}>{event.location}</Text>
-                <Text style={styles.placeLink}>Voir le plan →</Text>
+                <Text style={styles.placeLink}>Y aller (Plans, Google Maps, Waze…) →</Text>
               </TouchableOpacity>
             ) : null}
             {event.canRespond ? (

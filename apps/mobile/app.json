@@ -40,6 +40,9 @@
       "bundleIdentifier": "com.evolyfoot.coach",
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["comgooglemaps", "waze", "citymapper"]
       }
     },
     "android": {
