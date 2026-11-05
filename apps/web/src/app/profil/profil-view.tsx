@@ -2,7 +2,9 @@
 
 import { allFormationIds, playStyles } from "@evolyfoot/domain";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ProfileAccountBlocks } from "./account-blocks";
+import { SeasonTab } from "./season-tab";
 import { useEffect, useMemo, useState } from "react";
 
 interface Profile {
@@ -80,7 +82,20 @@ function toForm(profile: Profile): FormState {
   };
 }
 
+// Onglets du profil : « Profil » d’abord (informations et accès au compte), puis l’équipe, ce qui
+// oriente la saison, et les options du compte.
+const profileTabs = [
+  { id: "profil", label: "Profil" },
+  { id: "equipe", label: "Équipe" },
+  { id: "saison", label: "Ma saison" },
+  { id: "options", label: "Options" },
+] as const;
+type ProfileTab = (typeof profileTabs)[number]["id"];
+
 export function ProfilView() {
+  const requestedTab = useSearchParams()?.get("onglet");
+  const [tab, setTab] = useState<ProfileTab | null>(null);
+  const activeTab: ProfileTab = tab ?? (profileTabs.some((item) => item.id === requestedTab) ? (requestedTab as ProfileTab) : "profil");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "unauthenticated" | "error">("loading");
   const [editing, setEditing] = useState(false);
@@ -271,158 +286,182 @@ export function ProfilView() {
               </div>
             </div>
 
-            <div className="profil-block">
-              <div className="profil-block-head">
-                <h3>Informations personnelles</h3>
-                {!editing && (
-                  <button className="profil-edit" onClick={startEditing} type="button">
-                    Modifier
-                  </button>
-                )}
-              </div>
+            <nav aria-label="Sections du profil" className="profil-tabs">
+              {profileTabs.map((tab) => (
+                <button
+                  aria-current={activeTab === tab.id ? "page" : undefined}
+                  className={activeTab === tab.id ? "profil-tab active" : "profil-tab"}
+                  key={tab.id}
+                  onClick={() => setTab(tab.id)}
+                  type="button"
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
 
-              {saved && !editing && <p className="profil-saved">Informations enregistrées.</p>}
+            {activeTab === "profil" && (
+              <>
+                <div className="profil-block">
+                  <div className="profil-block-head">
+                    <h3>Informations personnelles</h3>
+                    {!editing && (
+                      <button className="profil-edit" onClick={startEditing} type="button">
+                        Modifier
+                      </button>
+                    )}
+                  </div>
 
-              {editing && form ? (
-                <form className="profil-form" onSubmit={saveProfile}>
-                  {fields.map((field) => (
-                    <label className="profil-field" key={field.key}>
-                      <span>{field.label}</span>
-                      {field.options ? (
-                        <input list={`profil-${field.key}-options`} onChange={(event) => updateField(field.key, event.target.value)} value={form[field.key]} />
-                      ) : (
-                        <input onChange={(event) => updateField(field.key, event.target.value)} type={field.type} value={form[field.key]} />
+                  {saved && !editing && <p className="profil-saved">Informations enregistrées.</p>}
+
+                  {editing && form ? (
+                    <form className="profil-form" onSubmit={saveProfile}>
+                      {fields.map((field) => (
+                        <label className="profil-field" key={field.key}>
+                          <span>{field.label}</span>
+                          {field.options ? (
+                            <input
+                              list={`profil-${field.key}-options`}
+                              onChange={(event) => updateField(field.key, event.target.value)}
+                              value={form[field.key]}
+                            />
+                          ) : (
+                            <input onChange={(event) => updateField(field.key, event.target.value)} type={field.type} value={form[field.key]} />
+                          )}
+                          {field.options && (
+                            <datalist id={`profil-${field.key}-options`}>
+                              {field.options.map((option) => (
+                                <option key={option} value={option} />
+                              ))}
+                            </datalist>
+                          )}
+                        </label>
+                      ))}
+                      <label className="profil-field">
+                        <span>E-mail</span>
+                        <input disabled value={profile.email} />
+                      </label>
+                      {saveError && (
+                        <p className="profil-error" role="alert">
+                          {saveError}
+                        </p>
                       )}
-                      {field.options && (
-                        <datalist id={`profil-${field.key}-options`}>
-                          {field.options.map((option) => (
-                            <option key={option} value={option} />
-                          ))}
-                        </datalist>
-                      )}
-                    </label>
-                  ))}
-                  <label className="profil-field">
-                    <span>E-mail</span>
-                    <input disabled value={profile.email} />
-                  </label>
-                  {saveError && (
-                    <p className="profil-error" role="alert">
-                      {saveError}
-                    </p>
+                      <div className="profil-form-actions">
+                        <button className="profil-primary" disabled={saving} type="submit">
+                          Enregistrer
+                        </button>
+                        <button className="profil-ghost" onClick={cancelEditing} type="button">
+                          Annuler
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <dl className="profil-grid">
+                      <div>
+                        <dt>Nom</dt>
+                        <dd>{profile.displayName}</dd>
+                      </div>
+                      <div>
+                        <dt>Date de naissance</dt>
+                        <dd>{formatBirthDate(profile.birthDate)}</dd>
+                      </div>
+                      <div>
+                        <dt>Club</dt>
+                        <dd>{profile.club ?? "—"}</dd>
+                      </div>
+                      <div>
+                        <dt>Pays</dt>
+                        <dd>{profile.country ?? "—"}</dd>
+                      </div>
+                      <div>
+                        <dt>Adresse</dt>
+                        <dd>{profile.address ?? "—"}</dd>
+                      </div>
+                      <div>
+                        <dt>E-mail</dt>
+                        <dd>{profile.email}</dd>
+                      </div>
+                      <div>
+                        <dt>Numéro de téléphone</dt>
+                        <dd>{profile.phone ?? "—"}</dd>
+                      </div>
+                      <div>
+                        <dt>Diplôme</dt>
+                        <dd className={profile.diploma ? "" : "profil-todo"}>{profile.diploma ?? "À définir"}</dd>
+                      </div>
+                      <div>
+                        <dt>Format de saison</dt>
+                        <dd>{seasonLabel}</dd>
+                      </div>
+                      <div>
+                        <dt>Style de jeu</dt>
+                        <dd className={profile.playStyle ? "" : "profil-todo"}>{profile.playStyle ?? "À définir"}</dd>
+                      </div>
+                      <div>
+                        <dt>Formation préférée</dt>
+                        <dd className={profile.preferredFormation ? "" : "profil-todo"}>{profile.preferredFormation ?? "À définir"}</dd>
+                      </div>
+                    </dl>
                   )}
-                  <div className="profil-form-actions">
-                    <button className="profil-primary" disabled={saving} type="submit">
-                      Enregistrer
-                    </button>
-                    <button className="profil-ghost" onClick={cancelEditing} type="button">
-                      Annuler
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <dl className="profil-grid">
-                  <div>
-                    <dt>Nom</dt>
-                    <dd>{profile.displayName}</dd>
-                  </div>
-                  <div>
-                    <dt>Date de naissance</dt>
-                    <dd>{formatBirthDate(profile.birthDate)}</dd>
-                  </div>
-                  <div>
-                    <dt>Club</dt>
-                    <dd>{profile.club ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Pays</dt>
-                    <dd>{profile.country ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Adresse</dt>
-                    <dd>{profile.address ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>E-mail</dt>
-                    <dd>{profile.email}</dd>
-                  </div>
-                  <div>
-                    <dt>Numéro de téléphone</dt>
-                    <dd>{profile.phone ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Diplôme</dt>
-                    <dd className={profile.diploma ? "" : "profil-todo"}>{profile.diploma ?? "À définir"}</dd>
-                  </div>
-                  <div>
-                    <dt>Format de saison</dt>
-                    <dd>{seasonLabel}</dd>
-                  </div>
-                  <div>
-                    <dt>Style de jeu</dt>
-                    <dd className={profile.playStyle ? "" : "profil-todo"}>{profile.playStyle ?? "À définir"}</dd>
-                  </div>
-                  <div>
-                    <dt>Formation préférée</dt>
-                    <dd className={profile.preferredFormation ? "" : "profil-todo"}>{profile.preferredFormation ?? "À définir"}</dd>
-                  </div>
-                </dl>
-              )}
-            </div>
-
-            <div className="profil-block">
-              <div className="profil-block-head">
-                <h3>Accès au compte</h3>
-              </div>
-              {pwDone && <p className="profil-saved">Mot de passe mis à jour.</p>}
-              {pwOpen ? (
-                <form className="profil-password-form" onSubmit={changePassword}>
-                  <label className="profil-field">
-                    <span>Mot de passe actuel</span>
-                    <input autoComplete="current-password" onChange={(event) => setPwCurrent(event.target.value)} type="password" value={pwCurrent} />
-                  </label>
-                  <label className="profil-field">
-                    <span>Nouveau mot de passe (10 caractères minimum)</span>
-                    <input autoComplete="new-password" onChange={(event) => setPwNew(event.target.value)} type="password" value={pwNew} />
-                  </label>
-                  <label className="profil-field">
-                    <span>Confirmer le nouveau mot de passe</span>
-                    <input autoComplete="new-password" onChange={(event) => setPwConfirm(event.target.value)} type="password" value={pwConfirm} />
-                  </label>
-                  {pwError && (
-                    <p className="profil-error" role="alert">
-                      {pwError}
-                    </p>
-                  )}
-                  <div className="profil-form-actions">
-                    <button className="profil-primary" disabled={pwSaving} type="submit">
-                      Mettre à jour le mot de passe
-                    </button>
-                    <button
-                      className="profil-ghost"
-                      onClick={() => {
-                        setPwOpen(false);
-                        setPwError("");
-                      }}
-                      type="button"
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="profil-account-actions">
-                  <button className="profil-ghost" onClick={() => setPwOpen(true)} type="button">
-                    Réinitialiser le mot de passe
-                  </button>
-                  <button className="profil-ghost profil-logout" onClick={logout} type="button">
-                    Se déconnecter
-                  </button>
                 </div>
-              )}
-            </div>
 
-            <ProfileAccountBlocks />
+                <div className="profil-block">
+                  <div className="profil-block-head">
+                    <h3>Accès au compte</h3>
+                  </div>
+                  {pwDone && <p className="profil-saved">Mot de passe mis à jour.</p>}
+                  {pwOpen ? (
+                    <form className="profil-password-form" onSubmit={changePassword}>
+                      <label className="profil-field">
+                        <span>Mot de passe actuel</span>
+                        <input autoComplete="current-password" onChange={(event) => setPwCurrent(event.target.value)} type="password" value={pwCurrent} />
+                      </label>
+                      <label className="profil-field">
+                        <span>Nouveau mot de passe (10 caractères minimum)</span>
+                        <input autoComplete="new-password" onChange={(event) => setPwNew(event.target.value)} type="password" value={pwNew} />
+                      </label>
+                      <label className="profil-field">
+                        <span>Confirmer le nouveau mot de passe</span>
+                        <input autoComplete="new-password" onChange={(event) => setPwConfirm(event.target.value)} type="password" value={pwConfirm} />
+                      </label>
+                      {pwError && (
+                        <p className="profil-error" role="alert">
+                          {pwError}
+                        </p>
+                      )}
+                      <div className="profil-form-actions">
+                        <button className="profil-primary" disabled={pwSaving} type="submit">
+                          Mettre à jour le mot de passe
+                        </button>
+                        <button
+                          className="profil-ghost"
+                          onClick={() => {
+                            setPwOpen(false);
+                            setPwError("");
+                          }}
+                          type="button"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="profil-account-actions">
+                      <button className="profil-ghost" onClick={() => setPwOpen(true)} type="button">
+                        Réinitialiser le mot de passe
+                      </button>
+                      <button className="profil-ghost profil-logout" onClick={logout} type="button">
+                        Se déconnecter
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {activeTab === "equipe" && <ProfileAccountBlocks section="equipe" />}
+            {activeTab === "saison" && <SeasonTab />}
+            {activeTab === "options" && <ProfileAccountBlocks section="options" />}
           </>
         )}
       </section>

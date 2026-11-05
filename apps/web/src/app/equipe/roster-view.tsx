@@ -240,7 +240,7 @@ export function RosterView() {
                 <Link href="/onboarding">
                   Modifier l’équipe <span aria-hidden="true">›</span>
                 </Link>
-                <Link href="/profil#staff-title">
+                <Link href="/profil?onglet=equipe">
                   Staff et invitations <span aria-hidden="true">›</span>
                 </Link>
                 <Link href="/messagerie">

@@ -320,9 +320,10 @@ function StaffPanel() {
   );
 }
 
-// Blocs du bas du profil, selon le type de compte : un adjoint ne gère pas le staff et sa
-// suppression n'emporte que son propre accès.
-export function ProfileAccountBlocks() {
+// Blocs du profil, selon le type de compte : un adjoint ne gère pas le staff et sa suppression
+// n'emporte que son propre accès. `section` choisit l'onglet : équipes/staff/club, ou les données
+// du compte.
+export function ProfileAccountBlocks({ section }: { section: "equipe" | "options" }) {
   const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -345,18 +346,21 @@ export function ProfileAccountBlocks() {
 
   return (
     <>
-      {role === "coach" && <TeamsPanel />}
-      {role === "coach" && <StaffPanel />}
-      {role === "coach" && <ClubPanel />}
-      <div className="profil-block">
-        <AccountPrivacy
-          warning={
-            role === "assistant"
-              ? "Cette action est définitive : ton accès sera supprimé. L’équipe reste chez l’éducateur."
-              : "Cette action est définitive : tes équipes, tes joueurs, tes séances, tes matchs et les comptes liés seront supprimés."
-          }
-        />
-      </div>
+      {section === "equipe" && role === "coach" && <TeamsPanel />}
+      {section === "equipe" && role === "coach" && <StaffPanel />}
+      {section === "equipe" && role === "coach" && <ClubPanel />}
+      {section === "equipe" && role !== "coach" && <p className="profil-note">L’équipe est gérée par l’éducateur principal.</p>}
+      {section === "options" && (
+        <div className="profil-block">
+          <AccountPrivacy
+            warning={
+              role === "assistant"
+                ? "Cette action est définitive : ton accès sera supprimé. L’équipe reste chez l’éducateur."
+                : "Cette action est définitive : tes équipes, tes joueurs, tes séances, tes matchs et les comptes liés seront supprimés."
+            }
+          />
+        </div>
+      )}
     </>
   );
 }
