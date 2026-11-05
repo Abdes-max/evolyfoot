@@ -53,6 +53,8 @@ export interface MobileMatch {
 export interface RosterPlayer extends PlayerReference {
   readonly firstName: string;
   readonly lastName: string;
+  readonly position?: string | null;
+  readonly jerseyNumber?: string | null;
 }
 
 export type AuthResult = { ok: true } | { ok: false; error: string };
