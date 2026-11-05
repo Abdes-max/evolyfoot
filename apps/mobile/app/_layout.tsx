@@ -2,7 +2,7 @@ import { colors } from "@evolyfoot/design-tokens";
 import { router, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, type ReactNode } from "react";
-import { View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { CoachTabBar } from "../components/coach-tab-bar";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { usePushNotifications } from "../lib/push";
@@ -15,10 +15,24 @@ function routeForLink(link: string): string {
 
 const PUBLIC_ROUTES = ["/connexion", "/inscription"];
 
-// Écrans racines (onglets) : pas d'en-tête, la barre du bas sert de navigation.
-const TAB_SCREENS = ["index", "seances", "match", "messages/index", "equipe"];
-// Plein écran : ni en-tête ni onglets (connexion, premier paramétrage, mode terrain).
-const FULL_SCREENS = ["connexion", "inscription", "onboarding", "terrain/[id]"];
+// Sans en-tête : l'accueil (point de départ), la connexion/inscription et le mode terrain (qui a
+// son propre bouton « Quitter »). Partout ailleurs, un bouton Retour en haut à gauche.
+const NO_HEADER_SCREENS = ["index", "connexion", "inscription", "terrain/[id]"];
+
+// Revient à l'écran précédent ; un onglet ouvert directement (sans historique) ramène à l'accueil.
+function BackButton() {
+  return (
+    <TouchableOpacity
+      accessibilityLabel="Retour"
+      accessibilityRole="button"
+      hitSlop={12}
+      onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
+      style={{ paddingVertical: 6, paddingLeft: 8, paddingRight: 12 }}
+    >
+      <Text style={{ color: colors.primary, fontSize: 16, fontWeight: "800" }}>‹ Retour</Text>
+    </TouchableOpacity>
+  );
+}
 
 function AuthGate({ children }: { children: ReactNode }) {
   const { educator, restoring, sessionToken } = useAuth();
@@ -44,11 +58,12 @@ function Navigation() {
       <View style={{ flex: 1 }}>
         <Stack
           screenOptions={({ route }) => ({
-            // Les autres écrans gardent l'en-tête natif : bouton Retour en haut à gauche et retour
-            // par glissement depuis le bord, comme partout sur iOS.
-            headerShown: !TAB_SCREENS.includes(route.name) && !FULL_SCREENS.includes(route.name),
+            // En-tête natif (le glissement depuis le bord reste actif) avec un bouton Retour toujours
+            // visible, y compris sur les onglets.
+            headerShown: !NO_HEADER_SCREENS.includes(route.name),
             headerTitle: "",
-            headerBackTitle: "Retour",
+            headerBackVisible: false,
+            headerLeft: () => <BackButton />,
             headerTintColor: colors.primary,
             headerStyle: { backgroundColor: colors.paper },
             headerShadowVisible: false,
