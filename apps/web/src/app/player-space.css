@@ -623,6 +623,39 @@
   background: var(--surface-2);
   color: var(--ink);
 }
+.club-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+.club-option {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.club-option h4 {
+  margin: 0;
+  font-size: 13px;
+}
+.club-option input {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.club-option button {
+  justify-self: start;
+}
+@media (max-width: 760px) {
+  .club-options {
+    grid-template-columns: 1fr;
+  }
+}
 .staff-invite small {
   width: 100%;
   color: var(--muted);

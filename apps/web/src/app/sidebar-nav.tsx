@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BallIcon, CalendarIcon, ChartIcon, EyeIcon, HomeIcon, MessageIcon, UsersIcon } from "./icons";
+import { BallIcon, CalendarIcon, EyeIcon, HomeIcon, UsersIcon } from "./icons";
 import { SidebarIdentity } from "./sidebar-identity";
 
 // Auparavant définie une seule fois, en dur, dans page.tsx (l'accueil) : chaque autre page
@@ -18,8 +18,6 @@ const navItems: ReadonlyArray<{ href: string; label: string; icon: typeof HomeIc
   { href: "/seances", label: "Séances", icon: CalendarIcon },
   { href: "/match", label: "Matchs", icon: BallIcon },
   { href: "/observations", label: "Observations", icon: EyeIcon },
-  { href: "/messagerie", label: "Messagerie", icon: MessageIcon },
-  { href: "/statistiques", label: "Statistiques", icon: ChartIcon },
   { href: "/equipe", label: "Mon équipe", icon: UsersIcon },
 ];
 
@@ -37,7 +35,11 @@ export function SidebarNav() {
       </div>
       <nav aria-label="Navigation principale">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = href === "/app" ? pathname === "/app" : pathname.startsWith(href);
+          // Statistiques et messagerie concernent l’équipe : on y accède depuis Mon équipe, qui reste en surbrillance.
+          const isActive =
+            href === "/app"
+              ? pathname === "/app"
+              : pathname.startsWith(href) || (href === "/equipe" && (pathname.startsWith("/statistiques") || pathname.startsWith("/messagerie")));
           return (
             <Link className={isActive ? "nav-item active" : "nav-item"} href={href} key={href}>
               <Icon /> <span className="nav-label">{label}</span>
