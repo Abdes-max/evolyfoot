@@ -1,6 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { attendanceStatusLabels, attendanceStatuses, type AttendanceStatus } from "@evolyfoot/domain";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Screen } from "../components/screen";
 import { apiFetch } from "../lib/api";
@@ -9,6 +9,25 @@ import { buildAgenda, useDashboard, type AgendaEvent } from "../lib/dashboard";
 import { openInMaps } from "../lib/open-in-maps";
 
 const absenceReasons = attendanceStatuses.filter((status) => status !== "present");
+
+function mondayOf(time: number): number {
+  const day = new Date(time);
+  day.setHours(0, 0, 0, 0);
+  day.setDate(day.getDate() - ((day.getDay() + 6) % 7));
+  return day.getTime();
+}
+
+// Titre de la semaine d’un événement : « Cette semaine », « Semaine prochaine », « Semaine
+// dernière », sinon « Semaine du 17 novembre ».
+function weekLabel(date: string | null, now: number): string {
+  if (!date) return "Date à préciser";
+  const monday = mondayOf(new Date(date).getTime());
+  const weeks = Math.round((monday - mondayOf(now)) / (7 * 24 * 3600 * 1000));
+  if (weeks === 0) return "Cette semaine";
+  if (weeks === 1) return "Semaine prochaine";
+  if (weeks === -1) return "Semaine dernière";
+  return `Semaine du ${new Date(monday).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`;
+}
 
 export default function CalendarScreen() {
   const { sessionToken } = useAuth();
@@ -66,49 +85,63 @@ export default function CalendarScreen() {
       {dashboard && agenda.length === 0 ? (
         <Text style={styles.note}>{scope === "past" ? "Aucun événement passé." : "Rien de prévu pour l’instant."}</Text>
       ) : null}
-      {agenda.map((event) => {
+      {agenda.map((event, index) => {
         const present = event.myStatus === "present";
         const absent = event.myStatus !== null && !present;
+        const week = weekLabel(event.date, now);
+        const newWeek = index === 0 || weekLabel(agenda[index - 1]!.date, now) !== week;
+        const day = event.date ? new Date(event.date) : null;
         return (
-          <View key={event.key} style={styles.event}>
-            <Text style={styles.kind}>{event.kind === "match" ? "MATCH" : "ENTRAÎNEMENT"}</Text>
-            <Text style={styles.title}>{event.title}</Text>
-            <Text style={styles.meta}>{[event.dateLabel, event.time].filter(Boolean).join(" · ")}</Text>
-            {event.location ? (
-              <TouchableOpacity accessibilityRole="link" onPress={() => void openInMaps(event.location!)} style={styles.place}>
-                <Text style={styles.placeText}>{event.location}</Text>
-                <Text style={styles.placeLink}>Y aller (Plans, Google Maps, Waze…) →</Text>
-              </TouchableOpacity>
-            ) : null}
-            {scope === "past" ? (
-              event.myStatus ? (
-                <Text style={styles.meta}>Ta réponse : {attendanceStatusLabels[event.myStatus]}</Text>
-              ) : null
-            ) : event.canRespond ? (
-              <View style={styles.choices}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: present }}
-                  disabled={busyKey === event.key}
-                  onPress={() => respond(event, "present")}
-                  style={[styles.choice, present && styles.choicePresent]}
-                >
-                  <Text style={[styles.choiceText, present && styles.choiceTextActive]}>Présent</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: absent }}
-                  disabled={busyKey === event.key}
-                  onPress={() => askAbsenceReason(event)}
-                  style={[styles.choice, absent && styles.choiceAbsent]}
-                >
-                  <Text style={styles.choiceText}>{absent ? attendanceStatusLabels[event.myStatus!] : "Absent"}</Text>
-                </TouchableOpacity>
+          <Fragment key={event.key}>
+            {newWeek ? <Text style={styles.weekTitle}>{week}</Text> : null}
+            <View style={styles.event}>
+              <View style={styles.eventRow}>
+                <View style={styles.dateBlock}>
+                  <Text style={styles.dateMonth}>{day ? day.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "").toUpperCase() : "—"}</Text>
+                  <Text style={styles.dateDay}>{day ? day.getDate() : "?"}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.kind}>{event.kind === "match" ? "MATCH" : "ENTRAÎNEMENT"}</Text>
+                  <Text style={styles.title}>{event.title}</Text>
+                  <Text style={styles.meta}>{[event.dateLabel, event.time].filter(Boolean).join(" · ")}</Text>
+                  {event.location ? (
+                    <TouchableOpacity accessibilityRole="link" onPress={() => void openInMaps(event.location!)} style={styles.place}>
+                      <Text style={styles.placeText}>{event.location}</Text>
+                      <Text style={styles.placeLink}>Y aller (Plans, Google Maps, Waze…) →</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                  {scope === "past" ? (
+                    event.myStatus ? (
+                      <Text style={styles.meta}>Ta réponse : {attendanceStatusLabels[event.myStatus]}</Text>
+                    ) : null
+                  ) : event.canRespond ? (
+                    <View style={styles.choices}>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: present }}
+                        disabled={busyKey === event.key}
+                        onPress={() => respond(event, "present")}
+                        style={[styles.choice, present && styles.choicePresent]}
+                      >
+                        <Text style={[styles.choiceText, present && styles.choiceTextActive]}>Présent</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: absent }}
+                        disabled={busyKey === event.key}
+                        onPress={() => askAbsenceReason(event)}
+                        style={[styles.choice, absent && styles.choiceAbsent]}
+                      >
+                        <Text style={styles.choiceText}>{absent ? attendanceStatusLabels[event.myStatus!] : "Absent"}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <Text style={styles.meta}>Pas convoqué pour ce match.</Text>
+                  )}
+                </View>
               </View>
-            ) : (
-              <Text style={styles.meta}>Pas convoqué pour ce match.</Text>
-            )}
-          </View>
+            </View>
+          </Fragment>
         );
       })}
     </Screen>
@@ -125,6 +158,11 @@ const styles = StyleSheet.create({
     borderColor: colors.primaryDark,
     backgroundColor: colors.surface,
   },
+  weekTitle: { color: colors.muted, fontSize: 14, fontWeight: "800", marginTop: spacing.sm, marginBottom: spacing.sm },
+  eventRow: { flexDirection: "row", gap: spacing.md },
+  dateBlock: { width: 52, alignItems: "center", paddingTop: 2 },
+  dateMonth: { color: colors.muted, fontSize: 12, fontWeight: "800", letterSpacing: 0.5 },
+  dateDay: { color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 32 },
   kind: { color: colors.lime, fontSize: 11, fontWeight: "900" },
   title: { color: colors.ink, fontSize: 17, fontWeight: "800", marginTop: 3 },
   meta: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 3 },
