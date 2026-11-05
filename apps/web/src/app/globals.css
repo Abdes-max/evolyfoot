@@ -1536,12 +1536,20 @@ button.week-calendar-badge:focus-visible {
   }
 }
 
+/* Les pages séance affichent le menu latéral : même réserve de 264px que les autres pages. */
 .session-shell {
   min-height: 100vh;
   background: var(--paper);
+  padding-left: 264px;
+}
+@media (max-width: 950px) {
+  .session-shell {
+    padding-left: 0;
+    padding-bottom: 90px;
+  }
 }
 .session-header {
-  padding: 38px max(25px, calc((100vw - 920px) / 2));
+  padding: 38px max(25px, calc((100% - 920px) / 2));
   background: linear-gradient(155deg, #123349, #0a1219);
   color: var(--ink);
 }
@@ -1570,6 +1578,11 @@ button.week-calendar-badge:focus-visible {
 .session-builder {
   width: min(920px, calc(100% - 40px));
   margin: 30px auto 60px;
+}
+/* Détails (lieu, description) et convocation, sous le constructeur : même colonne que lui. */
+.session-details {
+  width: min(1160px, calc(100% - 40px));
+  margin: -30px auto 60px;
 }
 .session-builder-summary {
   display: flex;

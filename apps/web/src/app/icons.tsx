@@ -98,3 +98,13 @@ export function UsersIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function MessageIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 5h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H10l-4.5 3.5V17H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+      <path d="M8 10h8" />
+      <path d="M8 13h5" />
+    </svg>
+  );
+}

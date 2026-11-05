@@ -13,7 +13,6 @@ import { colorForEvaluation } from "../../evaluation-colors";
 import { EvaluationSeasonsTable } from "../../evaluation-seasons-table";
 import { AccountPrivacy } from "../../account-privacy";
 import { PlayerCard } from "../../player-card";
-import { SelfEvaluation } from "./self-evaluation";
 import { PlayerSpaceHeader } from "../player-space-header";
 import { usePlayerDashboard } from "./use-player-dashboard";
 
@@ -39,7 +38,6 @@ export function PlayerSpaceView() {
   // auth-gate.tsx) : un simple indicateur `seededCompare` évite de réinitialiser la sélection à
   // chaque re-rendu une fois que l'utilisateur a lui-même coché/décoché une case.
   const coachEvaluations = dashboard?.evaluations.filter((evaluation) => evaluation.source !== "player") ?? [];
-  const selfEvaluations = dashboard?.evaluations.filter((evaluation) => evaluation.source === "player") ?? [];
   const seasons = buildPlayerEvaluationSeasons(coachEvaluations);
   const latest = coachEvaluations[0];
 
@@ -101,8 +99,6 @@ export function PlayerSpaceView() {
                 season={dashboard.season}
               />
             </div>
-
-            <SelfEvaluation coachEvaluation={latest} initialSelfEvaluation={selfEvaluations[0]} />
 
             <section className="player-space-block">
               <h2>Ma progression</h2>
