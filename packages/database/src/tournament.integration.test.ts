@@ -36,13 +36,15 @@ describe("PostgreSQL tournament persistence", () => {
   it("creates and lists tournaments most recent first", async () => {
     const educator = await createEducator("list");
     await service.create(educator.id, { name: "Tournoi de printemps", dateLabel: "12 avril 2026" });
-    await service.create(educator.id, { name: "Tournoi d’été", dateLabel: "3 juillet 2026", result: "Vainqueur" });
+    await service.create(educator.id, { name: "Tournoi d’été", dateLabel: "3 juillet 2026", location: "  Stade Marius Requier  ", result: "Vainqueur" });
 
     const tournaments = await service.list(educator.id);
 
     expect(tournaments.map((tournament) => tournament.name)).toEqual(["Tournoi d’été", "Tournoi de printemps"]);
     expect(tournaments[0]!.result).toBe("Vainqueur");
     expect(tournaments[1]!.result).toBeNull();
+    expect(tournaments[0]!.location).toBe("Stade Marius Requier");
+    expect(tournaments[1]!.location).toBeNull();
   });
 
   it("rejects a tournament without a name", async () => {

@@ -529,7 +529,7 @@ export interface PersistedTournament {
 export interface TournamentRepository {
   listByEducator(educatorId: string): Promise<PersistedTournament[]>;
   findById(id: string, educatorId: string): Promise<PersistedTournament | null>;
-  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedTournament>;
+  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; location?: string; result?: string }): Promise<PersistedTournament>;
   // Lieu, description et bilan -- modifiables indépendamment depuis la fiche détail, même
   // principe que TrainingSessionRepository.update.
   update(
@@ -556,7 +556,7 @@ export interface PersistedPlateau {
 export interface PlateauRepository {
   listByEducator(educatorId: string): Promise<PersistedPlateau[]>;
   findById(id: string, educatorId: string): Promise<PersistedPlateau | null>;
-  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; result?: string }): Promise<PersistedPlateau>;
+  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; location?: string; result?: string }): Promise<PersistedPlateau>;
   update(
     id: string,
     educatorId: string,

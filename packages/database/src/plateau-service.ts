@@ -27,7 +27,7 @@ export class PlateauService {
     return this.plateauRepository.findById(id, educatorId);
   }
 
-  async create(educatorId: string, input: PlateauInput & { date?: Date | null }): Promise<PersistedPlateau> {
+  async create(educatorId: string, input: PlateauInput & { date?: Date | null; location?: string }): Promise<PersistedPlateau> {
     const errors = validatePlateau(input);
     if (Object.keys(errors).length > 0) {
       throw new ValidationError(Object.values(errors)[0]!);
@@ -36,10 +36,12 @@ export class PlateauService {
       throw new EducatorNotFoundError();
     }
     const result = input.result?.trim();
+    const location = input.location?.trim();
     return this.plateauRepository.create(educatorId, {
       name: input.name.trim(),
       dateLabel: input.dateLabel.trim(),
       date: input.date ?? null,
+      ...(location ? { location } : {}),
       ...(result ? { result } : {}),
     });
   }
