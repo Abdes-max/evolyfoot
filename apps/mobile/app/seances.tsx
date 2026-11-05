@@ -1,8 +1,9 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { buildDevelopmentPlan, summarizeDiagnostic, type DiagnosticScores, type SavedTrainingSession } from "@evolyfoot/domain";
-import { Link, useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CalendarIcon } from "../components/icons";
 import { useAuth } from "../lib/auth-context";
 
 const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
@@ -41,12 +42,27 @@ export default function SeancesScreen() {
             {slotLabels.map((label, slot) => {
               const saved = sessions.find((session) => session.weekNumber === week.week && session.slot === slot);
               return (
-                <Link asChild href={`/session?week=${week.week}&slot=${slot}`} key={slot}>
-                  <TouchableOpacity accessibilityRole="button" style={[styles.slot, saved ? styles.slotSaved : styles.slotFree]}>
+                // Un vrai bouton par créneau : icône, jour, statut et action. router.push plutôt
+                // qu’un <Link asChild> (dont le style en tableau fait planter le rendu web).
+                <TouchableOpacity
+                  accessibilityHint={saved ? "Ouvre la séance préparée" : "Génère la séance à partir du plan"}
+                  accessibilityLabel={`${label}, semaine ${week.week} : ${saved ? "séance prête" : "à générer"}`}
+                  accessibilityRole="button"
+                  key={slot}
+                  onPress={() => router.push(`/session?week=${week.week}&slot=${slot}`)}
+                  style={[styles.slot, saved ? styles.slotSaved : styles.slotFree]}
+                >
+                  <View style={[styles.slotIcon, saved && styles.slotIconSaved]}>
+                    <CalendarIcon color={saved ? colors.primaryInk : colors.primary} size={18} />
+                  </View>
+                  <View style={{ flex: 1 }}>
                     <Text style={styles.slotLabel}>{label}</Text>
-                    <Text style={styles.slotAction}>{saved ? "Ouvrir →" : "Générer →"}</Text>
-                  </TouchableOpacity>
-                </Link>
+                    <Text style={styles.slotStatus}>{saved ? (saved.title ?? "Séance prête") : "À générer"}</Text>
+                  </View>
+                  <View style={[styles.slotButton, saved ? styles.slotButtonSaved : styles.slotButtonFree]}>
+                    <Text style={[styles.slotButtonText, !saved && styles.slotButtonTextFree]}>{saved ? "Ouvrir" : "Générer"}</Text>
+                  </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -65,17 +81,33 @@ const styles = StyleSheet.create({
   weekTitle: { fontSize: 14, fontWeight: "800", color: colors.ink },
   weekTheme: { fontSize: 11, color: colors.muted, marginTop: 4, marginBottom: 10 },
   slot: {
-    minHeight: 44,
+    minHeight: 64,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 12,
-    marginTop: 6,
+    gap: 12,
+    padding: 12,
+    marginTop: 8,
     borderRadius: radii.sm,
     borderWidth: 1,
   },
   slotSaved: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  slotFree: { borderColor: colors.line, borderStyle: "dashed" },
-  slotLabel: { fontSize: 12, fontWeight: "800", color: colors.ink },
-  slotAction: { fontSize: 11, fontWeight: "800", color: colors.primary },
+  slotFree: { borderColor: colors.line, backgroundColor: colors.paper },
+  slotIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  slotIconSaved: { backgroundColor: colors.primary, borderColor: colors.primary },
+  slotLabel: { fontSize: 14, fontWeight: "800", color: colors.ink },
+  slotStatus: { fontSize: 12, color: colors.muted, marginTop: 2 },
+  slotButton: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: radii.pill },
+  slotButtonSaved: { backgroundColor: colors.primary },
+  slotButtonFree: { borderWidth: 1, borderColor: colors.primary },
+  slotButtonText: { fontSize: 12, fontWeight: "900", color: colors.primaryInk },
+  slotButtonTextFree: { color: colors.primary },
 });
