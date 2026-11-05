@@ -14,14 +14,104 @@
   padding-left: max(25px, calc((100% - 1280px) / 2));
   padding-right: max(25px, calc((100% - 1280px) / 2));
 }
+/* Deux colonnes : l’équipe et ses outils à gauche, les joueurs par poste à droite ; empilées sur
+   écran étroit. */
+.roster-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: 28px;
+  align-items: start;
+}
+.roster-side {
+  display: grid;
+  gap: 12px;
+}
+.roster-team-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(62, 198, 245, 0.35);
+  background: radial-gradient(120% 120% at 100% 0%, rgba(62, 198, 245, 0.28), transparent 60%), linear-gradient(140deg, #123349, #0f1a27);
+}
+.roster-team-card h2 {
+  margin: 0 0 4px;
+  font-size: 19px;
+}
+.roster-crest {
+  flex: 0 0 auto;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 900;
+}
 .roster-team-summary {
-  margin: 0 0 20px;
-  padding: 13px 15px;
-  border-radius: 10px;
-  background: var(--surface);
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.roster-side-title {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+}
+.roster-tools {
+  display: grid;
+  gap: 8px;
+}
+.roster-tools a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
   border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
   color: var(--ink);
-  font-size: 11.5px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.roster-tools a:hover {
+  border-color: var(--accent);
+}
+.roster-main-title {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+.roster-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.roster-filter {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.roster-filter.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.roster-group h3 {
+  margin: 18px 0 8px;
+  font-size: 15px;
 }
 .roster-auth-required,
 .roster-content {
@@ -52,6 +142,7 @@
   text-decoration: none;
 }
 .roster-add-form {
+  margin-bottom: 0 !important;
   padding: 17px 19px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -107,8 +198,8 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 9px;
+  grid-template-columns: 1fr;
+  gap: 6px;
 }
 .roster-row {
   display: flex;
@@ -125,20 +216,40 @@
   font-size: 13px;
 }
 .roster-row-name {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
   text-decoration: none;
   color: var(--ink);
   min-width: 0;
+}
+.roster-row-identity {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.roster-row-identity small {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+/* Numéro de maillot en grand, en filigrane à droite de la ligne. */
+.roster-jersey {
+  margin-left: auto;
+  padding-right: 6px;
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 30px;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 1;
 }
 .roster-row-name:hover strong {
   color: var(--accent);
 }
 .roster-avatar {
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   overflow: hidden;
   display: grid;
@@ -168,14 +279,19 @@
   gap: 7px;
 }
 .roster-row-actions button {
-  min-height: 36px;
+  min-width: 34px;
+  min-height: 34px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: var(--surface-2);
-  color: var(--ink);
-  font-size: 10px;
+  color: var(--muted);
+  font-size: 12px;
   font-weight: 800;
+  cursor: pointer;
+}
+.roster-row-actions button:hover {
+  color: var(--ink);
 }
 .roster-row small.field-error {
   width: 100%;
@@ -186,13 +302,9 @@
   text-align: center;
   padding: 20px 0;
 }
-.roster-content > .back-link {
-  margin-top: 20px;
-}
-@media (max-width: 600px) {
-  .roster-row {
-    flex-direction: column;
-    align-items: flex-start;
+@media (max-width: 1100px) {
+  .roster-layout {
+    grid-template-columns: 1fr;
   }
 }
 @media (max-width: 950px) {
