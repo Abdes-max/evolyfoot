@@ -20,6 +20,8 @@ import { RadarChart } from "../../charts";
 import { colorForEvaluation, defaultComparedEvaluationIds, evaluationLabel } from "../../evaluation-colors";
 import { EvaluationSeasonsTable } from "../../evaluation-seasons-table";
 import { resizeImageToDataUrl } from "../../image-resize";
+import { cutoutPhoto } from "../../photo-cutout";
+import { PhotoChoice } from "../../photo-choice";
 import { MessagingThread } from "../../messaging-thread";
 import { PlayerCard } from "../../player-card";
 import { PrintButton } from "../../print-button";
@@ -68,7 +70,8 @@ function formatBirthDate(value: string | null): string {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
-const playerPhotoMaxSide = 320;
+// Assez de détail pour un détourage net, sans alourdir la fiche (PNG sans fond ~ 150 Ko).
+const playerPhotoMaxSide = 400;
 
 type DetailForm = {
   firstName: string;
@@ -108,6 +111,8 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [detailsError, setDetailsError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  // Photo choisie, en attente du choix « sans fond » / « avec le fond ».
+  const [photoChoice, setPhotoChoice] = useState<{ original: string; cutout: string } | null>(null);
 
   const [newScores, setNewScores] = useState<PlayerEvaluationScores>(midpointScores);
   const [newDate, setNewDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -244,7 +249,12 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
     setDetailsError("");
     try {
       const dataUrl = await resizeImageToDataUrl(file, playerPhotoMaxSide);
-      await patchPlayer({ photo: dataUrl });
+      const cutout = await cutoutPhoto(dataUrl);
+      if (cutout) {
+        setPhotoChoice({ original: dataUrl, cutout });
+      } else {
+        await patchPlayer({ photo: dataUrl });
+      }
     } catch {
       setDetailsError("Impossible de traiter cette image.");
     } finally {
@@ -427,7 +437,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                 />
                 <div className="player-photo-actions">
                   <button disabled={photoBusy} onClick={() => fileInputRef.current?.click()} type="button">
-                    {photoBusy ? "…" : player.photo ? "Changer la photo" : "Ajouter une photo"}
+                    {photoBusy ? "Détourage…" : player.photo ? "Changer la photo" : "Ajouter une photo"}
                   </button>
                   {player.photo && (
                     <button disabled={photoBusy} onClick={removePhoto} type="button">
@@ -436,6 +446,17 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                   )}
                   <input accept="image/*" className="visually-hidden" onChange={onPhotoChange} ref={fileInputRef} type="file" />
                 </div>
+                {photoChoice && (
+                  <PhotoChoice
+                    cutout={photoChoice.cutout}
+                    onCancel={() => setPhotoChoice(null)}
+                    onChoose={(photo) => {
+                      setPhotoChoice(null);
+                      void patchPlayer({ photo });
+                    }}
+                    original={photoChoice.original}
+                  />
+                )}
               </div>
 
               <div className="player-identity-body">

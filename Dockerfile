@@ -5,7 +5,9 @@
 #   web      → serveur Next.js autonome (docker build --target web)
 #   migrator → exécute `prisma migrate deploy` une fois, puis quitte (--target migrator)
 
-FROM node:22.23.3-alpine AS base
+# Debian slim (glibc) plutôt qu’Alpine : le détourage des photos (onnxruntime-node) n’existe qu’en
+# binaire glibc. Prisma 7 (adaptateur pg) n’a pas de moteur natif, il n’est pas concerné.
+FROM node:22.23.3-bookworm-slim AS base
 RUN corepack enable
 WORKDIR /repo
 
@@ -29,12 +31,14 @@ WORKDIR /repo
 ENTRYPOINT ["pnpm", "--filter", "@evolyfoot/database", "exec", "prisma", "migrate", "deploy"]
 
 # --- Web : serveur Next.js autonome, image finale minimale. ---
-FROM node:22.23.3-alpine AS web
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+FROM node:22.23.3-bookworm-slim AS web
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
 WORKDIR /app
 
 COPY --from=builder /repo/apps/web/.next/standalone ./
 COPY --from=builder /repo/apps/web/.next/static ./apps/web/.next/static
+# Modèles du détourage des photos (voir apps/web/src/server/photo-cutout.ts).
+COPY --from=builder /repo/node_modules/.pnpm/@imgly+background-removal-node@*/node_modules/@imgly/background-removal-node/dist ./apps/web/imgly-assets
 COPY --from=builder /repo/node_modules/.pnpm/@swc+helpers@*/node_modules/@swc/helpers /tmp/swc-helpers
 
 # Contournement d'un trou connu du traçage de sortie autonome de Next.js sous pnpm : le dossier
