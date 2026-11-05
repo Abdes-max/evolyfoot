@@ -40,7 +40,8 @@ export class NotificationService {
           kind: "message" as const,
           title: `Message de ${message.authorName}`,
           body: excerpt(message.text),
-          link: `/equipe/${message.playerId}`,
+          // Ouvre directement le fil de ce joueur dans la messagerie du coach.
+          link: `/messagerie?joueur=${message.playerId}`,
           threadPlayerId: message.playerId,
         })),
       );

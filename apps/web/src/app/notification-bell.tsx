@@ -119,7 +119,8 @@ export function NotificationBell() {
               {feed.notifications.map((notification) => (
                 <li className={notification.read ? undefined : "unread"} key={notification.id}>
                   <Link
-                    href={notification.link}
+                    // Anciennes alertes de message (/equipe/:id) : la messagerie, pas la fiche joueur.
+                    href={notification.kind === "message" ? notification.link.replace(/^\/equipe\/([^/?#]+)$/, "/messagerie?joueur=$1") : notification.link}
                     onClick={() => {
                       setOpen(false);
                       if (!notification.read) void markRead({ ids: [notification.id] });

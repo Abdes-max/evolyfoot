@@ -79,10 +79,12 @@ describe("NotificationService", () => {
     await service.onMessage({ ...message, authorRole: "player" });
 
     expect(notifications.records.map((record) => [record.recipientId, record.title, record.link])).toEqual([
-      ["coach-1", "Message de Lina", "/equipe/player-1"],
-      ["assistant-1", "Message de Lina", "/equipe/player-1"],
+      ["coach-1", "Message de Lina", "/messagerie?joueur=player-1"],
+      ["assistant-1", "Message de Lina", "/messagerie?joueur=player-1"],
     ]);
-    expect(sent).toEqual([[{ token: "ExponentPushToken[coach]", title: "Message de Lina", body: message.text, link: "/equipe/player-1", badge: 1 }]]);
+    expect(sent).toEqual([
+      [{ token: "ExponentPushToken[coach]", title: "Message de Lina", body: message.text, link: "/messagerie?joueur=player-1", badge: 1 }],
+    ]);
   });
 
   it("prévient le compte du joueur d’un message du coach et d’une évaluation, et oublie un téléphone désinstallé", async () => {

@@ -38,8 +38,14 @@ interface MessageNotification {
   read: boolean;
 }
 
+// Joueur visé par une notification de message : /messagerie?joueur=:id, ou /equipe/:id pour celles
+// envoyées avant ce format.
+function threadPlayerId(link: string): string | null {
+  return link.match(/[?&]joueur=([^&#]+)/)?.[1] ?? link.match(/^\/equipe\/([^/?#]+)/)?.[1] ?? null;
+}
+
 // Un fil par joueur de l'effectif (même API que la fiche joueur). Les fils avec un message non lu
-// remontent en tête, repérés par les notifications « message » qui pointent vers /equipe/:id.
+// remontent en tête, repérés par les notifications « message » qui désignent le fil du joueur.
 export function MessagerieView() {
   const requested = useSearchParams()?.get("joueur") ?? null;
   const [players, setPlayers] = useState<RosterPlayer[] | null>(null);
@@ -56,7 +62,7 @@ export function MessagerieView() {
       const unreadIds = new Set<string>(
         ((feed?.notifications ?? []) as MessageNotification[])
           .filter((notification) => notification.kind === "message" && !notification.read)
-          .map((notification) => notification.link.split("/").pop() ?? ""),
+          .map((notification) => threadPlayerId(notification.link) ?? ""),
       );
       const list: RosterPlayer[] = Array.isArray(roster?.players) ? roster.players : [];
       setUnread(unreadIds);

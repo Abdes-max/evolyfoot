@@ -38,7 +38,7 @@ describe("NotificationBell", () => {
 
     const bell = await screen.findByRole("button", { name: "Notifications, 2 non lues" });
     fireEvent.click(bell);
-    expect(screen.getByRole("link", { name: /Message de Lina/ })).toHaveAttribute("href", "/equipe/p-1");
+    expect(screen.getByRole("link", { name: /Message de Lina/ })).toHaveAttribute("href", "/messagerie?joueur=p-1");
 
     fireEvent.click(screen.getByRole("button", { name: "Tout marquer lu" }));
 
