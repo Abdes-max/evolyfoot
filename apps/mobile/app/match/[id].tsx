@@ -56,27 +56,40 @@ function MatchPitch({
 }) {
   return (
     <View style={pitchStyles.pitch}>
+      {/* Lignes du terrain : médiane, rond central, surfaces de réparation et de but. Les postes
+          sont placés entre 6 % et 90 % de la hauteur pour que le prénom du gardien reste visible. */}
+      <View pointerEvents="none" style={pitchStyles.halfway} />
+      <View pointerEvents="none" style={pitchStyles.centerCircle} />
+      <View pointerEvents="none" style={[pitchStyles.box, pitchStyles.boxTop]} />
+      <View pointerEvents="none" style={[pitchStyles.box, pitchStyles.boxBottom]} />
+      <View pointerEvents="none" style={[pitchStyles.goalArea, pitchStyles.boxTop]} />
+      <View pointerEvents="none" style={[pitchStyles.goalArea, pitchStyles.boxBottom]} />
       {slots.map((slot) => {
         const assignment = match.lineup.find((candidate) => candidate.slotId === slot.id);
         const isCaptain = Boolean(assignment && assignment.playerId === match.captainPlayerId);
         return (
-          <TouchableOpacity
-            accessibilityLabel={
-              assignment
-                ? `${slot.roleLabel} : ${assignment.playerName}${isCaptain ? ", capitaine" : ""}`
-                : `${slot.roleLabel} : aucun joueur, toucher pour affecter`
-            }
-            accessibilityRole="button"
-            disabled={!onSlotTap}
-            key={slot.id}
-            onPress={() => onSlotTap?.(slot.id)}
-            style={[pitchStyles.token, assignment && pitchStyles.tokenFilled, { left: `${(slot.x / 300) * 100}%`, top: `${(slot.y / 460) * 100}%` }]}
-          >
-            <Text style={[pitchStyles.tokenText, assignment && pitchStyles.tokenTextFilled]}>
-              {assignment ? (numberOf(assignment.playerId) ?? initials(assignment.playerName)) : onSlotTap ? "+" : slot.roleLabel.slice(0, 1)}
+          // Pastille agrandie (numéro ou initiales) et prénom du joueur juste en dessous.
+          <View key={slot.id} style={[pitchStyles.slot, { left: `${(slot.x / 300) * 100}%`, top: `${6 + (slot.y / 460) * 84}%` }]}>
+            <TouchableOpacity
+              accessibilityLabel={
+                assignment
+                  ? `${slot.roleLabel} : ${assignment.playerName}${isCaptain ? ", capitaine" : ""}`
+                  : `${slot.roleLabel} : aucun joueur, toucher pour affecter`
+              }
+              accessibilityRole="button"
+              disabled={!onSlotTap}
+              onPress={() => onSlotTap?.(slot.id)}
+              style={[pitchStyles.token, assignment && pitchStyles.tokenFilled]}
+            >
+              <Text style={[pitchStyles.tokenText, assignment && pitchStyles.tokenTextFilled]}>
+                {assignment ? (numberOf(assignment.playerId) ?? initials(assignment.playerName)) : onSlotTap ? "+" : slot.roleLabel.slice(0, 1)}
+              </Text>
+              {isCaptain && <Text style={pitchStyles.captainBadge}>C</Text>}
+            </TouchableOpacity>
+            <Text numberOfLines={1} style={[pitchStyles.slotName, !assignment && pitchStyles.slotNameFree]}>
+              {assignment ? assignment.playerName.split(" ")[0] : slot.roleLabel.replace(/ \d+$/, "")}
             </Text>
-            {isCaptain && <Text style={pitchStyles.captainBadge}>C</Text>}
-          </TouchableOpacity>
+          </View>
         );
       })}
     </View>
@@ -93,23 +106,49 @@ const pitchStyles = StyleSheet.create({
     borderColor: "rgba(255,255,255,.14)",
     overflow: "hidden",
   },
-  token: {
+  halfway: { position: "absolute", left: 0, right: 0, top: "50%", height: 1.5, backgroundColor: "rgba(255,255,255,.14)" },
+  centerCircle: {
     position: "absolute",
-    width: 36,
-    height: 36,
-    marginLeft: -18,
-    marginTop: -18,
-    borderRadius: 18,
+    left: "50%",
+    top: "50%",
+    width: 80,
+    height: 80,
+    marginLeft: -40,
+    marginTop: -40,
+    borderRadius: 40,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,.14)",
+  },
+  box: { position: "absolute", left: "25%", right: "25%", height: "12%", borderWidth: 1.5, borderColor: "rgba(255,255,255,.14)" },
+  goalArea: { position: "absolute", left: "38%", right: "38%", height: "5%", borderWidth: 1.5, borderColor: "rgba(255,255,255,.14)" },
+  boxTop: { top: -1.5 },
+  boxBottom: { bottom: -1.5 },
+  slot: { position: "absolute", width: 92, marginLeft: -46, marginTop: -28, alignItems: "center", gap: 4 },
+  slotName: { maxWidth: 92, color: colors.ink, fontSize: 12, fontWeight: "800", textShadowColor: "rgba(0,0,0,.6)", textShadowRadius: 3 },
+  slotNameFree: { color: colors.muted, fontWeight: "700" },
+  token: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.line,
   },
-  tokenFilled: { backgroundColor: colors.primary, borderColor: colors.primaryDark },
-  tokenText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
+  // Halo autour d’un poste occupé, aux couleurs de la marque.
+  tokenFilled: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primaryDark,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.55,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
+  },
+  tokenText: { color: colors.ink, fontSize: 19, fontWeight: "900" },
   tokenTextFilled: { color: colors.primaryInk },
-  captainBadge: { position: "absolute", top: -6, right: -10, color: colors.warn, fontSize: 12, fontWeight: "900" },
+  captainBadge: { position: "absolute", top: -6, right: -6, color: colors.warn, fontSize: 14, fontWeight: "900" },
 });
 
 export default function MatchDetailScreen() {
@@ -282,26 +321,8 @@ export default function MatchDetailScreen() {
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Composition</Text>
-        <Text style={styles.sectionHint}>Touche un poste sur le terrain ou dans la liste pour y affecter un joueur.</Text>
-        {slots.map((slot) => {
-          const assignment = match.lineup.find((candidate) => candidate.slotId === slot.id);
-          return (
-            <TouchableOpacity
-              accessibilityRole="button"
-              disabled={readOnly}
-              key={slot.id}
-              onPress={() => {
-                setPickerCaptain(false);
-                setPickerSlotId(slot.id);
-              }}
-              style={styles.slotRow}
-            >
-              <Text style={styles.slotLabel}>{slot.roleLabel}</Text>
-              <Text style={styles.slotValue}>{assignment?.playerName ?? "— Aucun joueur —"}</Text>
-            </TouchableOpacity>
-          );
-        })}
+        {/* La composition se fait directement sur le terrain : pas de liste des postes en dessous. */}
+        {!readOnly && <Text style={styles.sectionHint}>Touche un poste sur le terrain pour y affecter un joueur.</Text>}
 
         <TouchableOpacity
           accessibilityRole="button"
@@ -427,20 +448,9 @@ const styles = StyleSheet.create({
   formationChoiceText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
   formationChoiceTextActive: { color: colors.primary },
   pitchWrap: { marginTop: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginTop: 24, marginBottom: 2 },
+
   sectionHint: { fontSize: 11, color: colors.muted, marginBottom: 8 },
-  slotRow: {
-    minHeight: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radii.sm,
-    backgroundColor: colors.surface,
-    marginTop: 8,
-  },
+
   slotLabel: { color: colors.muted, fontSize: 11.5, fontWeight: "700" },
   slotValue: { color: colors.ink, fontSize: 12.5, fontWeight: "700" },
   captainRow: {
