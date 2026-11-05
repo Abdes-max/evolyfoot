@@ -170,12 +170,15 @@
   }
 }
 
+/* Saison mois par mois : un calendrier par mois (lundi → dimanche), séances, matchs, tournois et
+   plateaux posés sur leur jour ; les séances de la saison guidée encore à préparer en pointillés. */
 .season-months {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
   gap: 12px;
 }
 .season-month {
+  min-width: 0;
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -185,36 +188,79 @@
   border-color: var(--accent);
 }
 .season-month h2 {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 13.5px;
 }
-.season-month > p {
-  margin: 0;
-  font-size: 12px;
-  color: var(--muted);
-}
-.season-month ul {
+.season-month-grid {
   display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.season-weekday {
+  padding-bottom: 2px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+}
+.season-day {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.season-day.empty {
+  background: transparent;
+}
+.season-day.today {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.season-day-number {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.season-day.today .season-day-number {
+  color: var(--accent);
 }
 .season-event {
   display: grid;
-  grid-template-columns: 56px 1fr auto;
-  gap: 8px;
-  align-items: center;
-  padding: 8px 10px;
-  border-radius: 10px;
+  min-width: 0;
+  padding: 3px 5px;
+  border-radius: 6px;
   border-left: 3px solid var(--line);
-  background: var(--surface-2);
+  background: var(--surface);
   color: var(--ink);
-  font-size: 12px;
+  font-size: 10.5px;
+  line-height: 1.25;
   text-decoration: none;
+}
+.season-event strong {
+  overflow: hidden;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.season-event small {
+  color: var(--muted);
+  font-size: 9.5px;
+}
+.season-event:hover {
+  background: var(--surface-3, var(--surface-2));
+  outline: 1px solid var(--accent);
 }
 .season-event.session {
   border-left-color: var(--accent);
+}
+.season-event.session.planned {
+  border: 1px dashed var(--accent);
+  border-left-width: 3px;
+  background: transparent;
 }
 .season-event.match {
   border-left-color: #ffb073;
@@ -223,10 +269,18 @@
 .season-event.plateau {
   border-left-color: #7c9cff;
 }
-.season-event span,
-.season-event small {
-  color: var(--muted);
-  font-size: 10.5px;
+@media (max-width: 560px) {
+  .season-day {
+    min-height: 48px;
+    padding: 2px;
+  }
+  .season-event {
+    padding: 2px 3px;
+    font-size: 9.5px;
+  }
+  .season-event small {
+    display: none;
+  }
 }
 
 /* Pages de séance : même décalage que les autres pages à menu latéral, barre du bas sur mobile. */

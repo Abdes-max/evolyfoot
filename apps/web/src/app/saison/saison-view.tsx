@@ -1,9 +1,19 @@
 "use client";
 
-import { buildSeasonCalendar, type SeasonEventInput, type SeasonEventType } from "@evolyfoot/domain";
+import {
+  buildPrioritizedSeason,
+  buildSeasonCalendar,
+  guidedSeasonCycle,
+  seasonSlotDate,
+  type DevelopmentTheme,
+  type SeasonEvent,
+  type SeasonEventInput,
+  type SeasonEventType,
+  type TrainingDay,
+} from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { GuidedSeason } from "./guided-season";
+import { GuidedSeason, slotLabel } from "./guided-season";
 import { SeasonPlanView } from "./season-plan-view";
 
 const typeLabels: Record<SeasonEventType, string> = {
@@ -13,7 +23,17 @@ const typeLabels: Record<SeasonEventType, string> = {
   plateau: "Plateau",
 };
 
-function eventHref(event: SeasonEventInput): string {
+// Événement du calendrier : les séances encore à préparer de la saison guidée y figurent aussi, à
+// la date proposée (jour d'entraînement de l'équipe), avec un lien vers leur fiche.
+interface CalendarEvent extends SeasonEventInput {
+  href?: string;
+  planned?: boolean;
+}
+
+const weekdayHeaders = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+
+function eventHref(event: CalendarEvent): string {
+  if (event.href) return event.href;
   if (event.type === "session") return `/session/${event.id}`;
   if (event.type === "match") return `/match/${event.id}`;
   if (event.type === "tournament") return `/match/tournois/${event.id}`;
@@ -25,8 +45,36 @@ function monthLabel(year: number, month: number): string {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-function dayLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" });
+function timeLabel(iso: string): string {
+  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+// Grille du mois, semaines du lundi au dimanche : `null` pour les cases hors du mois.
+function monthGrid(year: number, month: number): (number | null)[] {
+  const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+  const days = new Date(year, month + 1, 0).getDate();
+  const cells: (number | null)[] = [...Array<null>(offset).fill(null), ...Array.from({ length: days }, (_, index) => index + 1)];
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
+function sameDay(date: Date, year: number, month: number, day: number): boolean {
+  return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day;
+}
+
+interface SeasonSessionSummary {
+  id: string;
+  title: string;
+  meetingAt: string | null;
+  cycleNumber: number;
+  weekNumber: number;
+  slot: number;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- corps JSON lu champ par champ
+async function readBody(url: string): Promise<any> {
+  const response = await fetch(url).catch(() => null);
+  return response?.ok ? response.json().catch(() => null) : null;
 }
 
 async function readList<Item>(url: string, key: string): Promise<Item[]> {
@@ -36,7 +84,7 @@ async function readList<Item>(url: string, key: string): Promise<Item[]> {
 }
 
 export function SaisonView() {
-  const [events, setEvents] = useState<SeasonEventInput[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [now] = useState(() => new Date());
 
@@ -45,16 +93,40 @@ export function SaisonView() {
 
     (async () => {
       try {
-        const [sessions, matches, tournaments, plateaux] = await Promise.all([
-          readList<{ id: string; title: string; meetingAt: string | null }>("/api/sessions?scope=season", "sessions"),
+        const [sessions, matches, tournaments, plateaux, programBody, teamBody] = await Promise.all([
+          readList<SeasonSessionSummary>("/api/sessions?scope=season", "sessions"),
           readList<{ id: string; opponent: string; date: string | null }>("/api/matches", "matches"),
           readList<{ id: string; name: string; date: string | null }>("/api/tournaments", "tournaments"),
           readList<{ id: string; name: string; date: string | null }>("/api/plateaux", "plateaux"),
+          readBody("/api/season-program"),
+          readBody("/api/team"),
         ]);
         if (cancelled) {
           return;
         }
+        const program: { priorities: DevelopmentTheme[]; startDate: string } | null = programBody?.program ?? null;
+        const profile: { sessionsPerWeek?: number; trainingDays?: TrainingDay[] } | null = teamBody?.profile ?? null;
+        // Séances de la saison guidée pas encore préparées : placées à leur date proposée.
+        const planned: CalendarEvent[] = program
+          ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek: profile?.sessionsPerWeek ?? 2 }).flatMap((week) =>
+              week.slots.flatMap((slot, index) =>
+                sessions.some((session) => session.cycleNumber === guidedSeasonCycle && session.weekNumber === week.week && session.slot === index)
+                  ? []
+                  : [
+                      {
+                        id: `prevue-${week.week}-${index}`,
+                        type: "session" as const,
+                        title: slotLabel(slot),
+                        date: seasonSlotDate(new Date(`${program.startDate}T00:00:00`), week.week, index, profile?.trainingDays ?? []).toISOString(),
+                        href: `/saison/seance/${slot.sessionNumber}?semaine=${week.week}&creneau=${index}`,
+                        planned: true,
+                      },
+                    ],
+              ),
+            )
+          : [];
         setEvents([
+          ...planned,
           ...sessions.map((session) => ({ id: session.id, type: "session" as const, title: session.title, date: session.meetingAt })),
           ...matches.map((match) => ({ id: match.id, type: "match" as const, title: `Contre ${match.opponent}`, date: match.date })),
           ...tournaments.map((tournament) => ({ id: tournament.id, type: "tournament" as const, title: tournament.name, date: tournament.date })),
@@ -97,21 +169,35 @@ export function SaisonView() {
           {calendar.months.map((month) => (
             <article className={month.isCurrent ? "season-month current" : "season-month"} key={month.key}>
               <h2>{monthLabel(month.year, month.month)}</h2>
-              {month.events.length === 0 ? (
-                <p>Rien de prévu.</p>
-              ) : (
-                <ul>
-                  {month.events.map((event) => (
-                    <li key={`${event.type}-${event.id}`}>
-                      <Link className={`season-event ${event.type}`} href={eventHref(event)}>
-                        <span>{dayLabel(event.date)}</span>
-                        <strong>{event.title}</strong>
-                        <small>{typeLabels[event.type]}</small>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <div className="season-month-grid" role="grid">
+                {weekdayHeaders.map((header) => (
+                  <span className="season-weekday" key={header} role="columnheader">
+                    {header}
+                  </span>
+                ))}
+                {monthGrid(month.year, month.month).map((day, index) =>
+                  day === null ? (
+                    <span aria-hidden className="season-day empty" key={`vide-${index}`} />
+                  ) : (
+                    <div className={sameDay(now, month.year, month.month, day) ? "season-day today" : "season-day"} key={day} role="gridcell">
+                      <span className="season-day-number">{day}</span>
+                      {month.events
+                        .filter((event) => sameDay(new Date(event.date), month.year, month.month, day))
+                        .map((event: SeasonEvent<CalendarEvent>) => (
+                          <Link
+                            className={`season-event ${event.type}${event.planned ? " planned" : ""}`}
+                            href={eventHref(event)}
+                            key={`${event.type}-${event.id}`}
+                            title={`${typeLabels[event.type]}${event.planned ? " à préparer" : ""} · ${event.title} · ${timeLabel(event.date)}`}
+                          >
+                            <strong>{event.title}</strong>
+                            <small>{event.planned ? "À préparer" : timeLabel(event.date)}</small>
+                          </Link>
+                        ))}
+                    </div>
+                  ),
+                )}
+              </div>
             </article>
           ))}
         </div>
