@@ -321,26 +321,8 @@ export default function MatchDetailScreen() {
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Composition</Text>
-        <Text style={styles.sectionHint}>Touche un poste sur le terrain ou dans la liste pour y affecter un joueur.</Text>
-        {slots.map((slot) => {
-          const assignment = match.lineup.find((candidate) => candidate.slotId === slot.id);
-          return (
-            <TouchableOpacity
-              accessibilityRole="button"
-              disabled={readOnly}
-              key={slot.id}
-              onPress={() => {
-                setPickerCaptain(false);
-                setPickerSlotId(slot.id);
-              }}
-              style={styles.slotRow}
-            >
-              <Text style={styles.slotLabel}>{slot.roleLabel}</Text>
-              <Text style={styles.slotValue}>{assignment?.playerName ?? "— Aucun joueur —"}</Text>
-            </TouchableOpacity>
-          );
-        })}
+        {/* La composition se fait directement sur le terrain : pas de liste des postes en dessous. */}
+        {!readOnly && <Text style={styles.sectionHint}>Touche un poste sur le terrain pour y affecter un joueur.</Text>}
 
         <TouchableOpacity
           accessibilityRole="button"
@@ -466,20 +448,9 @@ const styles = StyleSheet.create({
   formationChoiceText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
   formationChoiceTextActive: { color: colors.primary },
   pitchWrap: { marginTop: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginTop: 24, marginBottom: 2 },
+
   sectionHint: { fontSize: 11, color: colors.muted, marginBottom: 8 },
-  slotRow: {
-    minHeight: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radii.sm,
-    backgroundColor: colors.surface,
-    marginTop: 8,
-  },
+
   slotLabel: { color: colors.muted, fontSize: 11.5, fontWeight: "700" },
   slotValue: { color: colors.ink, fontSize: 12.5, fontWeight: "700" },
   captainRow: {
