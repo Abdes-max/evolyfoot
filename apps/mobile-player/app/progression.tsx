@@ -6,8 +6,8 @@ import {
   playerEvaluationMaxScore,
   type PlayerEvaluationScores,
 } from "@evolyfoot/domain";
-import { Fragment } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Fragment, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Circle, Line, Polygon, Text as SvgText } from "react-native-svg";
 import { Screen } from "../components/screen";
 import { useDashboard } from "../lib/dashboard";
@@ -25,7 +25,21 @@ function polygon(scores: PlayerEvaluationScores): string {
   return playerEvaluationAspects.map((aspect, index) => point(index, scores[aspect] / playerEvaluationMaxScore).join(",")).join(" ");
 }
 
-function Radar({ coach }: { coach: PlayerEvaluationScores | null }) {
+function overall(scores: PlayerEvaluationScores): number {
+  return Math.round((playerEvaluationAspects.reduce((sum, aspect) => sum + scores[aspect], 0) / playerEvaluationAspects.length) * 10) / 10;
+}
+
+function formatDate(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function signed(value: number): string {
+  return `${value > 0 ? "+" : ""}${value.toLocaleString("fr-FR")}`;
+}
+
+// L’évaluation choisie en plein, la précédente en pointillés pour voir ce qui a bougé.
+function Radar({ coach, previous }: { coach: PlayerEvaluationScores | null; previous: PlayerEvaluationScores | null }) {
   return (
     <Svg accessibilityLabel="Toile d’évaluation" height={RADAR_SIZE} style={styles.radar} width={RADAR_SIZE}>
       {[0.25, 0.5, 0.75, 1].map((ratio) => (
@@ -43,6 +57,7 @@ function Radar({ coach }: { coach: PlayerEvaluationScores | null }) {
           </Fragment>
         );
       })}
+      {previous ? <Polygon fill="none" points={polygon(previous)} stroke={colors.lime} strokeDasharray="5 4" strokeWidth={1.5} /> : null}
       {coach ? <Polygon fill={colors.primary} fillOpacity={0.25} points={polygon(coach)} stroke={colors.primary} strokeWidth={2} /> : null}
     </Svg>
   );
@@ -51,7 +66,16 @@ function Radar({ coach }: { coach: PlayerEvaluationScores | null }) {
 export default function ProgressionScreen() {
   const { dashboard, status } = useDashboard();
 
-  const coach = dashboard?.evaluations.find((evaluation) => evaluation.source !== "player")?.scores ?? null;
+  // Historique complet des notes de l’éducateur, la plus récente d’abord (ordre de l’API).
+  const history = dashboard?.evaluations.filter((evaluation) => evaluation.source !== "player") ?? [];
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedIndex = Math.max(
+    0,
+    history.findIndex((evaluation) => evaluation.id === selectedId),
+  );
+  const selected = history[selectedIndex] ?? null;
+  const previous = history[selectedIndex + 1] ?? null;
+  const coach = selected?.scores ?? null;
   const seasons = buildPlayerEvaluationSeasons(dashboard?.evaluations ?? []);
 
   return (
@@ -70,14 +94,55 @@ export default function ProgressionScreen() {
             </View>
           </View>
 
-          <Radar coach={coach} />
-          {coach ? (
+          <Radar coach={coach} previous={previous?.scores ?? null} />
+          {selected ? (
             <View style={styles.legend}>
-              <Text style={[styles.legendText, { color: colors.primary }]}>Éducateur</Text>
+              <Text style={[styles.legendText, { color: colors.primary }]}>{formatDate(selected.createdAt)}</Text>
+              {previous ? <Text style={[styles.legendText, { color: colors.lime }]}>Précédente · {formatDate(previous.createdAt)}</Text> : null}
             </View>
           ) : (
             <Text style={styles.note}>Pas encore d’évaluation.</Text>
           )}
+
+          {history.length > 0 ? (
+            <>
+              <Text style={styles.section}>Mes évaluations</Text>
+              {history.map((evaluation, index) => {
+                const before = history[index + 1];
+                const delta = before ? Math.round((overall(evaluation.scores) - overall(before.scores)) * 10) / 10 : null;
+                const active = index === selectedIndex;
+                return (
+                  <TouchableOpacity
+                    accessibilityLabel={`Évaluation du ${formatDate(evaluation.createdAt)}, ${overall(evaluation.scores)} sur ${playerEvaluationMaxScore}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    key={evaluation.id}
+                    onPress={() => setSelectedId(evaluation.id)}
+                    style={[styles.season, active && styles.evaluationActive]}
+                  >
+                    <View style={styles.seasonHead}>
+                      <Text style={styles.seasonLabel}>{formatDate(evaluation.createdAt)}</Text>
+                      <Text style={styles.seasonOverall}>
+                        {overall(evaluation.scores).toLocaleString("fr-FR")}/{playerEvaluationMaxScore}
+                        {delta === null ? "" : <Text style={delta >= 0 ? styles.up : styles.down}>{`  ${signed(delta)}`}</Text>}
+                      </Text>
+                    </View>
+                    <View style={styles.chips}>
+                      {playerEvaluationAspects.map((aspect) => {
+                        const change = before ? evaluation.scores[aspect] - before.scores[aspect] : 0;
+                        return (
+                          <Text key={aspect} style={styles.chip}>
+                            {playerEvaluationAspectLabels[aspect]} {evaluation.scores[aspect]}
+                            {change !== 0 ? <Text style={change > 0 ? styles.up : styles.down}>{` ${change > 0 ? "▲" : "▼"}`}</Text> : null}
+                          </Text>
+                        );
+                      })}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </>
+          ) : null}
 
           {seasons.length > 0 ? (
             <>
@@ -131,7 +196,19 @@ const styles = StyleSheet.create({
   counterValue: { color: colors.lime, fontSize: 28, fontWeight: "900" },
   counterLabel: { color: colors.muted, fontSize: 12, fontWeight: "700" },
   radar: { alignSelf: "center" },
-  legend: { flexDirection: "row", justifyContent: "center", gap: spacing.md },
+  legend: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: spacing.md },
+  evaluationActive: { borderColor: colors.primary },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
+  chip: {
+    color: colors.ink,
+    fontSize: 11,
+    fontWeight: "700",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: colors.paper,
+    overflow: "hidden",
+  },
   legendText: { fontSize: 12, fontWeight: "800" },
   season: {
     padding: spacing.md,
