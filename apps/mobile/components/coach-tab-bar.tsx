@@ -9,7 +9,7 @@ import { useUnread } from "../lib/push";
 // écrans s'ouvrent par-dessus avec l'en-tête natif (bouton Retour, glissement depuis le bord).
 export const coachTabs = [
   { href: "/", label: "Accueil" },
-  { href: "/seances", label: "Séances" },
+  { href: "/saison", label: "Saison" },
   { href: "/match", label: "Matchs" },
   { href: "/messages", label: "Messages" },
   { href: "/equipe", label: "Équipe" },

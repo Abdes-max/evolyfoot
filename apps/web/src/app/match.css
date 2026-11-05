@@ -81,6 +81,20 @@
   padding: 0;
   margin: 0;
 }
+/* Même libellé que les champs (label ci-dessus) : sans cette règle, la légende d’un groupe de
+   choix (Domicile/Extérieur, Formation) gardait la taille par défaut du navigateur. */
+.match-create-form legend {
+  padding: 0;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+}
+/* Adresse et formation : un espacement régulier entre les blocs du formulaire. */
+.match-create-form > label,
+.match-create-form > fieldset {
+  margin-bottom: 14px;
+}
 .match-create-actions {
   display: flex;
   gap: 10px;
