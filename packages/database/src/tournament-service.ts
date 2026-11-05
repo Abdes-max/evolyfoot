@@ -27,7 +27,7 @@ export class TournamentService {
     return this.tournamentRepository.findById(id, educatorId);
   }
 
-  async create(educatorId: string, input: TournamentInput & { date?: Date | null }): Promise<PersistedTournament> {
+  async create(educatorId: string, input: TournamentInput & { date?: Date | null; location?: string }): Promise<PersistedTournament> {
     const errors = validateTournament(input);
     if (Object.keys(errors).length > 0) {
       throw new ValidationError(Object.values(errors)[0]!);
@@ -36,10 +36,12 @@ export class TournamentService {
       throw new EducatorNotFoundError();
     }
     const result = input.result?.trim();
+    const location = input.location?.trim();
     return this.tournamentRepository.create(educatorId, {
       name: input.name.trim(),
       dateLabel: input.dateLabel.trim(),
       date: input.date ?? null,
+      ...(location ? { location } : {}),
       ...(result ? { result } : {}),
     });
   }

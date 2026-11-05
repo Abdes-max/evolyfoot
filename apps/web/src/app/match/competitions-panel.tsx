@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { frenchDateLabel, parseDateInputValue, sortChronologically } from "../date-format";
+import { PlaceInput } from "../place-input";
 
 interface Competition {
   id: string;
   name: string;
   dateLabel: string;
   date: string | null;
+  location?: string | null;
   result: string | null;
 }
 
@@ -38,6 +40,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
   // à l'envoi, voir add() ci-dessous.
   const [dateInput, setDateInput] = useState("");
   const [result, setResult] = useState("");
+  const [location, setLocation] = useState("");
   const [error, setError] = useState("");
   const [adding, setAdding] = useState(false);
 
@@ -72,6 +75,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
           name,
           dateLabel: date ? frenchDateLabel(date) : dateInput,
           date: date ? date.toISOString() : null,
+          location: location.trim() || undefined,
           result: result || undefined,
         }),
       });
@@ -84,6 +88,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
       setName("");
       setDateInput("");
       setResult("");
+      setLocation("");
     } catch {
       setError("Une erreur est survenue.");
     } finally {
@@ -98,6 +103,9 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
         <input onChange={(event) => setName(event.target.value)} placeholder={`Nom du ${singular}`} value={name} />
         <input aria-label="Date" onChange={(event) => setDateInput(event.target.value)} required type="date" value={dateInput} />
         <input onChange={(event) => setResult(event.target.value)} placeholder="Bilan (optionnel)" value={result} />
+        <div className="competitions-form-place">
+          <PlaceInput onChange={setLocation} value={location} />
+        </div>
         <button disabled={adding} type="submit">
           {adding ? "Ajout…" : "Ajouter"}
         </button>
@@ -125,6 +133,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
                   <h2 aria-hidden="true">{item.name}</h2>
                   <p aria-hidden="true">
                     {item.dateLabel}
+                    {item.location ? ` · ${item.location}` : ""}
                     {item.result ? ` · ${item.result}` : ""}
                   </p>
                   <span aria-hidden="true" className="match-card-link card-cta">

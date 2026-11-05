@@ -7,6 +7,7 @@ import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CalendarImport } from "../components/calendar-import";
 import { CompetitionsPanel } from "../components/competitions-panel";
+import { PlaceInput } from "../components/place-input";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
 
 const statusLabel: Record<MatchStatus, string> = { scheduled: "À venir", played: "Joué" };
@@ -19,6 +20,7 @@ export default function MatchListScreen() {
   const [opponent, setOpponent] = useState("");
   const [dateLabel, setDateLabel] = useState("");
   const [venue, setVenue] = useState<MatchVenue>("home");
+  const [location, setLocation] = useState("");
   // `null` tant que le coach n'a pas explicitement choisi un format : dérivé du format de
   // l'équipe au rendu plutôt que copié dans un `useState` via un effet (évite un rendu en
   // cascade, règle react-hooks/set-state-in-effect -- même correctif que sidebar-nav.tsx côté
@@ -43,7 +45,7 @@ export default function MatchListScreen() {
   async function submitCreate() {
     setSubmitting(true);
     setCreateError("");
-    const result = await createMatch({ opponent, dateLabel, venue, gameFormat, formationId });
+    const result = await createMatch({ opponent, dateLabel, venue, gameFormat, formationId, ...(location.trim() ? { location: location.trim() } : {}) });
     setSubmitting(false);
     if (!result.ok) {
       setCreateError(result.error);
@@ -96,6 +98,9 @@ export default function MatchListScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            <Text style={styles.label}>Adresse du terrain</Text>
+            <PlaceInput onChange={setLocation} value={location} />
 
             <Text style={styles.label}>Format de jeu</Text>
             <View style={styles.choiceRow}>
@@ -158,6 +163,7 @@ export default function MatchListScreen() {
               <Text style={styles.cardTitle}>{match.opponent}</Text>
               <Text style={styles.cardBody}>
                 {match.dateLabel} · {venueLabel[match.venue]}
+                {match.location ? ` · ${match.location}` : ""}
               </Text>
               <Text style={styles.cardLineup}>
                 {match.lineup.length}/{match.gameFormat} postes pourvus

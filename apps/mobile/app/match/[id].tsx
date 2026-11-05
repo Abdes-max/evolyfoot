@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MatchAnalysis } from "../../components/match-analysis";
+import { PlaceInput } from "../../components/place-input";
 import { useAuth, type MobileMatch } from "../../lib/auth-context";
 
 const venueLabel: Record<MatchVenue, string> = { home: "Domicile", away: "Extérieur" };
@@ -102,13 +103,15 @@ const pitchStyles = StyleSheet.create({
 
 export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { roster, getMatch, updateMatchLineup, changeMatchFormation, markMatchPlayed } = useAuth();
+  const { roster, getMatch, updateMatchLineup, changeMatchFormation, markMatchPlayed, apiRequest } = useAuth();
   const [match, setMatch] = useState<MobileMatch | null>(null);
   const [loadError, setLoadError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [finalizing, setFinalizing] = useState(false);
   const [pickerSlotId, setPickerSlotId] = useState<string | null>(null);
   const [pickerCaptain, setPickerCaptain] = useState(false);
+  const [location, setLocation] = useState("");
+  const [locationFeedback, setLocationFeedback] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -118,8 +121,19 @@ export default function MatchDetailScreen() {
         return;
       }
       setMatch(result.match);
+      setLocation(result.match.location ?? "");
     })();
   }, [id, getMatch]);
+
+  // Même route que la fiche match du web (lieu seul : les autres détails restent inchangés).
+  async function saveLocation() {
+    setLocationFeedback("");
+    const response = await apiRequest(`/api/matches/${encodeURIComponent(id)}/details`, {
+      method: "PATCH",
+      body: JSON.stringify({ location: location.trim() || null }),
+    });
+    setLocationFeedback(response?.ok ? "Lieu enregistré." : "Le lieu n’a pas été enregistré, réessaie.");
+  }
 
   async function persist(nextMatch: MobileMatch) {
     setSaveError("");
@@ -210,6 +224,21 @@ export default function MatchDetailScreen() {
         <Text style={styles.body}>
           {match.dateLabel} · {venueLabel[match.venue]} · Foot à {match.gameFormat}
         </Text>
+
+        <View style={styles.locationBlock}>
+          <Text style={styles.locationLabel}>Lieu</Text>
+          <PlaceInput
+            onChange={(value) => {
+              setLocation(value);
+              setLocationFeedback("");
+            }}
+            value={location}
+          />
+          <TouchableOpacity accessibilityRole="button" onPress={saveLocation} style={styles.locationSave}>
+            <Text style={styles.locationSaveText}>Enregistrer le lieu</Text>
+          </TouchableOpacity>
+          {locationFeedback ? <Text style={styles.body}>{locationFeedback}</Text> : null}
+        </View>
 
         {!readOnly && formations.length > 1 && (
           <View style={styles.formationRow}>
@@ -379,6 +408,17 @@ const styles = StyleSheet.create({
   step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
   title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 8 },
   body: { fontSize: 12.5, color: colors.muted, marginTop: 6 },
+  locationBlock: { marginTop: spacing.md, gap: 6 },
+  locationLabel: { fontSize: 11, fontWeight: "800", color: colors.muted },
+  locationSave: {
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  locationSaveText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
   formationRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 16 },
   formationChoice: {
     minHeight: 36,

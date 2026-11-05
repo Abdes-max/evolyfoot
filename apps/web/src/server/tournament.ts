@@ -17,7 +17,7 @@ export interface TournamentSummary {
 export interface TournamentGateway {
   list(educatorId: string): Promise<TournamentSummary[]>;
   get(educatorId: string, tournamentId: string): Promise<TournamentSummary>;
-  create(educatorId: string, input: { name: string; dateLabel: string; date?: string | null; result?: string }): Promise<TournamentSummary>;
+  create(educatorId: string, input: { name: string; dateLabel: string; date?: string | null; location?: string; result?: string }): Promise<TournamentSummary>;
   updateDetails(
     educatorId: string,
     tournamentId: string,
@@ -103,12 +103,13 @@ export function createCreateTournamentHandler(
     const dateLabel = typeof body?.dateLabel === "string" ? body.dateLabel : null;
     const date = typeof body?.date === "string" ? body.date : null;
     const result = typeof body?.result === "string" ? body.result : undefined;
+    const location = typeof body?.location === "string" ? body.location : undefined;
     if (name === null || dateLabel === null) {
       return Response.json({ error: "Nom et date sont requis." }, { status: 400 });
     }
 
     try {
-      const tournament = await tournaments.create(educator.id, { name, dateLabel, date, result });
+      const tournament = await tournaments.create(educator.id, { name, dateLabel, date, location, result });
       return Response.json({ tournament }, { status: 201 });
     } catch (error) {
       return errorResponse(error, log);

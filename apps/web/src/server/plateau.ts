@@ -15,7 +15,7 @@ export interface PlateauSummary {
 export interface PlateauGateway {
   list(educatorId: string): Promise<PlateauSummary[]>;
   get(educatorId: string, plateauId: string): Promise<PlateauSummary>;
-  create(educatorId: string, input: { name: string; dateLabel: string; date?: string | null; result?: string }): Promise<PlateauSummary>;
+  create(educatorId: string, input: { name: string; dateLabel: string; date?: string | null; location?: string; result?: string }): Promise<PlateauSummary>;
   updateDetails(
     educatorId: string,
     plateauId: string,
@@ -99,12 +99,13 @@ export function createCreatePlateauHandler(
     const dateLabel = typeof body?.dateLabel === "string" ? body.dateLabel : null;
     const date = typeof body?.date === "string" ? body.date : null;
     const result = typeof body?.result === "string" ? body.result : undefined;
+    const location = typeof body?.location === "string" ? body.location : undefined;
     if (name === null || dateLabel === null) {
       return Response.json({ error: "Nom et date sont requis." }, { status: 400 });
     }
 
     try {
-      const plateau = await plateaux.create(educator.id, { name, dateLabel, date, result });
+      const plateau = await plateaux.create(educator.id, { name, dateLabel, date, location, result });
       return Response.json({ plateau }, { status: 201 });
     } catch (error) {
       return errorResponse(error, log);
