@@ -1,5 +1,5 @@
 import { colors, spacing } from "@evolyfoot/design-tokens";
-import { Link, usePathname } from "expo-router";
+import { Link, router, usePathname } from "expo-router";
 import type { ReactNode } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
@@ -40,9 +40,22 @@ export function TabBar() {
 }
 
 export function Screen({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+  const pathname = usePathname();
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
+        {/* Retour sur chaque page sauf la carte (accueil) ; sans historique, ramène à l'accueil. */}
+        {pathname !== "/" ? (
+          <TouchableOpacity
+            accessibilityLabel="Retour"
+            accessibilityRole="button"
+            hitSlop={12}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
+            style={styles.back}
+          >
+            <Text style={styles.backText}>‹ Retour</Text>
+          </TouchableOpacity>
+        ) : null}
         <View style={styles.header}>
           <Text style={styles.title}>{title}</Text>
           {action}
@@ -59,6 +72,8 @@ const styles = StyleSheet.create({
   unreadDot: { position: "absolute", top: 6, right: 14, width: 9, height: 9, borderRadius: 5, backgroundColor: "#ef4444" },
   safe: { flex: 1, backgroundColor: colors.paper },
   page: { padding: spacing.lg, paddingTop: 56, paddingBottom: spacing.xl },
+  back: { alignSelf: "flex-start", marginTop: -36, marginBottom: spacing.sm, paddingVertical: 6 },
+  backText: { color: colors.primary, fontSize: 16, fontWeight: "800" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   title: {
     flex: 1,
