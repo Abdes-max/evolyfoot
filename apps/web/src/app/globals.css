@@ -204,10 +204,15 @@ nav {
 .coach {
   padding: 18px 4px 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 6px 10px;
 }
 .coach-link {
+  /* Le nom prend toute la largeur ; cloche et Déconnexion passent dessous : à trois sur une
+     ligne, ils débordaient de la colonne de 264px. */
+  flex: 1 1 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -825,6 +830,7 @@ button.week-calendar-badge:focus-visible {
     display: none;
   }
   .coach-link {
+    flex: 0 0 auto;
     padding: 6px;
   }
   .coach-link div {
