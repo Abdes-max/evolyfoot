@@ -141,6 +141,7 @@ describe("PlayerRsvpService", () => {
       attendance: [{ playerId: other.id, playerName: "Autre joueur séance", present: true }],
     });
 
+    await trainingSessionRepository.update(session.id, coach.id, { convokedAt: new Date() });
     await rsvpService.respondToTrainingSession(tutorAccountId, session.id, "sick", "Fièvre depuis hier soir");
 
     const reloaded = await trainingSessionRepository.findById(session.id, coach.id);
@@ -166,6 +167,7 @@ describe("PlayerRsvpService", () => {
       meetingAt: new Date("2026-09-15T18:00:00.000Z"),
     });
 
+    await trainingSessionRepository.update(session.id, coach.id, { convokedAt: new Date() });
     await rsvpService.respondToTrainingSession(tutorAccountId, session.id, "late");
     await rsvpService.respondToTrainingSession(tutorAccountId, session.id, "present");
 

@@ -2,6 +2,7 @@
 
 import { buildDevelopmentPlan, summarizeDiagnostic, type DiagnosticScores } from "@evolyfoot/domain";
 import Link from "next/link";
+import { ConvocationSettings } from "../convocation-settings";
 import { useEffect, useMemo, useState } from "react";
 import { cycleWeekDateRangeLabel } from "../date-format";
 import { currentCycleWeek, firstFreeCycleSlot, trainingCycleWeekCount } from "../session/cycle";
@@ -13,6 +14,16 @@ interface SavedSession {
   weekNumber: number;
   slot: number;
   blocks: ReadonlyArray<{ durationMinutes: number }>;
+  convokedAt?: string | null;
+  attendance?: ReadonlyArray<{ playerId: string; present: boolean }>;
+}
+
+// « 8 présents · 2 absents » sur la carte d'une séance convoquée, « Programmée » avant l'envoi.
+function responsesLabel(session: SavedSession): string {
+  if (!session.convokedAt) return "Programmée";
+  const present = (session.attendance ?? []).filter((entry) => entry.present).length;
+  const absent = (session.attendance ?? []).length - present;
+  return `${present} présent${present > 1 ? "s" : ""} · ${absent} absent${absent > 1 ? "s" : ""}`;
 }
 
 const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
@@ -107,6 +118,8 @@ export function SeancesView() {
           </p>
         )}
 
+        {authenticated && <ConvocationSettings prompt />}
+
         {trainingDays.length === 0 && authenticated && (
           <p className="seances-hint">
             Renseigne les jours d’entraînement de ton équipe dans <Link href="/equipe">Mon équipe</Link> pour caler les créneaux sur ta semaine réelle.
@@ -141,6 +154,7 @@ export function SeancesView() {
                           <span>
                             {sessionDuration(saved)} min · {saved.theme}
                           </span>
+                          <span className={saved.convokedAt ? "seances-slot-responses" : "seances-slot-responses scheduled"}>{responsesLabel(saved)}</span>
                           <span className="seances-slot-cta">Ouvrir la séance →</span>
                         </Link>
                       ) : (

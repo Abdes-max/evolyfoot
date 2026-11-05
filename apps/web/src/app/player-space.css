@@ -687,3 +687,9 @@ nav.child-switcher {
   background: var(--accent);
   color: var(--accent-ink);
 }
+
+/* Séance pas encore convoquée : visible, sans réponse possible. */
+.response-badge--scheduled {
+  background: var(--surface-2);
+  color: var(--muted);
+}

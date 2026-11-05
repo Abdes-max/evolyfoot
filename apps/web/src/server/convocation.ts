@@ -29,7 +29,7 @@ export const convocationMailer: ConvocationMailer = {
 
 // La convocation part d'abord dans la messagerie ; l'e-mail n'est qu'un rappel, envoyé aux
 // adresses connues. Un envoi raté est journalisé par `sendMail` sans faire échouer la convocation.
-async function notifyByEmail(outcome: ConvocationOutcome, coachName: string, request: Request, mailer: ConvocationMailer | undefined): Promise<number> {
+export async function notifyByEmail(outcome: ConvocationOutcome, coachName: string, request: Request, mailer: ConvocationMailer | undefined): Promise<number> {
   if (!mailer || outcome.recipients.length === 0) {
     return 0;
   }
@@ -108,6 +108,7 @@ export async function createConvocationGateway(): Promise<{ gateway: Convocation
     PrismaMessageRepository,
     PrismaPlayerRepository,
     PrismaTrainingSessionRepository,
+    PrismaTrainingConvocationRepository,
     NotifyingMessageRepository,
   } = await import("@evolyfoot/database");
   const { notificationServiceFor } = await import("./notifications");
@@ -118,6 +119,7 @@ export async function createConvocationGateway(): Promise<{ gateway: Convocation
     new PrismaMatchRepository(database.prisma),
     new PrismaTrainingSessionRepository(database.prisma),
     new NotifyingMessageRepository(new PrismaMessageRepository(database.prisma), await notificationServiceFor(database), console.error),
+    new PrismaTrainingConvocationRepository(database.prisma),
   );
 
   return {

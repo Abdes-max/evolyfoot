@@ -382,6 +382,7 @@ export function toPersistedTrainingSession(record: PrismaTrainingSessionRecord):
     location: record.location,
     description: record.description,
     attendance: toAttendanceEntries(record.attendance),
+    convokedAt: record.convokedAt,
     createdAt: record.createdAt,
   });
 }

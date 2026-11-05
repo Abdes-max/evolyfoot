@@ -159,6 +159,16 @@ export {
   summarizeAttendance,
 } from "./attendance";
 export type { AttendanceEntry, AttendanceStatus, AttendanceSummary } from "./attendance";
+export {
+  attendanceDefaultOptions,
+  convocationDue,
+  convocationLeadOptions,
+  convocationSendDate,
+  isAttendanceDefault,
+  isValidLeadDays,
+  summarizeTrainingResponses,
+} from "./training-convocation";
+export type { AttendanceDefault, ResponsePlayer, TrainingConvocationSettings, TrainingResponses } from "./training-convocation";
 export { messageMaxLength, validateMessageText } from "./message";
 export type { Message, MessageAuthorRole } from "./message";
 export { buildTeamStatsReport, pluralize } from "./team-stats-report";

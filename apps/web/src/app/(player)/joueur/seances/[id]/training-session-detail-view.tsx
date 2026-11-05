@@ -89,7 +89,16 @@ export function TrainingSessionDetailView({ sessionId }: { sessionId: string }) 
 
             <div className="player-match-detail-rsvp">
               <p>Ta réponse</p>
-              <RsvpControl disabled={responding} onRespond={respond} status={session.myStatus} />
+              {session.convoked === false ? (
+                <p className="player-space-tag">Séance programmée : tu pourras répondre quand ton éducateur aura envoyé la convocation.</p>
+              ) : (
+                <>
+                  {session.myStatusByDefault && session.myStatus === "present" && !myStatusOverride && (
+                    <p className="player-space-tag">Tu es compté présent par défaut. Préviens si tu ne peux pas venir.</p>
+                  )}
+                  <RsvpControl disabled={responding} onRespond={respond} status={session.myStatus} />
+                </>
+              )}
             </div>
           </section>
         )}

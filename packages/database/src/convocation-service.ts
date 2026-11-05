@@ -1,3 +1,4 @@
+import { createAttendanceEntry } from "@evolyfoot/domain";
 import { EducatorNotFoundError, MatchNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
 import { matchMeetingTime } from "./match-time";
 import type {
@@ -10,6 +11,7 @@ import type {
   PlayerRepository,
   TrainingSessionRepository,
 } from "./repositories";
+import type { TrainingConvocationRepository } from "./training-convocation-repository";
 
 // Adresse à prévenir aussi par e-mail : celle de la fiche joueur (saisie par l'éducateur) et celle
 // du compte EvolyFoot Player lié au joueur, sans doublon.
@@ -75,6 +77,9 @@ export class ConvocationService {
     private readonly matchRepository: MatchRepository,
     private readonly trainingSessionRepository: TrainingSessionRepository,
     private readonly messageRepository: MessageRepository,
+    // Réglage de l'équipe (présent par défaut) ; absent, la séance est convoquée sans réponse posée.
+    private readonly convocationRepository?: Pick<TrainingConvocationRepository, "findSettings">,
+    private readonly now: () => Date = () => new Date(),
   ) {}
 
   async sendForMatch(educatorId: string, matchId: string): Promise<ConvocationResult> {
@@ -117,6 +122,20 @@ export class ConvocationService {
     await Promise.all(
       roster.map((player) => this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text })),
     );
+    // La séance passe de « programmée » à « convoquée » ; en « présent par défaut », chaque joueur
+    // qui n'a pas encore répondu est compté présent jusqu'à ce qu'il signale son absence.
+    const settings = await this.convocationRepository?.findSettings(educatorId);
+    const answered = new Set((session.attendance ?? []).map((entry) => entry.playerId));
+    const attendance =
+      settings?.attendanceDefault === "present"
+        ? [
+            ...(session.attendance ?? []),
+            ...roster
+              .filter((player) => !answered.has(player.id))
+              .map((player) => Object.freeze({ ...createAttendanceEntry(player.id, player.name, "present"), byDefault: true })),
+          ]
+        : undefined;
+    await this.trainingSessionRepository.update(sessionId, educatorId, { convokedAt: this.now(), ...(attendance ? { attendance } : {}) });
     return { sentCount: roster.length, subject: `Convocation : séance « ${session.title} »`, text, recipients: await this.recipientsFor(roster) };
   }
 

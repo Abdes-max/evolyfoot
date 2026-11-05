@@ -3,6 +3,7 @@
 import { diagnosticCriteria, type DiagnosticScores } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ConvocationSettings } from "../convocation-settings";
 
 interface SeasonTabData {
   priorities: string[] | null;
@@ -102,6 +103,10 @@ export function SeasonTab() {
         ) : (
           <p className="profil-note">Aucun jour d’entraînement renseigné.</p>
         )}
+      </div>
+
+      <div className="profil-block">
+        <ConvocationSettings />
       </div>
     </div>
   );
