@@ -2,21 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BallIcon, CalendarIcon, ChartIcon, EyeIcon, HomeIcon, TargetIcon, UsersIcon } from "./icons";
+import { BallIcon, CalendarIcon, ChartIcon, EyeIcon, HomeIcon, MessageIcon, UsersIcon } from "./icons";
 import { SidebarIdentity } from "./sidebar-identity";
 
 // Auparavant définie une seule fois, en dur, dans page.tsx (l'accueil) : chaque autre page
 // (`/plan`, `/bibliotheque`, `/equipe`...) reconstruisait son propre en-tête "retour à l'accueil"
 // sans cette navigation, qui disparaissait donc dès qu'on quittait le tableau de bord. Partagée
 // ici et rendue sur chaque page qui fait partie de la navigation principale.
+// Le plan de progression (/plan) n’est plus dans le menu : ses 4 semaines se retrouvent dans
+// Séances ; on y accède depuis la vue d’ensemble et le diagnostic.
 const navItems: ReadonlyArray<{ href: string; label: string; icon: typeof HomeIcon }> = [
   { href: "/app", label: "Vue d'ensemble", icon: HomeIcon },
-  { href: "/plan", label: "Plan de progression", icon: TargetIcon },
   // La bibliothèque d'exercices n'est pas dans le menu : on y accède depuis la page Séances
   // (elle sert à composer une séance, pas de destination autonome).
   { href: "/seances", label: "Séances", icon: CalendarIcon },
   { href: "/match", label: "Matchs", icon: BallIcon },
   { href: "/observations", label: "Observations", icon: EyeIcon },
+  { href: "/messagerie", label: "Messagerie", icon: MessageIcon },
   { href: "/statistiques", label: "Statistiques", icon: ChartIcon },
   { href: "/equipe", label: "Mon équipe", icon: UsersIcon },
 ];
