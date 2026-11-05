@@ -1,8 +1,10 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import {
   buildDevelopmentPlan,
+  buildPrioritizedSeason,
   currentCycleWeek,
   firstFreeCycleSlot,
+  seasonWeekAt,
   summarizeDiagnostic,
   trainingCycleWeekCount,
   type SavedTrainingSession,
@@ -10,7 +12,7 @@ import {
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { useAuth } from "../lib/auth-context";
+import { useAuth, type MobileMatch } from "../lib/auth-context";
 import { useUnread } from "../lib/push";
 
 function initials(displayName: string): string {
@@ -33,10 +35,12 @@ function meetingLabel(iso: string): string {
 }
 
 export default function HomeScreen() {
-  const { educator, team, diagnosticScores, listSessions, logout, sessionToken } = useAuth();
+  const { educator, team, diagnosticScores, listSessions, listMatches, apiRequest, logout, sessionToken } = useAuth();
   const { unreadCount } = useUnread(sessionToken);
   const [sessions, setSessions] = useState<readonly SavedTrainingSession[]>([]);
   const [now] = useState(() => Date.now());
+  const [matches, setMatches] = useState<readonly MobileMatch[]>([]);
+  const [season, setSeason] = useState<{ priorities: string[]; startDate: string } | null>(null);
   const firstName = educator?.displayName.split(" ")[0] ?? "";
   const today = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
 
@@ -49,10 +53,19 @@ export default function HomeScreen() {
           setSessions(list);
         }
       });
+      listMatches().then((result) => {
+        if (!cancelled && result.ok) setMatches(result.matches);
+      });
+      apiRequest("/api/season-program")
+        .then((response) => (response?.ok ? response.json() : null))
+        .then((body) => {
+          if (!cancelled) setSeason(body?.program ?? null);
+        })
+        .catch(() => undefined);
       return () => {
         cancelled = true;
       };
-    }, [listSessions]),
+    }, [listSessions, listMatches, apiRequest]),
   );
 
   const slotsPerWeek = Math.max(team?.trainingDays.length ?? 1, 1);
@@ -66,6 +79,12 @@ export default function HomeScreen() {
     .sort((a, b) => new Date(a.meetingAt!).getTime() - new Date(b.meetingAt!).getTime())[0];
   const freeSlot = firstFreeCycleSlot(sessions, slotsPerWeek);
   const target = upcoming ?? freeSlot ?? { weekNumber: activeWeek, slot: 0 };
+  // Même logique que l’accueil web : le prochain match à jouer, puis l’avancement de la saison guidée.
+  const nextMatch = [...matches]
+    .filter((match) => match.status === "scheduled" && (!match.date || new Date(match.date).getTime() >= now - 3 * 3600_000))
+    .sort((a, b) => (a.date ? new Date(a.date).getTime() : Infinity) - (b.date ? new Date(b.date).getTime() : Infinity))[0];
+  const seasonWeeks = season ? buildPrioritizedSeason({ priorities: season.priorities as never, sessionsPerWeek: team?.sessionsPerWeek ?? 2 }) : [];
+  const seasonWeek = season ? Math.min(seasonWeekAt(new Date(`${season.startDate}T00:00:00`), new Date(now)), seasonWeeks.length) : 0;
 
   function confirmLogout() {
     Alert.alert("Mon compte", undefined, [
@@ -90,6 +109,73 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
+        <Text style={styles.sectionTitle}>Prochaine séance</Text>
+        <View style={styles.sessionCard}>
+          {upcoming?.meetingAt ? (
+            <>
+              <Text style={styles.eyebrow}>{meetingLabel(upcoming.meetingAt).toUpperCase()}</Text>
+              <Text style={styles.cardTitle}>{upcoming.title}</Text>
+              <Text style={styles.cardBody}>
+                {sessionDuration(upcoming)} min · {upcoming.playerCount} joueurs · {upcoming.theme}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.eyebrow}>À GÉNÉRER</Text>
+              <Text style={styles.cardTitle}>Ta prochaine séance t’attend</Text>
+              <Text style={styles.cardBody}>Une séance prête en un geste, à partir de ton plan.</Text>
+            </>
+          )}
+          <Link href={`/session?week=${target.weekNumber}&slot=${target.slot}`} asChild>
+            <TouchableOpacity accessibilityRole="button" style={styles.button}>
+              <Text style={styles.buttonText}>{upcoming ? "Ouvrir la séance" : "Générer ma séance"}</Text>
+              <Text style={styles.buttonText}>→</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
+
+        <Text style={styles.sectionTitle}>Prochain match</Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={() => (nextMatch ? router.push({ pathname: "/match/[id]", params: { id: nextMatch.id } }) : router.push("/match"))}
+          style={styles.sessionCard}
+        >
+          {nextMatch ? (
+            <>
+              <Text style={styles.eyebrow}>{nextMatch.dateLabel.toUpperCase()}</Text>
+              <View style={styles.versus}>
+                <Text style={styles.versusTeam}>{nextMatch.venue === "home" ? (team?.name ?? "Mon équipe") : nextMatch.opponent}</Text>
+                <Text style={styles.versusMark}>VS</Text>
+                <Text style={styles.versusTeam}>{nextMatch.venue === "home" ? nextMatch.opponent : (team?.name ?? "Mon équipe")}</Text>
+              </View>
+              {nextMatch.location ? <Text style={styles.cardBody}>📍 {nextMatch.location}</Text> : null}
+            </>
+          ) : (
+            <>
+              <Text style={styles.cardTitle}>Aucun match prévu</Text>
+              <Text style={styles.cardBody}>Ajoute ton prochain match pour préparer la composition.</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>Ma saison</Text>
+        <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/saison")} style={styles.sessionCard}>
+          {season ? (
+            <>
+              <Text style={styles.cardTitle}>
+                Semaine {seasonWeek} sur {seasonWeeks.length}
+              </Text>
+              <Text style={styles.cardBody}>Priorités : {season.priorities.join(" · ")}</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.cardTitle}>Lance ta saison guidée</Text>
+              <Text style={styles.cardBody}>Choisis tes priorités : la saison se construit semaine par semaine.</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>Thème du moment</Text>
         {plan && week ? (
           <View style={styles.focusCard}>
             <Text style={styles.focusEyebrow}>
@@ -116,31 +202,6 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </Link>
         )}
-
-        <Text style={styles.sectionTitle}>Prochaine séance</Text>
-        <View style={styles.sessionCard}>
-          {upcoming?.meetingAt ? (
-            <>
-              <Text style={styles.eyebrow}>{meetingLabel(upcoming.meetingAt).toUpperCase()}</Text>
-              <Text style={styles.cardTitle}>{upcoming.title}</Text>
-              <Text style={styles.cardBody}>
-                {sessionDuration(upcoming)} min · {upcoming.playerCount} joueurs · {upcoming.theme}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.eyebrow}>À GÉNÉRER</Text>
-              <Text style={styles.cardTitle}>Ta prochaine séance t’attend</Text>
-              <Text style={styles.cardBody}>Une séance prête en un geste, à partir de ton plan.</Text>
-            </>
-          )}
-          <Link href={`/session?week=${target.weekNumber}&slot=${target.slot}`} asChild>
-            <TouchableOpacity accessibilityRole="button" style={styles.button}>
-              <Text style={styles.buttonText}>{upcoming ? "Ouvrir la séance" : "Générer ma séance"}</Text>
-              <Text style={styles.buttonText}>→</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
 
         <Link href={`/observation?type=training&week=${activeWeek}`} asChild>
           <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
@@ -180,20 +241,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Link>
 
-        <Link href="/seances" asChild>
-          <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
-            <Text style={styles.observationText}>Toutes mes séances</Text>
-            <Text style={styles.observationText}>→</Text>
-          </TouchableOpacity>
-        </Link>
-
-        <Link href="/saison" asChild>
-          <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
-            <Text style={styles.observationText}>Ma saison</Text>
-            <Text style={styles.observationText}>→</Text>
-          </TouchableOpacity>
-        </Link>
-
         <Link href="/statistiques" asChild>
           <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
             <Text style={styles.observationText}>Statistiques</Text>
@@ -201,23 +248,9 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Link>
 
-        <Link href="/match" asChild>
-          <TouchableOpacity accessibilityRole="button" style={styles.observationButton}>
-            <Text style={styles.observationText}>Préparer un match</Text>
-            <Text style={styles.observationText}>→</Text>
-          </TouchableOpacity>
-        </Link>
-
         <Link href="/onboarding" asChild>
           <TouchableOpacity style={styles.setupButton}>
             <Text style={styles.setupText}>{team ? "Modifier mon équipe" : "Configurer mon équipe"}</Text>
-            <Text style={styles.setupText}>→</Text>
-          </TouchableOpacity>
-        </Link>
-
-        <Link href="/equipe" asChild>
-          <TouchableOpacity style={styles.setupButton}>
-            <Text style={styles.setupText}>Gérer l’effectif</Text>
             <Text style={styles.setupText}>→</Text>
           </TouchableOpacity>
         </Link>
@@ -237,6 +270,9 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, color: colors.muted, marginTop: 4 },
   avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
   avatarText: { color: colors.primary, fontSize: 11, fontWeight: "800" },
+  versus: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, marginVertical: spacing.sm },
+  versusTeam: { flex: 1, color: colors.ink, fontSize: 15, fontWeight: "800", textAlign: "center" },
+  versusMark: { color: colors.muted, fontSize: 22, fontWeight: "900", fontStyle: "italic" },
   focusCard: { padding: spacing.lg, borderRadius: radii.lg, backgroundColor: colors.primaryDark, borderWidth: 1, borderColor: colors.line },
   focusEyebrow: { fontSize: 9, letterSpacing: 1, color: colors.muted, fontWeight: "800" },
   focusTitle: { fontSize: 23, lineHeight: 29, fontWeight: "800", color: colors.ink, marginTop: 24 },
