@@ -123,9 +123,6 @@ export default function ProgramSessionScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-          <Text style={styles.back}>← Ma saison</Text>
-        </TouchableOpacity>
         <Text style={styles.step}>SÉANCE TYPE {session.number}</Text>
         <Text style={styles.title}>{title}</Text>
 

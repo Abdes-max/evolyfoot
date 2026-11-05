@@ -80,9 +80,6 @@ export default function SaisonScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-          <Text style={styles.back}>← Retour</Text>
-        </TouchableOpacity>
         <Text style={styles.step}>{calendar.label.toUpperCase()}</Text>
         <Text style={styles.title}>Toute ta saison, mois par mois.</Text>
 

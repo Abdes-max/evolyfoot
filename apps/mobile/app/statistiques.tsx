@@ -1,6 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { buildTeamStatsReport, pluralize, type AttendanceStats, type TeamStats } from "@evolyfoot/domain";
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
@@ -82,9 +82,6 @@ export default function StatistiquesScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-          <Text style={styles.back}>← Retour</Text>
-        </TouchableOpacity>
         <Text style={styles.step}>STATISTIQUES</Text>
         <Text style={styles.title}>Les chiffres de ta saison.</Text>
         {stats === undefined && <Text style={styles.muted}>Chargement…</Text>}

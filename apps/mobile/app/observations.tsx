@@ -26,9 +26,6 @@ export default function ObservationsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
-          <Text style={styles.back}>← Retour</Text>
-        </TouchableOpacity>
         <Text style={styles.step}>OBSERVATIONS</Text>
         <Text style={styles.title}>L’historique de tes observations.</Text>
         {observations === null && <Text style={styles.muted}>Chargement…</Text>}
