@@ -239,7 +239,16 @@ const styles = StyleSheet.create({
   label: { fontSize: 11, fontWeight: "800", color: colors.ink, marginTop: 24, marginBottom: 9 },
   addRow: { flexDirection: "row", gap: 9 },
   // minWidth: 0 -- sans lui, les deux champs ne rétrécissent pas et poussent « Ajouter » hors de l’écran.
-  input: { flex: 1, minWidth: 0, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
+  input: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: colors.surface,
+    borderColor: colors.line,
+    borderWidth: 1,
+    borderRadius: radii.sm,
+    padding: 12,
+    color: colors.ink,
+  },
   addButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: 18, backgroundColor: colors.primary, borderRadius: radii.sm },
   addButtonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
   fieldError: { color: colors.danger, fontSize: 10, marginTop: 6 },
