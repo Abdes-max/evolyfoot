@@ -26,6 +26,7 @@ import { TacticalDiagramView } from "../components/tactical-diagram";
 import { TacticalPlayer } from "../components/tactical-player";
 import { DateTimeField } from "../components/date-time-field";
 import { PlaceInput } from "../components/place-input";
+import { TrainingResponses } from "../components/training-responses";
 import { useAuth } from "../lib/auth-context";
 import { sessionHtml, sharePdf } from "../lib/pdf-export";
 
@@ -76,6 +77,9 @@ export default function SessionScreen() {
   const [location, setLocation] = useState("");
   const [savedLocation, setSavedLocation] = useState("");
   const [savedId, setSavedId] = useState<string | null>(null);
+  // Convocation et réponses des joueurs (voir TrainingResponses).
+  const [convokedAt, setConvokedAt] = useState<string | null>(null);
+  const [attendance, setAttendance] = useState<readonly AttendanceEntry[] | undefined>(undefined);
   const [convoking, setConvoking] = useState(false);
   const [convocationStatus, setConvocationStatus] = useState("");
   // Le diagnostic et l'équipe déjà enregistrés (s'ils existent) sont résolus avant que cet écran
@@ -114,6 +118,9 @@ export default function SessionScreen() {
         setSession(restored);
         setAlreadySaved(true);
         setSavedId(saved.id);
+        const savedState = saved as typeof saved & { convokedAt?: string | null; attendance?: readonly AttendanceEntry[] };
+        setConvokedAt(savedState.convokedAt ?? null);
+        setAttendance(savedState.attendance);
         setLocation(saved.location ?? "");
         setSavedLocation(saved.location ?? "");
         if (saved.meetingAt) {
@@ -224,6 +231,11 @@ export default function SessionScreen() {
       return;
     }
     setConvocationStatus(convocationFeedback(body.sentCount, body.emailCount));
+    // Relit la séance : date d'envoi et présences par défaut posées par le serveur.
+    const refreshed = await apiRequest(`/api/sessions/${encodeURIComponent(savedId)}`);
+    const refreshedBody = refreshed?.ok ? await refreshed.json().catch(() => null) : null;
+    setConvokedAt(refreshedBody?.session?.convokedAt ?? new Date().toISOString());
+    setAttendance(refreshedBody?.session?.attendance);
   }
 
   function confirmConvocation() {
@@ -420,13 +432,14 @@ export default function SessionScreen() {
           <View style={styles.card}>
             <Text style={styles.summaryLabel}>CONVOCATION</Text>
             <Text style={styles.detailText}>{[meetingLabel(meetingAt), location.trim() || null].filter(Boolean).join(" — ")}</Text>
+            <TrainingResponses attendance={attendance} convokedAt={convokedAt} roster={roster} />
             <TouchableOpacity
               accessibilityRole="button"
               disabled={convoking}
               onPress={confirmConvocation}
               style={[styles.validate, convoking && styles.validateDisabled]}
             >
-              <Text style={styles.validateText}>{convoking ? "Envoi…" : "Envoyer la convocation"}</Text>
+              <Text style={styles.validateText}>{convoking ? "Envoi…" : convokedAt ? "Renvoyer la convocation" : "Envoyer la convocation maintenant"}</Text>
             </TouchableOpacity>
             <Text style={styles.detailText}>Envoyée à tout l’effectif dans la messagerie, avec le rendez-vous et le lieu.</Text>
             {convocationStatus ? (
