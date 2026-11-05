@@ -8,21 +8,19 @@ export interface SeasonEventInput {
   date: string | null;
 }
 
-export interface SeasonEvent extends SeasonEventInput {
-  date: string;
-}
+export type SeasonEvent<Input extends SeasonEventInput = SeasonEventInput> = Input & { date: string };
 
-export interface SeasonMonth {
+export interface SeasonMonth<Input extends SeasonEventInput = SeasonEventInput> {
   key: string;
   year: number;
   month: number;
   isCurrent: boolean;
-  events: SeasonEvent[];
+  events: SeasonEvent<Input>[];
 }
 
-export interface SeasonCalendar {
+export interface SeasonCalendar<Input extends SeasonEventInput = SeasonEventInput> {
   label: string;
-  months: SeasonMonth[];
+  months: SeasonMonth<Input>[];
   undatedCount: number;
 }
 
@@ -44,9 +42,9 @@ export function seasonLabel(startYear: number): string {
   return `${startYear}-${startYear + 1}`;
 }
 
-export function buildSeasonCalendar(events: readonly SeasonEventInput[], now: Date): SeasonCalendar {
+export function buildSeasonCalendar<Input extends SeasonEventInput>(events: readonly Input[], now: Date): SeasonCalendar<Input> {
   const startYear = seasonStartYear(now);
-  const months: SeasonMonth[] = Array.from({ length: seasonMonthCount }, (_, index) => {
+  const months: SeasonMonth<Input>[] = Array.from({ length: seasonMonthCount }, (_, index) => {
     const start = new Date(startYear, seasonFirstMonth + index, 1);
     const year = start.getFullYear();
     const month = start.getMonth();
