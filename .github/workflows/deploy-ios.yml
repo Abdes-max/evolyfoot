@@ -1,0 +1,254 @@
+name: Deploy iOS to TestFlight
+
+# Construit EvolyFoot Coach et EvolyFoot Player pour iOS sur un runner macOS et envoie chaque build
+# sur TestFlight (jamais l'App Store public), à chaque merge dans master qui touche le mobile ou
+# ses dépendances partagées. Même méthode qu'arena-pulse (deploy-ios.yml) : signature manuelle
+# avec le certificat de distribution du compte Apple, puis `xcodebuild -exportArchive` en
+# `destination: upload` authentifié par une clé API App Store Connect — ni EAS, ni Fastlane.
+#
+# Le dossier ios/ n'est jamais commité : `expo prebuild` le régénère à chaque run depuis app.json.
+#
+# Inerte tant que les secrets ne sont pas configurés : le job s'arrête VERT avec un avertissement.
+# Checklist unique (voir docs/delivery.md) :
+#   1. developer.apple.com → Identifiers : App IDs com.evolyfoot.coach et com.evolyfoot.player,
+#      capacité Push Notifications cochée.
+#   2. Profiles : un profil « App Store Connect » par App ID, avec le certificat de distribution
+#      existant du compte (le même que les autres applis).
+#   3. App Store Connect → Apps → + : créer EvolyFoot Coach et EvolyFoot Player (mêmes bundle IDs).
+# Secrets du dépôt (Settings → Secrets and variables → Actions) ; les 7 premiers reprennent les
+# valeurs d'arena-pulse, même compte Apple :
+#   IOS_DIST_CERTIFICATE_P12_BASE64        -- `base64 -i Distribution.p12`
+#   IOS_DIST_CERTIFICATE_PASSWORD          -- mot de passe d'export du .p12
+#   IOS_KEYCHAIN_PASSWORD                  -- quelconque, trousseau jetable de ce run
+#   APPLE_TEAM_ID                          -- Team ID du compte Apple Developer
+#   APP_STORE_CONNECT_KEY_ID               -- ID de la clé API App Store Connect
+#   APP_STORE_CONNECT_ISSUER_ID            -- Issuer ID de la clé API
+#   APP_STORE_CONNECT_API_KEY_BASE64       -- `base64 -i AuthKey_<KEY_ID>.p8`
+#   IOS_COACH_PROVISIONING_PROFILE_BASE64  -- `base64 -i EvolyFoot_Coach_AppStore.mobileprovision`
+#   IOS_PLAYER_PROVISIONING_PROFILE_BASE64 -- `base64 -i EvolyFoot_Player_AppStore.mobileprovision`
+on:
+  push:
+    branches: [master]
+    paths:
+      - "apps/mobile/**"
+      - "apps/mobile-player/**"
+      - "packages/domain/**"
+      - "packages/design-tokens/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-ios.yml"
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: >-
+          CFBundleVersion de cet envoi -- strictement supérieur au dernier build TestFlight de la
+          version en cours. Par défaut, le numéro de run GitHub Actions.
+        required: false
+
+concurrency:
+  group: deploy-ios
+  cancel-in-progress: false
+
+jobs:
+  ios:
+    name: Archiver et envoyer sur TestFlight (${{ matrix.app }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: mobile
+            bundle_id: com.evolyfoot.coach
+            profile_secret: IOS_COACH_PROVISIONING_PROFILE_BASE64
+          - app: mobile-player
+            bundle_id: com.evolyfoot.player
+            profile_secret: IOS_PLAYER_PROVISIONING_PROFILE_BASE64
+    env:
+      EXPO_PUBLIC_API_URL: https://evolyfoot.com
+      BUILD_NUMBER: ${{ inputs.build_number || github.run_number }}
+    steps:
+      - name: Vérifier la présence des secrets Apple
+        id: secrets-check
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_CERTIFICATE_P12_BASE64 }}
+          PROFILE_BASE64: ${{ secrets[matrix.profile_secret] }}
+          API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$CERTIFICATE_BASE64" ] || [ -z "$PROFILE_BASE64" ] || [ -z "$API_KEY_BASE64" ] || [ -z "$APPLE_TEAM_ID" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Envoi TestFlight ignoré pour ${{ matrix.app }} : secrets Apple manquants. Voir l'en-tête de .github/workflows/deploy-ios.yml."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Récupérer le code
+        if: steps.secrets-check.outputs.ready == 'true'
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Installer Node.js
+        if: steps.secrets-check.outputs.ready == 'true'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Activer pnpm
+        if: steps.secrets-check.outputs.ready == 'true'
+        run: corepack enable && corepack prepare pnpm@10.15.1 --activate
+
+      - name: Installer les dépendances
+        if: steps.secrets-check.outputs.ready == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Générer le projet iOS natif
+        if: steps.secrets-check.outputs.ready == 'true'
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform ios --clean --no-install
+          cd ios && pod install
+          WORKSPACE=$(ls -d *.xcworkspace | head -1)
+          SCHEME="${WORKSPACE%.xcworkspace}"
+          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_ENV"
+          echo "SCHEME=$SCHEME" >> "$GITHUB_ENV"
+          echo "INFO_PLIST=$PWD/$SCHEME/Info.plist" >> "$GITHUB_ENV"
+
+      - name: Importer le certificat et le profil de provisioning
+        if: steps.secrets-check.outputs.ready == 'true'
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_CERTIFICATE_P12_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets[matrix.profile_secret] }}
+          KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERT_PATH="$RUNNER_TEMP/dist_cert.p12"
+          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+          KEYCHAIN_PATH="$RUNNER_TEMP/ci-signing.keychain-db"
+          KEYCHAIN_PASSWORD="${KEYCHAIN_PASSWORD:-$(uuidgen)}"
+
+          echo -n "$CERTIFICATE_BASE64" | base64 --decode -o "$CERT_PATH"
+          echo -n "$PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
+
+          # Trousseau propre à ce run, jamais celui du runner ; la VM est détruite en fin de job.
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/"//g')
+          rm -f "$CERT_PATH"
+
+          mkdir -p ~/Library/MobileDevice/"Provisioning Profiles"
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/"Provisioning Profiles"/
+
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+          echo "PROFILE_NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)" >> "$GITHUB_ENV"
+
+      # Signature manuelle sur la seule cible de l'appli : passée en ligne de commande à
+      # xcodebuild, elle s'appliquerait aussi aux Pods, qui refusent un profil de provisioning.
+      - name: Configurer la signature, la version et le numéro de build
+        if: steps.secrets-check.outputs.ready == 'true'
+        working-directory: apps/${{ matrix.app }}/ios
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          export MARKETING_VERSION=$(node -p "require('../app.json').expo.version")
+          ruby -rxcodeproj -e '
+            project = Xcodeproj::Project.open(Dir["*.xcodeproj"].first)
+            app = project.targets.find { |target| target.product_type == "com.apple.product-type.application" }
+            app.build_configurations.each do |config|
+              settings = config.build_settings
+              settings["CODE_SIGN_STYLE"] = "Manual"
+              settings["CODE_SIGN_IDENTITY"] = "Apple Distribution"
+              settings["DEVELOPMENT_TEAM"] = ENV["APPLE_TEAM_ID"]
+              settings["PROVISIONING_PROFILE_SPECIFIER"] = ENV["PROFILE_NAME"]
+              settings["MARKETING_VERSION"] = ENV["MARKETING_VERSION"]
+              settings["CURRENT_PROJECT_VERSION"] = ENV["BUILD_NUMBER"]
+            end
+            project.save
+          '
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $MARKETING_VERSION" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$INFO_PLIST"
+          # Conformité export (HTTPS standard) : déjà déclarée dans app.json, réaffirmée ici car
+          # sans elle chaque build reste « Missing Compliance », invisible des testeurs.
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$INFO_PLIST" ||
+            /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$INFO_PLIST"
+
+      - name: Archiver
+        if: steps.secrets-check.outputs.ready == 'true'
+        working-directory: apps/${{ matrix.app }}/ios
+        run: |
+          set -euo pipefail
+          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -destination 'generic/platform=iOS' \
+            archive > "$RUNNER_TEMP/archive.log" 2>&1 || { grep -E "error:" "$RUNNER_TEMP/archive.log" | head -50; tail -100 "$RUNNER_TEMP/archive.log"; exit 1; }
+          tail -5 "$RUNNER_TEMP/archive.log"
+
+      - name: Écrire ExportOptions.plist
+        if: steps.secrets-check.outputs.ready == 'true'
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>$APPLE_TEAM_ID</string>
+            <key>destination</key>
+            <string>upload</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${{ matrix.bundle_id }}</key>
+              <string>$PROFILE_NAME</string>
+            </dict>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Exporter et envoyer sur TestFlight
+        if: steps.secrets-check.outputs.ready == 'true'
+        env:
+          API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -uo pipefail
+          mkdir -p ~/private_keys
+          echo -n "$API_KEY_BASE64" | base64 --decode -o ~/private_keys/AuthKey_"$API_KEY_ID".p8
+
+          set +e
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -authenticationKeyPath ~/private_keys/AuthKey_"$API_KEY_ID".p8 \
+            -authenticationKeyID "$API_KEY_ID" \
+            -authenticationKeyIssuerID "$API_ISSUER_ID" 2>&1 | tee "$RUNNER_TEMP/export.log"
+          status="${PIPESTATUS[0]}"
+          set -e
+
+          if [ "$status" -ne 0 ]; then
+            # Envoi déjà reçu par Apple lors d'un run interrompu puis relancé : le build est déjà
+            # sur TestFlight, ce n'est pas un échec.
+            if grep -q "Redundant Binary Upload\|code = 90189" "$RUNNER_TEMP/export.log"; then
+              echo "::warning::Ce numéro de build est déjà sur TestFlight -- rien à renvoyer."
+              exit 0
+            fi
+            exit "$status"
+          fi
+
+      - name: Nettoyer le trousseau et la clé API
+        if: always() && steps.secrets-check.outputs.ready == 'true'
+        run: |
+          security delete-keychain "$KEYCHAIN_PATH" || true
+          rm -rf ~/private_keys

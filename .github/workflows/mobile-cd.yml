@@ -1,11 +1,11 @@
 name: Mobile CD
 
-# Construit et soumet l'app mobile (TestFlight + piste interne Google Play) via EAS à chaque
+# Construit et soumet les apps mobiles sur la piste interne Google Play via EAS à chaque
 # merge dans master qui touche le mobile ou ses dépendances partagées. Inerte tant que les
 # secrets ci-dessous ne sont pas configurés : le job s'arrête proprement à la première étape,
 # VERT, avec un avertissement explicite plutôt que d'échouer en rouge à chaque merge -- voir
-# docs/delivery.md pour la checklist complète (comptes Apple Developer / Google Play / Expo,
-# icônes/splash).
+# docs/delivery.md pour la checklist complète (comptes Google Play / Expo, icônes/splash).
+# iOS passe par deploy-ios.yml (signature Xcode puis TestFlight, sans EAS).
 #
 # Prérequis avant que ce workflow puisse réussir, à faire une seule fois, en local et de façon
 # interactive (EAS ne permet pas de générer des identifiants Apple/Google en mode non-interactif
@@ -98,12 +98,12 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Builder et soumettre (iOS + Android, profil production)
+      - name: Builder et soumettre (Android, profil production)
         if: steps.secrets-check.outputs.ready == 'true'
         working-directory: apps/${{ matrix.app }}
         # --auto-submit enchaîne la soumission TestFlight/piste interne Google Play dès que le
         # build correspondant réussit, sans étape séparée à orchestrer ni polling à écrire ici.
-        run: eas build --platform all --profile production --non-interactive --auto-submit
+        run: eas build --platform android --profile production --non-interactive --auto-submit
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 

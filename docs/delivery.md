@@ -13,7 +13,7 @@
 | Cible     | Source                          | Outil prévu                               |
 | --------- | ------------------------------- | ----------------------------------------- |
 | Web / API | `master`                        | image Docker vers VPS                     |
-| iOS       | tag de version issu de `master` | EAS Build puis TestFlight / App Store     |
+| iOS       | `master`                        | Xcode sur runner macOS puis TestFlight    |
 | Android   | tag de version issu de `master` | EAS Build puis piste interne / Play Store |
 
 ## Stratégie progressive
@@ -161,9 +161,31 @@ Les étapes ci-dessous sont à faire une fois pour chaque dossier ; `eas.json` y
 5. Quand prêt pour les stores : `eas build --platform ios --profile production` et `eas build --platform android --profile production`, en ayant au préalable créé les comptes Apple Developer Program et Google Play Console (payants, à la charge du porteur du projet).
 6. `eas submit` (configuré via le profil `submit.production` de `eas.json`) envoie le build vers TestFlight (iOS) ou la piste interne Google Play (Android) — les identifiants de soumission (App Store Connect API key, service account Google Play) sont à fournir au moment de la première soumission, jamais committés.
 
-### Déploiement continu mobile — terrain prêt côté code, inerte tant que les comptes manquent
+### iOS : TestFlight à chaque merge, sans EAS
 
-`.github/workflows/mobile-cd.yml` reproduit ce même parcours (`eas build --platform all --profile production --non-interactive --auto-submit`) automatiquement à chaque `push` dans `master` touchant le mobile ou ses dépendances partagées (`packages/domain`, `packages/design-tokens`). Il échoue proprement dès sa première étape tant que les comptes et secrets ci-dessous ne sont pas en place — aucun risque de déclenchement accidentel avant.
+`.github/workflows/deploy-ios.yml` reprend la méthode d'arena-pulse, sur le même compte Apple Developer. Pour chaque app, il :
+
+- régénère le projet natif (`expo prebuild`, `ios/` jamais commité) ;
+- signe l'archive avec le certificat de distribution du compte ;
+- l'envoie sur TestFlight avec la clé API App Store Connect.
+
+Il reste vert et ne fait rien tant que ses secrets manquent.
+
+À faire une fois :
+
+1. **developer.apple.com, Identifiers** : créer les App IDs `com.evolyfoot.coach` et `com.evolyfoot.player`, avec la capacité Push Notifications.
+2. **Profiles** : créer un profil « App Store Connect » par App ID, avec le certificat de distribution déjà utilisé par les autres applis du compte.
+3. **App Store Connect, Apps, +** : créer EvolyFoot Coach et EvolyFoot Player sur ces bundle IDs. Créer aussi un groupe de test interne dans TestFlight.
+4. **Secrets du dépôt GitHub** : leur liste est en en-tête du workflow.
+   - Le certificat `.p12`, la clé API et le Team ID reprennent les valeurs d'arena-pulse.
+   - Seuls les deux profils de provisioning sont nouveaux.
+5. **Lancer le workflow** : Actions → Deploy iOS to TestFlight → Run workflow, ou merger un changement mobile.
+
+`app.json` déclare `usesNonExemptEncryption: false`, ce qui évite le blocage « Missing Compliance » sur chaque build. `expo-notifications` y est en mode `production`, ce qui correspond à l'entitlement push d'un profil App Store.
+
+### Déploiement continu Android — terrain prêt côté code, inerte tant que les comptes manquent
+
+`.github/workflows/mobile-cd.yml` construit et soumet l'app Android (`eas build --platform android --profile production --non-interactive --auto-submit`) automatiquement à chaque `push` dans `master` touchant le mobile ou ses dépendances partagées (`packages/domain`, `packages/design-tokens`). Il échoue proprement dès sa première étape tant que les comptes et secrets ci-dessous ne sont pas en place — aucun risque de déclenchement accidentel avant.
 
 Reste à faire, une seule fois, en local et de façon interactive (EAS ne permet pas de générer des identifiants Apple/Google en mode non-interactif pour un premier build) :
 

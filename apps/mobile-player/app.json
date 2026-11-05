@@ -19,7 +19,8 @@
       [
         "expo-notifications",
         {
-          "color": "#2fd4ff"
+          "color": "#2fd4ff",
+          "mode": "production"
         }
       ]
     ],
@@ -28,7 +29,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.evolyfoot.player"
+      "bundleIdentifier": "com.evolyfoot.player",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.evolyfoot.player",
