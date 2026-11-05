@@ -1,4 +1,5 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
+import { playerPositionCodes, playerPositions } from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -51,13 +52,30 @@ export default function MessagesListScreen() {
               onPress={() => router.push({ pathname: "/messages/[id]", params: { id: player.id, name: player.name } })}
               style={styles.row}
             >
-              <Text style={styles.name}>{player.name}</Text>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {player.name
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((part) => part[0]!.toUpperCase())
+                    .join("")}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name}>{player.name}</Text>
+                <Text style={styles.meta}>
+                  {player.position && (playerPositions as readonly string[]).includes(player.position)
+                    ? `${player.position} (${playerPositionCodes[player.position as keyof typeof playerPositionCodes]})`
+                    : "Joueur ou tuteur"}
+                </Text>
+              </View>
               {unread.has(player.id) ? (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>Nouveau</Text>
                 </View>
               ) : (
-                <Text style={styles.chevron}>›</Text>
+                <Text style={styles.number}>{player.jerseyNumber || "›"}</Text>
               )}
             </TouchableOpacity>
           ))
@@ -76,14 +94,27 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: spacing.md,
+    gap: 12,
+    padding: 12,
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.primaryDark,
     backgroundColor: colors.surface,
   },
   name: { color: colors.ink, fontSize: 15, fontWeight: "800" },
+  meta: { color: colors.muted, fontSize: 12, marginTop: 2 },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.paper,
+  },
+  avatarText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
+  number: { color: "rgba(255,255,255,0.28)", fontSize: 22, fontWeight: "900", fontStyle: "italic" },
   chevron: { color: colors.muted, fontSize: 20, fontWeight: "800" },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.pill, backgroundColor: colors.primary },
   badgeText: { color: colors.primaryInk, fontSize: 10.5, fontWeight: "900" },

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MatchAnalysis } from "../../components/match-analysis";
+import { PlayerPicker } from "../../components/player-picker";
 import { PlaceInput } from "../../components/place-input";
 import { useAuth, type MobileMatch } from "../../lib/auth-context";
 
@@ -42,7 +43,17 @@ function toMatchPlan(match: MobileMatch): MatchPlan {
 // esprit que les schémas tactiques web (TacticalDiagramView). Chaque poste est une vraie
 // TouchableOpacity : toucher un poste directement sur le terrain ouvre le même sélecteur que la
 // liste juste en dessous.
-function MatchPitch({ slots, match, onSlotTap }: { slots: readonly MatchLineupSlot[]; match: MobileMatch; onSlotTap?: (slotId: string) => void }) {
+function MatchPitch({
+  slots,
+  match,
+  numberOf,
+  onSlotTap,
+}: {
+  slots: readonly MatchLineupSlot[];
+  match: MobileMatch;
+  numberOf: (playerId: string) => string | null;
+  onSlotTap?: (slotId: string) => void;
+}) {
   return (
     <View style={pitchStyles.pitch}>
       {slots.map((slot) => {
@@ -62,7 +73,7 @@ function MatchPitch({ slots, match, onSlotTap }: { slots: readonly MatchLineupSl
             style={[pitchStyles.token, assignment && pitchStyles.tokenFilled, { left: `${(slot.x / 300) * 100}%`, top: `${(slot.y / 460) * 100}%` }]}
           >
             <Text style={[pitchStyles.tokenText, assignment && pitchStyles.tokenTextFilled]}>
-              {assignment ? initials(assignment.playerName) : slot.roleLabel.slice(0, 1)}
+              {assignment ? (numberOf(assignment.playerId) ?? initials(assignment.playerName)) : onSlotTap ? "+" : slot.roleLabel.slice(0, 1)}
             </Text>
             {isCaptain && <Text style={pitchStyles.captainBadge}>C</Text>}
           </TouchableOpacity>
@@ -213,7 +224,6 @@ export default function MatchDetailScreen() {
   const formations = listFormations(gameFormat);
   const slots = formationSlots(gameFormat, match.formationId);
   const readOnly = match.status === "played";
-  const assignedPlayerIds = new Set(match.lineup.map((assignment) => assignment.playerId));
   const canFinalize = canFinalizeMatchPlan(toMatchPlan(match));
 
   return (
@@ -259,6 +269,7 @@ export default function MatchDetailScreen() {
         <View style={styles.pitchWrap}>
           <MatchPitch
             match={match}
+            numberOf={(playerId) => roster.find((player) => player.id === playerId)?.jerseyNumber || null}
             onSlotTap={
               readOnly
                 ? undefined
@@ -326,44 +337,26 @@ export default function MatchDetailScreen() {
         )}
       </ScrollView>
 
-      <Modal animationType="slide" onRequestClose={() => setPickerSlotId(null)} transparent visible={pickerSlotId !== null}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Choisir un joueur</Text>
-            <ScrollView>
-              <TouchableOpacity
-                onPress={() => {
-                  if (pickerSlotId) assignSlot(pickerSlotId, null);
-                  setPickerSlotId(null);
-                }}
-                style={styles.modalOption}
-              >
-                <Text style={styles.modalOptionText}>— Aucun joueur —</Text>
-              </TouchableOpacity>
-              {roster
-                .filter((player) => {
-                  const currentAssignment = match.lineup.find((a) => a.slotId === pickerSlotId);
-                  return player.id === currentAssignment?.playerId || !assignedPlayerIds.has(player.id);
-                })
-                .map((player) => (
-                  <TouchableOpacity
-                    key={player.id}
-                    onPress={() => {
-                      if (pickerSlotId) assignSlot(pickerSlotId, player.id);
-                      setPickerSlotId(null);
-                    }}
-                    style={styles.modalOption}
-                  >
-                    <Text style={styles.modalOptionText}>{player.name}</Text>
-                  </TouchableOpacity>
-                ))}
-            </ScrollView>
-            <TouchableOpacity onPress={() => setPickerSlotId(null)} style={styles.modalClose}>
-              <Text style={styles.modalCloseText}>Fermer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <PlayerPicker
+        currentPlayerId={match.lineup.find((assignment) => assignment.slotId === pickerSlotId)?.playerId ?? null}
+        onClear={() => {
+          if (pickerSlotId) assignSlot(pickerSlotId, null);
+          setPickerSlotId(null);
+        }}
+        onClose={() => setPickerSlotId(null)}
+        onPick={(playerId) => {
+          if (pickerSlotId) assignSlot(pickerSlotId, playerId);
+          setPickerSlotId(null);
+        }}
+        players={roster}
+        statusOf={(playerId) => {
+          const elsewhere = match.lineup.find((assignment) => assignment.playerId === playerId && assignment.slotId !== pickerSlotId);
+          if (elsewhere) return "déjà titulaire";
+          return match.substitutePlayerIds.includes(playerId) ? "remplaçant" : null;
+        }}
+        title={`Choisir un joueur${slots.find((slot) => slot.id === pickerSlotId) ? ` · ${slots.find((slot) => slot.id === pickerSlotId)!.roleLabel}` : ""}`}
+        visible={pickerSlotId !== null}
+      />
 
       <Modal animationType="slide" onRequestClose={() => setPickerCaptain(false)} transparent visible={pickerCaptain}>
         <View style={styles.modalOverlay}>
