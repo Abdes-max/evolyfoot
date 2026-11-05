@@ -62,6 +62,9 @@ export interface PlayerDashboardTrainingSession {
   location: string | null;
   description: string | null;
   myStatus: AttendanceStatus | null;
+  myStatusByDefault: boolean;
+  // Convocation envoyée : avant, la séance est seulement « programmée », sans réponse possible.
+  convoked: boolean;
 }
 
 // Plateau ou tournoi -- fusionnés sous "compétition", seule distinction utile pour le joueur.
@@ -213,6 +216,9 @@ export class PlayerDashboardService {
           location: session.location,
           description: session.description,
           myStatus: myEntry ? attendanceStatusOf(myEntry) : null,
+          // Présence posée par défaut à la convocation, pas encore confirmée par le joueur.
+          myStatusByDefault: myEntry?.byDefault === true,
+          convoked: session.convokedAt !== null,
         };
       }),
       competitions: [

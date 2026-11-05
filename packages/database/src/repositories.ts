@@ -289,6 +289,8 @@ export interface PersistedTrainingSession {
   // d'un tableau vide (présence saisie mais personne de présent) -- voir summarizeAttendance
   // côté domaine et /statistiques, qui doivent pouvoir faire la différence.
   attendance?: readonly AttendanceEntry[];
+  // Convocation envoyée ; `null` (ou absent) : séance seulement « programmée », sans réponse possible.
+  convokedAt?: Date | null;
   createdAt: Date;
 }
 
@@ -332,6 +334,7 @@ export interface TrainingSessionRepository {
       location?: string | null;
       description?: string | null;
       attendance?: readonly AttendanceEntry[];
+      convokedAt?: Date;
     },
   ): Promise<PersistedTrainingSession>;
 }

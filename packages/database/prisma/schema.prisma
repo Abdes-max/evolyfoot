@@ -219,6 +219,13 @@ model Diagnostic {
 // qu'un seul enregistrement par éducateur, une séance en crée un nouveau à chaque validation).
 // `blocks` ne stocke que de quoi retrouver chaque activité dans le catalogue du domaine
 // (`findTrainingActivity`) -- pas l'activité complète, déjà dupliquée dans ce catalogue.
+// Réponse d'un joueur convoqué à un entraînement tant qu'il ne s'est pas manifesté : présent par
+// défaut (il signale seulement ses absences) ou à demander.
+enum AttendanceDefault {
+  present
+  ask
+}
+
 model TrainingSessionRecord {
   id                 String           @id @default(uuid()) @db.Uuid
   educatorId         String           @map("educator_id") @db.Uuid
@@ -243,6 +250,9 @@ model TrainingSessionRecord {
   // MatchRecord.meetingTime : contrairement au match, une séance n'a par ailleurs aucune autre
   // date (weekNumber/slot ne placent la séance que dans le cycle, jamais sur un jour précis).
   meetingAt          DateTime?        @map("meeting_at")
+  // Convocation envoyée (à la main ou automatiquement) : avant, la séance est seulement
+  // « programmée » côté joueur, sans réponse possible.
+  convokedAt         DateTime?        @map("convoked_at")
   location           String?
   description        String?
   // Présence à cette séance (id + nom de joueur dupliqués, voir AttendanceEntry côté domaine et
@@ -296,20 +306,25 @@ model ObservationRecord {
 }
 
 model Team {
-  id              String        @id @default(uuid()) @db.Uuid
-  educatorId      String        @unique @map("educator_id") @db.Uuid
-  educator        Educator      @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  name            String
-  ageGroup        AgeGroup      @map("age_group")
+  id                  String             @id @default(uuid()) @db.Uuid
+  educatorId          String             @unique @map("educator_id") @db.Uuid
+  educator            Educator           @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  name                String
+  ageGroup            AgeGroup           @map("age_group")
   // Format de jeu (foot à 4 jusqu'à foot à 11) : un entier borné plutôt qu'un enum Postgres,
   // comme `playerCount`/`sessionsPerWeek` -- ce n'est pas une énumération de valeurs nommées,
   // juste une plage validée côté domaine (voir `gameFormats` dans @evolyfoot/domain).
-  gameFormat      Int           @default(8) @map("game_format")
-  playerCount     Int           @map("player_count")
-  sessionsPerWeek Int           @map("sessions_per_week")
-  trainingDays    TrainingDay[] @map("training_days")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  gameFormat          Int                @default(8) @map("game_format")
+  playerCount         Int                @map("player_count")
+  sessionsPerWeek     Int                @map("sessions_per_week")
+  trainingDays        TrainingDay[]      @map("training_days")
+  // Convocations aux entraînements : envoi automatique N jours avant le rendez-vous (0 = dès la
+  // création de la séance, null = l'éducateur les envoie lui-même) et réponse par défaut.
+  // `attendanceDefault` null = pas encore choisi : l'appli demande à l'éducateur.
+  convocationLeadDays Int?               @map("convocation_lead_days")
+  attendanceDefault   AttendanceDefault? @map("attendance_default")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
 
   @@map("teams")
 }

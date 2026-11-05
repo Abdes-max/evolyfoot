@@ -49,6 +49,9 @@ export {
 } from "./prisma-repositories";
 export { AuthService } from "./auth-service";
 export { ConvocationService } from "./convocation-service";
+export { PrismaTrainingConvocationRepository } from "./training-convocation-repository";
+export type { AwaitingConvocation, TrainingConvocationRepository } from "./training-convocation-repository";
+export { TrainingConvocationService } from "./training-convocation-service";
 export { DiagnosticService } from "./diagnostic-service";
 export { SeasonProgramService } from "./season-program-service";
 export { NotificationService, NotifyingMessageRepository, type PushSender } from "./notification-service";

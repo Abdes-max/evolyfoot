@@ -58,6 +58,9 @@ export class PlayerRsvpService {
     if (!session) {
       throw new EducatorNotFoundError();
     }
+    if (session.convokedAt === null) {
+      throw new ValidationError("La convocation de cette séance n’est pas encore envoyée.");
+    }
 
     const attendance = (session.attendance ?? []).filter((entry) => entry.playerId !== playerId);
     attendance.push(createAttendanceEntry(playerId, owned.name, status, status === "present" ? null : comment));

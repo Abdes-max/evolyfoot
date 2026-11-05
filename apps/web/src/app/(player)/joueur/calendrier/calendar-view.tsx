@@ -13,7 +13,13 @@ const venueLabel = { home: "Domicile", away: "Extérieur" } as const;
 // Réponse à une convocation, résumée en un badge de couleur : orange tant que rien n'est
 // renseigné, vert pour "Présent", rouge pour toute autre réponse (Absent, mais aussi Malade/
 // Blessé/Raison personnelle/En retard) -- avec le motif précis affiché en dessous, comme demandé.
-function ResponseBadge({ status }: { status: AttendanceStatus | null }) {
+function ResponseBadge({ status, scheduled = false, byDefault = false }: { status: AttendanceStatus | null; scheduled?: boolean; byDefault?: boolean }) {
+  if (scheduled) {
+    return <span className="response-badge response-badge--scheduled">Programmée</span>;
+  }
+  if (status === "present" && byDefault) {
+    return <span className="response-badge response-badge--present">Présent par défaut</span>;
+  }
   if (status === null) {
     return <span className="response-badge response-badge--pending">En attente de réponse</span>;
   }
@@ -43,6 +49,8 @@ type CalendarItem =
       meetingTime: string | null;
       location: string | null;
       myStatus: AttendanceStatus | null;
+      scheduled: boolean;
+      byDefault: boolean;
     }
   | {
       kind: "match";
@@ -74,6 +82,8 @@ export function PlayerCalendarView() {
           meetingTime: session.meetingTime,
           location: session.location,
           myStatus: session.myStatus,
+          scheduled: session.convoked === false,
+          byDefault: session.myStatusByDefault === true,
         })),
         // Ne pas être convoqué à un match à venir n'est pas une "convocation" -- ces matchs n'ont
         // rien à faire dans cette liste (voir demande utilisateur).
@@ -162,7 +172,11 @@ export function PlayerCalendarView() {
                                   {item.meetingTime ? `${item.dateLabel} · ${item.meetingTime}` : item.dateLabel}
                                   {item.kind === "match" ? ` · ${venueLabel[item.venue]}` : ""}
                                 </span>
-                                <ResponseBadge status={item.myStatus} />
+                                <ResponseBadge
+                                  byDefault={item.kind === "seance" && item.byDefault}
+                                  scheduled={item.kind === "seance" && item.scheduled}
+                                  status={item.myStatus}
+                                />
                               </Link>
                               {item.location && (
                                 <div className="player-space-convocation-place">

@@ -31,6 +31,7 @@ const persisted: PersistedTrainingSession = {
   location: null,
   description: null,
   cycleNumber: 1,
+  convokedAt: null,
   createdAt: "2026-08-29T12:00:00.000Z",
 };
 
@@ -155,7 +156,17 @@ describe("createSaveTrainingSessionHandler", () => {
   it("saves and returns the session on success", async () => {
     const handler = createSaveTrainingSessionHandler(
       authenticated,
-      { save: async (_id, input) => ({ ...input, id: "session-1", location: null, description: null, cycleNumber: 1, createdAt: "2026-08-29T12:00:00.000Z" }) },
+      {
+        save: async (_id, input) => ({
+          ...input,
+          id: "session-1",
+          location: null,
+          description: null,
+          cycleNumber: 1,
+          convokedAt: null,
+          createdAt: "2026-08-29T12:00:00.000Z",
+        }),
+      },
       () => undefined,
     );
 

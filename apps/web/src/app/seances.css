@@ -311,3 +311,198 @@
     padding-bottom: 90px;
   }
 }
+
+/* Réponses aux convocations d'entraînement (training-responses.tsx), à la manière de Spond. */
+.training-responses {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.training-responses.scheduled {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+.training-responses.scheduled p,
+.training-responses-sent {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.training-responses-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.training-responses-counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.training-responses-count {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  padding: 10px 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.training-responses-count strong {
+  font-size: 22px;
+  font-weight: 900;
+}
+.training-responses-count span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.training-responses-count.present strong {
+  color: var(--good, #3ddc84);
+}
+.training-responses-count.absent strong {
+  color: #ff6b6b;
+}
+.training-responses-count.pending strong {
+  color: var(--warn, #ffb073);
+}
+.training-responses-count.is-active {
+  border-color: var(--accent);
+}
+.training-responses-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.training-responses-list li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  column-gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.training-responses-list li strong {
+  font-size: 13.5px;
+}
+.training-responses-list li small {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 12px;
+}
+.training-responses-avatar {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 900;
+}
+.training-responses-avatar.present {
+  color: var(--good, #3ddc84);
+}
+.training-responses-avatar.absent {
+  color: #ff6b6b;
+}
+.training-responses-empty {
+  color: var(--muted);
+  font-size: 13px;
+}
+.seances-slot-responses {
+  color: var(--good, #3ddc84);
+  font-size: 12px;
+  font-weight: 800;
+}
+.seances-slot-responses.scheduled {
+  color: var(--muted);
+}
+
+/* Réglage des convocations aux entraînements (convocation-settings.tsx). */
+.convocation-settings {
+  display: grid;
+  gap: 12px;
+}
+.convocation-settings.is-prompt {
+  padding: 16px;
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.convocation-settings h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.convocation-settings-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.convocation-settings-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.convocation-settings-options button,
+.convocation-settings-defaults button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.convocation-settings-options button {
+  padding: 8px 14px;
+}
+.convocation-settings-defaults {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 8px;
+}
+.convocation-settings-defaults button {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-align: left;
+}
+.convocation-settings-defaults button span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.convocation-settings-options button.is-selected,
+.convocation-settings-defaults button.is-selected {
+  border-color: var(--accent);
+  background: rgba(47, 212, 255, 0.14);
+}
+.convocation-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.convocation-settings-status {
+  color: var(--muted);
+  font-size: 13px;
+}
+.convocation-settings-status.error {
+  color: #ff6b6b;
+}

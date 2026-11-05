@@ -1,6 +1,12 @@
 "use client";
 
-import { convocationFeedback as formatConvocationFeedback, guidedSeasonCycle, type TrainingSession } from "@evolyfoot/domain";
+import {
+  convocationFeedback as formatConvocationFeedback,
+  guidedSeasonCycle,
+  type AttendanceEntry,
+  type TrainingConvocationSettings,
+  type TrainingSession,
+} from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { PlaceInput } from "../../place-input";
@@ -8,6 +14,7 @@ import { cycleWeekLabel } from "../cycle";
 import type { PersonalExercise } from "@evolyfoot/domain";
 import { rehydrateTrainingSession, type SavedTrainingSession } from "../rehydrate";
 import { SessionBuilder } from "../session-builder";
+import { TrainingResponses } from "../../training-responses";
 
 interface RosterPlayer {
   id: string;
@@ -39,6 +46,10 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
   const [convocationFeedback, setConvocationFeedback] = useState<string | null>(null);
   // Sans lieu, un premier clic prévient ; le second envoie quand même.
   const [confirmingNoLocation, setConfirmingNoLocation] = useState(false);
+  // Convocation et réponses des joueurs (voir TrainingResponses).
+  const [convokedAt, setConvokedAt] = useState<string | null>(null);
+  const [attendance, setAttendance] = useState<readonly AttendanceEntry[] | undefined>(undefined);
+  const [convocationSettings, setConvocationSettings] = useState<TrainingConvocationSettings | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,6 +95,13 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
           return;
         }
         setRoster(rosterBody.players ?? []);
+        const recordState = record as SavedTrainingSession & { convokedAt?: string | null; attendance?: readonly AttendanceEntry[] };
+        setConvokedAt(recordState.convokedAt ?? null);
+        setAttendance(recordState.attendance);
+        void fetch("/api/team/convocations")
+          .then((response) => (response.ok ? response.json() : null))
+          .then((body) => !cancelled && setConvocationSettings(body?.settings ?? null))
+          .catch(() => undefined);
         setPersonalExercises(personalBody.exercises ?? []);
         setRecordMeetingAt(record.meetingAt ?? null);
         setLocation(record.location ?? "");
@@ -177,6 +195,12 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
       }
       const body = await response.json();
       setConvocationFeedback(formatConvocationFeedback(body.sentCount, body.emailCount));
+      // Relit la séance : date d'envoi et présences par défaut posées par le serveur.
+      const refreshed = await fetch(`/api/sessions/${sessionId}`)
+        .then((reply) => reply.json())
+        .catch(() => null);
+      setConvokedAt(refreshed?.session?.convokedAt ?? new Date().toISOString());
+      setAttendance(refreshed?.session?.attendance);
     } catch {
       setConvocationFeedback("Une erreur est survenue.");
     } finally {
@@ -269,9 +293,17 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
               </button>
             </form>
 
+            <TrainingResponses attendance={attendance} convokedAt={convokedAt} meetingAt={recordMeetingAt} roster={roster} settings={convocationSettings} />
+
             <div className="match-convocation">
               <button className="match-convocation-send" disabled={sendingConvocation} onClick={sendConvocation} type="button">
-                {sendingConvocation ? "Envoi…" : confirmingNoLocation && !location.trim() ? "Envoyer sans lieu" : "Envoyer la convocation"}
+                {sendingConvocation
+                  ? "Envoi…"
+                  : confirmingNoLocation && !location.trim()
+                    ? "Envoyer sans lieu"
+                    : convokedAt
+                      ? "Renvoyer la convocation"
+                      : "Envoyer la convocation maintenant"}
               </button>
               <p className="match-slot-hint">
                 {location.trim() ? `Lieu indiqué : ${location.trim()}.` : "Aucun lieu renseigné : ajoutez-le ci-dessus pour qu’il figure dans la convocation."}{" "}

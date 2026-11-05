@@ -754,6 +754,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
       location?: string | null;
       description?: string | null;
       attendance?: readonly AttendanceEntry[];
+      convokedAt?: Date;
     },
   ): Promise<PersistedTrainingSession> {
     const { count } = await this.prisma.trainingSessionRecord.updateMany({
@@ -763,6 +764,7 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
         ...(input.location !== undefined ? { location: input.location } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
+        ...(input.convokedAt !== undefined ? { convokedAt: input.convokedAt } : {}),
       },
     });
     if (count === 0) {

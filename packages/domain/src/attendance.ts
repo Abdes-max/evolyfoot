@@ -43,6 +43,9 @@ export interface AttendanceEntry {
   // Précision libre laissée par le joueur/tuteur en répondant à une convocation (motif détaillé
   // d'une absence). Jamais renseigné pour une entrée saisie par le coach lui-même.
   readonly comment?: string | null;
+  // Présence posée automatiquement à l’envoi de la convocation (équipe réglée sur « présent par
+  // défaut ») : le joueur n’a pas encore répondu lui-même.
+  readonly byDefault?: boolean;
 }
 
 export function createAttendanceEntry(playerId: string, playerName: string, status: AttendanceStatus, comment?: string | null): AttendanceEntry {

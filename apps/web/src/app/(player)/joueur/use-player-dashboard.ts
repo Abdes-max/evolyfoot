@@ -35,6 +35,10 @@ export interface DashboardTrainingSession {
   location: string | null;
   description: string | null;
   myStatus: AttendanceStatus | null;
+  // Présence posée par défaut à la convocation, pas encore confirmée.
+  myStatusByDefault?: boolean;
+  // Convocation envoyée : avant, la séance est seulement « programmée », sans réponse possible.
+  convoked?: boolean;
 }
 
 export interface Competition {
