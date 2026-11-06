@@ -1,5 +1,5 @@
 import { createAuthGateway, readSessionToken, type PublicEducator } from "@/server/auth";
-import { createCreateInviteHandler, createPlayerInviteGateway } from "@/server/player-invite";
+import { createCreateInviteHandler, createCurrentInviteHandler, createPlayerInviteGateway } from "@/server/player-invite";
 
 async function resolveEducator(request: Request): Promise<PublicEducator | null> {
   const token = readSessionToken(request);
@@ -9,6 +9,15 @@ async function resolveEducator(request: Request): Promise<PublicEducator | null>
   const { gateway, disconnect } = await createAuthGateway();
   try {
     return await gateway.getEducatorForSession(token);
+  } finally {
+    await disconnect();
+  }
+}
+
+export async function GET(request: Request): Promise<Response> {
+  const { gateway, disconnect } = await createPlayerInviteGateway();
+  try {
+    return await createCurrentInviteHandler(resolveEducator, gateway, console.error)(request);
   } finally {
     await disconnect();
   }

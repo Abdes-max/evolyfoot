@@ -15,6 +15,13 @@ export interface PushSender {
   send(messages: Array<{ token: string; title: string; body: string; link: string; badge: number }>): Promise<{ invalidTokens: string[] }>;
 }
 
+export interface FollowRequestNotice {
+  educatorId: string;
+  playerId: string;
+  playerName: string;
+  accountName: string;
+}
+
 const bodyMaxLength = 140;
 
 function excerpt(text: string): string {
@@ -61,6 +68,20 @@ export class NotificationService {
         })),
       );
     }
+  }
+
+  // Un compte demande à suivre un joueur par le lien d'invitation : l'éducateur doit l'accepter.
+  async onFollowRequest(request: FollowRequestNotice): Promise<void> {
+    const recipients = await this.notificationRepository.coachRecipients(request.educatorId);
+    await this.notify(
+      recipients.map((recipientId) => ({
+        recipientId,
+        kind: "tutor-request" as const,
+        title: `Demande d’accès à ${request.playerName}`,
+        body: `${request.accountName} veut suivre ${request.playerName} : accepte ou refuse sa demande.`,
+        link: `/equipe/${request.playerId}`,
+      })),
+    );
   }
 
   async onEvaluation(playerId: string): Promise<void> {

@@ -6,6 +6,7 @@ import { PlayerNotFoundError } from "./errors";
 import { PlayerChildrenService } from "./player-children-service";
 import { InviteInvalidError } from "./player-invite-service";
 import { PlayerInviteService } from "./player-invite-service";
+import { TutorService } from "./tutor-service";
 import { PlayerDashboardService } from "./player-dashboard-service";
 import { PlayerEvaluationService } from "./player-evaluation-service";
 import { hashPassword } from "./password";
@@ -41,7 +42,15 @@ const plateauRepository = new PrismaPlateauRepository(database.prisma);
 const tournamentRepository = new PrismaTournamentRepository(database.prisma);
 
 const authService = new AuthService(educatorRepository, sessionRepository);
-const inviteService = new PlayerInviteService(educatorRepository, playerRepository, playerInviteRepository, teamRepository, authService);
+const inviteService = new PlayerInviteService(educatorRepository, playerRepository, playerInviteRepository, teamRepository, authService, educatorRepository);
+const tutorService = new TutorService(educatorRepository, playerRepository, educatorRepository);
+
+// L'éducateur accepte les demandes de suivi faites par le lien d'invitation.
+async function acceptRequests(coachId: string, playerId: string): Promise<void> {
+  for (const request of (await tutorService.list(coachId, playerId)).requests) {
+    await tutorService.answer(coachId, playerId, request.id, true);
+  }
+}
 const dashboardService = new PlayerDashboardService(
   educatorRepository,
   playerRepository,
@@ -87,7 +96,11 @@ describe("PostgreSQL player accounts", () => {
       displayName: "Parent de Kylian",
     });
     expect(session.educator.role).toBe("player");
-    expect(session.educator.linkedPlayerId).toBe(player.id);
+    // Aucun accès à l'enfant avant l'accord de l'éducateur.
+    expect(session.educator.linkedPlayerId).toBeNull();
+    await expect(dashboardService.get(session.educator.id)).rejects.toBeTruthy();
+    await acceptRequests(coach.id, player.id);
+    expect((await educatorRepository.findById(session.educator.id))?.linkedPlayerId).toBe(player.id);
 
     // Le jeton de session du compte joueur ne résout PAS comme éducateur.
     expect(await authService.getEducatorForSession(session.sessionToken)).toBeNull();
@@ -106,53 +119,83 @@ describe("PostgreSQL player accounts", () => {
       password: "tutor-password",
       displayName: "Parent 1",
     });
-    // Second parent : un autre compte sur le même enfant, désormais autorisé.
+    // Second parent : un autre compte sur le même enfant, avec le même lien.
     const second = await inviteService.consume((await inviteService.create(coach.id, leo.id)).token, {
       email: `${testRun}-parent2@example.test`,
       password: "tutor-password",
       displayName: "Parent 2",
     });
+    await acceptRequests(coach.id, leo.id);
     expect((await educatorRepository.findFollowers(leo.id)).map((account) => account.displayName).sort()).toEqual(["Parent 1", "Parent 2"]);
 
-    // Le premier parent ajoute Inès avec son compte existant : elle devient l'enfant affiché.
+    // Le premier parent demande Inès avec son compte existant : en attente, puis suivie une fois acceptée.
     await children.attachInvite(first.educator.id, (await inviteService.create(coach.id, ines.id)).token);
-    const list = await children.list(first.educator.id);
-    expect(list.map((child) => [child.name, child.displayed])).toEqual([
-      ["Léo", false],
-      ["Inès", true],
+    expect((await children.pending(first.educator.id)).map((child) => child.name)).toEqual(["Inès"]);
+    await acceptRequests(coach.id, ines.id);
+    expect(await children.pending(first.educator.id)).toEqual([]);
+    expect((await children.list(first.educator.id)).map((child) => [child.name, child.displayed])).toEqual([
+      ["Léo", true],
+      ["Inès", false],
     ]);
 
-    await children.select(first.educator.id, leo.id);
-    expect((await children.list(first.educator.id)).find((child) => child.displayed)?.name).toBe("Léo");
+    await children.select(first.educator.id, ines.id);
+    expect((await children.list(first.educator.id)).find((child) => child.displayed)?.name).toBe("Inès");
     // Le second parent ne suit pas Inès : il ne peut pas la choisir.
     await expect(children.select(second.educator.id, ines.id)).rejects.toBeInstanceOf(PlayerNotFoundError);
   });
 
-  it("generates a new link on each request, every link staying valid once", async () => {
+  it("keeps the same link until the coach asks for a new one", async () => {
     const coach = await createCoach("again");
     const player = await playerRepository.create(coach.id, "Lou");
     const first = await inviteService.create(coach.id, player.id);
-    const second = await inviteService.create(coach.id, player.id);
 
-    expect(second.token).not.toBe(first.token);
-    expect(await inviteService.preview(first.token)).not.toBeNull();
-    expect(await inviteService.preview(second.token)).not.toBeNull();
+    expect((await inviteService.create(coach.id, player.id)).token).toBe(first.token);
+    expect((await inviteService.current(coach.id, player.id))?.token).toBe(first.token);
+
+    const renewed = await inviteService.create(coach.id, player.id, { renew: true });
+    expect(renewed.token).not.toBe(first.token);
+    expect(await inviteService.preview(first.token)).toBeNull();
+    expect(await inviteService.preview(renewed.token)).not.toBeNull();
   });
 
-  it("rejects a consumed or unknown invite token", async () => {
+  it("accepts several sign-ups with the same link, rejects a renewed or unknown one", async () => {
     const coach = await createCoach("consumed");
     const player = await playerRepository.create(coach.id, "Noah");
     const { token } = await inviteService.create(coach.id, player.id);
-    await inviteService.consume(token, {
-      email: `${testRun}-t3@example.test`,
-      password: "tutor-password",
-      displayName: "Tuteur",
-    });
+    for (const suffix of ["t3", "t3b"]) {
+      await inviteService.consume(token, { email: `${testRun}-${suffix}@example.test`, password: "tutor-password", displayName: "Tuteur" });
+    }
+    expect((await tutorService.list(coach.id, player.id)).requests).toHaveLength(2);
 
+    await inviteService.create(coach.id, player.id, { renew: true });
     await expect(inviteService.consume(token, { email: `${testRun}-x@example.test`, password: "x-password", displayName: "X" })).rejects.toBeInstanceOf(
       InviteInvalidError,
     );
     expect(await inviteService.preview("not-a-real-token")).toBeNull();
+  });
+
+  it("lets the coach refuse a request and remove a tutor", async () => {
+    const coach = await createCoach("tutors");
+    const player = await playerRepository.create(coach.id, "Maé");
+    const { token } = await inviteService.create(coach.id, player.id);
+    const accepted = await inviteService.consume(token, { email: `${testRun}-ok@example.test`, password: "tutor-password", displayName: "Accepté" });
+    await inviteService.consume(token, { email: `${testRun}-no@example.test`, password: "tutor-password", displayName: "Refusé" });
+
+    const { requests } = await tutorService.list(coach.id, player.id);
+    const byName = new Map(requests.map((request) => [request.displayName, request.id]));
+    await tutorService.answer(coach.id, player.id, byName.get("Accepté")!, true);
+    const afterRefusal = await tutorService.answer(coach.id, player.id, byName.get("Refusé")!, false);
+    expect(afterRefusal.requests).toEqual([]);
+    expect(afterRefusal.tutors.map((tutor) => tutor.displayName)).toEqual(["Accepté"]);
+
+    // Un autre éducateur ne voit pas ces tuteurs.
+    const other = await createCoach("other");
+    await expect(tutorService.list(other.id, player.id)).rejects.toBeInstanceOf(PlayerNotFoundError);
+
+    const afterRemoval = await tutorService.remove(coach.id, player.id, accepted.educator.id);
+    expect(afterRemoval.tutors).toEqual([]);
+    expect((await educatorRepository.findById(accepted.educator.id))?.linkedPlayerId).toBeNull();
+    await expect(dashboardService.get(accepted.educator.id)).rejects.toBeTruthy();
   });
 
   it("serves the player dashboard for the linked player only", async () => {
@@ -165,6 +208,7 @@ describe("PostgreSQL player accounts", () => {
       password: "tutor-password",
       displayName: "Tuteur",
     });
+    await acceptRequests(coach.id, player.id);
     const account = await authService.getPlayerAccountForSession(session.sessionToken);
 
     await plateauRepository.create(coach.id, { name: "Plateau de rentrée", dateLabel: "14 septembre 2026" });
@@ -191,6 +235,7 @@ describe("PostgreSQL player accounts", () => {
       password: "tutor-password",
       displayName: "Tuteur",
     });
+    await acceptRequests(coach.id, player.id);
     const account = await authService.getPlayerAccountForSession(session.sessionToken);
 
     await playerRepository.remove(player.id, coach.id);

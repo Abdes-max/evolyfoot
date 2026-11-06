@@ -82,6 +82,7 @@ model Educator {
   staffInvites       StaffInvite[]
   invitesCreated     PlayerInvite[]
   followedPlayers    PlayerFollowerLink[]
+  followRequests     PlayerFollowRequest[]
   // Fiche profil de l'éducateur (page /profil). Tous optionnels : renseignés après l'inscription,
   // qui ne demande que nom / e-mail / mot de passe. `birthDate` est stocké en texte ISO
   // (`YYYY-MM-DD`) plutôt qu'en `DateTime` -- une date de naissance n'a pas d'heure ni de fuseau,
@@ -338,41 +339,42 @@ model Team {
 // append-only de TrainingSessionRecord/ObservationRecord) : un joueur peut être renommé ou
 // retiré à tout moment.
 model Player {
-  id            String                   @id @default(uuid()) @db.Uuid
-  educatorId    String                   @map("educator_id") @db.Uuid
-  educator      Educator                 @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  id             String                   @id @default(uuid()) @db.Uuid
+  educatorId     String                   @map("educator_id") @db.Uuid
+  educator       Educator                 @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   // Prénom et nom séparés (plutôt qu'un `name` unique) : la fiche joueur les distingue désormais
   // (formulaire d'ajout/de fiche détail) ; `lastName` garde un défaut "" pour les joueurs créés
   // avant l'introduction du champ (voir la migration de rétro-compatibilité). Tous les autres
   // usages (composition de match, présence, messagerie...) continuent de ne voir qu'un nom
   // complet, calculé par le mapper (voir toPersistedPlayer côté base).
-  firstName     String                   @map("first_name")
-  lastName      String                   @default("") @map("last_name")
+  firstName      String                   @map("first_name")
+  lastName       String                   @default("") @map("last_name")
   // Fiche joueur : tous optionnels. `photo` stocke une image (data URL) redimensionnée côté
   // client -- pas de stockage d'objets ni de CDN pour l'instant. `birthDate` en texte ISO
   // (`YYYY-MM-DD`), même choix que pour la fiche éducateur.
-  photo         String?
-  birthDate     String?                  @map("birth_date")
-  phone         String?
-  email         String?
+  photo          String?
+  birthDate      String?                  @map("birth_date")
+  phone          String?
+  email          String?
   // Profil sportif, tous optionnels : valeurs contrôlées par RosterService (playerPositions,
   // playerFeet côté domaine). Le numéro reste un texte, jamais utilisé dans un calcul.
-  position      String?
-  jerseyNumber  String?                  @map("jersey_number")
-  preferredFoot String?                  @map("preferred_foot")
-  strengths     String?
-  workAreas     String?                  @map("work_areas")
+  position       String?
+  jerseyNumber   String?                  @map("jersey_number")
+  preferredFoot  String?                  @map("preferred_foot")
+  strengths      String?
+  workAreas      String?                  @map("work_areas")
   // Historique borné d'évaluations datées (voir playerEvaluationMaxPerSeason côté domaine),
   // plus « une seule par joueur » : d'où la relation 1-N ci-dessous au lieu d'un `?`.
-  evaluations   PlayerEvaluationRecord[]
+  evaluations    PlayerEvaluationRecord[]
   // Comptes dont c'est l'enfant affiché (Educator.linkedPlayerId) ; la liste complète des comptes
   // qui suivent ce joueur est dans `followerLinks`.
-  followers     Educator[]               @relation("PlayerFollowers")
-  followerLinks PlayerFollowerLink[]
-  invites       PlayerInvite[]
-  messages      MessageRecord[]
-  createdAt     DateTime                 @default(now()) @map("created_at")
-  updatedAt     DateTime                 @updatedAt @map("updated_at")
+  followers      Educator[]               @relation("PlayerFollowers")
+  followerLinks  PlayerFollowerLink[]
+  followRequests PlayerFollowRequest[]
+  invites        PlayerInvite[]
+  messages       MessageRecord[]
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  updatedAt      DateTime                 @updatedAt @map("updated_at")
 
   @@index([educatorId])
   @@map("players")
@@ -390,6 +392,21 @@ model PlayerFollowerLink {
   @@id([accountId, playerId])
   @@index([playerId])
   @@map("player_followers")
+}
+
+// Demande d'un compte tuteur/joueur à suivre un joueur, faite par le lien d'invitation : aucun accès
+// à l'enfant tant que l'éducateur ne l'a pas acceptée (elle devient alors un PlayerFollowerLink).
+model PlayerFollowRequest {
+  id        String   @id @default(uuid()) @db.Uuid
+  accountId String   @map("account_id") @db.Uuid
+  account   Educator @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  playerId  String   @map("player_id") @db.Uuid
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([accountId, playerId])
+  @@index([playerId])
+  @@map("player_follow_requests")
 }
 
 // Invitation générée par un coach pour qu'un tuteur crée un compte lié à un joueur de son
@@ -416,6 +433,9 @@ model PlayerInvite {
   playerId   String    @map("player_id") @db.Uuid
   player     Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
   tokenHash  String    @unique @map("token_hash")
+  // Lien en clair, pour que l'éducateur le retrouve et le renvoie : il ne donne accès à rien sans
+  // son accord (voir PlayerFollowRequest). Null pour les invitations d'avant ce choix.
+  token      String?
   expiresAt  DateTime  @map("expires_at")
   consumedAt DateTime? @map("consumed_at")
   createdAt  DateTime  @default(now()) @map("created_at")

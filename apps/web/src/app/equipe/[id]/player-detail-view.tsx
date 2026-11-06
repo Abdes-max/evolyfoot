@@ -25,6 +25,7 @@ import { PhotoChoice } from "../../photo-choice";
 import { MessagingThread } from "../../messaging-thread";
 import { PlayerCard } from "../../player-card";
 import { PrintButton } from "../../print-button";
+import { TutorAccess } from "./tutor-access";
 
 interface Player {
   id: string;
@@ -124,11 +125,6 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   // Évaluations superposées sur le radar (voir RadarChart.series) -- les dernières de chaque source y sont
   // par défaut, comparer les autres est un choix explicite plutôt qu'un graphe surchargé d'emblée.
   const [comparedEvaluationIds, setComparedEvaluationIds] = useState<ReadonlySet<string>>(new Set());
-
-  const [inviteUrl, setInviteUrl] = useState("");
-  const [inviteError, setInviteError] = useState("");
-  const [invitingTutor, setInvitingTutor] = useState(false);
-  const [inviteCopied, setInviteCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -327,41 +323,6 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
       setEvaluationError("L’enregistrement a échoué, réessaie.");
     } finally {
       setAddingEvaluation(false);
-    }
-  }
-
-  async function inviteTutor() {
-    if (!player) {
-      return;
-    }
-    setInvitingTutor(true);
-    setInviteError("");
-    setInviteCopied(false);
-    try {
-      const response = await fetch("/api/invites", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ playerId: player.id }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setInviteError(typeof body.error === "string" ? body.error : "La génération du lien a échoué.");
-        return;
-      }
-      setInviteUrl(body.url);
-    } catch {
-      setInviteError("La génération du lien a échoué, réessaie.");
-    } finally {
-      setInvitingTutor(false);
-    }
-  }
-
-  async function copyInvite() {
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-      setInviteCopied(true);
-    } catch {
-      // Le champ reste sélectionnable manuellement.
     }
   }
 
@@ -731,32 +692,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
               <MessagingThread fetchUrl={`/api/roster/${playerId}/messages`} sendUrl={`/api/roster/${playerId}/messages`} viewerRole="coach" />
             </div>
 
-            <div className="player-block print-hidden">
-              <div className="player-block-head">
-                <h2>Accès tuteur / joueur</h2>
-              </div>
-              <p className="player-invite-lead">
-                Génère un lien à transmettre au tuteur : il crée un compte séparé qui ne voit que le suivi de {player.name} (évaluations, présences, calendrier,
-                convocations).
-              </p>
-              {inviteUrl && (
-                <div className="player-invite-result">
-                  <input aria-label="Lien d’invitation" readOnly value={inviteUrl} />
-                  <button className="player-ghost" onClick={copyInvite} type="button">
-                    {inviteCopied ? "Copié" : "Copier"}
-                  </button>
-                </div>
-              )}
-              {/* Un nouveau lien à chaque fois (deuxième parent, lien perdu) : les précédents restent valables. */}
-              <button className={inviteUrl ? "player-ghost" : "player-primary"} disabled={invitingTutor} onClick={inviteTutor} type="button">
-                {invitingTutor ? "…" : inviteUrl ? "Générer un autre lien" : "Générer un lien d’invitation"}
-              </button>
-              {inviteError && (
-                <p className="player-error" role="alert">
-                  {inviteError}
-                </p>
-              )}
-            </div>
+            <TutorAccess playerId={player.id} playerName={player.name} />
           </>
         )}
       </section>

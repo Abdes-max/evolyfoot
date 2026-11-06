@@ -8,6 +8,7 @@ import { MapEmbed } from "../../../map-embed";
 import { sortChronologically, weekGroupKey, weekGroupLabel } from "../../../date-format";
 import { PlayerSpaceHeader } from "../../player-space-header";
 import { usePlayerDashboard } from "../use-player-dashboard";
+import { WaitingApproval } from "../../waiting-approval";
 import { WeekCalendar } from "../week-calendar";
 
 const venueLabel = { home: "Domicile", away: "Extérieur" } as const;
@@ -114,7 +115,7 @@ function CompetitionResponse({ item }: { item: Extract<CalendarItem, { kind: "co
 // qui décrit ce qui se passe, plutôt que ce qui décrit le joueur lui-même (voir l'onglet Mon
 // enfant, player-dashboard-view.tsx).
 export function PlayerCalendarView() {
-  const { status, dashboard } = usePlayerDashboard();
+  const { status, dashboard, pending } = usePlayerDashboard();
 
   const items: CalendarItem[] = dashboard
     ? [
@@ -167,6 +168,7 @@ export function PlayerCalendarView() {
 
       <main className="player-space-content">
         {status === "loading" && <p className="player-space-note">Chargement…</p>}
+        {status === "waiting" && <WaitingApproval pending={pending} />}
         {status === "error" && <p className="player-space-note">Impossible de charger le calendrier pour le moment.</p>}
 
         {status === "ready" && dashboard && (
