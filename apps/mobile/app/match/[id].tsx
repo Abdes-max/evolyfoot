@@ -1,10 +1,11 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { assignPlayerToSlot, canFinalizeMatchPlan, clearSlot, formationSlots, listFormations } from "@evolyfoot/domain";
-import type { GameFormat, MatchLineupSlot, MatchPlan, MatchVenue } from "@evolyfoot/domain";
+import { assignPlayerToSlot, canFinalizeMatchPlan, clearSlot, concernedPlayers, formationSlots, listFormations } from "@evolyfoot/domain";
+import type { GameFormat, MatchLineupSlot, MatchPlan, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ConcernedPlayersPicker } from "../../components/concerned-players-picker";
 import { MatchAnalysis } from "../../components/match-analysis";
 import { PlayerPicker } from "../../components/player-picker";
 import { PlaceInput } from "../../components/place-input";
@@ -161,6 +162,8 @@ export default function MatchDetailScreen() {
   const [pickerSlotId, setPickerSlotId] = useState<string | null>(null);
   const [location, setLocation] = useState("");
   const [locationFeedback, setLocationFeedback] = useState("");
+  const [selection, setSelection] = useState<PlayerSelection>(null);
+  const [selectionFeedback, setSelectionFeedback] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -171,6 +174,7 @@ export default function MatchDetailScreen() {
       }
       setMatch(result.match);
       setLocation(result.match.location ?? "");
+      setSelection(result.match.selectedPlayerIds ?? null);
     })();
   }, [id, getMatch]);
 
@@ -182,6 +186,22 @@ export default function MatchDetailScreen() {
       body: JSON.stringify({ location: location.trim() || null }),
     });
     setLocationFeedback(response?.ok ? "Lieu enregistré." : "Le lieu n’a pas été enregistré, réessaie.");
+  }
+
+  // Joueurs concernés : même route que la fiche match du web ; seuls eux entrent dans la composition.
+  async function saveSelection() {
+    setSelectionFeedback("");
+    const response = await apiRequest(`/api/matches/${encodeURIComponent(id)}/details`, {
+      method: "PATCH",
+      body: JSON.stringify({ selectedPlayerIds: selection }),
+    });
+    const body = response?.ok ? await response.json().catch(() => null) : null;
+    if (!body?.match) {
+      setSelectionFeedback("Les joueurs concernés n’ont pas été enregistrés, réessaie.");
+      return;
+    }
+    setMatch((current) => (current ? { ...current, selectedPlayerIds: body.match.selectedPlayerIds ?? null } : current));
+    setSelectionFeedback("Joueurs concernés enregistrés.");
   }
 
   async function persist(nextMatch: MobileMatch) {
@@ -288,6 +308,26 @@ export default function MatchDetailScreen() {
           {locationFeedback ? <Text style={styles.body}>{locationFeedback}</Text> : null}
         </View>
 
+        {!readOnly && (
+          <View style={styles.concerned}>
+            <ConcernedPlayersPicker
+              hint="Seuls les joueurs cochés voient le match, reçoivent la convocation et entrent dans la composition."
+              onChange={(value) => {
+                setSelection(value);
+                setSelectionFeedback("");
+              }}
+              roster={roster}
+              value={selection}
+            />
+            {JSON.stringify(selection) !== JSON.stringify(match.selectedPlayerIds ?? null) && (
+              <TouchableOpacity accessibilityRole="button" disabled={selection?.length === 0} onPress={saveSelection} style={styles.locationSave}>
+                <Text style={styles.locationSaveText}>Enregistrer les joueurs concernés</Text>
+              </TouchableOpacity>
+            )}
+            {selectionFeedback ? <Text style={styles.body}>{selectionFeedback}</Text> : null}
+          </View>
+        )}
+
         {!readOnly && formations.length > 1 && (
           <View style={styles.formationRow}>
             {formations.map((formation) => (
@@ -356,7 +396,11 @@ export default function MatchDetailScreen() {
           if (pickerSlotId) assignSlot(pickerSlotId, playerId);
           setPickerSlotId(null);
         }}
-        players={roster}
+        // Joueurs concernés, plus ceux déjà placés s'ils ont été décochés depuis.
+        players={roster.filter(
+          (player) =>
+            concernedPlayers([player], match.selectedPlayerIds ?? null).length > 0 || match.lineup.some((assignment) => assignment.playerId === player.id),
+        )}
         statusOf={(playerId) => {
           const elsewhere = match.lineup.find((assignment) => assignment.playerId === playerId && assignment.slotId !== pickerSlotId);
           if (elsewhere) return "déjà titulaire";
@@ -377,6 +421,7 @@ const styles = StyleSheet.create({
   body: { fontSize: 12.5, color: colors.muted, marginTop: 6 },
   locationBlock: { marginTop: spacing.md, gap: 6 },
   locationLabel: { fontSize: 11, fontWeight: "800", color: colors.muted },
+  concerned: { marginTop: spacing.md, gap: spacing.sm },
   locationSave: {
     alignSelf: "flex-start",
     paddingHorizontal: spacing.md,

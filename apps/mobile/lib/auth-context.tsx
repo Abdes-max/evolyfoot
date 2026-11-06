@@ -45,6 +45,8 @@ export interface MobileMatch {
   // ISO, absent pour un match sans date réelle.
   date?: string | null;
   location?: string | null;
+  // Joueurs concernés : `null` = tout l'effectif.
+  selectedPlayerIds?: readonly string[] | null;
 }
 
 // `PlayerReference` (domaine) reste { id, name } -- générique, utilisé aussi pour les signaux
@@ -141,6 +143,7 @@ export interface AuthContextValue {
     formationId?: string;
     date?: string | null;
     location?: string;
+    selectedPlayerIds?: readonly string[] | null;
   }): Promise<MatchResult>;
   updateMatchLineup(id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null): Promise<MatchResult>;
   changeMatchFormation(id: string, formationId: string): Promise<MatchResult>;
@@ -590,6 +593,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       formationId?: string;
       date?: string | null;
       location?: string;
+      selectedPlayerIds?: readonly string[] | null;
     }): Promise<MatchResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour préparer un match." };

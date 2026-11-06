@@ -37,6 +37,18 @@ export interface TrainingSession {
   convoked?: boolean;
 }
 
+// Tournoi ou plateau : réponse possible une fois la convocation envoyée, comme une séance.
+export interface Competition {
+  id: string;
+  type: "plateau" | "tournoi";
+  name: string;
+  dateLabel: string;
+  date: string | null;
+  location?: string | null;
+  convoked?: boolean;
+  myStatus?: AttendanceStatus | null;
+}
+
 export interface Dashboard {
   player: {
     id: string;
@@ -54,11 +66,12 @@ export interface Dashboard {
   upcomingMatches: UpcomingMatch[];
   pastMatches?: UpcomingMatch[];
   trainingSessions: TrainingSession[];
+  competitions?: Competition[];
 }
 
 export interface AgendaEvent {
   key: string;
-  kind: "match" | "training";
+  kind: "match" | "training" | "tournament" | "plateau";
   id: string;
   title: string;
   dateLabel: string;
@@ -101,6 +114,19 @@ export function buildAgenda(dashboard: Dashboard, now: number, scope: "upcoming"
       myStatus: session.myStatus,
       canRespond: session.convoked !== false,
       byDefault: session.myStatusByDefault === true,
+    })),
+    ...(dashboard.competitions ?? []).map((competition) => ({
+      key: `competition-${competition.id}`,
+      kind: competition.type === "plateau" ? ("plateau" as const) : ("tournament" as const),
+      id: competition.id,
+      title: competition.name,
+      dateLabel: competition.dateLabel,
+      time: null,
+      location: competition.location ?? null,
+      date: competition.date,
+      myStatus: competition.myStatus ?? null,
+      canRespond: competition.convoked === true,
+      byDefault: false,
     })),
   ];
   if (scope === "past") {

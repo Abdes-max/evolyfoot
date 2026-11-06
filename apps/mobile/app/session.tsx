@@ -4,6 +4,7 @@ import {
   buildDevelopmentPlan,
   canReplaceSessionActivity,
   canValidateSession,
+  concernedPlayers,
   currentCycleWeek,
   demoTeam,
   diagramTargets,
@@ -17,6 +18,7 @@ import {
   summarizeDiagnostic,
   type AttendanceEntry,
   type DiagnosticScores,
+  type PlayerSelection,
 } from "@evolyfoot/domain";
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { Link, useLocalSearchParams } from "expo-router";
@@ -53,6 +55,11 @@ function meetingLabel(iso: string): string {
   return new Date(iso).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 }
 
+// Durée de préparation, lue à l'enregistrement (jamais pendant le rendu).
+function secondsSince(start: number): number {
+  return Math.round((Date.now() - start) / 1000);
+}
+
 export default function SessionScreen() {
   const { team, diagnosticScores, roster, saveTrainingSession, listSessions, listPersonalExercises, getPlayStyle, apiRequest } = useAuth();
   const params = useLocalSearchParams<{ week?: string; slot?: string }>();
@@ -82,6 +89,20 @@ export default function SessionScreen() {
   const [attendance, setAttendance] = useState<readonly AttendanceEntry[] | undefined>(undefined);
   const [convoking, setConvoking] = useState(false);
   const [convocationStatus, setConvocationStatus] = useState("");
+  // Joueurs des entraînements (réglage des convocations) : présence et réponses ne portent que sur eux.
+  const [trainingPlayerIds, setTrainingPlayerIds] = useState<PlayerSelection>(null);
+  const trainingRoster = concernedPlayers(roster, trainingPlayerIds);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const response = await apiRequest("/api/team/convocations");
+      const body = response?.ok ? await response.json().catch(() => null) : null;
+      if (!cancelled) setTrainingPlayerIds(body?.settings?.playerIds ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiRequest]);
   // Le diagnostic et l'équipe déjà enregistrés (s'ils existent) sont résolus avant que cet écran
   // ne soit atteignable -- voir AuthContext.login -- donc un état paresseux suffit, comme pour le
   // diagnostic dans diagnostic.tsx.
@@ -101,7 +122,7 @@ export default function SessionScreen() {
       cancelled = true;
     };
   }, [getPlayStyle]);
-  const capturesAttendance = !alreadySaved && roster.length > 0;
+  const capturesAttendance = !alreadySaved && trainingRoster.length > 0;
 
   // Une séance déjà enregistrée sur ce créneau est rouverte telle quelle ; sinon le rendez-vous est
   // proposé sur le prochain jour d'entraînement.
@@ -173,14 +194,14 @@ export default function SessionScreen() {
     setSaveError("");
     setSaving(true);
     const attendance: AttendanceEntry[] = capturesAttendance
-      ? roster.map((player) => ({ playerId: player.id, playerName: player.name, present: !absentPlayerIds.has(player.id) }))
+      ? trainingRoster.map((player) => ({ playerId: player.id, playerName: player.name, present: !absentPlayerIds.has(player.id) }))
       : [];
     const result = await saveTrainingSession(session, {
       weekNumber,
       slot,
       meetingAt,
       attendance,
-      ...(preparationStart.current !== null ? { preparationSeconds: Math.round((Date.now() - preparationStart.current) / 1000) } : {}),
+      ...(preparationStart.current !== null ? { preparationSeconds: secondsSince(preparationStart.current) } : {}),
     });
     if (result.ok) {
       setSavedId(result.id);
@@ -382,7 +403,7 @@ export default function SessionScreen() {
         {capturesAttendance && (
           <View style={styles.card}>
             <Text style={styles.summaryLabel}>PRÉSENCE · TOUCHE LES ABSENTS</Text>
-            {roster.map((player) => {
+            {trainingRoster.map((player) => {
               const absent = absentPlayerIds.has(player.id);
               return (
                 <TouchableOpacity
@@ -432,7 +453,7 @@ export default function SessionScreen() {
           <View style={styles.card}>
             <Text style={styles.summaryLabel}>CONVOCATION</Text>
             <Text style={styles.detailText}>{[meetingLabel(meetingAt), location.trim() || null].filter(Boolean).join(" — ")}</Text>
-            <TrainingResponses attendance={attendance} convokedAt={convokedAt} roster={roster} />
+            <TrainingResponses attendance={attendance} convokedAt={convokedAt} roster={trainingRoster} />
             <TouchableOpacity
               accessibilityRole="button"
               disabled={convoking}

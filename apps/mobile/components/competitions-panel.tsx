@@ -1,9 +1,11 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, useFocusEffect } from "expo-router";
+import type { PlayerSelection } from "@evolyfoot/domain";
 import { useCallback, useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { competitionDateLabel, competitionKinds, isPastCompetition, sortCompetitions, type Competition, type CompetitionKind } from "../lib/competitions";
+import { ConcernedPlayersPicker, type ConcernedPlayer } from "./concerned-players-picker";
 import { DateTimeField } from "./date-time-field";
 import { PlaceInput } from "./place-input";
 
@@ -25,16 +27,23 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
   const [location, setLocation] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
+  // Joueurs concernés, tout l'effectif par défaut (voir ConcernedPlayersPicker).
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<PlayerSelection>(null);
 
   // Rechargée à chaque retour sur l'onglet : une fiche modifiée ou retirée se reflète aussitôt.
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
       (async () => {
-        const response = await apiRequest(endpoint);
+        const [response, rosterResponse] = await Promise.all([apiRequest(endpoint), apiRequest("/api/roster")]);
         const body = response?.ok ? await response.json().catch(() => null) : null;
+        const rosterBody = rosterResponse?.ok ? await rosterResponse.json().catch(() => null) : null;
         if (!cancelled && Array.isArray(body?.[listKey])) {
           setItems(body[listKey]);
+        }
+        if (!cancelled && Array.isArray(rosterBody?.players)) {
+          setRoster(rosterBody.players);
         }
       })();
       return () => {
@@ -63,6 +72,7 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
         date: iso,
         location: location.trim() || undefined,
         result: result.trim() || undefined,
+        selectedPlayerIds,
       }),
     });
     setSubmitting(false);
@@ -76,6 +86,7 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
     setDateValue(null);
     setResult("");
     setLocation("");
+    setSelectedPlayerIds(null);
     setAdding(false);
   }
 
@@ -96,9 +107,15 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
           <DateTimeField label="Date" mode="date" onChange={setDateValue} value={dateValue} />
           <PlaceInput onChange={setLocation} value={location} />
           <TextInput accessibilityLabel="Bilan" onChangeText={setResult} placeholder="Bilan (optionnel)" style={styles.input} value={result} />
+          <ConcernedPlayersPicker
+            hint="Seuls les joueurs cochés voient l’événement, reçoivent la convocation et peuvent répondre."
+            onChange={setSelectedPlayerIds}
+            roster={roster}
+            value={selectedPlayerIds}
+          />
           {error ? <Text style={styles.fieldError}>{error}</Text> : null}
           <View style={styles.actions}>
-            <TouchableOpacity accessibilityRole="button" disabled={submitting} onPress={add} style={styles.submitButton}>
+            <TouchableOpacity accessibilityRole="button" disabled={submitting || selectedPlayerIds?.length === 0} onPress={add} style={styles.submitButton}>
               <Text style={styles.submitButtonText}>{submitting ? "Ajout…" : "Ajouter"}</Text>
             </TouchableOpacity>
             <TouchableOpacity accessibilityRole="button" onPress={() => setAdding(false)} style={styles.cancelButton}>

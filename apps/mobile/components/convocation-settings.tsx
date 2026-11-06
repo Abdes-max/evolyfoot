@@ -1,11 +1,18 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { attendanceDefaultOptions, convocationLeadOptions, type AttendanceDefault, type TrainingConvocationSettings } from "@evolyfoot/domain";
+import {
+  attendanceDefaultOptions,
+  convocationLeadOptions,
+  type AttendanceDefault,
+  type PlayerSelection,
+  type TrainingConvocationSettings,
+} from "@evolyfoot/domain";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { ConcernedPlayersPicker, type ConcernedPlayer } from "./concerned-players-picker";
 
-// Réglage des convocations aux entraînements (même écran que le web, convocation-settings.tsx) :
-// déplié tant que l'éducateur n'a pas choisi, sinon un résumé avec « Modifier ».
+// Réglage des convocations aux entraînements (même écran que le web, convocation-settings.tsx),
+// joueurs des entraînements compris : déplié tant que l'éducateur n'a pas choisi, sinon un résumé avec « Modifier ».
 export function ConvocationSettings() {
   const { apiRequest } = useAuth();
   const [settings, setSettings] = useState<TrainingConvocationSettings | null>(null);
@@ -13,15 +20,20 @@ export function ConvocationSettings() {
   const [leadDays, setLeadDays] = useState<number | null>(2);
   const [attendanceDefault, setAttendanceDefault] = useState<AttendanceDefault>("ask");
   const [status, setStatus] = useState("");
+  const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
+  const [playerIds, setPlayerIds] = useState<PlayerSelection>(null);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const response = await apiRequest("/api/team/convocations");
+      const [response, rosterResponse] = await Promise.all([apiRequest("/api/team/convocations"), apiRequest("/api/roster")]);
       const body = response?.ok ? await response.json().catch(() => null) : null;
+      const rosterBody = rosterResponse?.ok ? await rosterResponse.json().catch(() => null) : null;
       if (cancelled || !body?.settings) return;
       const loaded: TrainingConvocationSettings = body.settings;
       setSettings(loaded);
+      setRoster(Array.isArray(rosterBody?.players) ? rosterBody.players : []);
+      setPlayerIds(loaded.playerIds ?? null);
       if (loaded.attendanceDefault) {
         setLeadDays(loaded.leadDays);
         setAttendanceDefault(loaded.attendanceDefault);
@@ -34,7 +46,7 @@ export function ConvocationSettings() {
 
   async function save() {
     setStatus("");
-    const response = await apiRequest("/api/team/convocations", { method: "PUT", body: JSON.stringify({ leadDays, attendanceDefault }) });
+    const response = await apiRequest("/api/team/convocations", { method: "PUT", body: JSON.stringify({ leadDays, attendanceDefault, playerIds }) });
     const body = response?.ok ? await response.json().catch(() => null) : null;
     if (!body?.settings) {
       setStatus("Le réglage n’a pas été enregistré.");
@@ -57,6 +69,7 @@ export function ConvocationSettings() {
           <Text style={styles.summaryText}>
             {lead} · {answer}
           </Text>
+          {settings.playerIds ? <Text style={styles.hint}>{`${settings.playerIds.length} joueurs des entraînements`}</Text> : null}
         </View>
         <TouchableOpacity accessibilityRole="button" hitSlop={8} onPress={() => setEditing(true)}>
           <Text style={styles.link}>Modifier</Text>
@@ -100,7 +113,14 @@ export function ConvocationSettings() {
           </TouchableOpacity>
         );
       })}
-      <TouchableOpacity accessibilityRole="button" onPress={() => void save()} style={styles.save}>
+      <ConcernedPlayersPicker
+        hint="Seuls ces joueurs voient les séances, reçoivent la convocation et peuvent répondre."
+        onChange={setPlayerIds}
+        roster={roster}
+        title="Joueurs des entraînements"
+        value={playerIds}
+      />
+      <TouchableOpacity accessibilityRole="button" disabled={playerIds?.length === 0} onPress={() => void save()} style={styles.save}>
         <Text style={styles.saveText}>Enregistrer</Text>
       </TouchableOpacity>
       {status ? <Text style={styles.error}>{status}</Text> : null}
