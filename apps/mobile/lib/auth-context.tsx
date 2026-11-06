@@ -406,7 +406,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { items: (body[key] as Item[]) ?? [], body };
     };
     const [season, cycle, matches, tournaments, plateaux] = await Promise.all([
-      read<{ id: string; title: string; meetingAt: string | null; cycleNumber?: number; weekNumber: number; slot: number }>("/api/sessions?scope=season", "sessions"),
+      read<{ id: string; title: string; meetingAt: string | null; cycleNumber?: number; weekNumber: number; slot: number }>(
+        "/api/sessions?scope=season",
+        "sessions",
+      ),
       read<SavedTrainingSession>("/api/sessions", "sessions"),
       read<{ id: string; opponent: string; date: string | null }>("/api/matches", "matches"),
       read<{ id: string; name: string; date: string | null }>("/api/tournaments", "tournaments"),
