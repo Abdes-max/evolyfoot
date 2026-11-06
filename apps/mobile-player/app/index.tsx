@@ -5,6 +5,7 @@ import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { PhotoChoice } from "../components/photo-choice";
 import { PlayerCard } from "../components/player-card";
 import { Screen } from "../components/screen";
+import { WaitingApproval } from "../components/waiting-approval";
 import { useAuth } from "../lib/auth-context";
 import { buildAgenda, endOfCurrentWeek, useDashboard } from "../lib/dashboard";
 import { apiFetch } from "../lib/api";
@@ -76,6 +77,7 @@ export default function MyCardScreen() {
     >
       {status === "loading" && !dashboard ? <Text style={styles.note}>Chargement…</Text> : null}
       {status === "error" && !dashboard ? <Text style={styles.note}>Impossible de charger ta carte. Vérifie ta connexion.</Text> : null}
+      {status === "waiting" ? <WaitingApproval /> : null}
 
       {dashboard ? (
         <>

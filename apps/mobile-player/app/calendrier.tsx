@@ -3,6 +3,7 @@ import { attendanceStatusLabels, attendanceStatuses, type AttendanceStatus } fro
 import { Fragment, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Screen } from "../components/screen";
+import { WaitingApproval } from "../components/waiting-approval";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { buildAgenda, useDashboard, type AgendaEvent } from "../lib/dashboard";
@@ -89,6 +90,7 @@ export default function CalendarScreen() {
         ))}
       </View>
       {status === "error" && !dashboard ? <Text style={styles.note}>Impossible de charger ton calendrier.</Text> : null}
+      {status === "waiting" ? <WaitingApproval /> : null}
       {dashboard && agenda.length === 0 ? (
         <Text style={styles.note}>{scope === "past" ? "Aucun événement passé." : "Rien de prévu pour l’instant."}</Text>
       ) : null}
