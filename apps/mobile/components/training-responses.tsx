@@ -14,10 +14,13 @@ export function TrainingResponses({
   roster,
   attendance,
   convokedAt,
+  scheduledText,
 }: {
   roster: readonly ResponsePlayer[];
   attendance: readonly AttendanceEntry[] | undefined;
   convokedAt: string | null;
+  // Texte affiché avant l'envoi, à la place de celui des séances (tournoi, plateau).
+  scheduledText?: string;
 }) {
   const [tab, setTab] = useState<Tab | null>(null);
 
@@ -25,7 +28,7 @@ export function TrainingResponses({
     return (
       <View style={styles.scheduled}>
         <Text style={styles.badge}>Programmée</Text>
-        <Text style={styles.hint}>Les joueurs voient la séance sans pouvoir répondre tant que la convocation n’est pas envoyée.</Text>
+        <Text style={styles.hint}>{scheduledText ?? "Les joueurs voient la séance sans pouvoir répondre tant que la convocation n’est pas envoyée."}</Text>
       </View>
     );
   }

@@ -8,6 +8,8 @@ import { useAuth } from "../lib/auth-context";
 import { buildAgenda, useDashboard, type AgendaEvent } from "../lib/dashboard";
 import { openInMaps } from "../lib/open-in-maps";
 
+const kindLabels: Record<AgendaEvent["kind"], string> = { match: "MATCH", training: "ENTRAÎNEMENT", tournament: "TOURNOI", plateau: "PLATEAU" };
+
 const absenceReasons = attendanceStatuses.filter((status) => status !== "present");
 
 function mondayOf(time: number): number {
@@ -38,11 +40,16 @@ export default function CalendarScreen() {
 
   async function respond(event: AgendaEvent, response: AttendanceStatus) {
     setBusyKey(event.key);
-    const [path, idField] = event.kind === "match" ? ["/api/joueur/rsvp", "matchId"] : ["/api/joueur/rsvp-seance", "sessionId"];
+    const [path, body] =
+      event.kind === "match"
+        ? ["/api/joueur/rsvp", { matchId: event.id }]
+        : event.kind === "training"
+          ? ["/api/joueur/rsvp-seance", { sessionId: event.id }]
+          : ["/api/joueur/rsvp-competition", { kind: event.kind, competitionId: event.id }];
     const result = await apiFetch(path, {
       method: "POST",
       sessionToken,
-      body: JSON.stringify({ [idField]: event.id, status: response }),
+      body: JSON.stringify({ ...body, status: response }),
     }).catch(() => null);
     setBusyKey(null);
     if (!result?.ok) {
@@ -101,7 +108,7 @@ export default function CalendarScreen() {
                   <Text style={styles.dateDay}>{day ? day.getDate() : "?"}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.kind}>{event.kind === "match" ? "MATCH" : "ENTRAÎNEMENT"}</Text>
+                  <Text style={styles.kind}>{kindLabels[event.kind]}</Text>
                   <Text style={styles.title}>{event.title}</Text>
                   <Text style={styles.meta}>{[event.dateLabel, event.time].filter(Boolean).join(" · ")}</Text>
                   {event.location ? (
@@ -142,7 +149,7 @@ export default function CalendarScreen() {
                     </View>
                   ) : (
                     <Text style={styles.meta}>
-                      {event.kind === "training" ? "Séance programmée : tu pourras répondre quand la convocation sera envoyée." : "Pas convoqué pour ce match."}
+                      {event.kind === "match" ? "Pas convoqué pour ce match." : "Programmé : tu pourras répondre quand la convocation sera envoyée."}
                     </Text>
                   )}
                 </View>

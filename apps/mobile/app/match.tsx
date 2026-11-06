@@ -1,12 +1,13 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { gameFormats, listFormations } from "@evolyfoot/domain";
-import type { GameFormat, MatchStatus, MatchVenue } from "@evolyfoot/domain";
+import type { GameFormat, MatchStatus, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CalendarImport } from "../components/calendar-import";
 import { CompetitionsPanel } from "../components/competitions-panel";
+import { ConcernedPlayersPicker } from "../components/concerned-players-picker";
 import { CalendarIcon, LineupIcon, PinIcon } from "../components/icons";
 import { DateTimeField } from "../components/date-time-field";
 import { PlaceInput } from "../components/place-input";
@@ -16,7 +17,7 @@ const statusLabel: Record<MatchStatus, string> = { scheduled: "À venir", played
 const venueLabel: Record<MatchVenue, string> = { home: "Domicile", away: "Extérieur" };
 
 export default function MatchListScreen() {
-  const { team, listMatches, createMatch } = useAuth();
+  const { team, roster, listMatches, createMatch } = useAuth();
   const [matches, setMatches] = useState<MobileMatch[]>([]);
   const [creating, setCreating] = useState(false);
   const [opponent, setOpponent] = useState("");
@@ -34,6 +35,8 @@ export default function MatchListScreen() {
   const formationId = availableFormations.some((formation) => formation.id === selectedFormationId) ? selectedFormationId! : availableFormations[0]!.id;
   const [createError, setCreateError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // Joueurs concernés, tout l'effectif par défaut (voir ConcernedPlayersPicker).
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<PlayerSelection>(null);
 
   useEffect(() => {
     (async () => {
@@ -56,6 +59,7 @@ export default function MatchListScreen() {
       gameFormat,
       formationId,
       ...(location.trim() ? { location: location.trim() } : {}),
+      selectedPlayerIds,
     });
     setSubmitting(false);
     if (!result.ok) {
@@ -143,9 +147,23 @@ export default function MatchListScreen() {
               ))}
             </View>
 
+            <View style={styles.concerned}>
+              <ConcernedPlayersPicker
+                hint="Seuls les joueurs cochés voient le match, reçoivent la convocation et entrent dans la composition."
+                onChange={setSelectedPlayerIds}
+                roster={roster}
+                value={selectedPlayerIds}
+              />
+            </View>
+
             {createError ? <Text style={styles.fieldError}>{createError}</Text> : null}
             <View style={styles.createActions}>
-              <TouchableOpacity accessibilityRole="button" disabled={submitting} onPress={submitCreate} style={styles.submitButton}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                disabled={submitting || selectedPlayerIds?.length === 0}
+                onPress={submitCreate}
+                style={styles.submitButton}
+              >
                 <Text style={styles.submitButtonText}>{submitting ? "Création…" : "Créer le match"}</Text>
               </TouchableOpacity>
               <TouchableOpacity accessibilityRole="button" onPress={() => setCreating(false)} style={styles.cancelButton}>
@@ -203,6 +221,7 @@ export default function MatchListScreen() {
 }
 
 const styles = StyleSheet.create({
+  concerned: { marginTop: 16 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
   safe: { flex: 1, backgroundColor: colors.paper },
   page: { padding: spacing.lg, paddingBottom: 50 },
