@@ -4,6 +4,7 @@ import { TacticalDiagramView } from "../tactical-diagram";
 import { AuthedRedirect } from "./authed-redirect";
 import { HeroPitch } from "./hero-pitch";
 import { ScrollEffects } from "./scroll-effects";
+import { StoreBadges } from "./store-badges";
 
 // Uniquement des faits vérifiables dans le produit : aucun chiffre d'utilisateurs ou d'avis.
 const proofs = [
@@ -21,11 +22,21 @@ const loop = [
 ];
 
 const features = [
-  { title: "Préparation de match", text: "Compose ton équipe en touchant le terrain, désigne un capitaine, plusieurs formations par format." },
+  {
+    title: "Convocations programmées",
+    text: "Choisis quand elles partent (la veille, 2 jours avant…) et si les joueurs sont présents par défaut. Avant l’envoi, la séance apparaît « programmée ».",
+  },
+  { title: "Présents, absents, sans réponse", text: "Les réponses de l’équipe en trois compteurs ; un geste pour voir qui vient, qui manque et pourquoi." },
+  {
+    title: "Les bons joueurs concernés",
+    text: "Coche qui est concerné par un match, un tournoi, un plateau ou les entraînements : eux seuls voient l’événement et reçoivent la convocation.",
+  },
+  { title: "Préparation de match", text: "Compose ton équipe en touchant le terrain ; change de formation sans perdre les joueurs déjà placés." },
+  { title: "Carte joueur", text: "Une carte façon néon avec la photo détourée automatiquement, les notes par aspect et les chiffres de la saison." },
+  { title: "Progrès en toile", text: "Chaque évaluation datée en toile d’araignée ; superpose-les pour voir le chemin parcouru." },
+  { title: "Saison mois par mois", text: "Toutes les séances de la saison placées dans le calendrier, mois après mois, comme le mois en cours." },
   { title: "Présences & statistiques", text: "La présence se relève à la préparation ; les chiffres de la saison en diagrammes et en rapport." },
-  { title: "Fiche joueur", text: "Une évaluation en toile d’araignée datée, comparée à l’auto-évaluation du joueur." },
-  { title: "Calendrier & saison", text: "La semaine d’un coup d’œil, toute la saison mois par mois." },
-  { title: "Web et mobile", text: "La même équipe, le même plan, synchronisés entre l’ordinateur et le téléphone." },
+  { title: "Deux applis mobiles", text: "EvolyFoot Coach pour le bord du terrain, EvolyFoot Player pour les joueurs et leurs parents." },
 ];
 
 const audiences = [
@@ -39,7 +50,7 @@ const audiences = [
   {
     eyebrow: "Joueurs et tuteurs",
     title: "Suis ta progression.",
-    text: "Sur invitation du coach : calendrier, convocations, messages et auto-évaluation.",
+    text: "Sur invitation du coach, dans l’appli EvolyFoot Player : calendrier, réponses aux convocations, messages et progrès.",
     href: "/methode",
     cta: "Voir comment ça marche",
   },
@@ -49,7 +60,10 @@ const faq = [
   { q: "Pour quelle catégorie ?", a: "EvolyFoot est pensé pour le football de jeunes, en particulier les catégories U10 à U13." },
   { q: "Faut-il être diplômé ?", a: "Non. EvolyFoot s’adresse aussi bien aux éducateurs diplômés qu’aux bénévoles qui débutent." },
   { q: "Mes données sont-elles à moi ?", a: "Oui. Ton effectif, tes séances et tes observations t’appartiennent et restent privés." },
-  { q: "Web ou mobile ?", a: "Les deux. L’application web pour préparer, l’application mobile pour le bord du terrain." },
+  {
+    q: "Web ou mobile ?",
+    a: "Les deux. L’application web pour préparer, EvolyFoot Coach pour le bord du terrain et EvolyFoot Player pour les joueurs et leurs parents.",
+  },
   { q: "Combien de temps pour démarrer ?", a: "Le diagnostic et le premier cycle se font en quelques minutes, avant ta prochaine séance." },
   {
     q: "Combien ça coûte ?",
@@ -85,6 +99,7 @@ export default function MarketingHome() {
             </Link>
           </div>
           <p className="m-hero-note">14 jours d’essai, sans carte bancaire · Web et mobile</p>
+          <StoreBadges app="coach" />
         </div>
 
         <div className="m-impact-visual">
@@ -184,6 +199,25 @@ export default function MarketingHome() {
               <span>{audience.cta} →</span>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="m-section m-reveal">
+        <h2>Deux applis, une même équipe</h2>
+        <p className="m-section-lead">Tout reste synchronisé avec l’application web : la même équipe, le même plan, les mêmes convocations.</p>
+        <div className="m-apps">
+          <div className="m-app">
+            <small>Pour l’éducateur</small>
+            <h3>EvolyFoot Coach</h3>
+            <p>Séance du jour, mode terrain, composition, convocations et réponses de l’équipe, au bord du terrain.</p>
+            <StoreBadges app="coach" />
+          </div>
+          <div className="m-app">
+            <small>Pour les joueurs et les parents</small>
+            <h3>EvolyFoot Player</h3>
+            <p>Calendrier, réponse présent ou absent, messages avec le coach, carte joueur et progrès.</p>
+            <StoreBadges app="player" />
+          </div>
         </div>
       </section>
 
