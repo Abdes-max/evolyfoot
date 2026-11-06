@@ -1,5 +1,5 @@
 import { Prisma } from "./generated/prisma/client";
-import type { MatchPlayerStat, PersonalExercise, PersonalExerciseInput } from "@evolyfoot/domain";
+import type { MatchPlayerStat, PersonalExercise, PersonalExerciseInput, PlayerSelection } from "@evolyfoot/domain";
 import type { PrismaClient } from "./generated/prisma/client";
 import {
   DiagnosticNotFoundError,
@@ -44,6 +44,8 @@ import { normalizeEducatorEmail } from "./email";
 import type {
   AdjustmentDecision,
   ClubRecord,
+  CompetitionCreate,
+  CompetitionUpdate,
   NotificationInput,
   NotificationKind,
   NotificationRecord,
@@ -912,6 +914,7 @@ export class PrismaMatchRepository implements MatchRepository {
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
+      selectedPlayerIds?: PlayerSelection;
     },
   ): Promise<PersistedMatch> {
     try {
@@ -928,6 +931,7 @@ export class PrismaMatchRepository implements MatchRepository {
           meetingTime: input.meetingTime,
           location: input.location,
           description: input.description,
+          ...(input.selectedPlayerIds ? { selectedPlayerIds: toSelectionJson(input.selectedPlayerIds) } : {}),
         },
       });
       return toPersistedMatch(match);
@@ -962,6 +966,7 @@ export class PrismaMatchRepository implements MatchRepository {
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
+      selectedPlayerIds?: PlayerSelection;
     },
   ): Promise<PersistedMatch> {
     const { count } = await this.prisma.matchRecord.updateMany({
@@ -986,6 +991,7 @@ export class PrismaMatchRepository implements MatchRepository {
         ...(input.goalsFor !== undefined ? { goalsFor: input.goalsFor } : {}),
         ...(input.goalsAgainst !== undefined ? { goalsAgainst: input.goalsAgainst } : {}),
         ...(input.playerStats !== undefined ? { playerStats: input.playerStats as unknown as Prisma.InputJsonValue } : {}),
+        ...(input.selectedPlayerIds !== undefined ? { selectedPlayerIds: toSelectionJson(input.selectedPlayerIds) } : {}),
       },
     });
     if (count === 0) {
@@ -1003,6 +1009,11 @@ export class PrismaMatchRepository implements MatchRepository {
   }
 }
 
+// Joueurs concernés : `null` (tout l'effectif) s'écrit NULL en base, pas le JSON `null`.
+function toSelectionJson(selection: PlayerSelection): Prisma.InputJsonValue | typeof Prisma.DbNull {
+  return selection === null ? Prisma.DbNull : (selection as unknown as Prisma.InputJsonValue);
+}
+
 export class PrismaTournamentRepository implements TournamentRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -1016,10 +1027,7 @@ export class PrismaTournamentRepository implements TournamentRepository {
     return record === null ? null : toPersistedTournament(record);
   }
 
-  async create(
-    educatorId: string,
-    input: { name: string; dateLabel: string; date?: Date | null; location?: string; result?: string },
-  ): Promise<PersistedTournament> {
+  async create(educatorId: string, input: CompetitionCreate): Promise<PersistedTournament> {
     const record = await this.prisma.tournamentRecord.create({
       data: {
         educatorId,
@@ -1028,6 +1036,7 @@ export class PrismaTournamentRepository implements TournamentRepository {
         date: input.date ?? null,
         location: input.location ?? null,
         result: input.result ?? null,
+        ...(input.selectedPlayerIds ? { selectedPlayerIds: toSelectionJson(input.selectedPlayerIds) } : {}),
       },
     });
     return toPersistedTournament(record);
@@ -1035,11 +1044,7 @@ export class PrismaTournamentRepository implements TournamentRepository {
 
   // Même principe que PrismaMatchRepository.update : `updateMany` vérifie l'appartenance à
   // `educatorId` dans la même requête que l'écriture.
-  async update(
-    id: string,
-    educatorId: string,
-    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null },
-  ): Promise<PersistedTournament> {
+  async update(id: string, educatorId: string, input: CompetitionUpdate): Promise<PersistedTournament> {
     const { count } = await this.prisma.tournamentRecord.updateMany({
       where: { id, educatorId },
       data: {
@@ -1047,6 +1052,9 @@ export class PrismaTournamentRepository implements TournamentRepository {
         ...(input.location !== undefined ? { location: input.location } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.result !== undefined ? { result: input.result } : {}),
+        ...(input.selectedPlayerIds !== undefined ? { selectedPlayerIds: toSelectionJson(input.selectedPlayerIds) } : {}),
+        ...(input.convokedAt !== undefined ? { convokedAt: input.convokedAt } : {}),
+        ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
       },
     });
     if (count === 0) {
@@ -1078,10 +1086,7 @@ export class PrismaPlateauRepository implements PlateauRepository {
     return record === null ? null : toPersistedPlateau(record);
   }
 
-  async create(
-    educatorId: string,
-    input: { name: string; dateLabel: string; date?: Date | null; location?: string; result?: string },
-  ): Promise<PersistedPlateau> {
+  async create(educatorId: string, input: CompetitionCreate): Promise<PersistedPlateau> {
     const record = await this.prisma.plateauRecord.create({
       data: {
         educatorId,
@@ -1090,16 +1095,13 @@ export class PrismaPlateauRepository implements PlateauRepository {
         date: input.date ?? null,
         location: input.location ?? null,
         result: input.result ?? null,
+        ...(input.selectedPlayerIds ? { selectedPlayerIds: toSelectionJson(input.selectedPlayerIds) } : {}),
       },
     });
     return toPersistedPlateau(record);
   }
 
-  async update(
-    id: string,
-    educatorId: string,
-    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null },
-  ): Promise<PersistedPlateau> {
+  async update(id: string, educatorId: string, input: CompetitionUpdate): Promise<PersistedPlateau> {
     const { count } = await this.prisma.plateauRecord.updateMany({
       where: { id, educatorId },
       data: {
@@ -1107,6 +1109,9 @@ export class PrismaPlateauRepository implements PlateauRepository {
         ...(input.location !== undefined ? { location: input.location } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.result !== undefined ? { result: input.result } : {}),
+        ...(input.selectedPlayerIds !== undefined ? { selectedPlayerIds: toSelectionJson(input.selectedPlayerIds) } : {}),
+        ...(input.convokedAt !== undefined ? { convokedAt: input.convokedAt } : {}),
+        ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
       },
     });
     if (count === 0) {

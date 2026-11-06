@@ -6,6 +6,7 @@ import {
   attendanceStatusLabels,
   canFinalizeMatchPlan,
   clearSlot,
+  concernedPlayers,
   convocationFeedback as formatConvocationFeedback,
   defaultFormationId,
   formationSlots,
@@ -14,13 +15,23 @@ import {
   maxSubstitutes,
   removeSubstitute,
 } from "@evolyfoot/domain";
-import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchPlayerStat, MatchStatus, MatchVenue } from "@evolyfoot/domain";
+import type {
+  AttendanceEntry,
+  GameFormat,
+  MatchLineupAssignment,
+  MatchPlan,
+  MatchPlayerStat,
+  MatchStatus,
+  MatchVenue,
+  PlayerSelection,
+} from "@evolyfoot/domain";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { parseDatetimeInputValue, toDatetimeInputValue } from "../../date-format";
 import { initials, MatchPitch } from "../match-pitch";
 import { PlayerPicker } from "../player-picker";
+import { ConcernedPlayersPicker } from "../../concerned-players-picker";
 import { PlaceInput } from "../../place-input";
 import { MatchAnalysis } from "./match-analysis";
 import { MatchResultForm } from "./match-result-form";
@@ -43,6 +54,8 @@ interface MatchRecord {
   captainPlayerId: string | null;
   substitutePlayerIds: string[];
   attendance?: AttendanceEntry[];
+  // Joueurs concernés : `null` = tout l'effectif.
+  selectedPlayerIds?: string[] | null;
   opponentFormationId?: string | null;
   goalsFor?: number | null;
   goalsAgainst?: number | null;
@@ -91,6 +104,9 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [savingDetails, setSavingDetails] = useState(false);
+  const [selection, setSelection] = useState<PlayerSelection>(null);
+  const [savingSelection, setSavingSelection] = useState(false);
+  const [selectionFeedback, setSelectionFeedback] = useState<string | null>(null);
   const [sendingConvocation, setSendingConvocation] = useState(false);
   const [convocationFeedback, setConvocationFeedback] = useState<string | null>(null);
 
@@ -126,6 +142,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         setMeetingOffsetMinutes(typeof matchBody.match?.meetingOffsetMinutes === "number" ? String(matchBody.match.meetingOffsetMinutes) : "");
         setLocation(matchBody.match?.location ?? "");
         setDescription(matchBody.match?.description ?? "");
+        setSelection(matchBody.match?.selectedPlayerIds ?? null);
         // Pré-coche les absents déjà connus -- notamment un joueur/tuteur qui a répondu à sa
         // convocation avant même que le coach n'ouvre cette page (voir player-rsvp-service.ts) :
         // sans ce pré-remplissage, valider écraserait sa réponse par "présent" par défaut.
@@ -304,8 +321,40 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     }
   }
 
-  // Envoie un message de convocation (via la messagerie) à chaque joueur de la composition
-  // retenue -- voir ConvocationService côté base. Pas de blocage si déjà envoyée : renvoyer
+  // Joueurs concernés : seuls eux entrent dans la composition, la présence et la convocation (voir
+  // ConcernedPlayersPicker). Un joueur déjà placé reste affiché même s'il a été décoché depuis.
+  function teamRoster(current: MatchRecord): RosterPlayer[] {
+    const placed = new Set([...current.lineup.map((assignment) => assignment.playerId), ...current.substitutePlayerIds]);
+    const concerned = new Set(concernedPlayers(roster, current.selectedPlayerIds ?? null).map((player) => player.id));
+    return roster.filter((player) => concerned.has(player.id) || placed.has(player.id));
+  }
+
+  async function saveSelection() {
+    setSavingSelection(true);
+    setSelectionFeedback(null);
+    try {
+      const response = await fetch(`/api/matches/${matchId}/details`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ selectedPlayerIds: selection }),
+      });
+      if (!response.ok) {
+        setSelectionFeedback(await readErrorMessage(response));
+        return;
+      }
+      const body = await response.json();
+      setMatch(body.match);
+      setSelection(body.match?.selectedPlayerIds ?? null);
+      setSelectionFeedback("Joueurs concernés enregistrés.");
+    } catch {
+      setSelectionFeedback("Une erreur est survenue.");
+    } finally {
+      setSavingSelection(false);
+    }
+  }
+
+  // Envoie un message de convocation (via la messagerie) à chaque joueur concerné -- voir
+  // ConvocationService côté base. Pas de blocage si déjà envoyée : renvoyer
   // (composition modifiée, rappel...) est un geste volontaire du coach.
   async function sendConvocation() {
     setSendingConvocation(true);
@@ -341,7 +390,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     setFinalizing(true);
     setSaveError("");
     try {
-      const attendance: AttendanceEntry[] = roster.map((player) => {
+      const attendance: AttendanceEntry[] = (match ? teamRoster(match) : roster).map((player) => {
         const present = !absentPlayerIds.has(player.id);
         // Le motif détaillé (malade, blessé…) éventuellement déjà donné par le joueur/tuteur est
         // conservé tant que la case à cocher du coach correspond toujours à ce qu'il avait
@@ -408,6 +457,8 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   const slots = formationSlots(gameFormat, match.formationId);
   const readOnly = match.status === "played";
   const assignedPlayerIds = new Set(match.lineup.map((assignment) => assignment.playerId));
+  const concernedRoster = teamRoster(match);
+  const selectionChanged = JSON.stringify(selection) !== JSON.stringify(match.selectedPlayerIds ?? null);
   const canFinalize = canFinalizeMatchPlan(toPlan(match));
   // Autant de pastilles que le maximum autorisé pour ce format de jeu (voir maxSubstitutes),
   // vides tant qu'aucun remplaçant n'y est affecté -- même langage visuel que le terrain (pastille
@@ -466,8 +517,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             onSlotAssign={readOnly ? undefined : assignSlot}
             onCaptainChange={readOnly ? undefined : (playerId) => setCaptainPlayer(playerId ?? "")}
             onSlotClear={readOnly ? undefined : (slotId) => assignSlot(slotId, "")}
-            roster={roster}
-
+            roster={concernedRoster}
             slots={slots}
             substitutePlayerIds={match.substitutePlayerIds}
           />
@@ -501,7 +551,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
                   setPickingBenchIndex(null);
                 }}
                 // Une place déjà occupée ne propose que « Laisser le poste libre » (voir setBenchSlot).
-                players={benchSlots[pickingBenchIndex] ? [] : roster.filter((candidate) => !match.substitutePlayerIds.includes(candidate.id))}
+                players={benchSlots[pickingBenchIndex] ? [] : concernedRoster.filter((candidate) => !match.substitutePlayerIds.includes(candidate.id))}
                 statusOf={(playerId) => (assignedPlayerIds.has(playerId) ? "déjà titulaire" : null)}
                 title="Choisir un remplaçant"
               />
@@ -553,21 +603,37 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           />
 
           {!readOnly && (
+            <section className="match-concerned">
+              <ConcernedPlayersPicker
+                hint="Seuls les joueurs cochés voient le match, reçoivent la convocation et entrent dans la composition."
+                onChange={setSelection}
+                roster={roster}
+                value={selection}
+              />
+              {selectionChanged && (
+                <button className="match-details-save" disabled={savingSelection || selection?.length === 0} onClick={saveSelection} type="button">
+                  {savingSelection ? "Enregistrement…" : "Enregistrer les joueurs concernés"}
+                </button>
+              )}
+              {selectionFeedback && <p className="match-convocation-feedback">{selectionFeedback}</p>}
+            </section>
+          )}
+
+          {!readOnly && (
             <div className="match-convocation">
-              <button className="match-convocation-send" disabled={sendingConvocation || match.lineup.length === 0} onClick={sendConvocation} type="button">
-                {sendingConvocation ? "Envoi…" : "Envoyer la convocation"}
+              <button className="match-convocation-send" disabled={sendingConvocation || concernedRoster.length === 0} onClick={sendConvocation} type="button">
+                {sendingConvocation ? "Envoi…" : `Envoyer la convocation (${concernedPlayers(roster, match.selectedPlayerIds ?? null).length})`}
               </button>
-              {match.lineup.length === 0 && <p className="match-slot-hint">Compose l’équipe pour pouvoir convoquer.</p>}
               {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
             </div>
           )}
 
-          {!readOnly && roster.length > 0 && (
+          {!readOnly && concernedRoster.length > 0 && (
             <section aria-labelledby="match-attendance-title" className="match-attendance">
               <h2 id="match-attendance-title">Présence</h2>
               <p>Décoche les joueurs absents.</p>
               <ul className="match-attendance-list">
-                {roster.map((player) => {
+                {concernedRoster.map((player) => {
                   const present = !absentPlayerIds.has(player.id);
                   // Réponse déjà laissée par le joueur/tuteur à sa convocation (voir
                   // match-detail-view.tsx côté joueur) -- motif et commentaire éventuel, envoyé

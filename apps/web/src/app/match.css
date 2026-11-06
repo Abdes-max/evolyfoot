@@ -590,6 +590,12 @@
 
 /* Bouton "Envoyer la convocation" (match-prep-view.tsx) -- envoie un message dans le fil de
    messagerie de chaque joueur de la composition retenue. */
+/* Joueurs concernés d'un match ou d'un tournoi/plateau (concerned-players-picker.tsx). */
+.match-concerned {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
 .match-convocation {
   margin: 4px 0 18px;
   display: grid;
@@ -679,6 +685,11 @@
 .competitions-form-place {
   grid-column: 1 / -1;
   order: 1;
+}
+/* Joueurs concernés, sous le lieu. */
+.competitions-form-players {
+  grid-column: 1 / -1;
+  order: 2;
 }
 .competitions-empty {
   margin: 0;

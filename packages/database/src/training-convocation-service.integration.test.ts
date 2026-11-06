@@ -82,9 +82,9 @@ describe("TrainingConvocationService", () => {
 
   it("demande le réglage tant que l'éducateur ne l'a pas choisi, puis le garde", async () => {
     const coach = await coachWithTeam("settings");
-    expect(await service.getSettings(coach.id)).toEqual({ leadDays: null, attendanceDefault: null });
+    expect(await service.getSettings(coach.id)).toEqual({ leadDays: null, attendanceDefault: null, playerIds: null });
     await service.saveSettings(coach.id, { leadDays: 2, attendanceDefault: "present" });
-    expect(await service.getSettings(coach.id)).toEqual({ leadDays: 2, attendanceDefault: "present" });
+    expect(await service.getSettings(coach.id)).toEqual({ leadDays: 2, attendanceDefault: "present", playerIds: null });
     await expect(service.saveSettings(coach.id, { leadDays: 5, attendanceDefault: "ask" })).rejects.toBeInstanceOf(ValidationError);
   });
 

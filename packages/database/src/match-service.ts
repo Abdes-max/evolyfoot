@@ -1,7 +1,8 @@
 import { defaultFormationId, formationSlots, gameFormats, listFormations, maxSubstitutes, validateMatchPlan, validateMatchResult } from "@evolyfoot/domain";
 import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchResult, MatchVenue } from "@evolyfoot/domain";
 import { EducatorNotFoundError, MatchNotFoundError, ValidationError } from "./errors";
-import type { EducatorRepository, MatchRepository, PersistedMatch } from "./repositories";
+import { readPlayerSelection } from "./player-selection";
+import type { EducatorRepository, MatchRepository, PersistedMatch, PlayerRepository } from "./repositories";
 
 function normalizeOpponent(opponent: string): string {
   const trimmed = opponent.trim();
@@ -109,6 +110,8 @@ export class MatchService {
   constructor(
     private readonly educatorRepository: EducatorRepository,
     private readonly matchRepository: MatchRepository,
+    // Effectif, pour vérifier les joueurs concernés (voir readPlayerSelection).
+    private readonly playerRepository?: Pick<PlayerRepository, "listByEducator">,
   ) {}
 
   async list(educatorId: string): Promise<PersistedMatch[]> {
@@ -139,6 +142,7 @@ export class MatchService {
       meetingTime?: string;
       location?: string;
       description?: string;
+      selectedPlayerIds?: unknown;
     },
   ): Promise<PersistedMatch> {
     const opponent = normalizeOpponent(input.opponent);
@@ -148,6 +152,7 @@ export class MatchService {
     if (!(await this.educatorRepository.existsById(educatorId))) {
       throw new EducatorNotFoundError();
     }
+    const selectedPlayerIds = await readPlayerSelection(this.playerRepository, educatorId, input.selectedPlayerIds);
     return this.matchRepository.create(educatorId, {
       opponent,
       dateLabel,
@@ -159,6 +164,7 @@ export class MatchService {
       meetingTime: normalizeOptionalText(input.meetingTime),
       location: normalizeOptionalText(input.location),
       description: normalizeOptionalText(input.description),
+      ...(selectedPlayerIds !== undefined ? { selectedPlayerIds } : {}),
     });
   }
 
@@ -176,13 +182,16 @@ export class MatchService {
       location?: string | null;
       description?: string | null;
       opponentFormationId?: string | null;
+      selectedPlayerIds?: unknown;
     },
   ): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
     if (input.opponentFormationId && !listFormations(match.gameFormat).some((formation) => formation.id === input.opponentFormationId)) {
       throw new ValidationError("Ce système n’existe pas pour ce format de jeu.");
     }
+    const selectedPlayerIds = await readPlayerSelection(this.playerRepository, educatorId, input.selectedPlayerIds);
     return this.matchRepository.update(matchId, educatorId, {
+      ...(selectedPlayerIds !== undefined ? { selectedPlayerIds } : {}),
       ...(input.opponentFormationId !== undefined ? { opponentFormationId: input.opponentFormationId } : {}),
       ...(input.date !== undefined ? { date: input.date } : {}),
       ...(input.meetingOffsetMinutes !== undefined ? { meetingOffsetMinutes: normalizeMeetingOffset(input.meetingOffsetMinutes) } : {}),

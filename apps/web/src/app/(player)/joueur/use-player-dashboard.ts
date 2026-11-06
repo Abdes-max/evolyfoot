@@ -47,6 +47,10 @@ export interface Competition {
   name: string;
   dateLabel: string;
   date: string | null;
+  location?: string | null;
+  // Convocation envoyée : avant, l'événement est seulement « programmé », sans réponse possible.
+  convoked?: boolean;
+  myStatus?: AttendanceStatus | null;
 }
 
 export interface Dashboard {

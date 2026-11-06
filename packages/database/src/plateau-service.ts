@@ -1,7 +1,8 @@
 import { validatePlateau } from "@evolyfoot/domain";
 import type { PlateauInput } from "@evolyfoot/domain";
 import { EducatorNotFoundError, PlateauNotFoundError, ValidationError } from "./errors";
-import type { EducatorRepository, PersistedPlateau, PlateauRepository } from "./repositories";
+import { readPlayerSelection } from "./player-selection";
+import type { EducatorRepository, PersistedPlateau, PlayerRepository, PlateauRepository } from "./repositories";
 
 // Champ libre facultatif (lieu, description) : même principe que
 // TrainingSessionService.normalizeOptionalText.
@@ -17,6 +18,8 @@ export class PlateauService {
   constructor(
     private readonly educatorRepository: EducatorRepository,
     private readonly plateauRepository: PlateauRepository,
+    // Effectif, pour vérifier les joueurs concernés (voir readPlayerSelection).
+    private readonly playerRepository?: Pick<PlayerRepository, "listByEducator">,
   ) {}
 
   async list(educatorId: string): Promise<PersistedPlateau[]> {
@@ -27,7 +30,7 @@ export class PlateauService {
     return this.plateauRepository.findById(id, educatorId);
   }
 
-  async create(educatorId: string, input: PlateauInput & { date?: Date | null; location?: string }): Promise<PersistedPlateau> {
+  async create(educatorId: string, input: PlateauInput & { date?: Date | null; location?: string; selectedPlayerIds?: unknown }): Promise<PersistedPlateau> {
     const errors = validatePlateau(input);
     if (Object.keys(errors).length > 0) {
       throw new ValidationError(Object.values(errors)[0]!);
@@ -37,12 +40,14 @@ export class PlateauService {
     }
     const result = input.result?.trim();
     const location = input.location?.trim();
+    const selectedPlayerIds = await readPlayerSelection(this.playerRepository, educatorId, input.selectedPlayerIds);
     return this.plateauRepository.create(educatorId, {
       name: input.name.trim(),
       dateLabel: input.dateLabel.trim(),
       date: input.date ?? null,
       ...(location ? { location } : {}),
       ...(result ? { result } : {}),
+      ...(selectedPlayerIds !== undefined ? { selectedPlayerIds } : {}),
     });
   }
 
@@ -51,17 +56,19 @@ export class PlateauService {
   async updateDetails(
     educatorId: string,
     plateauId: string,
-    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null },
+    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null; selectedPlayerIds?: unknown },
   ): Promise<PersistedPlateau> {
     const existing = await this.plateauRepository.findById(plateauId, educatorId);
     if (!existing) {
       throw new PlateauNotFoundError();
     }
+    const selectedPlayerIds = await readPlayerSelection(this.playerRepository, educatorId, input.selectedPlayerIds);
     return this.plateauRepository.update(plateauId, educatorId, {
       ...(input.date !== undefined ? { date: input.date } : {}),
       ...(input.location !== undefined ? { location: normalizeOptionalText(input.location) } : {}),
       ...(input.description !== undefined ? { description: normalizeOptionalText(input.description) } : {}),
       ...(input.result !== undefined ? { result: normalizeOptionalText(input.result) } : {}),
+      ...(selectedPlayerIds !== undefined ? { selectedPlayerIds } : {}),
     });
   }
 

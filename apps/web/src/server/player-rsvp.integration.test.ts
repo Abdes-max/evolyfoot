@@ -1,6 +1,6 @@
 import { EducatorNotFoundError, ValidationError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
-import { createRespondToMatchHandler, createRespondToTrainingSessionHandler } from "./player-rsvp";
+import { createRespondToCompetitionHandler, createRespondToMatchHandler, createRespondToTrainingSessionHandler } from "./player-rsvp";
 
 const account = { id: "account-1", email: "tuteur@example.test", displayName: "Tuteur", role: "player" as const, linkedPlayerId: "p1", emailVerified: true };
 const authenticated = async () => account;
@@ -140,5 +140,27 @@ describe("createRespondToTrainingSessionHandler", () => {
       () => undefined,
     );
     expect((await handler(request({ sessionId: "s1", status: "present" }))).status).toBe(404);
+  });
+});
+
+describe("createRespondToCompetitionHandler", () => {
+  it("validates the kind and forwards the answer", async () => {
+    const received: unknown[] = [];
+    const handler = createRespondToCompetitionHandler(
+      authenticated,
+      {
+        respondToCompetition: async (accountId, kind, competitionId, status, comment) => {
+          received.push({ accountId, kind, competitionId, status, comment });
+          if (competitionId === "hidden") throw new EducatorNotFoundError();
+          if (competitionId === "scheduled") throw new ValidationError("Pas encore convoqué.");
+        },
+      },
+      () => undefined,
+    );
+    expect((await handler(request({ kind: "match", competitionId: "t1", status: "present" }))).status).toBe(400);
+    expect((await handler(request({ kind: "tournament", competitionId: "t1", status: "absent", comment: " Vacances " }))).status).toBe(200);
+    expect(received[0]).toEqual({ accountId: "account-1", kind: "tournament", competitionId: "t1", status: "absent", comment: "Vacances" });
+    expect((await handler(request({ kind: "plateau", competitionId: "hidden", status: "present" }))).status).toBe(404);
+    expect((await handler(request({ kind: "plateau", competitionId: "scheduled", status: "present" }))).status).toBe(400);
   });
 });

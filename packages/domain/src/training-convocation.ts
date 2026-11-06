@@ -1,3 +1,4 @@
+import type { PlayerSelection } from "./concerned-players";
 import { attendanceStatusOf, type AttendanceEntry } from "./attendance";
 
 // Réponse d'un joueur convoqué à un entraînement tant qu'il ne s'est pas manifesté.
@@ -9,6 +10,8 @@ export interface TrainingConvocationSettings {
   leadDays: number | null;
   // `null` tant que l'éducateur n'a pas fait son choix : l'appli le lui demande.
   attendanceDefault: AttendanceDefault | null;
+  // Joueurs des entraînements (voir concerned-players.ts) : `null` = tout l'effectif.
+  playerIds?: PlayerSelection;
 }
 
 export const convocationLeadOptions: readonly { value: number | null; label: string }[] = [

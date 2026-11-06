@@ -17,6 +17,7 @@ import type {
   PlayerSignal,
   TeamProfile,
   TrainingDay as DomainTrainingDay,
+  PlayerSelection,
 } from "@evolyfoot/domain";
 import {
   AgeGroup as PrismaAgeGroup,
@@ -68,6 +69,11 @@ import type {
 // sur PersistedTrainingSession.attendance/PersistedMatch.attendance.
 function toAttendanceEntries(value: unknown): readonly AttendanceEntry[] | undefined {
   return value === null || value === undefined ? undefined : (value as readonly AttendanceEntry[]);
+}
+
+// Joueurs concernés : Json nullable, `null` = tout l'effectif (voir concerned-players.ts côté domaine).
+function toPlayerSelection(value: unknown): PlayerSelection {
+  return Array.isArray(value) ? (value as string[]) : null;
 }
 
 function exhaustive(value: never): never {
@@ -432,6 +438,7 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     goalsFor: record.goalsFor,
     goalsAgainst: record.goalsAgainst,
     playerStats: (record.playerStats as unknown as readonly MatchPlayerStat[] | null) ?? [],
+    selectedPlayerIds: toPlayerSelection(record.selectedPlayerIds),
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   });
@@ -447,6 +454,9 @@ export function toPersistedTournament(record: PrismaTournamentRecord): Persisted
     location: record.location,
     description: record.description,
     result: record.result,
+    selectedPlayerIds: toPlayerSelection(record.selectedPlayerIds),
+    convokedAt: record.convokedAt,
+    attendance: toAttendanceEntries(record.attendance),
     createdAt: record.createdAt,
   });
 }
@@ -461,6 +471,9 @@ export function toPersistedPlateau(record: PrismaPlateauRecord): PersistedPlatea
     location: record.location,
     description: record.description,
     result: record.result,
+    selectedPlayerIds: toPlayerSelection(record.selectedPlayerIds),
+    convokedAt: record.convokedAt,
+    attendance: toAttendanceEntries(record.attendance),
     createdAt: record.createdAt,
   });
 }

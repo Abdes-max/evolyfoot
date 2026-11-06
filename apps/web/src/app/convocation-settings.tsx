@@ -1,15 +1,24 @@
 "use client";
 
-import { attendanceDefaultOptions, convocationLeadOptions, type AttendanceDefault, type TrainingConvocationSettings } from "@evolyfoot/domain";
+import {
+  attendanceDefaultOptions,
+  convocationLeadOptions,
+  type AttendanceDefault,
+  type PlayerSelection,
+  type TrainingConvocationSettings,
+} from "@evolyfoot/domain";
 import { useEffect, useState } from "react";
+import { ConcernedPlayersPicker, type ConcernedPlayer } from "./concerned-players-picker";
 
-// Réglage des convocations aux entraînements : quand elles partent et la réponse par défaut des
-// joueurs. Affiché en invitation tant que l'éducateur n'a pas choisi (`prompt`), sinon en réglage.
+// Réglage des convocations aux entraînements : quand elles partent, la réponse par défaut et les
+// joueurs des entraînements. Affiché en invitation tant que l'éducateur n'a pas choisi (`prompt`), sinon en réglage.
 export function ConvocationSettings({ prompt = false, onSaved }: { prompt?: boolean; onSaved?: (settings: TrainingConvocationSettings) => void }) {
   const [settings, setSettings] = useState<TrainingConvocationSettings | null>(null);
   const [leadDays, setLeadDays] = useState<number | null>(2);
   const [attendanceDefault, setAttendanceDefault] = useState<AttendanceDefault>("ask");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
+  const [playerIds, setPlayerIds] = useState<PlayerSelection>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -19,11 +28,16 @@ export function ConvocationSettings({ prompt = false, onSaved }: { prompt?: bool
         if (cancelled || !body?.settings) return;
         const loaded: TrainingConvocationSettings = body.settings;
         setSettings(loaded);
+        setPlayerIds(loaded.playerIds ?? null);
         if (loaded.attendanceDefault) {
           setLeadDays(loaded.leadDays);
           setAttendanceDefault(loaded.attendanceDefault);
         }
       })
+      .catch(() => undefined);
+    fetch("/api/roster")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => !cancelled && setRoster(body?.players ?? []))
       .catch(() => undefined);
     return () => {
       cancelled = true;
@@ -35,7 +49,7 @@ export function ConvocationSettings({ prompt = false, onSaved }: { prompt?: bool
     const response = await fetch("/api/team/convocations", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ leadDays, attendanceDefault }),
+      body: JSON.stringify({ leadDays, attendanceDefault, playerIds }),
     }).catch(() => null);
     const body = response?.ok ? await response.json().catch(() => null) : null;
     if (!body?.settings) {
@@ -82,8 +96,15 @@ export function ConvocationSettings({ prompt = false, onSaved }: { prompt?: bool
           </button>
         ))}
       </div>
+      <ConcernedPlayersPicker
+        hint="Seuls ces joueurs voient les séances, reçoivent la convocation et peuvent répondre."
+        onChange={setPlayerIds}
+        roster={roster}
+        title="Joueurs des entraînements"
+        value={playerIds}
+      />
       <div className="convocation-settings-actions">
-        <button className="primary-button" disabled={state === "saving"} onClick={save} type="button">
+        <button className="primary-button" disabled={state === "saving" || playerIds?.length === 0} onClick={save} type="button">
           {state === "saving" ? "Enregistrement…" : "Enregistrer"}
         </button>
         {state === "saved" && <span className="convocation-settings-status">Réglage enregistré.</span>}

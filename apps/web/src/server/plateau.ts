@@ -1,4 +1,5 @@
 import { EducatorNotFoundError, PlateauNotFoundError } from "@evolyfoot/database";
+import type { AttendanceEntry } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface PlateauSummary {
@@ -9,17 +10,24 @@ export interface PlateauSummary {
   location: string | null;
   description: string | null;
   result: string | null;
+  // Joueurs concernés (`null` = tout l'effectif), convocation et réponses.
+  selectedPlayerIds: readonly string[] | null;
+  convokedAt: string | null;
+  attendance?: readonly AttendanceEntry[];
   createdAt: string;
 }
 
 export interface PlateauGateway {
   list(educatorId: string): Promise<PlateauSummary[]>;
   get(educatorId: string, plateauId: string): Promise<PlateauSummary>;
-  create(educatorId: string, input: { name: string; dateLabel: string; date?: string | null; location?: string; result?: string }): Promise<PlateauSummary>;
+  create(
+    educatorId: string,
+    input: { name: string; dateLabel: string; date?: string | null; location?: string; result?: string; selectedPlayerIds?: unknown },
+  ): Promise<PlateauSummary>;
   updateDetails(
     educatorId: string,
     plateauId: string,
-    input: { date?: string | null; location?: string | null; description?: string | null; result?: string | null },
+    input: { date?: string | null; location?: string | null; description?: string | null; result?: string | null; selectedPlayerIds?: unknown },
   ): Promise<PlateauSummary>;
   remove(educatorId: string, plateauId: string): Promise<void>;
 }
@@ -105,7 +113,7 @@ export function createCreatePlateauHandler(
     }
 
     try {
-      const plateau = await plateaux.create(educator.id, { name, dateLabel, date, location, result });
+      const plateau = await plateaux.create(educator.id, { name, dateLabel, date, location, result, selectedPlayerIds: body?.selectedPlayerIds });
       return Response.json({ plateau }, { status: 201 });
     } catch (error) {
       return errorResponse(error, log);
@@ -136,7 +144,7 @@ export function createUpdatePlateauDetailsHandler(
     const result = body?.result === undefined ? undefined : isNullableString(body.result) ? body.result : null;
     try {
       return Response.json({
-        plateau: await plateaux.updateDetails(educator.id, plateauId, { date, location, description, result }),
+        plateau: await plateaux.updateDetails(educator.id, plateauId, { date, location, description, result, selectedPlayerIds: body?.selectedPlayerIds }),
       });
     } catch (error) {
       return errorResponse(error, log);
@@ -164,9 +172,14 @@ export function createRemovePlateauHandler(
 }
 
 export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, PrismaEducatorRepository, PrismaPlateauRepository, PlateauService } = await import("@evolyfoot/database");
+  const { createDatabaseClient, PrismaEducatorRepository, PrismaPlayerRepository, PrismaPlateauRepository, PlateauService } =
+    await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const service = new PlateauService(new PrismaEducatorRepository(database.prisma), new PrismaPlateauRepository(database.prisma));
+  const service = new PlateauService(
+    new PrismaEducatorRepository(database.prisma),
+    new PrismaPlateauRepository(database.prisma),
+    new PrismaPlayerRepository(database.prisma),
+  );
 
   function toSummary(plateau: Awaited<ReturnType<typeof service.create>>): PlateauSummary {
     return {
@@ -177,6 +190,9 @@ export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway;
       location: plateau.location,
       description: plateau.description,
       result: plateau.result,
+      selectedPlayerIds: plateau.selectedPlayerIds,
+      convokedAt: plateau.convokedAt ? plateau.convokedAt.toISOString() : null,
+      ...(plateau.attendance ? { attendance: plateau.attendance } : {}),
       createdAt: plateau.createdAt.toISOString(),
     };
   }

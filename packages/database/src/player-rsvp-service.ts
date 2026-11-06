@@ -1,7 +1,8 @@
-import { createAttendanceEntry } from "@evolyfoot/domain";
+import { createAttendanceEntry, isConcerned } from "@evolyfoot/domain";
 import type { AttendanceStatus } from "@evolyfoot/domain";
 import { EducatorNotFoundError, ValidationError } from "./errors";
 import type { EducatorRepository, MatchRepository, PlayerRepository, TrainingSessionRepository } from "./repositories";
+import type { TrainingConvocationRepository } from "./training-convocation-repository";
 
 // Réponse du joueur/tuteur à sa convocation pour un match ou une séance à venir -- seule écriture
 // ouverte à un compte "player" (le reste de son espace est en lecture seule, voir
@@ -14,6 +15,8 @@ export class PlayerRsvpService {
     private readonly playerRepository: PlayerRepository,
     private readonly matchRepository: MatchRepository,
     private readonly trainingSessionRepository: TrainingSessionRepository,
+    // Joueurs des entraînements ; absent, toute l'équipe peut répondre.
+    private readonly convocationRepository?: Pick<TrainingConvocationRepository, "findSettings">,
   ) {}
 
   async respondToMatch(playerAccountId: string, matchId: string, status: AttendanceStatus, comment?: string | null): Promise<void> {
@@ -27,7 +30,8 @@ export class PlayerRsvpService {
       throw new EducatorNotFoundError();
     }
     const match = await this.matchRepository.findById(matchId, owned.educatorId);
-    if (!match) {
+    // Un joueur non concerné ne voit pas le match (voir PlayerDashboardService).
+    if (!match || !isConcerned(match.selectedPlayerIds, playerId)) {
       throw new EducatorNotFoundError();
     }
     if (match.status !== "scheduled") {
@@ -54,8 +58,11 @@ export class PlayerRsvpService {
     if (!owned) {
       throw new EducatorNotFoundError();
     }
-    const session = await this.trainingSessionRepository.findById(sessionId, owned.educatorId);
-    if (!session) {
+    const [session, settings] = await Promise.all([
+      this.trainingSessionRepository.findById(sessionId, owned.educatorId),
+      this.convocationRepository?.findSettings(owned.educatorId),
+    ]);
+    if (!session || !isConcerned(settings?.playerIds, playerId)) {
       throw new EducatorNotFoundError();
     }
     if (session.convokedAt === null) {

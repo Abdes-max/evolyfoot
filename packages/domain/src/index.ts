@@ -169,6 +169,8 @@ export {
   summarizeTrainingResponses,
 } from "./training-convocation";
 export type { AttendanceDefault, ResponsePlayer, TrainingConvocationSettings, TrainingResponses } from "./training-convocation";
+export { concernedPlayers, isConcerned, parsePlayerSelection } from "./concerned-players";
+export type { PlayerSelection } from "./concerned-players";
 export { messageMaxLength, validateMessageText } from "./message";
 export type { Message, MessageAuthorRole } from "./message";
 export { buildTeamStatsReport, pluralize } from "./team-stats-report";
