@@ -10,6 +10,7 @@ import { Fragment, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Circle, Line, Polygon, Text as SvgText } from "react-native-svg";
 import { Screen } from "../components/screen";
+import { WaitingApproval } from "../components/waiting-approval";
 import { useDashboard } from "../lib/dashboard";
 
 const RADAR_SIZE = 300;
@@ -117,6 +118,7 @@ export default function ProgressionScreen() {
   return (
     <Screen title="Mes progrès">
       {status === "error" && !dashboard ? <Text style={styles.note}>Impossible de charger tes progrès.</Text> : null}
+      {status === "waiting" ? <WaitingApproval /> : null}
       {dashboard ? (
         <>
           <View style={styles.counters}>

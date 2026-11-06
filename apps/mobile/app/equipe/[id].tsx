@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { EvaluationRadar } from "../../components/evaluation-radar";
 import { PlayerDetailsForm } from "../../components/player-details-form";
+import { PlayerTutors } from "../../components/player-tutors";
 import { useAuth } from "../../lib/auth-context";
 import { playerReportHtml, sharePdf, type ReportPlayer } from "../../lib/pdf-export";
 import { PhotoChoice } from "../../components/photo-choice";
@@ -394,9 +395,10 @@ export default function PlayerScreen() {
               <Text style={styles.link}>Exporter le bilan en PDF</Text>
             </TouchableOpacity>
             <TouchableOpacity accessibilityRole="button" onPress={inviteTutor} style={styles.outline}>
-              <Text style={styles.link}>Inviter le joueur ou son tuteur</Text>
+              <Text style={styles.link}>Envoyer le lien d’invitation</Text>
             </TouchableOpacity>
-            <Text style={styles.muted}>Le lien donne accès à EvolyFoot Player pour ce joueur seulement.</Text>
+            <Text style={styles.muted}>Toujours le même lien, à envoyer au joueur ou à ses parents : tu acceptes ensuite chaque demande.</Text>
+            <PlayerTutors playerId={player.id} />
           </>
         )}
       </ScrollView>

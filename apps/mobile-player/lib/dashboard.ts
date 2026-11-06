@@ -155,7 +155,8 @@ export function pendingResponses(dashboard: Dashboard, now: number): number {
 export function useDashboard() {
   const { sessionToken } = useAuth();
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  // "waiting" : aucune demande de suivi encore acceptée par l'éducateur.
+  const [status, setStatus] = useState<"loading" | "ready" | "waiting" | "error">("loading");
 
   const reload = useCallback(async () => {
     const response = await apiFetch("/api/joueur", { sessionToken }).catch(() => null);
@@ -163,6 +164,9 @@ export function useDashboard() {
     if (response?.ok && body?.dashboard) {
       setDashboard(body.dashboard);
       setStatus("ready");
+    } else if (response?.ok && body?.waiting) {
+      setDashboard(null);
+      setStatus("waiting");
     } else {
       setStatus("error");
     }
