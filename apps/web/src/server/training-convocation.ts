@@ -5,7 +5,7 @@ import { convocationMailer, notifyByEmail, type ConvocationOutcome } from "./con
 
 export interface TrainingConvocationGateway {
   getSettings(educatorId: string): Promise<TrainingConvocationSettings>;
-  saveSettings(educatorId: string, input: { leadDays: unknown; attendanceDefault: unknown }): Promise<TrainingConvocationSettings>;
+  saveSettings(educatorId: string, input: { leadDays: unknown; attendanceDefault: unknown; playerIds?: unknown }): Promise<TrainingConvocationSettings>;
 }
 
 // GET : réglage des convocations aux entraînements (`attendanceDefault` null = pas encore choisi).
@@ -28,7 +28,8 @@ export function createGetConvocationSettingsHandler(
   };
 }
 
-// PUT { leadDays: 0|1|2|3|7|null, attendanceDefault: "present"|"ask" }.
+// PUT { leadDays: 0|1|2|3|7|null, attendanceDefault: "present"|"ask", playerIds?: string[]|null }
+// (joueurs des entraînements, absent = inchangé).
 export function createSaveConvocationSettingsHandler(
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
   gateway: Pick<TrainingConvocationGateway, "saveSettings">,
@@ -41,7 +42,9 @@ export function createSaveConvocationSettingsHandler(
     }
     const body = await request.json().catch(() => null);
     try {
-      return Response.json({ settings: await gateway.saveSettings(educator.id, { leadDays: body?.leadDays, attendanceDefault: body?.attendanceDefault }) });
+      return Response.json({
+        settings: await gateway.saveSettings(educator.id, { leadDays: body?.leadDays, attendanceDefault: body?.attendanceDefault, playerIds: body?.playerIds }),
+      });
     } catch (error) {
       if (error instanceof ValidationError) {
         return Response.json({ error: error.message }, { status: 400 });
@@ -56,12 +59,14 @@ export function createSaveConvocationSettingsHandler(
 }
 
 export async function createTrainingConvocationGateway(): Promise<{ gateway: TrainingConvocationGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, PrismaTrainingConvocationRepository, TrainingConvocationService } = await import("@evolyfoot/database");
+  const { createDatabaseClient, PrismaPlayerRepository, PrismaTrainingConvocationRepository, TrainingConvocationService } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   // Le réglage n'envoie rien : pas besoin du service de convocation ici.
-  const service = new TrainingConvocationService(new PrismaTrainingConvocationRepository(database.prisma), {
-    sendForTrainingSession: () => Promise.reject(new Error("Non utilisé")),
-  });
+  const service = new TrainingConvocationService(
+    new PrismaTrainingConvocationRepository(database.prisma),
+    { sendForTrainingSession: () => Promise.reject(new Error("Non utilisé")) },
+    new PrismaPlayerRepository(database.prisma),
+  );
   return {
     gateway: {
       getSettings: (educatorId) => service.getSettings(educatorId),

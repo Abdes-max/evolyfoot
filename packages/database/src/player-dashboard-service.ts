@@ -1,4 +1,4 @@
-import { attendanceStatusOf, playerSeasonTotals, summarizeAttendance } from "@evolyfoot/domain";
+import { attendanceStatusOf, isConcerned, playerSeasonTotals, summarizeAttendance } from "@evolyfoot/domain";
 import type { AttendanceEntry, AttendanceStatus, AttendanceSummary, PlayerEvaluationScores, PlayerSeasonTotals, TrainingDay } from "@evolyfoot/domain";
 import { EducatorNotFoundError } from "./errors";
 import { matchKickoffTime, matchMeetingTime } from "./match-time";
@@ -12,6 +12,7 @@ import type {
   TournamentRepository,
   TrainingSessionRepository,
 } from "./repositories";
+import type { TrainingConvocationRepository } from "./training-convocation-repository";
 
 export interface PlayerDashboardEvaluation {
   id: string;
@@ -68,12 +69,17 @@ export interface PlayerDashboardTrainingSession {
 }
 
 // Plateau ou tournoi -- fusionnés sous "compétition", seule distinction utile pour le joueur.
+// Réponse possible une fois la convocation envoyée, comme une séance.
 export interface PlayerDashboardCompetition {
   id: string;
   type: "plateau" | "tournoi";
   name: string;
   dateLabel: string;
   date: Date | null;
+  location: string | null;
+  description: string | null;
+  convoked: boolean;
+  myStatus: AttendanceStatus | null;
 }
 
 export interface PlayerDashboard {
@@ -130,6 +136,8 @@ export class PlayerDashboardService {
     private readonly playerEvaluationRepository: PlayerEvaluationRepository,
     private readonly plateauRepository: PlateauRepository,
     private readonly tournamentRepository: TournamentRepository,
+    // Joueurs des entraînements ; absent, toute l'équipe voit les séances.
+    private readonly convocationRepository?: Pick<TrainingConvocationRepository, "findSettings">,
   ) {}
 
   private async resolveOwnedPlayer(playerAccountId: string) {
@@ -149,7 +157,7 @@ export class PlayerDashboardService {
     const playerId = owned.id;
     const ownerId = owned.educatorId;
 
-    const [team, sessions, currentCycle, matches, evaluations, plateaux, tournaments] = await Promise.all([
+    const [team, allSessions, currentCycle, allMatches, evaluations, allPlateaux, allTournaments, settings] = await Promise.all([
       this.teamRepository.findForEducator(ownerId),
       this.trainingSessionRepository.listByEducator(ownerId),
       this.trainingSessionRepository.currentCycle(ownerId),
@@ -157,7 +165,26 @@ export class PlayerDashboardService {
       this.playerEvaluationRepository.listByPlayer(playerId, ownerId),
       this.plateauRepository.listByEducator(ownerId),
       this.tournamentRepository.listByEducator(ownerId),
+      this.convocationRepository?.findSettings(ownerId),
     ]);
+    // Un joueur ne voit que les événements qui le concernent (voir concerned-players.ts côté domaine).
+    const sessions = isConcerned(settings?.playerIds, playerId) ? allSessions : [];
+    const matches = allMatches.filter((match) => isConcerned(match.selectedPlayerIds, playerId));
+    const plateaux = allPlateaux.filter((plateau) => isConcerned(plateau.selectedPlayerIds, playerId));
+    const tournaments = allTournaments.filter((tournament) => isConcerned(tournament.selectedPlayerIds, playerId));
+    const competitionFields = (competition: (typeof plateaux)[number]) => {
+      const myEntry = competition.attendance?.find((entry) => entry.playerId === playerId);
+      return {
+        id: competition.id,
+        name: competition.name,
+        dateLabel: competition.dateLabel,
+        date: competition.date,
+        location: competition.location,
+        description: competition.description,
+        convoked: competition.convokedAt !== null,
+        myStatus: myEntry ? attendanceStatusOf(myEntry) : null,
+      };
+    };
 
     const trainingEntries: AttendanceEntry[] = sessions.flatMap((session) => (session.attendance ?? []).filter((entry) => entry.playerId === playerId));
     const matchEntries: AttendanceEntry[] = matches.flatMap((match) => (match.attendance ?? []).filter((entry) => entry.playerId === playerId));
@@ -174,7 +201,7 @@ export class PlayerDashboardService {
         location: match.location,
         description: match.description,
         venue: match.venue,
-        convoked: match.lineup.some((assignment) => assignment.playerId === playerId),
+        convoked: true,
         myStatus: myEntry ? attendanceStatusOf(myEntry) : null,
       };
     };
@@ -190,7 +217,8 @@ export class PlayerDashboardService {
         jerseyNumber: owned.jerseyNumber,
         preferredFoot: owned.preferredFoot,
       },
-      season: playerSeasonTotals(matches, playerId),
+      // Totaux sur tous les matchs : un joueur retiré d'un match n'y a de toute façon pas de statistiques.
+      season: playerSeasonTotals(allMatches, playerId),
       team: team ? { name: team.profile.name, ageGroup: team.profile.ageGroup, trainingDays: team.profile.trainingDays } : null,
       evaluations: evaluations.map((evaluation) => ({
         id: evaluation.id,
@@ -222,20 +250,8 @@ export class PlayerDashboardService {
         };
       }),
       competitions: [
-        ...plateaux.map((plateau) => ({
-          id: plateau.id,
-          type: "plateau" as const,
-          name: plateau.name,
-          dateLabel: plateau.dateLabel,
-          date: plateau.date,
-        })),
-        ...tournaments.map((tournament) => ({
-          id: tournament.id,
-          type: "tournoi" as const,
-          name: tournament.name,
-          dateLabel: tournament.dateLabel,
-          date: tournament.date,
-        })),
+        ...plateaux.map((plateau) => ({ ...competitionFields(plateau), type: "plateau" as const })),
+        ...tournaments.map((tournament) => ({ ...competitionFields(tournament), type: "tournoi" as const })),
       ],
     };
   }

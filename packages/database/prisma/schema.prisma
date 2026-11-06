@@ -323,6 +323,8 @@ model Team {
   // `attendanceDefault` null = pas encore choisi : l'appli demande à l'éducateur.
   convocationLeadDays Int?               @map("convocation_lead_days")
   attendanceDefault   AttendanceDefault? @map("attendance_default")
+  // Joueurs des entraînements : tableau d'ids, null = tout l'effectif.
+  trainingPlayerIds   Json?              @map("training_player_ids")
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
 
@@ -526,6 +528,9 @@ model MatchRecord {
   goalsFor             Int?                @map("goals_for")
   goalsAgainst         Int?                @map("goals_against")
   playerStats          Json?               @map("player_stats")
+  // Joueurs concernés (voir concerned-players.ts côté domaine) : tableau d'ids, null = tout
+  // l'effectif ou, pour un match créé avant ce choix, la composition.
+  selectedPlayerIds    Json?               @map("selected_player_ids")
   observations         ObservationRecord[]
   createdAt            DateTime            @default(now()) @map("created_at")
   updatedAt            DateTime            @updatedAt @map("updated_at")
@@ -543,16 +548,21 @@ model MatchRecord {
 // depuis la fiche détail (voir MatchService.updateDetails) -- affiche tournois/plateaux sous la
 // même forme qu'un match (fiche cliquable, lieu, description).
 model TournamentRecord {
-  id          String    @id @default(uuid()) @db.Uuid
-  educatorId  String    @map("educator_id") @db.Uuid
-  educator    Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  name        String
-  dateLabel   String    @map("date_label")
-  date        DateTime?
-  location    String?
-  description String?
-  result      String?
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id                String    @id @default(uuid()) @db.Uuid
+  educatorId        String    @map("educator_id") @db.Uuid
+  educator          Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  name              String
+  dateLabel         String    @map("date_label")
+  date              DateTime?
+  location          String?
+  description       String?
+  result            String?
+  // Joueurs concernés (tableau d'ids, null = tout l'effectif), convocation et réponses : même
+  // principe que TrainingSessionRecord.
+  selectedPlayerIds Json?     @map("selected_player_ids")
+  convokedAt        DateTime? @map("convoked_at")
+  attendance        Json?
+  createdAt         DateTime  @default(now()) @map("created_at")
 
   @@index([educatorId])
   @@map("tournaments")
@@ -561,16 +571,20 @@ model TournamentRecord {
 // Fiche simple d'un plateau (rassemblement U6–U11) -- même forme que TournamentRecord, comptée à
 // part dans /statistiques.
 model PlateauRecord {
-  id          String    @id @default(uuid()) @db.Uuid
-  educatorId  String    @map("educator_id") @db.Uuid
-  educator    Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  name        String
-  dateLabel   String    @map("date_label")
-  date        DateTime?
-  location    String?
-  description String?
-  result      String?
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id                String    @id @default(uuid()) @db.Uuid
+  educatorId        String    @map("educator_id") @db.Uuid
+  educator          Educator  @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  name              String
+  dateLabel         String    @map("date_label")
+  date              DateTime?
+  location          String?
+  description       String?
+  result            String?
+  // Même principe que TournamentRecord.
+  selectedPlayerIds Json?     @map("selected_player_ids")
+  convokedAt        DateTime? @map("convoked_at")
+  attendance        Json?
+  createdAt         DateTime  @default(now()) @map("created_at")
 
   @@index([educatorId])
   @@map("plateaux")

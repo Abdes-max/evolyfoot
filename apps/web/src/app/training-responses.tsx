@@ -28,12 +28,15 @@ export function TrainingResponses({
   convokedAt,
   meetingAt,
   settings,
+  scheduledText,
 }: {
   roster: readonly ResponsePlayer[];
   attendance: readonly AttendanceEntry[] | undefined;
   convokedAt: string | null;
   meetingAt: string | null;
   settings: TrainingConvocationSettings | null;
+  // Texte affiché avant l'envoi, à la place de celui des séances (tournoi, plateau).
+  scheduledText?: string;
 }) {
   const [tab, setTab] = useState<Tab | null>(null);
 
@@ -43,11 +46,13 @@ export function TrainingResponses({
       <div className="training-responses scheduled">
         <span className="training-responses-badge">Programmée</span>
         <p>
-          {settings?.leadDays === null || settings?.leadDays === undefined
-            ? "Les joueurs voient la séance sans pouvoir répondre tant que tu n’as pas envoyé la convocation."
-            : sendDate
-              ? `La convocation partira automatiquement ${dateLabel(sendDate)}.`
-              : "La convocation part automatiquement dans les prochaines minutes."}
+          {scheduledText
+            ? scheduledText
+            : settings?.leadDays === null || settings?.leadDays === undefined
+              ? "Les joueurs voient la séance sans pouvoir répondre tant que tu n’as pas envoyé la convocation."
+              : sendDate
+                ? `La convocation partira automatiquement ${dateLabel(sendDate)}.`
+                : "La convocation part automatiquement dans les prochaines minutes."}
         </p>
       </div>
     );

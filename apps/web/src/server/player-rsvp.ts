@@ -1,4 +1,5 @@
 import { EducatorNotFoundError, ValidationError } from "@evolyfoot/database";
+import type { CompetitionKind } from "@evolyfoot/database";
 import { attendanceStatuses } from "@evolyfoot/domain";
 import type { AttendanceStatus } from "@evolyfoot/domain";
 import type { PublicAccount } from "./auth";
@@ -6,6 +7,7 @@ import type { PublicAccount } from "./auth";
 export interface PlayerRsvpGateway {
   respondToMatch(playerAccountId: string, matchId: string, status: AttendanceStatus, comment?: string | null): Promise<void>;
   respondToTrainingSession(playerAccountId: string, sessionId: string, status: AttendanceStatus, comment?: string | null): Promise<void>;
+  respondToCompetition(playerAccountId: string, kind: CompetitionKind, competitionId: string, status: AttendanceStatus, comment?: string | null): Promise<void>;
 }
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
@@ -92,21 +94,79 @@ export function createRespondToTrainingSessionHandler(
   };
 }
 
+// Même principe, pour un tournoi ou un plateau : { kind: "tournament"|"plateau", competitionId, status, comment? }.
+export function createRespondToCompetitionHandler(
+  resolvePlayerAccount: (request: Request) => Promise<PublicAccount | null>,
+  rsvp: Pick<PlayerRsvpGateway, "respondToCompetition">,
+  log: (error: unknown) => void,
+): (request: Request) => Promise<Response> {
+  return async (request) => {
+    const account = await resolvePlayerAccount(request);
+    if (!account) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const body = await readJsonBody(request);
+    const kind = body?.kind === "tournament" || body?.kind === "plateau" ? body.kind : null;
+    const competitionId = typeof body?.competitionId === "string" ? body.competitionId : null;
+    const status = isAttendanceStatus(body?.status) ? body.status : null;
+    if (!kind || !competitionId || !status) {
+      return Response.json({ error: "Événement et statut sont requis." }, { status: 400 });
+    }
+    try {
+      await rsvp.respondToCompetition(account.id, kind, competitionId, status, readCommentField(body));
+      return Response.json({ status: "ok" });
+    } catch (error) {
+      if (error instanceof EducatorNotFoundError) {
+        return Response.json({ error: error.message }, { status: 404 });
+      }
+      if (error instanceof ValidationError) {
+        return Response.json({ error: error.message }, { status: 400 });
+      }
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  };
+}
+
 export async function createPlayerRsvpGateway(): Promise<{ gateway: PlayerRsvpGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, PlayerRsvpService, PrismaEducatorRepository, PrismaMatchRepository, PrismaPlayerRepository, PrismaTrainingSessionRepository } =
-    await import("@evolyfoot/database");
+  const {
+    createDatabaseClient,
+    CompetitionConvocationService,
+    PlayerRsvpService,
+    PrismaEducatorRepository,
+    PrismaMatchRepository,
+    PrismaMessageRepository,
+    PrismaPlateauRepository,
+    PrismaPlayerRepository,
+    PrismaTournamentRepository,
+    PrismaTrainingConvocationRepository,
+    PrismaTrainingSessionRepository,
+  } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
+  const educatorRepository = new PrismaEducatorRepository(database.prisma);
+  const playerRepository = new PrismaPlayerRepository(database.prisma);
   const service = new PlayerRsvpService(
-    new PrismaEducatorRepository(database.prisma),
-    new PrismaPlayerRepository(database.prisma),
+    educatorRepository,
+    playerRepository,
     new PrismaMatchRepository(database.prisma),
     new PrismaTrainingSessionRepository(database.prisma),
+    new PrismaTrainingConvocationRepository(database.prisma),
+  );
+  // Répondre n'envoie aucun message : le dépôt des messages n'est là que pour le constructeur.
+  const competitions = new CompetitionConvocationService(
+    educatorRepository,
+    playerRepository,
+    new PrismaTournamentRepository(database.prisma),
+    new PrismaPlateauRepository(database.prisma),
+    new PrismaMessageRepository(database.prisma),
   );
 
   return {
     gateway: {
       respondToMatch: (playerAccountId, matchId, status, comment) => service.respondToMatch(playerAccountId, matchId, status, comment),
       respondToTrainingSession: (playerAccountId, sessionId, status, comment) => service.respondToTrainingSession(playerAccountId, sessionId, status, comment),
+      respondToCompetition: (playerAccountId, kind, competitionId, status, comment) =>
+        competitions.respond(playerAccountId, kind, competitionId, status, comment),
     },
     disconnect: database.disconnect,
   };

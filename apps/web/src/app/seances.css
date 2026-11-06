@@ -506,3 +506,70 @@
 .convocation-settings-status.error {
   color: #ff6b6b;
 }
+
+/* Joueurs concernés par un événement (concerned-players-picker.tsx). */
+.concerned-players {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.concerned-players legend {
+  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 800;
+}
+.concerned-players legend span,
+.concerned-players-hint,
+.concerned-players-empty {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.concerned-players-hint,
+.concerned-players-empty {
+  margin: 0;
+}
+.concerned-players-actions {
+  display: flex;
+  gap: 8px;
+}
+.concerned-players-actions button {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.concerned-players-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.concerned-players-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.concerned-players-list label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 13px;
+  cursor: pointer;
+}
+.concerned-players-list label.is-checked {
+  border-color: var(--accent);
+}
+.concerned-players-list input {
+  accent-color: var(--accent);
+}

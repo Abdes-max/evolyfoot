@@ -4,7 +4,10 @@ import Link from "next/link";
 import { PlaceInput } from "../place-input";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { concernedPlayers, convocationFeedback, type AttendanceEntry, type PlayerSelection } from "@evolyfoot/domain";
 import { parseDateInputValue } from "../date-format";
+import { ConcernedPlayersPicker, type ConcernedPlayer } from "../concerned-players-picker";
+import { TrainingResponses } from "../training-responses";
 
 interface Competition {
   id: string;
@@ -14,6 +17,10 @@ interface Competition {
   location: string | null;
   description: string | null;
   result: string | null;
+  // Joueurs concernés (`null` = tout l'effectif), convocation et réponses.
+  selectedPlayerIds: string[] | null;
+  convokedAt: string | null;
+  attendance?: AttendanceEntry[];
 }
 
 interface CompetitionDetailViewProps {
@@ -33,7 +40,7 @@ async function readErrorMessage(response: Response): Promise<string> {
 
 // Fiche détail d'un tournoi ou d'un plateau -- même forme que la préparation d'un match
 // (match-prep-view.tsx) : en-tête avec statut, panneau « Détails » modifiable (date, lieu,
-// description, bilan). Pas de composition ni de convocation ici, contrairement à un match : un
+// description, bilan), joueurs concernés, convocation et réponses. Pas de composition : un
 // tournoi/plateau n'a pas de feuille de match individuelle rattachée.
 export function CompetitionDetailView({ competitionId, endpoint, itemKey, singular, backHref }: CompetitionDetailViewProps) {
   const router = useRouter();
@@ -47,6 +54,10 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
   const [result, setResult] = useState("");
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
+  const [selection, setSelection] = useState<PlayerSelection>(null);
+  const [convoking, setConvoking] = useState(false);
+  const [convocationStatus, setConvocationStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,17 +75,20 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
           return;
         }
 
-        const response = await fetch(`${endpoint}/${competitionId}`);
+        const [response, rosterResponse] = await Promise.all([fetch(`${endpoint}/${competitionId}`), fetch("/api/roster")]);
         if (!response.ok) {
           setLoadError(await readErrorMessage(response));
           return;
         }
         const body = await response.json();
+        const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
         const loaded: Competition = body[itemKey];
         if (cancelled) {
           return;
         }
         setItem(loaded);
+        setRoster(rosterBody.players ?? []);
+        setSelection(loaded.selectedPlayerIds ?? null);
         setDateInput(loaded.date ? loaded.date.slice(0, 10) : "");
         setLocation(loaded.location ?? "");
         setDescription(loaded.description ?? "");
@@ -105,6 +119,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
           location,
           description,
           result,
+          selectedPlayerIds: selection,
         }),
       });
       if (!response.ok) {
@@ -114,11 +129,36 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
       const body = await response.json();
       const updated: Competition = body[itemKey];
       setItem(updated);
+      setSelection(updated.selectedPlayerIds ?? null);
       setDateInput(updated.date ? updated.date.slice(0, 10) : "");
     } catch {
       setSaveError("Une erreur est survenue.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Convocation aux joueurs concernés (messagerie + e-mail) ; ouvre les réponses côté joueur.
+  async function convoke() {
+    setConvoking(true);
+    setConvocationStatus(null);
+    try {
+      const response = await fetch(`${endpoint}/${competitionId}/convoke`, { method: "POST" });
+      if (!response.ok) {
+        setConvocationStatus(await readErrorMessage(response));
+        return;
+      }
+      const body = await response.json();
+      setConvocationStatus(convocationFeedback(body.sentCount, body.emailCount));
+      const refreshed = await fetch(`${endpoint}/${competitionId}`);
+      const refreshedBody = refreshed.ok ? await refreshed.json().catch(() => null) : null;
+      if (refreshedBody?.[itemKey]) {
+        setItem(refreshedBody[itemKey]);
+      }
+    } catch {
+      setConvocationStatus("Une erreur est survenue.");
+    } finally {
+      setConvoking(false);
     }
   }
 
@@ -199,10 +239,33 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
               <span>Bilan</span>
               <input onChange={(event) => setResult(event.target.value)} placeholder="Ex. 2 victoires, 1 nul" value={result} />
             </label>
-            <button className="match-details-save" disabled={saving} type="submit">
+            <ConcernedPlayersPicker
+              hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et peuvent répondre.`}
+              onChange={setSelection}
+              roster={roster}
+              value={selection}
+            />
+            <button className="match-details-save" disabled={saving || selection?.length === 0} type="submit">
               {saving ? "Enregistrement…" : "Enregistrer les détails"}
             </button>
           </form>
+
+          <TrainingResponses
+            attendance={item.attendance}
+            convokedAt={item.convokedAt}
+            meetingAt={item.date}
+            roster={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
+            scheduledText={`Les joueurs concernés voient ce ${singular} sans pouvoir répondre tant que tu n’as pas envoyé la convocation.`}
+            settings={null}
+          />
+          {!isPast && (
+            <div className="match-convocation">
+              <button className="match-convocation-send" disabled={convoking} onClick={convoke} type="button">
+                {convoking ? "Envoi…" : item.convokedAt ? "Renvoyer la convocation" : "Envoyer la convocation"}
+              </button>
+              {convocationStatus && <p className="match-convocation-feedback">{convocationStatus}</p>}
+            </div>
+          )}
 
           {saveError && (
             <p className="field-error" role="alert">

@@ -1,11 +1,12 @@
 "use client";
 
 import { gameFormats, listFormations } from "@evolyfoot/domain";
-import type { GameFormat, MatchStatus, MatchVenue } from "@evolyfoot/domain";
+import type { GameFormat, MatchStatus, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { frenchDateLabel, parseDatetimeInputValue, sortChronologically } from "../date-format";
+import { ConcernedPlayersPicker, type ConcernedPlayer } from "../concerned-players-picker";
 import { PlaceInput } from "../place-input";
 import { CalendarImport } from "./calendar-import";
 import { CompetitionsPanel } from "./competitions-panel";
@@ -59,6 +60,9 @@ export function MatchListView() {
   const formationId = availableFormations.some((formation) => formation.id === selectedFormationId) ? selectedFormationId! : availableFormations[0]!.id;
   const [createError, setCreateError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
+  // Joueurs concernés, tout l'effectif par défaut (voir ConcernedPlayersPicker).
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<PlayerSelection>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,7 +80,13 @@ export function MatchListView() {
           return;
         }
 
-        const [matchesResponse, teamResponse, profileResponse] = await Promise.all([fetch("/api/matches"), fetch("/api/team"), fetch("/api/profile")]);
+        const [matchesResponse, teamResponse, profileResponse, rosterResponse] = await Promise.all([
+          fetch("/api/matches"),
+          fetch("/api/team"),
+          fetch("/api/profile"),
+          fetch("/api/roster"),
+        ]);
+        const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
         const matchesBody = await matchesResponse.json().catch(() => ({ matches: [] }));
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const profileBody = await profileResponse.json().catch(() => ({ profile: null }));
@@ -84,6 +94,7 @@ export function MatchListView() {
           return;
         }
         setMatches(matchesBody.matches ?? []);
+        setRoster(rosterBody.players ?? []);
         setSelectedFormationId(profileBody.profile?.preferredFormation ?? null);
         const team: TeamSummary | null = teamBody.profile ?? null;
         setTeamName(team?.name ?? "");
@@ -119,6 +130,7 @@ export function MatchListView() {
           ...(location.trim() ? { location: location.trim() } : {}),
           gameFormat,
           formationId,
+          selectedPlayerIds,
         }),
       });
       if (!response.ok) {
@@ -223,13 +235,19 @@ export function MatchListView() {
                   ))}
                 </div>
               </fieldset>
+              <ConcernedPlayersPicker
+                hint="Seuls les joueurs cochés voient le match, reçoivent la convocation et entrent dans la composition."
+                onChange={setSelectedPlayerIds}
+                roster={roster}
+                value={selectedPlayerIds}
+              />
               {createError && (
                 <p className="field-error" role="alert">
                   {createError}
                 </p>
               )}
               <div className="match-create-actions">
-                <button disabled={submitting} type="submit">
+                <button disabled={submitting || selectedPlayerIds?.length === 0} type="submit">
                   {submitting ? "Création…" : "Créer le match"}
                 </button>
                 <button onClick={() => setCreating(false)} type="button">

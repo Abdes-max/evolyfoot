@@ -59,11 +59,11 @@ describe("ConvocationService", () => {
   afterEach(removeTestEducators);
   afterAll(() => database.disconnect());
 
-  it("envoie un message de convocation à chaque joueur de la composition d'un match", async () => {
+  it("envoie un message de convocation à chaque joueur concerné par un match", async () => {
     const coach = await createCoach("match");
     const p1 = await playerRepository.create(coach.id, "Kylian");
     const p2 = await playerRepository.create(coach.id, "Nael");
-    const outsider = await playerRepository.create(coach.id, "Sur le banc, pas convoqué");
+    const outsider = await playerRepository.create(coach.id, "Pas concerné");
     const match = await matchRepository.create(coach.id, {
       opponent: "US Vallée",
       dateLabel: "Samedi 19 septembre",
@@ -72,12 +72,7 @@ describe("ConvocationService", () => {
       formationId: "3-3-1",
       meetingTime: "14:30",
       location: "Stade Marius Requier",
-    });
-    await matchRepository.update(match.id, coach.id, {
-      lineup: [
-        { playerId: p1.id, playerName: p1.name, slotId: "gk" },
-        { playerId: p2.id, playerName: p2.name, slotId: "d1" },
-      ],
+      selectedPlayerIds: [p1.id, p2.id],
     });
 
     const result = await convocationService.sendForMatch(coach.id, match.id);
@@ -93,7 +88,7 @@ describe("ConvocationService", () => {
     expect(outsiderMessages).toHaveLength(0);
   });
 
-  it("rejette la convocation d'un match sans composition", async () => {
+  it("rejette la convocation d'un match sans joueur concerné", async () => {
     const coach = await createCoach("empty-lineup");
     const match = await matchRepository.create(coach.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8, formationId: "3-3-1" });
 

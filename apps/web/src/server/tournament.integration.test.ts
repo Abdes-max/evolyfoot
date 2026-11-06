@@ -21,6 +21,8 @@ const summary: TournamentSummary = {
   location: null,
   description: null,
   result: null,
+  selectedPlayerIds: null,
+  convokedAt: null,
   createdAt: "2026-09-10T00:00:00.000Z",
 };
 

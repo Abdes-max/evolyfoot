@@ -19,6 +19,7 @@ import type {
   PlayerSignal,
   TeamProfile,
   MatchPlayerStat,
+  PlayerSelection,
 } from "@evolyfoot/domain";
 
 // "team" : espace d'une équipe supplémentaire d'un éducateur, sans connexion possible.
@@ -472,6 +473,9 @@ export interface PersistedMatch {
   // présenté, et inversement. Même convention `undefined`/tableau vide que
   // PersistedTrainingSession.attendance ci-dessus.
   attendance?: readonly AttendanceEntry[];
+  // Joueurs concernés : `null` = tout l'effectif, ou la composition pour un match créé avant ce
+  // choix (voir matchConcernedIds).
+  selectedPlayerIds: PlayerSelection;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -492,6 +496,7 @@ export interface MatchRepository {
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
+      selectedPlayerIds?: PlayerSelection;
     },
   ): Promise<PersistedMatch>;
   update(
@@ -517,9 +522,30 @@ export interface MatchRepository {
       meetingTime?: string | null;
       location?: string | null;
       description?: string | null;
+      selectedPlayerIds?: PlayerSelection;
     },
   ): Promise<PersistedMatch>;
   remove(id: string, educatorId: string): Promise<void>;
+}
+
+// Création et modification d'un tournoi ou d'un plateau (mêmes champs).
+export interface CompetitionCreate {
+  name: string;
+  dateLabel: string;
+  date?: Date | null;
+  location?: string;
+  result?: string;
+  selectedPlayerIds?: PlayerSelection;
+}
+
+export interface CompetitionUpdate {
+  date?: Date | null;
+  location?: string | null;
+  description?: string | null;
+  result?: string | null;
+  selectedPlayerIds?: PlayerSelection;
+  convokedAt?: Date | null;
+  attendance?: readonly AttendanceEntry[];
 }
 
 // Fiche simple comptée à part des matchs dans /statistiques -- voir TournamentInput côté domaine.
@@ -534,20 +560,21 @@ export interface PersistedTournament {
   location: string | null;
   description: string | null;
   result: string | null;
+  // Joueurs concernés (`null` = tout l'effectif), convocation et réponses : même principe que
+  // PersistedTrainingSession.
+  selectedPlayerIds: PlayerSelection;
+  convokedAt: Date | null;
+  attendance?: readonly AttendanceEntry[];
   createdAt: Date;
 }
 
 export interface TournamentRepository {
   listByEducator(educatorId: string): Promise<PersistedTournament[]>;
   findById(id: string, educatorId: string): Promise<PersistedTournament | null>;
-  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; location?: string; result?: string }): Promise<PersistedTournament>;
+  create(educatorId: string, input: CompetitionCreate): Promise<PersistedTournament>;
   // Lieu, description et bilan -- modifiables indépendamment depuis la fiche détail, même
   // principe que TrainingSessionRepository.update.
-  update(
-    id: string,
-    educatorId: string,
-    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null },
-  ): Promise<PersistedTournament>;
+  update(id: string, educatorId: string, input: CompetitionUpdate): Promise<PersistedTournament>;
   remove(id: string, educatorId: string): Promise<void>;
 }
 
@@ -561,18 +588,19 @@ export interface PersistedPlateau {
   location: string | null;
   description: string | null;
   result: string | null;
+  // Joueurs concernés (`null` = tout l'effectif), convocation et réponses : même principe que
+  // PersistedTrainingSession.
+  selectedPlayerIds: PlayerSelection;
+  convokedAt: Date | null;
+  attendance?: readonly AttendanceEntry[];
   createdAt: Date;
 }
 
 export interface PlateauRepository {
   listByEducator(educatorId: string): Promise<PersistedPlateau[]>;
   findById(id: string, educatorId: string): Promise<PersistedPlateau | null>;
-  create(educatorId: string, input: { name: string; dateLabel: string; date?: Date | null; location?: string; result?: string }): Promise<PersistedPlateau>;
-  update(
-    id: string,
-    educatorId: string,
-    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null },
-  ): Promise<PersistedPlateau>;
+  create(educatorId: string, input: CompetitionCreate): Promise<PersistedPlateau>;
+  update(id: string, educatorId: string, input: CompetitionUpdate): Promise<PersistedPlateau>;
   remove(id: string, educatorId: string): Promise<void>;
 }
 

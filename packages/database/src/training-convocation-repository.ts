@@ -1,4 +1,5 @@
-import type { AttendanceDefault, TrainingConvocationSettings } from "@evolyfoot/domain";
+import type { AttendanceDefault, PlayerSelection, TrainingConvocationSettings } from "@evolyfoot/domain";
+import { Prisma } from "./generated/prisma/client";
 import type { PrismaClient } from "./generated/prisma/client";
 import { TeamNotFoundError } from "./errors";
 
@@ -14,7 +15,10 @@ export interface AwaitingConvocation {
 // automatiquement.
 export interface TrainingConvocationRepository {
   findSettings(educatorId: string): Promise<TrainingConvocationSettings>;
-  saveSettings(educatorId: string, settings: { leadDays: number | null; attendanceDefault: AttendanceDefault }): Promise<TrainingConvocationSettings>;
+  saveSettings(
+    educatorId: string,
+    settings: { leadDays: number | null; attendanceDefault: AttendanceDefault; playerIds?: PlayerSelection },
+  ): Promise<TrainingConvocationSettings>;
   listAwaiting(now: Date): Promise<AwaitingConvocation[]>;
 }
 
@@ -22,19 +26,35 @@ export class PrismaTrainingConvocationRepository implements TrainingConvocationR
   constructor(private readonly prisma: PrismaClient) {}
 
   async findSettings(educatorId: string): Promise<TrainingConvocationSettings> {
-    const team = await this.prisma.team.findUnique({ where: { educatorId }, select: { convocationLeadDays: true, attendanceDefault: true } });
-    return { leadDays: team?.convocationLeadDays ?? null, attendanceDefault: team?.attendanceDefault ?? null };
+    const team = await this.prisma.team.findUnique({
+      where: { educatorId },
+      select: { convocationLeadDays: true, attendanceDefault: true, trainingPlayerIds: true },
+    });
+    return {
+      leadDays: team?.convocationLeadDays ?? null,
+      attendanceDefault: team?.attendanceDefault ?? null,
+      playerIds: Array.isArray(team?.trainingPlayerIds) ? (team.trainingPlayerIds as string[]) : null,
+    };
   }
 
-  async saveSettings(educatorId: string, settings: { leadDays: number | null; attendanceDefault: AttendanceDefault }): Promise<TrainingConvocationSettings> {
+  async saveSettings(
+    educatorId: string,
+    settings: { leadDays: number | null; attendanceDefault: AttendanceDefault; playerIds?: PlayerSelection },
+  ): Promise<TrainingConvocationSettings> {
     const { count } = await this.prisma.team.updateMany({
       where: { educatorId },
-      data: { convocationLeadDays: settings.leadDays, attendanceDefault: settings.attendanceDefault },
+      data: {
+        convocationLeadDays: settings.leadDays,
+        attendanceDefault: settings.attendanceDefault,
+        ...(settings.playerIds !== undefined
+          ? { trainingPlayerIds: settings.playerIds === null ? Prisma.DbNull : (settings.playerIds as unknown as Prisma.InputJsonValue) }
+          : {}),
+      },
     });
     if (count === 0) {
       throw new TeamNotFoundError();
     }
-    return { ...settings };
+    return this.findSettings(educatorId);
   }
 
   async listAwaiting(now: Date): Promise<AwaitingConvocation[]> {

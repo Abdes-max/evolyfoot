@@ -1,4 +1,12 @@
-import { EducatorNotFoundError, MatchNotFoundError, TrainingSessionNotFoundError, ValidationError } from "@evolyfoot/database";
+import {
+  EducatorNotFoundError,
+  MatchNotFoundError,
+  PlateauNotFoundError,
+  TournamentNotFoundError,
+  TrainingSessionNotFoundError,
+  ValidationError,
+} from "@evolyfoot/database";
+import type { CompetitionKind } from "@evolyfoot/database";
 import type { PublicEducator } from "./auth";
 import type { MailInput } from "./mailer";
 import { renderConvocationEmail, sendMail } from "./mailer";
@@ -14,6 +22,7 @@ export interface ConvocationOutcome {
 export interface ConvocationGateway {
   sendForMatch(educatorId: string, matchId: string): Promise<ConvocationOutcome>;
   sendForTrainingSession(educatorId: string, sessionId: string): Promise<ConvocationOutcome>;
+  sendForCompetition(educatorId: string, kind: CompetitionKind, competitionId: string): Promise<ConvocationOutcome>;
 }
 
 export interface ConvocationMailer {
@@ -43,7 +52,12 @@ export async function notifyByEmail(outcome: ConvocationOutcome, coachName: stri
 }
 
 function errorResponse(error: unknown, log: (error: unknown) => void): Response {
-  if (error instanceof MatchNotFoundError || error instanceof TrainingSessionNotFoundError) {
+  if (
+    error instanceof MatchNotFoundError ||
+    error instanceof TrainingSessionNotFoundError ||
+    error instanceof TournamentNotFoundError ||
+    error instanceof PlateauNotFoundError
+  ) {
     return Response.json({ error: error.message }, { status: 404 });
   }
   if (error instanceof EducatorNotFoundError) {
@@ -56,9 +70,8 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
 }
 
-// Envoie la convocation (via la messagerie, voir ConvocationService côté base) pour un match --
-// à la composition retenue -- ou une séance -- à tout l'effectif, celle-ci n'ayant pas de
-// composition.
+// Envoie la convocation (via la messagerie, voir ConvocationService côté base) pour un match, une
+// séance, un tournoi ou un plateau, aux joueurs concernés.
 export function createSendMatchConvocationHandler(
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
   convocation: Pick<ConvocationGateway, "sendForMatch">,
@@ -99,33 +112,68 @@ export function createSendTrainingSessionConvocationHandler(
   };
 }
 
+export function createSendCompetitionConvocationHandler(
+  kind: CompetitionKind,
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  convocation: Pick<ConvocationGateway, "sendForCompetition">,
+  log: (error: unknown) => void,
+  mailer?: ConvocationMailer,
+): (request: Request, competitionId: string) => Promise<Response> {
+  return async (request, competitionId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    try {
+      const outcome = await convocation.sendForCompetition(educator.id, kind, competitionId);
+      return Response.json({ sentCount: outcome.sentCount, emailCount: await notifyByEmail(outcome, educator.displayName, request, mailer) });
+    } catch (error) {
+      return errorResponse(error, log);
+    }
+  };
+}
+
 export async function createConvocationGateway(): Promise<{ gateway: ConvocationGateway; disconnect: () => Promise<void> }> {
   const {
     createDatabaseClient,
+    CompetitionConvocationService,
     ConvocationService,
     PrismaEducatorRepository,
     PrismaMatchRepository,
     PrismaMessageRepository,
+    PrismaPlateauRepository,
     PrismaPlayerRepository,
+    PrismaTournamentRepository,
     PrismaTrainingSessionRepository,
     PrismaTrainingConvocationRepository,
     NotifyingMessageRepository,
   } = await import("@evolyfoot/database");
   const { notificationServiceFor } = await import("./notifications");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
+  const educatorRepository = new PrismaEducatorRepository(database.prisma);
+  const playerRepository = new PrismaPlayerRepository(database.prisma);
+  const messageRepository = new NotifyingMessageRepository(new PrismaMessageRepository(database.prisma), await notificationServiceFor(database), console.error);
   const service = new ConvocationService(
-    new PrismaEducatorRepository(database.prisma),
-    new PrismaPlayerRepository(database.prisma),
+    educatorRepository,
+    playerRepository,
     new PrismaMatchRepository(database.prisma),
     new PrismaTrainingSessionRepository(database.prisma),
-    new NotifyingMessageRepository(new PrismaMessageRepository(database.prisma), await notificationServiceFor(database), console.error),
+    messageRepository,
     new PrismaTrainingConvocationRepository(database.prisma),
+  );
+  const competitions = new CompetitionConvocationService(
+    educatorRepository,
+    playerRepository,
+    new PrismaTournamentRepository(database.prisma),
+    new PrismaPlateauRepository(database.prisma),
+    messageRepository,
   );
 
   return {
     gateway: {
       sendForMatch: (educatorId, matchId) => service.sendForMatch(educatorId, matchId),
       sendForTrainingSession: (educatorId, sessionId) => service.sendForTrainingSession(educatorId, sessionId),
+      sendForCompetition: (educatorId, kind, competitionId) => competitions.send(educatorId, kind, competitionId),
     },
     disconnect: database.disconnect,
   };

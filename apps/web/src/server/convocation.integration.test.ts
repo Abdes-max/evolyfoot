@@ -1,6 +1,11 @@
-import { EducatorNotFoundError, MatchNotFoundError, TrainingSessionNotFoundError, ValidationError } from "@evolyfoot/database";
+import { EducatorNotFoundError, MatchNotFoundError, TournamentNotFoundError, TrainingSessionNotFoundError, ValidationError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
-import { createSendMatchConvocationHandler, createSendTrainingSessionConvocationHandler, type ConvocationGateway } from "./convocation";
+import {
+  createSendCompetitionConvocationHandler,
+  createSendMatchConvocationHandler,
+  createSendTrainingSessionConvocationHandler,
+  type ConvocationGateway,
+} from "./convocation";
 
 const educator = { id: "educator-1", email: "coach@example.test", displayName: "Coach" };
 const authenticated = async () => educator;
@@ -146,5 +151,25 @@ describe("createSendTrainingSessionConvocationHandler", () => {
     expect(mails[0]!.text).toContain("Bonjour Kylian");
     expect(mails[0]!.text).toContain("Coach t’envoie une convocation");
     expect(mails[0]!.text).toContain("https://evolyfoot.test/joueur/calendrier");
+  });
+});
+
+describe("createSendCompetitionConvocationHandler", () => {
+  it("forwards the kind and the id, then maps a missing tournament to 404", async () => {
+    const received: unknown[] = [];
+    const gateway: Pick<ConvocationGateway, "sendForCompetition"> = {
+      sendForCompetition: async (educatorId, kind, competitionId) => {
+        received.push({ educatorId, kind, competitionId });
+        if (competitionId === "absent") throw new TournamentNotFoundError();
+        return { sentCount: 2, subject: "Convocation : tournoi « Noël »", text: "Convocation…", recipients: [] };
+      },
+    };
+    const handler = createSendCompetitionConvocationHandler("tournament", authenticated, gateway, () => undefined);
+    const response = await handler(request(), "t1");
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ sentCount: 2, emailCount: 0 });
+    expect(received).toEqual([{ educatorId: educator.id, kind: "tournament", competitionId: "t1" }]);
+    expect((await handler(request(), "absent")).status).toBe(404);
+    expect((await createSendCompetitionConvocationHandler("plateau", anonymous, gateway, () => undefined)(request(), "p1")).status).toBe(401);
   });
 });

@@ -26,6 +26,8 @@ export interface MatchSummary {
   captainPlayerId: string | null;
   substitutePlayerIds: readonly string[];
   attendance?: readonly AttendanceEntry[];
+  // Joueurs concernés : `null` = tout l'effectif.
+  selectedPlayerIds: readonly string[] | null;
   opponentFormationId: string | null;
   goalsFor: number | null;
   goalsAgainst: number | null;
@@ -48,6 +50,7 @@ export interface MatchGateway {
       meetingTime?: string;
       location?: string;
       description?: string;
+      selectedPlayerIds?: unknown;
     },
   ): Promise<MatchSummary>;
   updateLineup(
@@ -69,6 +72,7 @@ export interface MatchGateway {
       location?: string | null;
       description?: string | null;
       opponentFormationId?: string | null;
+      selectedPlayerIds?: unknown;
     },
   ): Promise<MatchSummary>;
   changeFormation(educatorId: string, matchId: string, input: { formationId: string; gameFormat?: number }): Promise<MatchSummary>;
@@ -174,6 +178,7 @@ export function createCreateMatchHandler(
         meetingTime,
         location,
         description,
+        selectedPlayerIds: body?.selectedPlayerIds,
       });
       return Response.json({ match }, { status: 201 });
     } catch (error) {
@@ -268,7 +273,15 @@ export function createUpdateMatchDetailsHandler(
       body?.opponentFormationId === undefined ? undefined : isNullableString(body.opponentFormationId) ? body.opponentFormationId : null;
     try {
       return Response.json({
-        match: await matches.updateDetails(educator.id, matchId, { date, meetingOffsetMinutes, meetingTime, location, description, opponentFormationId }),
+        match: await matches.updateDetails(educator.id, matchId, {
+          date,
+          meetingOffsetMinutes,
+          meetingTime,
+          location,
+          description,
+          opponentFormationId,
+          selectedPlayerIds: body?.selectedPlayerIds,
+        }),
       });
     } catch (error) {
       return errorResponse(error, log);
@@ -387,10 +400,14 @@ export function createRemoveMatchHandler(
 }
 
 export async function createMatchGateway(): Promise<{ gateway: MatchGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, MatchService, PrismaEducatorRepository, PrismaMatchRepository, matchKickoffTime, matchMeetingTime } =
+  const { createDatabaseClient, MatchService, PrismaEducatorRepository, PrismaMatchRepository, PrismaPlayerRepository, matchKickoffTime, matchMeetingTime } =
     await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const service = new MatchService(new PrismaEducatorRepository(database.prisma), new PrismaMatchRepository(database.prisma));
+  const service = new MatchService(
+    new PrismaEducatorRepository(database.prisma),
+    new PrismaMatchRepository(database.prisma),
+    new PrismaPlayerRepository(database.prisma),
+  );
 
   function toSummary(match: Awaited<ReturnType<typeof service.get>>): MatchSummary {
     return {
@@ -411,6 +428,7 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       captainPlayerId: match.captainPlayerId,
       substitutePlayerIds: match.substitutePlayerIds,
       ...(match.attendance ? { attendance: match.attendance } : {}),
+      selectedPlayerIds: match.selectedPlayerIds,
       opponentFormationId: match.opponentFormationId,
       goalsFor: match.goalsFor,
       goalsAgainst: match.goalsAgainst,

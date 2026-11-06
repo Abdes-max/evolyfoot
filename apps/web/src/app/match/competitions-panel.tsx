@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { frenchDateLabel, parseDateInputValue, sortChronologically } from "../date-format";
+import type { PlayerSelection } from "@evolyfoot/domain";
+import { ConcernedPlayersPicker, type ConcernedPlayer } from "../concerned-players-picker";
 import { PlaceInput } from "../place-input";
 
 interface Competition {
@@ -43,15 +45,20 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
   const [location, setLocation] = useState("");
   const [error, setError] = useState("");
   const [adding, setAdding] = useState(false);
+  const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
+  // Joueurs concernés, tout l'effectif par défaut (voir ConcernedPlayersPicker).
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<PlayerSelection>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch(endpoint);
+        const [response, rosterResponse] = await Promise.all([fetch(endpoint), fetch("/api/roster")]);
         const body = await response.json().catch(() => ({}));
+        const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
         if (!cancelled && response.ok) {
           setItems(body[listKey] ?? []);
+          setRoster(rosterBody.players ?? []);
         }
       } catch {
         // Section vide si la liste ne charge pas.
@@ -77,6 +84,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
           date: date ? date.toISOString() : null,
           location: location.trim() || undefined,
           result: result || undefined,
+          selectedPlayerIds,
         }),
       });
       if (!response.ok) {
@@ -89,6 +97,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
       setDateInput("");
       setResult("");
       setLocation("");
+      setSelectedPlayerIds(null);
     } catch {
       setError("Une erreur est survenue.");
     } finally {
@@ -106,7 +115,15 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
         <div className="competitions-form-place">
           <PlaceInput onChange={setLocation} value={location} />
         </div>
-        <button disabled={adding} type="submit">
+        <div className="competitions-form-players">
+          <ConcernedPlayersPicker
+            hint="Seuls les joueurs cochés voient l’événement, reçoivent la convocation et peuvent répondre."
+            onChange={setSelectedPlayerIds}
+            roster={roster}
+            value={selectedPlayerIds}
+          />
+        </div>
+        <button disabled={adding || selectedPlayerIds?.length === 0} type="submit">
           {adding ? "Ajout…" : "Ajouter"}
         </button>
       </form>

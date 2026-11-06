@@ -43,6 +43,7 @@ export async function createPlayerDashboardGateway(): Promise<{
     PrismaTeamRepository,
     PrismaTournamentRepository,
     PrismaTrainingSessionRepository,
+    PrismaTrainingConvocationRepository,
   } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new PlayerDashboardService(
@@ -54,6 +55,7 @@ export async function createPlayerDashboardGateway(): Promise<{
     new PrismaPlayerEvaluationRepository(database.prisma),
     new PrismaPlateauRepository(database.prisma),
     new PrismaTournamentRepository(database.prisma),
+    new PrismaTrainingConvocationRepository(database.prisma),
   );
 
   return {

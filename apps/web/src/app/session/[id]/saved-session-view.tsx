@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  concernedPlayers,
   convocationFeedback as formatConvocationFeedback,
   guidedSeasonCycle,
   type AttendanceEntry,
@@ -293,7 +294,13 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
               </button>
             </form>
 
-            <TrainingResponses attendance={attendance} convokedAt={convokedAt} meetingAt={recordMeetingAt} roster={roster} settings={convocationSettings} />
+            <TrainingResponses
+              attendance={attendance}
+              convokedAt={convokedAt}
+              meetingAt={recordMeetingAt}
+              roster={concernedPlayers(roster, convocationSettings?.playerIds)}
+              settings={convocationSettings}
+            />
 
             <div className="match-convocation">
               <button className="match-convocation-send" disabled={sendingConvocation} onClick={sendConvocation} type="button">

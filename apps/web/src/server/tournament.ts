@@ -1,4 +1,5 @@
 import { EducatorNotFoundError, TournamentNotFoundError } from "@evolyfoot/database";
+import type { AttendanceEntry } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface TournamentSummary {
@@ -11,17 +12,24 @@ export interface TournamentSummary {
   location: string | null;
   description: string | null;
   result: string | null;
+  // Joueurs concernés (`null` = tout l'effectif), convocation et réponses.
+  selectedPlayerIds: readonly string[] | null;
+  convokedAt: string | null;
+  attendance?: readonly AttendanceEntry[];
   createdAt: string;
 }
 
 export interface TournamentGateway {
   list(educatorId: string): Promise<TournamentSummary[]>;
   get(educatorId: string, tournamentId: string): Promise<TournamentSummary>;
-  create(educatorId: string, input: { name: string; dateLabel: string; date?: string | null; location?: string; result?: string }): Promise<TournamentSummary>;
+  create(
+    educatorId: string,
+    input: { name: string; dateLabel: string; date?: string | null; location?: string; result?: string; selectedPlayerIds?: unknown },
+  ): Promise<TournamentSummary>;
   updateDetails(
     educatorId: string,
     tournamentId: string,
-    input: { date?: string | null; location?: string | null; description?: string | null; result?: string | null },
+    input: { date?: string | null; location?: string | null; description?: string | null; result?: string | null; selectedPlayerIds?: unknown },
   ): Promise<TournamentSummary>;
   remove(educatorId: string, tournamentId: string): Promise<void>;
 }
@@ -109,7 +117,7 @@ export function createCreateTournamentHandler(
     }
 
     try {
-      const tournament = await tournaments.create(educator.id, { name, dateLabel, date, location, result });
+      const tournament = await tournaments.create(educator.id, { name, dateLabel, date, location, result, selectedPlayerIds: body?.selectedPlayerIds });
       return Response.json({ tournament }, { status: 201 });
     } catch (error) {
       return errorResponse(error, log);
@@ -140,7 +148,13 @@ export function createUpdateTournamentDetailsHandler(
     const result = body?.result === undefined ? undefined : isNullableString(body.result) ? body.result : null;
     try {
       return Response.json({
-        tournament: await tournaments.updateDetails(educator.id, tournamentId, { date, location, description, result }),
+        tournament: await tournaments.updateDetails(educator.id, tournamentId, {
+          date,
+          location,
+          description,
+          result,
+          selectedPlayerIds: body?.selectedPlayerIds,
+        }),
       });
     } catch (error) {
       return errorResponse(error, log);
@@ -168,9 +182,14 @@ export function createRemoveTournamentHandler(
 }
 
 export async function createTournamentGateway(): Promise<{ gateway: TournamentGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, PrismaEducatorRepository, PrismaTournamentRepository, TournamentService } = await import("@evolyfoot/database");
+  const { createDatabaseClient, PrismaEducatorRepository, PrismaPlayerRepository, PrismaTournamentRepository, TournamentService } =
+    await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const service = new TournamentService(new PrismaEducatorRepository(database.prisma), new PrismaTournamentRepository(database.prisma));
+  const service = new TournamentService(
+    new PrismaEducatorRepository(database.prisma),
+    new PrismaTournamentRepository(database.prisma),
+    new PrismaPlayerRepository(database.prisma),
+  );
 
   function toSummary(tournament: Awaited<ReturnType<typeof service.create>>): TournamentSummary {
     return {
@@ -181,6 +200,9 @@ export async function createTournamentGateway(): Promise<{ gateway: TournamentGa
       location: tournament.location,
       description: tournament.description,
       result: tournament.result,
+      selectedPlayerIds: tournament.selectedPlayerIds,
+      convokedAt: tournament.convokedAt ? tournament.convokedAt.toISOString() : null,
+      ...(tournament.attendance ? { attendance: tournament.attendance } : {}),
       createdAt: tournament.createdAt.toISOString(),
     };
   }

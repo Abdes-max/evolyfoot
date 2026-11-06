@@ -1,4 +1,4 @@
-import { createAttendanceEntry } from "@evolyfoot/domain";
+import { concernedPlayers, createAttendanceEntry } from "@evolyfoot/domain";
 import { EducatorNotFoundError, MatchNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
 import { matchMeetingTime } from "./match-time";
 import type {
@@ -65,9 +65,31 @@ function trainingSessionConvocationText(session: PersistedTrainingSession): stri
   return `Convocation : séance « ${session.title} », ${when}${where}. Merci de répondre présent ou absent dans l'appli.`;
 }
 
+// Adresses e-mail à prévenir pour ces joueurs : celles des comptes qui les suivent et celle de la
+// fiche joueur, sans doublon.
+export async function convocationRecipients(
+  educatorRepository: Pick<EducatorRepository, "findFollowers">,
+  players: readonly PersistedPlayer[],
+): Promise<ConvocationRecipient[]> {
+  const followers = await Promise.all(players.map((player) => educatorRepository.findFollowers(player.id)));
+  const byEmail = new Map<string, ConvocationRecipient>();
+  players.forEach((player, index) => {
+    for (const candidate of [
+      ...(followers[index] ?? []).map((account) => ({ email: account.email, name: account.displayName })),
+      player.email ? { email: player.email, name: player.firstName } : null,
+    ]) {
+      const key = candidate?.email.trim().toLowerCase();
+      if (candidate && key && key.includes("@") && !byEmail.has(key)) {
+        byEmail.set(key, { email: candidate.email.trim(), name: candidate.name });
+      }
+    }
+  });
+  return [...byEmail.values()];
+}
+
 // Envoie un message de convocation (via MessagingService, même fil que la messagerie normale) à
-// tous les joueurs concernés par un événement -- la composition retenue pour un match, tout
-// l'effectif pour une séance (qui n'a pas de composition, voir PlayerDashboardTrainingSession).
+// tous les joueurs concernés par un événement -- ceux cochés pour un match, les joueurs des
+// entraînements pour une séance (voir concerned-players.ts côté domaine).
 // Pas de suivi "déjà envoyée" : renvoyer la convocation (composition modifiée, rappel...) est un
 // geste volontaire du coach, pas une erreur à empêcher.
 export class ConvocationService {
@@ -90,25 +112,31 @@ export class ConvocationService {
     if (!match) {
       throw new MatchNotFoundError();
     }
-    const playerIds = [...new Set(match.lineup.map((assignment) => assignment.playerId))];
-    if (playerIds.length === 0) {
-      throw new ValidationError("Compose l’équipe avant d’envoyer la convocation.");
+    const convoked = concernedPlayers(await this.playerRepository.listByEducator(educatorId), match.selectedPlayerIds);
+    if (convoked.length === 0) {
+      throw new ValidationError("Coche les joueurs concernés avant d’envoyer la convocation.");
     }
     const text = matchConvocationText(match);
     await Promise.all(
-      playerIds.map((playerId) => this.messageRepository.create({ educatorId, playerId, authorRole: "coach", authorName: educator.displayName, text })),
+      convoked.map((player) => this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text })),
     );
-    const roster = await this.playerRepository.listByEducator(educatorId);
-    const convoked = roster.filter((player) => playerIds.includes(player.id));
-    return { sentCount: playerIds.length, subject: `Convocation : match contre ${match.opponent}`, text, recipients: await this.recipientsFor(convoked) };
+    return {
+      sentCount: convoked.length,
+      subject: `Convocation : match contre ${match.opponent}`,
+      text,
+      recipients: await convocationRecipients(this.educatorRepository, convoked),
+    };
   }
 
   async sendForTrainingSession(educatorId: string, sessionId: string): Promise<ConvocationResult> {
-    const [educator, session, roster] = await Promise.all([
+    const [educator, session, fullRoster, settings] = await Promise.all([
       this.educatorRepository.findById(educatorId),
       this.trainingSessionRepository.findById(sessionId, educatorId),
       this.playerRepository.listByEducator(educatorId),
+      this.convocationRepository?.findSettings(educatorId),
     ]);
+    // Seuls les joueurs des entraînements sont convoqués (tout l'effectif sans réglage).
+    const roster = concernedPlayers(fullRoster, settings?.playerIds);
     if (!educator) {
       throw new EducatorNotFoundError();
     }
@@ -124,7 +152,6 @@ export class ConvocationService {
     );
     // La séance passe de « programmée » à « convoquée » ; en « présent par défaut », chaque joueur
     // qui n'a pas encore répondu est compté présent jusqu'à ce qu'il signale son absence.
-    const settings = await this.convocationRepository?.findSettings(educatorId);
     const answered = new Set((session.attendance ?? []).map((entry) => entry.playerId));
     const attendance =
       settings?.attendanceDefault === "present"
@@ -136,23 +163,11 @@ export class ConvocationService {
           ]
         : undefined;
     await this.trainingSessionRepository.update(sessionId, educatorId, { convokedAt: this.now(), ...(attendance ? { attendance } : {}) });
-    return { sentCount: roster.length, subject: `Convocation : séance « ${session.title} »`, text, recipients: await this.recipientsFor(roster) };
-  }
-
-  private async recipientsFor(players: readonly PersistedPlayer[]): Promise<ConvocationRecipient[]> {
-    const followers = await Promise.all(players.map((player) => this.educatorRepository.findFollowers(player.id)));
-    const byEmail = new Map<string, ConvocationRecipient>();
-    players.forEach((player, index) => {
-      for (const candidate of [
-        ...(followers[index] ?? []).map((account) => ({ email: account.email, name: account.displayName })),
-        player.email ? { email: player.email, name: player.firstName } : null,
-      ]) {
-        const key = candidate?.email.trim().toLowerCase();
-        if (candidate && key && key.includes("@") && !byEmail.has(key)) {
-          byEmail.set(key, { email: candidate.email.trim(), name: candidate.name });
-        }
-      }
-    });
-    return [...byEmail.values()];
+    return {
+      sentCount: roster.length,
+      subject: `Convocation : séance « ${session.title} »`,
+      text,
+      recipients: await convocationRecipients(this.educatorRepository, roster),
+    };
   }
 }

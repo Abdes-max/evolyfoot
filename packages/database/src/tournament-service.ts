@@ -1,7 +1,8 @@
 import { validateTournament } from "@evolyfoot/domain";
 import type { TournamentInput } from "@evolyfoot/domain";
 import { EducatorNotFoundError, TournamentNotFoundError, ValidationError } from "./errors";
-import type { EducatorRepository, PersistedTournament, TournamentRepository } from "./repositories";
+import { readPlayerSelection } from "./player-selection";
+import type { EducatorRepository, PersistedTournament, PlayerRepository, TournamentRepository } from "./repositories";
 
 // Champ libre facultatif (lieu, description) : même principe que
 // TrainingSessionService.normalizeOptionalText.
@@ -17,6 +18,8 @@ export class TournamentService {
   constructor(
     private readonly educatorRepository: EducatorRepository,
     private readonly tournamentRepository: TournamentRepository,
+    // Effectif, pour vérifier les joueurs concernés (voir readPlayerSelection).
+    private readonly playerRepository?: Pick<PlayerRepository, "listByEducator">,
   ) {}
 
   async list(educatorId: string): Promise<PersistedTournament[]> {
@@ -27,7 +30,10 @@ export class TournamentService {
     return this.tournamentRepository.findById(id, educatorId);
   }
 
-  async create(educatorId: string, input: TournamentInput & { date?: Date | null; location?: string }): Promise<PersistedTournament> {
+  async create(
+    educatorId: string,
+    input: TournamentInput & { date?: Date | null; location?: string; selectedPlayerIds?: unknown },
+  ): Promise<PersistedTournament> {
     const errors = validateTournament(input);
     if (Object.keys(errors).length > 0) {
       throw new ValidationError(Object.values(errors)[0]!);
@@ -37,12 +43,14 @@ export class TournamentService {
     }
     const result = input.result?.trim();
     const location = input.location?.trim();
+    const selectedPlayerIds = await readPlayerSelection(this.playerRepository, educatorId, input.selectedPlayerIds);
     return this.tournamentRepository.create(educatorId, {
       name: input.name.trim(),
       dateLabel: input.dateLabel.trim(),
       date: input.date ?? null,
       ...(location ? { location } : {}),
       ...(result ? { result } : {}),
+      ...(selectedPlayerIds !== undefined ? { selectedPlayerIds } : {}),
     });
   }
 
@@ -51,17 +59,19 @@ export class TournamentService {
   async updateDetails(
     educatorId: string,
     tournamentId: string,
-    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null },
+    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null; selectedPlayerIds?: unknown },
   ): Promise<PersistedTournament> {
     const existing = await this.tournamentRepository.findById(tournamentId, educatorId);
     if (!existing) {
       throw new TournamentNotFoundError();
     }
+    const selectedPlayerIds = await readPlayerSelection(this.playerRepository, educatorId, input.selectedPlayerIds);
     return this.tournamentRepository.update(tournamentId, educatorId, {
       ...(input.date !== undefined ? { date: input.date } : {}),
       ...(input.location !== undefined ? { location: normalizeOptionalText(input.location) } : {}),
       ...(input.description !== undefined ? { description: normalizeOptionalText(input.description) } : {}),
       ...(input.result !== undefined ? { result: normalizeOptionalText(input.result) } : {}),
+      ...(selectedPlayerIds !== undefined ? { selectedPlayerIds } : {}),
     });
   }
 

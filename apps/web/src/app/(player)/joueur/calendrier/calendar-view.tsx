@@ -2,6 +2,8 @@
 
 import { attendanceStatusLabels, type AttendanceStatus } from "@evolyfoot/domain";
 import Link from "next/link";
+import { useState } from "react";
+import { RsvpControl } from "../../rsvp-control";
 import { MapEmbed } from "../../../map-embed";
 import { sortChronologically, weekGroupKey, weekGroupLabel } from "../../../date-format";
 import { PlayerSpaceHeader } from "../../player-space-header";
@@ -63,7 +65,50 @@ type CalendarItem =
       venue: "home" | "away";
       myStatus: AttendanceStatus | null;
     }
-  | { kind: "competition"; id: string; date: Date | null; title: string; dateLabel: string; type: "plateau" | "tournoi" };
+  | {
+      kind: "competition";
+      id: string;
+      date: Date | null;
+      title: string;
+      dateLabel: string;
+      type: "plateau" | "tournoi";
+      location: string | null;
+      convoked: boolean;
+      myStatus: AttendanceStatus | null;
+    };
+
+// Réponse à la convocation d'un tournoi ou d'un plateau, directement sur la carte (pas de page de
+// détail pour une compétition).
+function CompetitionResponse({ item }: { item: Extract<CalendarItem, { kind: "competition" }> }) {
+  const [status, setStatus] = useState<AttendanceStatus | null>(item.myStatus);
+  const [responding, setResponding] = useState(false);
+
+  async function respond(nextStatus: AttendanceStatus, comment: string | null) {
+    setResponding(true);
+    setStatus(nextStatus);
+    try {
+      await fetch("/api/joueur/rsvp-competition", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ kind: item.type === "plateau" ? "plateau" : "tournament", competitionId: item.id, status: nextStatus, comment }),
+      });
+    } catch {
+      // Repli silencieux, comme pour une séance : un rechargement confirmera ou corrigera.
+    } finally {
+      setResponding(false);
+    }
+  }
+
+  if (!item.convoked) {
+    return <ResponseBadge scheduled status={null} />;
+  }
+  return (
+    <>
+      <ResponseBadge status={status} />
+      <RsvpControl disabled={responding} onRespond={respond} status={status} />
+    </>
+  );
+}
 
 // Onglet "Calendrier" (voir player-tab-bar.tsx) : la semaine, puis "Mes convocations" -- tout ce
 // qui décrit ce qui se passe, plutôt que ce qui décrit le joueur lui-même (voir l'onglet Mon
@@ -107,6 +152,9 @@ export function PlayerCalendarView() {
           title: competition.name,
           dateLabel: competition.dateLabel,
           type: competition.type,
+          location: competition.location ?? null,
+          convoked: competition.convoked === true,
+          myStatus: competition.myStatus ?? null,
         })),
       ]
     : [];
@@ -160,6 +208,8 @@ export function PlayerCalendarView() {
                                 <strong>{item.title}</strong>
                                 <span>{item.dateLabel}</span>
                                 <span className="player-space-tag">{item.type === "plateau" ? "Plateau" : "Tournoi"}</span>
+                                {item.location && <span>{item.location}</span>}
+                                <CompetitionResponse item={item} />
                               </li>
                             );
                           }
