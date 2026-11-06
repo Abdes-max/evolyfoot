@@ -20,7 +20,6 @@ import {
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { MatchPitch } from "../match/match-pitch";
 import { TodayDate } from "../today-date";
 import { WeeklyCalendar } from "../weekly-calendar";
 
@@ -163,7 +162,6 @@ export function DashboardView() {
   const nextMatch = [...(data?.matches ?? [])]
     .filter((match) => match.status === "scheduled" && (!match.date || new Date(match.date).getTime() >= now - 3 * 3600_000))
     .sort((a, b) => (a.date ? new Date(a.date).getTime() : Infinity) - (b.date ? new Date(b.date).getTime() : Infinity))[0];
-  const nextMatchSlots = nextMatch ? formationSlots(nextMatch.gameFormat as GameFormat, nextMatch.formationId) : [];
 
   const season = data?.seasonProgram ?? null;
   const seasonWeeks = season ? buildPrioritizedSeason({ priorities: season.priorities as never, sessionsPerWeek: data?.sessionsPerWeek ?? 2 }) : [];
@@ -276,16 +274,8 @@ export function DashboardView() {
               </Link>
             )}
 
-            <Link aria-label="Voir la composition du prochain match" className="home-card card-link" href={nextMatch ? `/match/${nextMatch.id}` : "/match"}>
-              <span className="eyebrow">COMPOSITION</span>
-              {nextMatch ? (
-                <div className="home-pitch">
-                  <MatchPitch captainPlayerId={nextMatch.captainPlayerId} lineup={nextMatch.lineup} slots={nextMatchSlots} />
-                </div>
-              ) : (
-                <p>Ta composition s’affichera ici dès ton prochain match.</p>
-              )}
-            </Link>
+            {/* Calendrier de la semaine : la composition du prochain match est sur la page Mon équipe. */}
+            <WeeklyCalendar />
 
             <Link aria-label="Voir ma saison" className="home-card card-link" href="/saison">
               <span className="eyebrow">MA SAISON</span>
@@ -363,7 +353,6 @@ export function DashboardView() {
                 )}
               </div>
             </article>
-            <WeeklyCalendar />
           </section>
         </>
       )}

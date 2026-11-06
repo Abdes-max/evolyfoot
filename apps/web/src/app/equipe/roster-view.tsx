@@ -4,6 +4,7 @@ import { playerPositionCodes, playerPositions } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { SidebarNav } from "../sidebar-nav";
+import { NextMatchLineup } from "./next-match-lineup";
 
 interface RosterPlayer {
   id: string;
@@ -218,6 +219,8 @@ export function RosterView() {
                   )}
                 </div>
               </div>
+
+              <NextMatchLineup />
 
               <span className="roster-side-title">OUTILS</span>
               <form className="roster-add-form" onSubmit={addPlayer}>
