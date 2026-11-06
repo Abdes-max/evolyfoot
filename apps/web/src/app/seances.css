@@ -573,3 +573,31 @@
 .concerned-players-list input {
   accent-color: var(--accent);
 }
+
+/* Navigation entre les cycles de la saison (seances-view.tsx). */
+.seances-cycle-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  font-size: 13px;
+}
+.seances-cycle-nav button {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.seances-cycle-nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

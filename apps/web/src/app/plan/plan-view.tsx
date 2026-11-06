@@ -1,6 +1,19 @@
 "use client";
 
-import { buildDevelopmentPlan, summarizeDiagnostic, trainingCycleWeekCount, type DiagnosticScores } from "@evolyfoot/domain";
+import {
+  buildDevelopmentPlan,
+  buildPrioritizedSeason,
+  guidedSeasonCycle,
+  nextSeasonSlot,
+  seasonCycleAsPlan,
+  seasonCycleAt,
+  seasonCycles,
+  seasonWeekAt,
+  summarizeDiagnostic,
+  trainingCycleWeekCount,
+  type DevelopmentTheme,
+  type DiagnosticScores,
+} from "@evolyfoot/domain";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -24,6 +37,11 @@ export function PlanView() {
   const [cycleNumber, setCycleNumber] = useState(1);
   const [starting, setStarting] = useState(false);
   const [cycleError, setCycleError] = useState("");
+  // Saison guidée : le cycle affiché est alors celui de la saison (voir seasonCycles).
+  const [program, setProgram] = useState<{ priorities: DevelopmentTheme[]; startDate: string } | null>(null);
+  const [sessionsPerWeek, setSessionsPerWeek] = useState(2);
+  const [preparedSeasonSlots, setPreparedSeasonSlots] = useState<{ weekNumber: number; slot: number }[]>([]);
+  const [now] = useState(() => new Date());
   const router = useRouter();
 
   useEffect(() => {
@@ -37,7 +55,15 @@ export function PlanView() {
           return;
         }
 
-        const [diagnosticResponse, teamResponse, sessionsResponse] = await Promise.all([fetch("/api/diagnostic"), fetch("/api/team"), fetch("/api/sessions")]);
+        const [diagnosticResponse, teamResponse, sessionsResponse, programResponse, seasonSessionsResponse] = await Promise.all([
+          fetch("/api/diagnostic"),
+          fetch("/api/team"),
+          fetch("/api/sessions"),
+          fetch("/api/season-program"),
+          fetch("/api/sessions?scope=season"),
+        ]);
+        const programBody = await programResponse.json().catch(() => ({ program: null }));
+        const seasonSessionsBody = await seasonSessionsResponse.json().catch(() => ({ sessions: [] }));
         const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const sessionsBody = await sessionsResponse.json().catch(() => ({ sessions: [] }));
@@ -51,6 +77,13 @@ export function PlanView() {
         setSlotsPerWeek(trainingDays.length > 0 ? trainingDays.length : fallbackSlotsPerWeek);
         setSessions(sessionsBody.sessions ?? []);
         setCycleNumber(sessionsBody.cycleNumber ?? 1);
+        setProgram(programBody.program ?? null);
+        setSessionsPerWeek(teamBody.profile?.sessionsPerWeek ?? 2);
+        setPreparedSeasonSlots(
+          ((seasonSessionsBody.sessions ?? []) as Array<{ cycleNumber?: number; weekNumber: number; slot: number }>).filter(
+            (session) => session.cycleNumber === guidedSeasonCycle,
+          ),
+        );
       } catch {
         // Reste sur le diagnostic de démonstration.
       }
@@ -61,10 +94,19 @@ export function PlanView() {
     };
   }, []);
 
-  const plan = buildDevelopmentPlan(summarizeDiagnostic(scores));
-  const activeWeek = useMemo(() => currentCycleWeek(sessions, slotsPerWeek), [sessions, slotsPerWeek]);
-  const totalSessions = slotsPerWeek * trainingCycleWeekCount;
-  const heading = cycleNumber === 1 ? "Ton premier cycle est prêt." : `Ton cycle ${cycleNumber} est prêt.`;
+  const seasonWeeks = useMemo(() => (program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek }) : []), [program, sessionsPerWeek]);
+  const seasonWeek = program ? seasonWeekAt(new Date(`${program.startDate}T00:00:00`), now) : 0;
+  const seasonCycle = program ? seasonCycleAt(seasonCycles(seasonWeeks), seasonWeek) : null;
+  const plan = seasonCycle ? seasonCycleAsPlan(seasonCycle) : buildDevelopmentPlan(summarizeDiagnostic(scores));
+  const cycleActiveWeek = useMemo(() => currentCycleWeek(sessions, slotsPerWeek), [sessions, slotsPerWeek]);
+  const activeWeek = seasonCycle ? (seasonCycle.weeks.find((week) => week.seasonWeek === seasonWeek)?.weekInCycle ?? 1) : cycleActiveWeek;
+  const totalSessions = seasonCycle ? seasonCycle.weeks.reduce((sum, week) => sum + week.slots.length, 0) : slotsPerWeek * trainingCycleWeekCount;
+  const nextGuided = program ? nextSeasonSlot(seasonWeeks, preparedSeasonSlots, seasonWeek) : null;
+  const heading = seasonCycle
+    ? `Cycle ${seasonCycle.number} sur ${seasonCycle.count} de ta saison.`
+    : cycleNumber === 1
+      ? "Ton premier cycle est prêt."
+      : `Ton cycle ${cycleNumber} est prêt.`;
 
   // Le diagnostic se refait à chaque nouveau cycle : c'est lui qui choisit les prochaines priorités.
   async function startNextCycle() {
@@ -128,7 +170,19 @@ export function PlanView() {
             ))}
           </div>
           <div className="plan-actions">
-            {sessions.length >= totalSessions ? (
+            {seasonCycle ? (
+              <>
+                <Link
+                  className="continue-button"
+                  href={nextGuided ? `/saison/seance/${nextGuided.slot.sessionNumber}?semaine=${nextGuided.week}&creneau=${nextGuided.index}` : "/saison"}
+                >
+                  {nextGuided ? "Préparer la prochaine séance" : "Voir ma saison"} <span aria-hidden="true">→</span>
+                </Link>
+                <Link className="back-link" href="/saison">
+                  Toute ma saison et ses priorités
+                </Link>
+              </>
+            ) : sessions.length >= totalSessions ? (
               <button className="continue-button" disabled={starting} onClick={startNextCycle} type="button">
                 {starting ? "…" : "Démarrer le cycle suivant"} <span aria-hidden="true">→</span>
               </button>
@@ -142,9 +196,11 @@ export function PlanView() {
                 {cycleError}
               </p>
             )}
-            <Link className="back-link" href="/diagnostic">
-              Ajuster mon diagnostic
-            </Link>
+            {!seasonCycle && (
+              <Link className="back-link" href="/diagnostic">
+                Ajuster mon diagnostic
+              </Link>
+            )}
           </div>
         </section>
       </main>

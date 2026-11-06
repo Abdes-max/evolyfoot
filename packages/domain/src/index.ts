@@ -171,6 +171,8 @@ export {
 } from "./training-convocation";
 export type { AttendanceDefault, ResponsePlayer, TrainingConvocationSettings, TrainingResponses } from "./training-convocation";
 export { concernedPlayers, isConcerned, parsePlayerSelection } from "./concerned-players";
+export { nextSeasonSlot, seasonCycleAsPlan, seasonCycleAt, seasonCycleLength, seasonCycles, seasonSlotColor, themeColors } from "./season-cycle";
+export type { SeasonCycle, SeasonCycleWeek } from "./season-cycle";
 export type { PlayerSelection } from "./concerned-players";
 export { messageMaxLength, validateMessageText } from "./message";
 export type { Message, MessageAuthorRole } from "./message";

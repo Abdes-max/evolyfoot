@@ -3,6 +3,8 @@
 import {
   buildPrioritizedSeason,
   developmentThemes,
+  seasonCycles,
+  themeColors,
   guidedSeasonCycle,
   maxSeasonPriorities,
   programPrinciples,
@@ -230,6 +232,32 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
                 </ul>
               </div>
             )}
+
+            {/* La saison se lit en cycles de 4 semaines : ce sont eux que suivent la vue d’ensemble et la page Séances. */}
+            <ol aria-label="Les cycles de la saison" className="guided-cycles">
+              {seasonCycles(weeks).map((cycle) => {
+                const first = cycle.weeks[0]!.seasonWeek;
+                const last = cycle.weeks.at(-1)!.seasonWeek;
+                const current = currentWeek >= first && currentWeek <= last;
+                return (
+                  <li key={cycle.number}>
+                    <button
+                      aria-label={`Cycle ${cycle.number}, semaines ${first} à ${last} : ${cycle.theme}`}
+                      className={current ? "is-current" : undefined}
+                      onClick={() => setPickedWeek(first)}
+                      style={{ borderColor: themeColors[cycle.theme] }}
+                      type="button"
+                    >
+                      <strong>Cycle {cycle.number}</strong>
+                      <span>
+                        S{first}–{last}
+                      </span>
+                      <span style={{ color: themeColors[cycle.theme] }}>{cycle.theme}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
 
             <ol className="guided-grid" aria-label="Les 36 semaines de la saison">
               {weeks.map((week) => (
