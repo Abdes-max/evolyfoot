@@ -54,15 +54,20 @@ export interface PlayerInviteRecord {
   educatorId: string;
   playerId: string;
   tokenHash: string;
+  // Lien en clair, réaffichable à l'éducateur (null pour une invitation d'avant ce choix).
+  token: string | null;
   expiresAt: Date;
   consumedAt: Date | null;
   createdAt: Date;
 }
 
 export interface PlayerInviteRepository {
-  create(input: { educatorId: string; playerId: string; tokenHash: string; expiresAt: Date }): Promise<PlayerInviteRecord>;
+  create(input: { educatorId: string; playerId: string; tokenHash: string; token: string; expiresAt: Date }): Promise<PlayerInviteRecord>;
   findByTokenHash(tokenHash: string): Promise<PlayerInviteRecord | null>;
-  findActiveForPlayer(playerId: string): Promise<PlayerInviteRecord | null>;
+  // Lien encore valable et réaffichable pour ce joueur (le plus récent).
+  findCurrentForPlayer(playerId: string, now: Date): Promise<PlayerInviteRecord | null>;
+  // Invalide les liens de ce joueur (nouveau lien demandé par l'éducateur).
+  expireForPlayer(playerId: string, now: Date): Promise<void>;
   markConsumed(id: string): Promise<void>;
 }
 
@@ -183,10 +188,34 @@ export interface EducatorRepository {
 
 // Enfants suivis par un compte tuteur/joueur (table player_followers) et enfant affiché
 // (Educator.linkedPlayerId).
+// Demande de suivi en attente de l'accord de l'éducateur (voir PlayerFollowRequest côté schéma).
+export interface FollowRequestRecord {
+  id: string;
+  accountId: string;
+  playerId: string;
+  createdAt: Date;
+  account: { displayName: string; email: string };
+}
+
+export interface FollowerRecord {
+  accountId: string;
+  displayName: string;
+  email: string;
+  since: Date;
+}
+
 export interface PlayerFollowerRepository {
   followedPlayerIds(accountId: string): Promise<string[]>;
   follow(accountId: string, playerId: string): Promise<void>;
-  setDisplayedPlayer(accountId: string, playerId: string): Promise<void>;
+  unfollow(accountId: string, playerId: string): Promise<void>;
+  listFollowers(playerId: string): Promise<FollowerRecord[]>;
+  // `null` : plus aucun enfant affiché (dernier enfant retiré, ou demande pas encore acceptée).
+  setDisplayedPlayer(accountId: string, playerId: string | null): Promise<void>;
+  requestFollow(accountId: string, playerId: string): Promise<void>;
+  listRequests(playerId: string): Promise<FollowRequestRecord[]>;
+  findRequest(id: string): Promise<FollowRequestRecord | null>;
+  deleteRequest(id: string): Promise<void>;
+  pendingPlayerIds(accountId: string): Promise<string[]>;
 }
 
 // Lecture/écriture de la fiche profil et du mot de passe -- interface distincte d'EducatorRepository
@@ -676,7 +705,7 @@ export interface PersistedMessage {
   createdAt: Date;
 }
 
-export type NotificationKind = "message" | "evaluation";
+export type NotificationKind = "message" | "evaluation" | "tutor-request";
 
 export interface NotificationInput {
   recipientId: string;

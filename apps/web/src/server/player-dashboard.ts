@@ -16,6 +16,11 @@ export function createGetPlayerDashboardHandler(
     if (!account) {
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
+    // Compte dont aucune demande n'est encore acceptée : rien à montrer, l'appli affiche l'attente
+    // (enfants en attente lus sur /api/joueur/enfants).
+    if (!account.linkedPlayerId) {
+      return Response.json({ dashboard: null, waiting: true });
+    }
     try {
       return Response.json({ dashboard: await dashboard.get(account.id) });
     } catch (error) {

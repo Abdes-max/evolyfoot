@@ -104,13 +104,14 @@ export function JoinView({ token }: { token: string }) {
               <h1>Suis la progression de {invite.playerName}.</h1>
               <p>
                 {invite.coachName} t’invite à suivre {invite.playerName}
-                {invite.teamName ? ` (${invite.teamName})` : ""} : évaluations, présences, calendrier et convocations.
+                {invite.teamName ? ` (${invite.teamName})` : ""} : évaluations, présences, calendrier et convocations. Tu y auras accès dès qu’il aura accepté
+                ta demande.
               </p>
             </>
           ) : status === "invalid" ? (
             <>
               <h1>Cette invitation n’est plus valide.</h1>
-              <p>Le lien a peut-être expiré ou a déjà été utilisé. Demande un nouveau lien à l’éducateur.</p>
+              <p>Le lien a peut-être expiré ou été remplacé. Demande le lien actuel à l’éducateur.</p>
             </>
           ) : (
             <h1>Chargement…</h1>

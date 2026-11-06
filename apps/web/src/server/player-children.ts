@@ -1,9 +1,12 @@
 import { EducatorNotFoundError, InviteInvalidError, PlayerNotFoundError, ValidationError } from "@evolyfoot/database";
-import type { FollowedChild } from "@evolyfoot/database";
+import type { FollowedChild, PendingChild } from "@evolyfoot/database";
 import type { PublicAccount } from "./auth";
+import { notificationServiceFor } from "./notifications";
 
 export interface PlayerChildrenGateway {
   list(accountId: string): Promise<FollowedChild[]>;
+  // Enfants dont la demande attend l'accord de l'éducateur.
+  pending(accountId: string): Promise<PendingChild[]>;
   select(accountId: string, playerId: string): Promise<void>;
   attachInvite(accountId: string, token: string): Promise<void>;
   setPhoto(accountId: string, photo: string | null): Promise<void>;
@@ -49,7 +52,8 @@ export function createPlayerChildrenHandlers(
   }
 
   return {
-    list: (request: Request) => guard(request, async (account) => Response.json({ children: await children.list(account.id) })),
+    list: (request: Request) =>
+      guard(request, async (account) => Response.json({ children: await children.list(account.id), pending: await children.pending(account.id) })),
     select: (request: Request) =>
       guard(request, async (account) => {
         const body = await readJsonBody(request);
@@ -66,7 +70,7 @@ export function createPlayerChildrenHandlers(
           return Response.json({ error: "Invitation manquante." }, { status: 400 });
         }
         await children.attachInvite(account.id, body.token);
-        return Response.json({ children: await children.list(account.id) }, { status: 201 });
+        return Response.json({ children: await children.list(account.id), pending: await children.pending(account.id) }, { status: 201 });
       }),
     // PUT { photo: data URL | null } : photo de l’enfant affiché.
     photo: (request: Request) =>
@@ -92,10 +96,13 @@ export async function createPlayerChildrenGateway(): Promise<{ gateway: PlayerCh
     new PrismaPlayerRepository(database.prisma),
     new PrismaTeamRepository(database.prisma),
     new PrismaPlayerInviteRepository(database.prisma),
+    undefined,
+    async (notice) => (await notificationServiceFor(database)).onFollowRequest(notice),
   );
   return {
     gateway: {
       list: (accountId) => service.list(accountId),
+      pending: (accountId) => service.pending(accountId),
       select: (accountId, playerId) => service.select(accountId, playerId),
       attachInvite: (accountId, token) => service.attachInvite(accountId, token),
       setPhoto: (accountId, photo) => service.setPhoto(accountId, photo),

@@ -15,6 +15,7 @@ import { AccountPrivacy } from "../../account-privacy";
 import { PlayerCard } from "../../player-card";
 import { PlayerSpaceHeader } from "../player-space-header";
 import { usePlayerDashboard } from "./use-player-dashboard";
+import { WaitingApproval } from "../waiting-approval";
 
 const radarAxes = playerEvaluationAspects.map((aspect) => ({ key: aspect, label: playerEvaluationAspectLabels[aspect] }));
 
@@ -27,7 +28,7 @@ function formatDate(iso: string): string {
 // décrit le joueur lui-même. Le calendrier et les convocations vivent sur l'onglet Calendrier
 // (/joueur/calendrier), pour ne pas surcharger cette page.
 export function PlayerSpaceView() {
-  const { status, dashboard } = usePlayerDashboard();
+  const { status, dashboard, pending } = usePlayerDashboard();
   // Évaluations superposées sur le radar -- même mécanisme que côté coach (player-detail-view.tsx),
   // en lecture seule ici : pas d'ajout/modification/retrait, juste comparer.
   const [comparedEvaluationIds, setComparedEvaluationIds] = useState<ReadonlySet<string>>(new Set());
@@ -65,6 +66,7 @@ export function PlayerSpaceView() {
       <main className="player-space-content">
         {status === "loading" && <p className="player-space-note">Chargement…</p>}
         {status === "error" && <p className="player-space-note">Impossible de charger ton suivi pour le moment.</p>}
+        {(status === "waiting" || pending.length > 0) && <WaitingApproval pending={pending} />}
 
         {status === "ready" && dashboard && (
           <>

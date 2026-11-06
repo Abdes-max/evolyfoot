@@ -1,10 +1,19 @@
 import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "./errors";
+import type { FollowRequestNotice } from "./notification-service";
 import { InviteInvalidError } from "./player-invite-service";
 import { hashSessionToken } from "./session-token";
 import type { EducatorRepository, PlayerFollowerRepository, PlayerInviteRepository, PlayerRepository, TeamRepository } from "./repositories";
 
 // Même plafond que la photo posée par l’éducateur (RosterService).
 const maxPhotoLength = 700_000;
+
+// Enfant dont la demande de suivi attend l'accord de l'éducateur.
+export interface PendingChild {
+  playerId: string;
+  name: string;
+  teamName: string | null;
+  coachName: string | null;
+}
 
 export interface FollowedChild {
   playerId: string;
@@ -26,6 +35,8 @@ export class PlayerChildrenService {
     private readonly teamRepository: TeamRepository,
     private readonly playerInviteRepository: PlayerInviteRepository,
     private readonly now: () => Date = () => new Date(),
+    // Prévient l'éducateur d'une nouvelle demande (voir PlayerInviteService).
+    private readonly notifyRequest: (notice: FollowRequestNotice) => Promise<void> = async () => undefined,
   ) {}
 
   private async playerAccount(accountId: string) {
@@ -56,6 +67,20 @@ export class PlayerChildrenService {
     return children.filter((child): child is FollowedChild => child !== null);
   }
 
+  async pending(accountId: string): Promise<PendingChild[]> {
+    await this.playerAccount(accountId);
+    const playerIds = await this.followerRepository.pendingPlayerIds(accountId);
+    const children = await Promise.all(
+      playerIds.map(async (playerId) => {
+        const player = await this.playerRepository.findAnyById(playerId);
+        if (!player) return null;
+        const [team, coach] = await Promise.all([this.teamRepository.findForEducator(player.educatorId), this.educatorRepository.findById(player.educatorId)]);
+        return { playerId, name: player.name, teamName: team?.profile.name ?? null, coachName: coach?.displayName ?? null };
+      }),
+    );
+    return children.filter((child): child is PendingChild => child !== null);
+  }
+
   // Change l’enfant affiché ; refuse un enfant que ce compte ne suit pas.
   async select(accountId: string, playerId: string): Promise<void> {
     await this.playerAccount(accountId);
@@ -66,11 +91,10 @@ export class PlayerChildrenService {
     await this.followerRepository.setDisplayedPlayer(accountId, playerId);
   }
 
-  // Un tuteur déjà inscrit accepte l’invitation d’un autre enfant (ou d’un enfant déjà suivi par
-  // l’autre parent) avec son compte existant : l’enfant rejoint ses enfants suivis et devient
-  // l’enfant affiché.
+  // Un tuteur déjà inscrit utilise l’invitation d’un autre enfant avec son compte existant : une
+  // demande part à l’éducateur, l’enfant rejoint ses enfants suivis quand elle est acceptée.
   async attachInvite(accountId: string, token: string): Promise<void> {
-    await this.playerAccount(accountId);
+    const account = await this.playerAccount(accountId);
     const invite = await this.playerInviteRepository.findByTokenHash(hashSessionToken(token));
     if (!invite || invite.consumedAt || invite.expiresAt.getTime() <= this.now().getTime()) {
       throw new InviteInvalidError();
@@ -79,9 +103,12 @@ export class PlayerChildrenService {
     if (!player) {
       throw new PlayerNotFoundError();
     }
-    await this.followerRepository.follow(accountId, invite.playerId);
-    await this.followerRepository.setDisplayedPlayer(accountId, invite.playerId);
-    await this.playerInviteRepository.markConsumed(invite.id);
+    if (!(await this.followerRepository.followedPlayerIds(accountId)).includes(invite.playerId)) {
+      await this.followerRepository.requestFollow(accountId, invite.playerId);
+      await this.notifyRequest({ educatorId: invite.educatorId, playerId: invite.playerId, playerName: player.name, accountName: account.displayName }).catch(
+        () => undefined,
+      );
+    }
   }
 
   // Le joueur (ou son tuteur) change la photo de l’enfant affiché : la même que voit l’éducateur.

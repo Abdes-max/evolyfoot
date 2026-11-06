@@ -1,6 +1,7 @@
 import { InviteInvalidError, PlayerAccountExistsError } from "@evolyfoot/database";
 import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "@evolyfoot/database";
 import { buildSessionCookie, type PublicAccount, type PublicEducator } from "./auth";
+import { notificationServiceFor } from "./notifications";
 import { resolveOrigin } from "./request-origin";
 
 export interface InvitePreviewSummary {
@@ -15,7 +16,9 @@ export interface CreatedInviteSummary {
 }
 
 export interface PlayerInviteGateway {
-  create(educatorId: string, playerId: string): Promise<CreatedInviteSummary>;
+  // Le lien en cours (le même tant qu'il est valable) ; `renew` en génère un nouveau.
+  create(educatorId: string, playerId: string, renew?: boolean): Promise<CreatedInviteSummary>;
+  current(educatorId: string, playerId: string): Promise<CreatedInviteSummary | null>;
   preview(token: string): Promise<InvitePreviewSummary | null>;
   consume(
     token: string,
@@ -65,9 +68,33 @@ export function createCreateInviteHandler(
       return Response.json({ error: "Le joueur est requis." }, { status: 400 });
     }
     try {
-      const invite = await invites.create(educator.id, playerId);
+      const invite = await invites.create(educator.id, playerId, body?.renew === true);
       const url = `${resolveOrigin(request)}/rejoindre/${invite.token}`;
       return Response.json({ url, expiresAt: invite.expiresAt }, { status: 201 });
+    } catch (error) {
+      return errorResponse(error, log);
+    }
+  };
+}
+
+// GET ?playerId= : lien d'invitation en cours pour ce joueur (`url` null s'il n'y en a pas).
+export function createCurrentInviteHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  invites: Pick<PlayerInviteGateway, "current">,
+  log: (error: unknown) => void,
+): (request: Request) => Promise<Response> {
+  return async (request) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const playerId = new URL(request.url).searchParams.get("playerId");
+    if (!playerId) {
+      return Response.json({ error: "Le joueur est requis." }, { status: 400 });
+    }
+    try {
+      const invite = await invites.current(educator.id, playerId);
+      return Response.json(invite ? { url: `${resolveOrigin(request)}/rejoindre/${invite.token}`, expiresAt: invite.expiresAt } : { url: null });
     } catch (error) {
       return errorResponse(error, log);
     }
@@ -130,20 +157,28 @@ export async function createPlayerInviteGateway(): Promise<{
     PrismaTeamRepository,
   } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
-  const authService = new AuthService(new PrismaEducatorRepository(database.prisma), new PrismaSessionRepository(database.prisma));
+  const educators = new PrismaEducatorRepository(database.prisma);
+  const authService = new AuthService(educators, new PrismaSessionRepository(database.prisma));
+  const notifications = await notificationServiceFor(database);
   const service = new PlayerInviteService(
-    new PrismaEducatorRepository(database.prisma),
+    educators,
     new PrismaPlayerRepository(database.prisma),
     new PrismaPlayerInviteRepository(database.prisma),
     new PrismaTeamRepository(database.prisma),
     authService,
+    educators,
+    (notice) => notifications.onFollowRequest(notice),
   );
 
   return {
     gateway: {
-      async create(educatorId, playerId) {
-        const invite = await service.create(educatorId, playerId);
+      async create(educatorId, playerId, renew) {
+        const invite = await service.create(educatorId, playerId, { renew });
         return { token: invite.token, expiresAt: invite.expiresAt.toISOString() };
+      },
+      async current(educatorId, playerId) {
+        const invite = await service.current(educatorId, playerId);
+        return invite ? { token: invite.token, expiresAt: invite.expiresAt.toISOString() } : null;
       },
       preview: (token) => service.preview(token),
       async consume(token, input) {

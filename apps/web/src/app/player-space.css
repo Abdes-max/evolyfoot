@@ -693,3 +693,12 @@ nav.child-switcher {
   background: var(--surface-2);
   color: var(--muted);
 }
+
+/* Demande de suivi pas encore acceptée (waiting-approval.tsx). */
+.waiting-approval {
+  border: 1px solid var(--accent);
+}
+.waiting-approval ul {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}

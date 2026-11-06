@@ -77,22 +77,36 @@ export interface Dashboard {
 // player-tab-bar.tsx) : chacun refait son propre fetch au montage plutôt que de partager un état
 // entre pages (Next.js démonte/remonte le composant de page à chaque navigation d'onglet -- pas
 // de "layout persistant" ici qui justifierait un contexte), léger vu la taille de la réponse.
+// Enfant dont la demande de suivi attend l'accord de l'éducateur.
+export interface PendingChild {
+  playerId: string;
+  name: string;
+  teamName: string | null;
+  coachName: string | null;
+}
+
 export function usePlayerDashboard() {
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  // "waiting" : aucune demande encore acceptée, rien à montrer de l'enfant.
+  const [status, setStatus] = useState<"loading" | "ready" | "waiting" | "error">("loading");
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [pending, setPending] = useState<PendingChild[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch("/api/joueur");
+        const [response, childrenResponse] = await Promise.all([fetch("/api/joueur"), fetch("/api/joueur/enfants").catch(() => null)]);
         const body = await response.json().catch(() => ({ dashboard: null }));
+        const childrenBody = childrenResponse?.ok ? await childrenResponse.json().catch(() => null) : null;
         if (cancelled) {
           return;
         }
+        setPending(childrenBody?.pending ?? []);
         if (response.ok && body.dashboard) {
           setDashboard(body.dashboard);
           setStatus("ready");
+        } else if (response.ok && body.waiting) {
+          setStatus("waiting");
         } else {
           setStatus("error");
         }
@@ -107,7 +121,7 @@ export function usePlayerDashboard() {
     };
   }, []);
 
-  return { status, dashboard };
+  return { status, dashboard, pending };
 }
 
 export async function playerLogout(): Promise<void> {

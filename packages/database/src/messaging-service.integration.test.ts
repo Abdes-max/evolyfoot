@@ -4,6 +4,7 @@ import { createDatabaseClient } from "./client";
 import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "./errors";
 import { MessagingService } from "./messaging-service";
 import { PlayerInviteService } from "./player-invite-service";
+import { TutorService } from "./tutor-service";
 import {
   PrismaEducatorRepository,
   PrismaMessageRepository,
@@ -28,7 +29,15 @@ const teamRepository = new PrismaTeamRepository(database.prisma);
 const messageRepository = new PrismaMessageRepository(database.prisma);
 
 const authService = new AuthService(educatorRepository, sessionRepository);
-const inviteService = new PlayerInviteService(educatorRepository, playerRepository, playerInviteRepository, teamRepository, authService);
+const inviteService = new PlayerInviteService(educatorRepository, playerRepository, playerInviteRepository, teamRepository, authService, educatorRepository);
+const tutorService = new TutorService(educatorRepository, playerRepository, educatorRepository);
+
+// L'éducateur accepte les demandes de suivi faites par le lien d'invitation.
+async function acceptRequests(coachId: string, playerId: string): Promise<void> {
+  for (const request of (await tutorService.list(coachId, playerId)).requests) {
+    await tutorService.answer(coachId, playerId, request.id, true);
+  }
+}
 const messagingService = new MessagingService(educatorRepository, playerRepository, messageRepository);
 
 async function createCoach(suffix: string) {
@@ -48,6 +57,7 @@ async function createTutorAccount(suffix: string) {
     password: "tutor-password",
     displayName: `Parent de ${testRun}-${suffix}`,
   });
+  await acceptRequests(coach.id, player.id);
   const account = await authService.getPlayerAccountForSession(session.sessionToken);
   return { coach, player, tutorAccountId: account!.id, tutorDisplayName: `Parent de ${testRun}-${suffix}` };
 }

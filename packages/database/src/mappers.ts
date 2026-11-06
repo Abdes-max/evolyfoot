@@ -301,6 +301,7 @@ export function toPlayerInviteRecord(invite: PrismaPlayerInvite): PlayerInviteRe
     educatorId: invite.educatorId,
     playerId: invite.playerId,
     tokenHash: invite.tokenHash,
+    token: invite.token,
     expiresAt: invite.expiresAt,
     consumedAt: invite.consumedAt,
     createdAt: invite.createdAt,

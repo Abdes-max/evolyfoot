@@ -1,11 +1,14 @@
 import type { AuthenticatedSession, AuthService } from "./auth-service";
+import type { FollowRequestNotice } from "./notification-service";
 import { normalizeEducatorEmail } from "./email";
 import { PlayerNotFoundError, ValidationError } from "./errors";
 import { hashPassword, validatePassword } from "./password";
 import { generateSessionToken, hashSessionToken } from "./session-token";
-import type { EducatorRepository, PlayerInviteRepository, PlayerRepository, TeamRepository } from "./repositories";
+import type { EducatorRepository, PlayerFollowerRepository, PlayerInviteRepository, PlayerRepository, TeamRepository } from "./repositories";
 
-const INVITE_DURATION_MS = 1000 * 60 * 60 * 24 * 14; // 14 jours
+// Le lien reste le même tant que l'éducateur n'en demande pas un nouveau : chaque utilisation crée
+// une demande à valider, il peut donc servir aux deux parents et être renvoyé.
+const INVITE_DURATION_MS = 1000 * 60 * 60 * 24 * 365; // 1 an
 
 export class PlayerAccountExistsError extends Error {
   constructor() {
@@ -39,26 +42,42 @@ export class PlayerInviteService {
     private readonly playerInviteRepository: PlayerInviteRepository,
     private readonly teamRepository: TeamRepository,
     private readonly authService: Pick<AuthService, "openSession">,
+    private readonly followerRepository: Pick<PlayerFollowerRepository, "requestFollow">,
+    // Prévient l'éducateur d'une nouvelle demande (notification et push) ; jamais bloquant.
+    private readonly notifyRequest: (notice: FollowRequestNotice) => Promise<void> = async () => undefined,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
-  // Génère une invitation pour un joueur de l'effectif du coach. Un nouveau lien à chaque demande :
-  // le lien n'est gardé que haché, on ne peut pas réafficher le précédent. Les liens déjà envoyés
-  // restent valables, chacun pour un compte (les deux parents peuvent suivre le même enfant).
-  async create(educatorId: string, playerId: string): Promise<CreatedInvite> {
+  // Lien d'invitation d'un joueur de l'effectif du coach : le même tant qu'il est valable, pour le
+  // renvoyer à volonté ; `renew` le remplace (l'ancien ne marche plus, lien diffusé par erreur).
+  async create(educatorId: string, playerId: string, options: { renew?: boolean } = {}): Promise<CreatedInvite> {
     const player = await this.playerRepository.findById(playerId, educatorId);
     if (!player) {
       throw new PlayerNotFoundError();
     }
+    const now = this.now();
+    if (!options.renew) {
+      const current = await this.playerInviteRepository.findCurrentForPlayer(playerId, now);
+      if (current?.token) {
+        return { token: current.token, expiresAt: current.expiresAt };
+      }
+    } else {
+      await this.playerInviteRepository.expireForPlayer(playerId, now);
+    }
     const token = generateSessionToken();
-    const expiresAt = new Date(this.now().getTime() + INVITE_DURATION_MS);
-    await this.playerInviteRepository.create({
-      educatorId,
-      playerId,
-      tokenHash: hashSessionToken(token),
-      expiresAt,
-    });
+    const expiresAt = new Date(now.getTime() + INVITE_DURATION_MS);
+    await this.playerInviteRepository.create({ educatorId, playerId, tokenHash: hashSessionToken(token), token, expiresAt });
     return { token, expiresAt };
+  }
+
+  // Lien en cours pour ce joueur, sans en créer (affiché à l'ouverture de la fiche).
+  async current(educatorId: string, playerId: string): Promise<CreatedInvite | null> {
+    const player = await this.playerRepository.findById(playerId, educatorId);
+    if (!player) {
+      throw new PlayerNotFoundError();
+    }
+    const current = await this.playerInviteRepository.findCurrentForPlayer(playerId, this.now());
+    return current?.token ? { token: current.token, expiresAt: current.expiresAt } : null;
   }
 
   // Infos publiques d'une invitation, sans la consommer (pour l'afficher sur /rejoindre/:token).
@@ -78,7 +97,8 @@ export class PlayerInviteService {
     return { playerName: player.name, teamName: team?.profile.name ?? null, coachName: coach.displayName };
   }
 
-  // Crée le compte tuteur/joueur lié et ouvre sa session. Marque l'invitation consommée.
+  // Crée le compte tuteur/joueur et ouvre sa session. Le compte ne voit rien de l'enfant tant que
+  // l'éducateur n'a pas accepté sa demande (voir TutorService) ; le lien reste utilisable.
   async consume(token: string, input: { email: string; password: string; displayName: string }): Promise<AuthenticatedSession> {
     const invite = await this.playerInviteRepository.findByTokenHash(hashSessionToken(token));
     if (!invite || invite.consumedAt || invite.expiresAt.getTime() <= this.now().getTime()) {
@@ -106,9 +126,11 @@ export class PlayerInviteService {
       displayName,
       passwordHash: await hashPassword(password),
       role: "player",
-      linkedPlayerId: invite.playerId,
     });
-    await this.playerInviteRepository.markConsumed(invite.id);
+    await this.followerRepository.requestFollow(account.id, invite.playerId);
+    await this.notifyRequest({ educatorId: invite.educatorId, playerId: invite.playerId, playerName: player.name, accountName: displayName }).catch(
+      () => undefined,
+    );
     return this.authService.openSession(account);
   }
 }

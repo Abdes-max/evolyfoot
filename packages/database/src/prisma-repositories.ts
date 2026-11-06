@@ -88,6 +88,8 @@ import type {
   PlateauRepository,
   PlayerDetailsPatch,
   PlayerEvaluationRepository,
+  FollowerRecord,
+  FollowRequestRecord,
   PlayerFollowerRepository,
   PersonalExerciseRepository,
   PlayerEvaluationSource,
@@ -224,8 +226,46 @@ export class PrismaEducatorRepository implements EducatorRepository, EducatorPro
     await this.prisma.playerFollowerLink.upsert({ where: { accountId_playerId: { accountId, playerId } }, create: { accountId, playerId }, update: {} });
   }
 
-  async setDisplayedPlayer(accountId: string, playerId: string): Promise<void> {
+  async setDisplayedPlayer(accountId: string, playerId: string | null): Promise<void> {
     await this.prisma.educator.update({ where: { id: accountId }, data: { linkedPlayerId: playerId } });
+  }
+
+  async unfollow(accountId: string, playerId: string): Promise<void> {
+    await this.prisma.playerFollowerLink.deleteMany({ where: { accountId, playerId } });
+  }
+
+  async listFollowers(playerId: string): Promise<FollowerRecord[]> {
+    const links = await this.prisma.playerFollowerLink.findMany({
+      where: { playerId },
+      include: { account: { select: { displayName: true, email: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+    return links.map((link) => ({ accountId: link.accountId, displayName: link.account.displayName, email: link.account.email, since: link.createdAt }));
+  }
+
+  async requestFollow(accountId: string, playerId: string): Promise<void> {
+    await this.prisma.playerFollowRequest.upsert({ where: { accountId_playerId: { accountId, playerId } }, create: { accountId, playerId }, update: {} });
+  }
+
+  async listRequests(playerId: string): Promise<FollowRequestRecord[]> {
+    return this.prisma.playerFollowRequest.findMany({
+      where: { playerId },
+      include: { account: { select: { displayName: true, email: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async findRequest(id: string): Promise<FollowRequestRecord | null> {
+    return this.prisma.playerFollowRequest.findUnique({ where: { id }, include: { account: { select: { displayName: true, email: true } } } });
+  }
+
+  async deleteRequest(id: string): Promise<void> {
+    await this.prisma.playerFollowRequest.deleteMany({ where: { id } });
+  }
+
+  async pendingPlayerIds(accountId: string): Promise<string[]> {
+    const requests = await this.prisma.playerFollowRequest.findMany({ where: { accountId }, orderBy: { createdAt: "asc" }, select: { playerId: true } });
+    return requests.map((request) => request.playerId);
   }
 
   async findProfileById(id: string): Promise<EducatorProfile | null> {
@@ -452,7 +492,7 @@ export class PrismaTeamSpaceRepository implements TeamSpaceRepository {
 export class PrismaPlayerInviteRepository implements PlayerInviteRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async create(input: { educatorId: string; playerId: string; tokenHash: string; expiresAt: Date }): Promise<PlayerInviteRecord> {
+  async create(input: { educatorId: string; playerId: string; tokenHash: string; token: string; expiresAt: Date }): Promise<PlayerInviteRecord> {
     const invite = await this.prisma.playerInvite.create({ data: input });
     return toPlayerInviteRecord(invite);
   }
@@ -462,13 +502,16 @@ export class PrismaPlayerInviteRepository implements PlayerInviteRepository {
     return invite === null ? null : toPlayerInviteRecord(invite);
   }
 
-  // Invitation encore utilisable pour ce joueur : non consommée et non expirée.
-  async findActiveForPlayer(playerId: string): Promise<PlayerInviteRecord | null> {
+  async findCurrentForPlayer(playerId: string, now: Date): Promise<PlayerInviteRecord | null> {
     const invite = await this.prisma.playerInvite.findFirst({
-      where: { playerId, consumedAt: null, expiresAt: { gt: new Date() } },
+      where: { playerId, consumedAt: null, token: { not: null }, expiresAt: { gt: now } },
       orderBy: { createdAt: "desc" },
     });
     return invite === null ? null : toPlayerInviteRecord(invite);
+  }
+
+  async expireForPlayer(playerId: string, now: Date): Promise<void> {
+    await this.prisma.playerInvite.updateMany({ where: { playerId, expiresAt: { gt: now } }, data: { expiresAt: now } });
   }
 
   async markConsumed(id: string): Promise<void> {
