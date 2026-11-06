@@ -78,6 +78,7 @@ describe("ConvocationService", () => {
     const result = await convocationService.sendForMatch(coach.id, match.id);
 
     expect(result).toMatchObject({ sentCount: 2, subject: "Convocation : match contre US Vallée", recipients: [] });
+    expect((await matchRepository.findById(match.id, coach.id))?.convokedAt).toBeInstanceOf(Date);
     const p1Messages = await messageRepository.listByPlayer(coach.id, p1.id);
     expect(p1Messages).toHaveLength(1);
     expect(p1Messages[0]).toMatchObject({ authorRole: "coach", authorName: coach.displayName });

@@ -120,6 +120,7 @@ export class ConvocationService {
     await Promise.all(
       convoked.map((player) => this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text })),
     );
+    await this.matchRepository.update(matchId, educatorId, { convokedAt: this.now() });
     return {
       sentCount: convoked.length,
       subject: `Convocation : match contre ${match.opponent}`,

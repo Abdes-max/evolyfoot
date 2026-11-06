@@ -1,5 +1,5 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { gameFormats, listFormations } from "@evolyfoot/domain";
+import { concernedPlayers, gameFormats, listFormations, summarizeTrainingResponses } from "@evolyfoot/domain";
 import type { GameFormat, MatchStatus, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -15,6 +15,27 @@ import { useAuth, type MobileMatch } from "../lib/auth-context";
 
 const statusLabel: Record<MatchStatus, string> = { scheduled: "À venir", played: "Joué" };
 const venueLabel: Record<MatchVenue, string> = { home: "Domicile", away: "Extérieur" };
+
+// Convocation d'un match à venir : envoyée ou non, puis présents, absents et sans réponse parmi les
+// joueurs concernés (même résumé que les séances).
+function MatchConvocation({ match, roster }: { match: MobileMatch; roster: readonly { id: string; name: string }[] }) {
+  if (!match.convokedAt) {
+    return <Text style={styles.convocationPending}>Convocation pas encore envoyée</Text>;
+  }
+  const responses = summarizeTrainingResponses(concernedPlayers(roster, match.selectedPlayerIds ?? null), match.attendance);
+  return (
+    <View style={styles.convocation}>
+      <Text style={styles.convocationSent}>
+        Convocation envoyée le {new Date(match.convokedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+      </Text>
+      <View style={styles.counts}>
+        <Text style={[styles.count, { color: "#3ddc84" }]}>{responses.present.length} présents</Text>
+        <Text style={[styles.count, { color: "#ff6b6b" }]}>{responses.absent.length} absents</Text>
+        <Text style={[styles.count, { color: "#ffb073" }]}>{responses.pending.length} sans réponse</Text>
+      </View>
+    </View>
+  );
+}
 
 export default function MatchListScreen() {
   const { team, roster, listMatches, createMatch } = useAuth();
@@ -208,6 +229,7 @@ export default function MatchListScreen() {
                   {match.lineup.length}/{match.gameFormat} postes pourvus
                 </Text>
               </View>
+              {match.status === "scheduled" ? <MatchConvocation match={match} roster={roster} /> : null}
               <Text style={styles.cardLink}>{match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}</Text>
             </TouchableOpacity>
           ))
@@ -288,6 +310,11 @@ const styles = StyleSheet.create({
   statusTextPlayed: { color: "#34d399" },
   cardFormat: { color: colors.muted, fontSize: 10, fontWeight: "700" },
   cardTitle: { fontSize: 17, fontWeight: "800", color: colors.ink, marginTop: 6 },
+  convocation: { marginTop: 8, gap: 2 },
+  convocationSent: { color: colors.lime, fontSize: 12, fontWeight: "800" },
+  convocationPending: { color: colors.muted, fontSize: 12, fontWeight: "800", marginTop: 8 },
+  counts: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
+  count: { fontSize: 12, fontWeight: "800" },
   cardBody: { color: colors.muted, fontSize: 11.5, marginTop: 2 },
   cardLineup: { color: colors.ink, fontSize: 11.5, fontWeight: "700", marginTop: 4 },
   cardLink: { color: colors.primary, fontSize: 11.5, fontWeight: "800", marginTop: 8 },

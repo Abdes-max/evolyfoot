@@ -505,6 +505,8 @@ export interface PersistedMatch {
   // Joueurs concernés : `null` = tout l'effectif, ou la composition pour un match créé avant ce
   // choix (voir matchConcernedIds).
   selectedPlayerIds: PlayerSelection;
+  // Dernier envoi de la convocation, `null` tant qu'elle n'est pas partie.
+  convokedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -552,6 +554,7 @@ export interface MatchRepository {
       location?: string | null;
       description?: string | null;
       selectedPlayerIds?: PlayerSelection;
+      convokedAt?: Date | null;
     },
   ): Promise<PersistedMatch>;
   remove(id: string, educatorId: string): Promise<void>;

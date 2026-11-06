@@ -47,6 +47,10 @@ export interface MobileMatch {
   location?: string | null;
   // Joueurs concernés : `null` = tout l'effectif.
   selectedPlayerIds?: readonly string[] | null;
+  // Dernier envoi de la convocation (ISO), null tant qu'elle n'est pas partie.
+  convokedAt?: string | null;
+  // Réponses des joueurs (présent, absent, motif).
+  attendance?: AttendanceEntry[];
 }
 
 // `PlayerReference` (domaine) reste { id, name } -- générique, utilisé aussi pour les signaux
@@ -145,7 +149,7 @@ export interface AuthContextValue {
     location?: string;
     selectedPlayerIds?: readonly string[] | null;
   }): Promise<MatchResult>;
-  updateMatchLineup(id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null): Promise<MatchResult>;
+  updateMatchLineup(id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null, substitutePlayerIds?: readonly string[]): Promise<MatchResult>;
   changeMatchFormation(id: string, formationId: string): Promise<MatchResult>;
   markMatchPlayed(id: string): Promise<MatchResult>;
 }
@@ -609,14 +613,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const updateMatchLineup = useCallback(
-    async (id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null): Promise<MatchResult> => {
+    async (id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null, substitutePlayerIds?: readonly string[]): Promise<MatchResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour modifier la composition." };
       }
       const response = await apiFetch(`/api/matches/${id}`, {
         method: "PUT",
         sessionToken,
-        body: JSON.stringify({ lineup, captainPlayerId }),
+        body: JSON.stringify({ lineup, captainPlayerId, ...(substitutePlayerIds ? { substitutePlayerIds } : {}) }),
       });
       if (!response.ok) {
         return { ok: false, error: await readErrorMessage(response) };

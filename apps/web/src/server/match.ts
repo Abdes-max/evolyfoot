@@ -28,6 +28,8 @@ export interface MatchSummary {
   attendance?: readonly AttendanceEntry[];
   // Joueurs concernés : `null` = tout l'effectif.
   selectedPlayerIds: readonly string[] | null;
+  // Dernier envoi de la convocation (ISO), null tant qu'elle n'est pas partie.
+  convokedAt: string | null;
   opponentFormationId: string | null;
   goalsFor: number | null;
   goalsAgainst: number | null;
@@ -429,6 +431,7 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       substitutePlayerIds: match.substitutePlayerIds,
       ...(match.attendance ? { attendance: match.attendance } : {}),
       selectedPlayerIds: match.selectedPlayerIds,
+      convokedAt: match.convokedAt ? match.convokedAt.toISOString() : null,
       opponentFormationId: match.opponentFormationId,
       goalsFor: match.goalsFor,
       goalsAgainst: match.goalsAgainst,
