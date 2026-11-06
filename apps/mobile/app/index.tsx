@@ -12,6 +12,7 @@ import {
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
+import { CardGlow } from "../components/card-glow";
 import { CalendarIcon, ClockIcon, PinIcon } from "../components/icons";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
 import { useUnread } from "../lib/push";
@@ -98,6 +99,9 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <View pointerEvents="none" style={styles.pageGlow}>
+        <CardGlow variant="page" />
+      </View>
       <ScrollView contentContainerStyle={styles.page}>
         <View style={styles.header}>
           <View>
@@ -132,6 +136,7 @@ export default function HomeScreen() {
           )}
           <Link href={`/session?week=${target.weekNumber}&slot=${target.slot}`} asChild>
             <TouchableOpacity accessibilityRole="button" style={styles.button}>
+              <CardGlow variant="button" />
               <Text style={styles.buttonText}>{upcoming ? "Ouvrir la séance" : "Générer ma séance"}</Text>
               <Text style={styles.buttonText}>→</Text>
             </TouchableOpacity>
@@ -142,8 +147,9 @@ export default function HomeScreen() {
         <TouchableOpacity
           accessibilityRole="button"
           onPress={() => (nextMatch ? router.push({ pathname: "/match/[id]", params: { id: nextMatch.id } }) : router.push("/match"))}
-          style={styles.sessionCard}
+          style={[styles.sessionCard, styles.matchCard]}
         >
+          <CardGlow variant="match" />
           {nextMatch ? (
             <>
               <View style={styles.metaRow}>
@@ -190,6 +196,7 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>Thème du moment</Text>
         {plan && week ? (
           <View style={styles.focusCard}>
+            <CardGlow variant="focus" />
             <Text style={styles.focusEyebrow}>
               PRIORITÉ DU CYCLE · SEMAINE {activeWeek}/{trainingCycleWeekCount}
             </Text>
@@ -208,6 +215,7 @@ export default function HomeScreen() {
         ) : (
           <Link href="/diagnostic" asChild>
             <TouchableOpacity accessibilityRole="button" style={styles.focusCard}>
+              <CardGlow variant="focus" />
               <Text style={styles.focusEyebrow}>POUR COMMENCER</Text>
               <Text style={styles.focusTitle}>Fais ton diagnostic</Text>
               <Text style={styles.focusBody}>Il choisit les priorités de ton cycle de quatre semaines.</Text>
@@ -279,8 +287,23 @@ const styles = StyleSheet.create({
   versus: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, marginVertical: spacing.sm },
   versusTeam: { flex: 1, color: colors.ink, fontSize: 15, fontWeight: "800", textAlign: "center" },
   versusMark: { color: colors.muted, fontSize: 22, fontWeight: "900", fontStyle: "italic" },
-  focusCard: { padding: spacing.lg, borderRadius: radii.lg, backgroundColor: colors.primaryDark, borderWidth: 1, borderColor: colors.line },
-  focusEyebrow: { fontSize: 9, letterSpacing: 1, color: colors.muted, fontWeight: "800" },
+  // Mêmes fonds que la vue d'ensemble du web (voir CardGlow) : carte « thème » en dégradé bleu nuit
+  // bordée de cyan, halo cyan sur le prochain match, bouton en dégradé.
+  focusCard: {
+    padding: spacing.lg,
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: colors.primaryDark,
+    borderWidth: 1,
+    borderColor: "rgba(47, 212, 255, 0.4)",
+    shadowColor: colors.primary,
+    shadowOpacity: 0.16,
+    shadowRadius: 13,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  focusEyebrow: { fontSize: 9, letterSpacing: 1, color: colors.lime, fontWeight: "800" },
+  matchCard: { overflow: "hidden" },
+  pageGlow: { position: "absolute", top: 0, left: 0, right: 0, height: 320 },
   focusTitle: { fontSize: 23, lineHeight: 29, fontWeight: "800", color: colors.ink, marginTop: 24 },
   focusBody: { fontSize: 12, lineHeight: 19, color: colors.muted, marginTop: 10 },
   progress: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,.08)", marginTop: 24, overflow: "hidden" },
@@ -288,7 +311,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   focusMeta: { fontSize: 10, color: colors.muted, marginTop: 10 },
   sectionTitle: { fontSize: 18, fontWeight: "800", color: colors.ink, marginTop: 32, marginBottom: 14 },
-  sessionCard: { padding: spacing.lg, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line },
+  sessionCard: { padding: spacing.lg, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1, borderColor: colors.line },
   chip: {
     fontSize: 9,
     fontWeight: "800",
@@ -306,6 +329,7 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: colors.primary,
     borderRadius: radii.sm,
+    overflow: "hidden",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
