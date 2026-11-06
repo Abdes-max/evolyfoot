@@ -4,7 +4,14 @@ import {
   buildPrioritizedSeason,
   currentCycleWeek,
   firstFreeCycleSlot,
+  guidedSeasonCycle,
+  nextSeasonSlot,
+  seasonCycleAsPlan,
+  seasonCycleAt,
+  seasonCycles,
   seasonWeekAt,
+  themeColors,
+  type DevelopmentTheme,
   summarizeDiagnostic,
   trainingCycleWeekCount,
   type SavedTrainingSession,
@@ -43,6 +50,8 @@ export default function HomeScreen() {
   const [now] = useState(() => Date.now());
   const [matches, setMatches] = useState<readonly MobileMatch[]>([]);
   const [season, setSeason] = useState<{ priorities: string[]; startDate: string } | null>(null);
+  // Toutes les séances (cycles et saison guidée) : prochaine séance datée et séances préparées de la saison.
+  const [allSessions, setAllSessions] = useState<readonly SavedTrainingSession[]>([]);
   const firstName = educator?.displayName.split(" ")[0] ?? "";
   const today = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
 
@@ -58,6 +67,12 @@ export default function HomeScreen() {
       listMatches().then((result) => {
         if (!cancelled && result.ok) setMatches(result.matches);
       });
+      apiRequest("/api/sessions?scope=season")
+        .then((response) => (response?.ok ? response.json() : null))
+        .then((body) => {
+          if (!cancelled) setAllSessions(body?.sessions ?? []);
+        })
+        .catch(() => undefined);
       apiRequest("/api/season-program")
         .then((response) => (response?.ok ? response.json() : null))
         .then((body) => {
@@ -71,22 +86,58 @@ export default function HomeScreen() {
   );
 
   const slotsPerWeek = Math.max(team?.trainingDays.length ?? 1, 1);
-  const activeWeek = currentCycleWeek(sessions, slotsPerWeek);
-  const plan = diagnosticScores ? buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores)) : null;
+  // Avec une saison guidée, le cycle affiché est celui de la saison (4 semaines de ses séances) ;
+  // sans saison, le cycle court construit depuis le diagnostic (même logique que le web).
+  const seasonPlanWeeks = season
+    ? buildPrioritizedSeason({ priorities: season.priorities as DevelopmentTheme[], sessionsPerWeek: team?.sessionsPerWeek ?? 2 })
+    : [];
+  const currentSeasonWeek = season ? seasonWeekAt(new Date(`${season.startDate}T00:00:00`), new Date(now)) : 0;
+  const seasonCycle = season ? seasonCycleAt(seasonCycles(seasonPlanWeeks), currentSeasonWeek) : null;
+  const preparedSeasonSlots = allSessions.filter((session) => session.cycleNumber === guidedSeasonCycle);
+  const activeWeek = seasonCycle
+    ? (seasonCycle.weeks.find((cycleWeek) => cycleWeek.seasonWeek === currentSeasonWeek)?.weekInCycle ?? 1)
+    : currentCycleWeek(sessions, slotsPerWeek);
+  const plan = seasonCycle ? seasonCycleAsPlan(seasonCycle) : diagnosticScores ? buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores)) : null;
   const week = plan?.weeks[activeWeek - 1];
-  const totalSlots = slotsPerWeek * trainingCycleWeekCount;
-  const progress = Math.round((Math.min(sessions.length, totalSlots) / totalSlots) * 100);
-  const upcoming = [...sessions]
+  const totalSlots = seasonCycle
+    ? Math.max(
+        seasonCycle.weeks.reduce((sum, cycleWeek) => sum + cycleWeek.slots.length, 0),
+        1,
+      )
+    : slotsPerWeek * trainingCycleWeekCount;
+  const doneSlots = seasonCycle
+    ? preparedSeasonSlots.filter((session) => seasonCycle.weeks.some((cycleWeek) => cycleWeek.seasonWeek === session.weekNumber)).length
+    : Math.min(sessions.length, totalSlots);
+  const progress = Math.min(100, Math.round((doneSlots / totalSlots) * 100));
+  const upcoming = [...(allSessions.length > 0 ? allSessions : sessions)]
     .filter((session) => session.meetingAt && new Date(session.meetingAt).getTime() >= now)
     .sort((a, b) => new Date(a.meetingAt!).getTime() - new Date(b.meetingAt!).getTime())[0];
-  const freeSlot = firstFreeCycleSlot(sessions, slotsPerWeek);
-  const target = upcoming ?? freeSlot ?? { weekNumber: activeWeek, slot: 0 };
+  const nextGuided = season ? nextSeasonSlot(seasonPlanWeeks, preparedSeasonSlots, currentSeasonWeek) : null;
+  const freeSlot = season ? null : firstFreeCycleSlot(sessions, slotsPerWeek);
+  const target = freeSlot ?? { weekNumber: activeWeek, slot: 0 };
+
+  // Toute la carte « Prochaine séance » est cliquable : séance datée, sinon prochaine séance à préparer.
+  function openNextSession() {
+    if (upcoming) {
+      if (upcoming.cycleNumber === guidedSeasonCycle) router.push(`/terrain/${upcoming.id}`);
+      else router.push(`/session?week=${upcoming.weekNumber}&slot=${upcoming.slot}`);
+    } else if (nextGuided) {
+      router.push({
+        pathname: "/saison/seance/[number]",
+        params: { number: String(nextGuided.slot.sessionNumber), semaine: String(nextGuided.week), creneau: String(nextGuided.index) },
+      });
+    } else if (season) {
+      router.push("/saison");
+    } else {
+      router.push(`/session?week=${target.weekNumber}&slot=${target.slot}`);
+    }
+  }
   // Même logique que l’accueil web : le prochain match à jouer, puis l’avancement de la saison guidée.
   const nextMatch = [...matches]
     .filter((match) => match.status === "scheduled" && (!match.date || new Date(match.date).getTime() >= now - 3 * 3600_000))
     .sort((a, b) => (a.date ? new Date(a.date).getTime() : Infinity) - (b.date ? new Date(b.date).getTime() : Infinity))[0];
-  const seasonWeeks = season ? buildPrioritizedSeason({ priorities: season.priorities as never, sessionsPerWeek: team?.sessionsPerWeek ?? 2 }) : [];
-  const seasonWeek = season ? Math.min(seasonWeekAt(new Date(`${season.startDate}T00:00:00`), new Date(now)), seasonWeeks.length) : 0;
+  const seasonWeeks = seasonPlanWeeks;
+  const seasonWeek = season ? Math.min(currentSeasonWeek, seasonWeeks.length) : 0;
 
   function confirmLogout() {
     Alert.alert("Mon compte", undefined, [
@@ -115,7 +166,7 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Prochaine séance</Text>
-        <View style={[styles.sessionCard, styles.primaryCard]}>
+        <TouchableOpacity accessibilityRole="button" onPress={openNextSession} style={[styles.sessionCard, styles.primaryCard]}>
           <CardGlow variant="primary" />
           {upcoming?.meetingAt ? (
             <>
@@ -130,18 +181,18 @@ export default function HomeScreen() {
             </>
           ) : (
             <>
-              <Text style={[styles.eyebrow, styles.primaryMuted]}>À GÉNÉRER</Text>
+              <Text style={[styles.eyebrow, styles.primaryMuted]}>À PRÉPARER</Text>
               <Text style={[styles.cardTitle, styles.primaryInk]}>Ta prochaine séance t’attend</Text>
-              <Text style={[styles.cardBody, styles.primaryMuted]}>Une séance prête en un geste, à partir de ton plan.</Text>
+              <Text style={[styles.cardBody, styles.primaryMuted]}>
+                {nextGuided ? `Semaine ${nextGuided.week} de ta saison : une séance prête en un geste.` : "Une séance prête en un geste, à partir de ton plan."}
+              </Text>
             </>
           )}
-          <Link href={`/session?week=${target.weekNumber}&slot=${target.slot}`} asChild>
-            <TouchableOpacity accessibilityRole="button" style={[styles.button, styles.primaryButton]}>
-              <Text style={styles.primaryButtonText}>{upcoming ? "Ouvrir la séance" : "Générer ma séance"}</Text>
-              <Text style={styles.primaryButtonText}>→</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
+          <View style={[styles.button, styles.primaryButton]}>
+            <Text style={styles.primaryButtonText}>{upcoming ? "Ouvrir la séance" : "Préparer ma séance"}</Text>
+            <Text style={styles.primaryButtonText}>→</Text>
+          </View>
+        </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Prochain match</Text>
         <TouchableOpacity
@@ -195,23 +246,24 @@ export default function HomeScreen() {
 
         <Text style={styles.sectionTitle}>Thème du moment</Text>
         {plan && week ? (
-          <View style={styles.focusCard}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/plan")} style={styles.focusCard}>
             <CardGlow variant="focus" />
             <Text style={styles.focusEyebrow}>
-              PRIORITÉ DU CYCLE · SEMAINE {activeWeek}/{trainingCycleWeekCount}
+              {seasonCycle ? `CYCLE ${seasonCycle.number}/${seasonCycle.count} DE LA SAISON` : "PRIORITÉ DU CYCLE"} · SEMAINE {activeWeek}/
+              {trainingCycleWeekCount}
             </Text>
-            <Text style={styles.focusTitle}>{week.theme}</Text>
+            <Text style={[styles.focusTitle, { color: themeColors[week.theme] }]}>{week.theme}</Text>
             <Text style={styles.focusBody}>{week.intention}</Text>
             <View style={styles.progress}>
               <View style={[styles.progressValue, { width: `${progress}%` }]} />
             </View>
             <View style={styles.row}>
               <Text style={styles.focusMeta}>
-                {Math.min(sessions.length, totalSlots)}/{totalSlots} séances
+                {doneSlots}/{totalSlots} séances préparées
               </Text>
-              <Text style={styles.focusMeta}>{progress}%</Text>
+              <Text style={styles.focusMeta}>{progress}% · Voir le plan →</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         ) : (
           <Link href="/diagnostic" asChild>
             <TouchableOpacity accessibilityRole="button" style={styles.focusCard}>
