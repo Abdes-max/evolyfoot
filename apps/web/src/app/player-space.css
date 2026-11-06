@@ -33,6 +33,16 @@
   display: grid;
   gap: 16px;
 }
+/* Les éléments d’une grille gardent par défaut la largeur de leur contenu : le tableau des saisons
+   ou la toile élargissaient toute la page sur téléphone au lieu de défiler dans leur bloc. */
+.player-space-content > *,
+.player-space-grid > *,
+.player-space-progress > * {
+  min-width: 0;
+}
+.player-space-history li {
+  overflow-wrap: anywhere;
+}
 .player-space-note,
 .player-space-empty {
   margin: 0;
