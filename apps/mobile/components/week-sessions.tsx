@@ -1,5 +1,13 @@
 import { colors, spacing } from "@evolyfoot/design-tokens";
-import { concernedPlayers, convocationSendDate, summarizeTrainingResponses, type AttendanceEntry, type TrainingConvocationSettings } from "@evolyfoot/domain";
+import {
+  concernedPlayers,
+  convocationSendDate,
+  summarizeTrainingResponses,
+  themeColors,
+  type AttendanceEntry,
+  type DevelopmentTheme,
+  type TrainingConvocationSettings,
+} from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -8,6 +16,7 @@ import { useAuth } from "../lib/auth-context";
 interface WeekSession {
   id: string;
   title: string;
+  theme?: string;
   meetingAt: string | null;
   location?: string | null;
   cycleNumber?: number;
@@ -136,7 +145,12 @@ export function WeekSessions() {
             {entry.sessions.map((session) => {
               const responses = summarizeTrainingResponses(trainingRoster, session.attendance);
               return (
-                <TouchableOpacity accessibilityRole="button" key={session.id} onPress={() => open(session)} style={styles.card}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  key={session.id}
+                  onPress={() => open(session)}
+                  style={[styles.card, { borderLeftWidth: 4, borderLeftColor: themeColors[session.theme as DevelopmentTheme] ?? colors.line }]}
+                >
                   <View style={styles.cardHead}>
                     <Text numberOfLines={1} style={styles.cardTitle}>
                       {session.title}

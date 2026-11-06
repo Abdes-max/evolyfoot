@@ -4,6 +4,7 @@ import {
   buildSeasonCalendar,
   buildSeasonPlan,
   currentCycleWeek,
+  seasonSlotColor,
   seasonSlotDate,
   type DevelopmentTheme,
   type SeasonEventInput,
@@ -39,6 +40,8 @@ function shortDate(date: Date): string {
 // et ouvre sa fiche (même principe que le web, saison-view.tsx).
 interface CalendarEvent extends SeasonEventInput {
   planned?: { sessionNumber: number; week: number; slot: number };
+  // Couleur du thème de la séance prévue (voir themeColors).
+  color?: string;
 }
 
 const typeColors: Record<SeasonEventType, string> = {
@@ -75,7 +78,7 @@ function EventRow({ event }: { event: CalendarEvent & { date: string } }) {
   const content = (
     <>
       <Text style={styles.eventDay}>{dayLabel(event.date)}</Text>
-      <View style={[styles.eventDot, { backgroundColor: typeColors[event.type] }, event.planned && styles.eventDotPlanned]} />
+      <View style={[styles.eventDot, { backgroundColor: event.color ?? typeColors[event.type] }, event.planned && styles.eventDotPlanned]} />
       <View style={styles.eventBody}>
         <Text numberOfLines={1} style={[styles.eventTitle, event.planned && styles.eventTitlePlanned]}>
           {event.title}
@@ -115,7 +118,7 @@ function MonthGrid({ year, month, events, now }: { year: number; month: number; 
                   {dayEvents.slice(0, 3).map((event) => (
                     <View
                       key={`${event.type}-${event.id}`}
-                      style={[styles.gridDot, { backgroundColor: typeColors[event.type] }, event.planned && styles.eventDotPlanned]}
+                      style={[styles.gridDot, { backgroundColor: event.color ?? typeColors[event.type] }, event.planned && styles.eventDotPlanned]}
                     />
                   ))}
                 </View>
@@ -165,6 +168,7 @@ export default function SaisonScreen() {
                 title: slotLabel(slot),
                 date: seasonSlotDate(start, week.week, index, team?.trainingDays ?? []).toISOString(),
                 planned: { sessionNumber: slot.sessionNumber, week: week.week, slot: index },
+                color: seasonSlotColor(slot),
               },
             ],
       ),

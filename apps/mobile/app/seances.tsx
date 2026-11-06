@@ -1,5 +1,5 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { buildDevelopmentPlan, summarizeDiagnostic, type DiagnosticScores, type SavedTrainingSession } from "@evolyfoot/domain";
+import { buildDevelopmentPlan, summarizeDiagnostic, themeColors, type DiagnosticScores, type SavedTrainingSession } from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -7,6 +7,8 @@ import { ConvocationSettings } from "../components/convocation-settings";
 import { CalendarIcon } from "../components/icons";
 import { WeekSessions } from "../components/week-sessions";
 import { useAuth } from "../lib/auth-context";
+import { useSeasonCycle } from "../lib/season-cycle";
+import { SeasonCycleList } from "../components/season-cycle-list";
 
 const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
 
@@ -17,6 +19,8 @@ export default function SeancesScreen() {
   const [view, setView] = useState<"week" | "cycle">("week");
   const plan = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores));
   const slotLabels: readonly string[] = team?.trainingDays.length ? team.trainingDays : ["Séance 1"];
+  // Avec une saison guidée, la vue « Par cycle » suit les cycles de 4 semaines de la saison.
+  const season = useSeasonCycle();
 
   useFocusEffect(
     useCallback(() => {
@@ -57,9 +61,19 @@ export default function SeancesScreen() {
           ))}
         </View>
         {view === "week" ? <WeekSessions /> : null}
+        {view === "cycle" && season.currentCycle ? (
+          <SeasonCycleList
+            currentCycle={season.currentCycle}
+            currentSeasonWeek={season.currentSeasonWeek}
+            cycles={season.cycles}
+            prepared={season.prepared}
+            slotLabels={slotLabels}
+          />
+        ) : null}
         {view === "cycle" &&
+          !season.program &&
           plan.weeks.map((week) => (
-            <View key={week.week} style={styles.week}>
+            <View key={week.week} style={[styles.week, { borderLeftWidth: 4, borderLeftColor: themeColors[week.theme] }]}>
               <Text style={styles.weekTitle}>
                 Semaine {week.week} · {week.phase}
               </Text>

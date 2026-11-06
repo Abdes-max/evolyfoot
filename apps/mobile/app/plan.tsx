@@ -1,9 +1,18 @@
-import { buildDevelopmentPlan, summarizeDiagnostic, trainingCycleWeekCount, type DiagnosticScores, type SavedTrainingSession } from "@evolyfoot/domain";
+import {
+  buildDevelopmentPlan,
+  seasonCycleAsPlan,
+  summarizeDiagnostic,
+  themeColors,
+  trainingCycleWeekCount,
+  type DiagnosticScores,
+  type SavedTrainingSession,
+} from "@evolyfoot/domain";
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { openSeasonSlot, useSeasonCycle } from "../lib/season-cycle";
 
 // Diagnostic de démonstration, utilisé tant que l'éducateur connecté n'a pas encore fait le
 // sien (mobile est entièrement protégé par connexion -- voir _layout.tsx -- donc jamais utilisé
@@ -13,7 +22,9 @@ const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression
 export default function PlanScreen() {
   const { diagnosticScores, team, listSessions, startNextCycle } = useAuth();
   const [sessions, setSessions] = useState<readonly SavedTrainingSession[]>([]);
-  const plan = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores));
+  // Avec une saison guidée : le cycle de 4 semaines de la saison en cours (voir useSeasonCycle).
+  const { currentCycle, nextGuided } = useSeasonCycle();
+  const plan = currentCycle ? seasonCycleAsPlan(currentCycle) : buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores));
   const cycleComplete = sessions.length >= Math.max(team?.trainingDays.length ?? 1, 1) * trainingCycleWeekCount;
 
   useFocusEffect(
@@ -42,22 +53,33 @@ export default function PlanScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <Text style={styles.step}>ÉTAPE 3 SUR 3</Text>
-        <Text style={styles.title}>Ton premier cycle est prêt.</Text>
+        <Text style={styles.step}>{currentCycle ? "MA SAISON" : "ÉTAPE 3 SUR 3"}</Text>
+        <Text style={styles.title}>
+          {currentCycle ? `Cycle ${currentCycle.number} sur ${currentCycle.count} de ta saison.` : "Ton premier cycle est prêt."}
+        </Text>
         <Text style={styles.body}>{plan.explanation}</Text>
         {plan.weeks.map((week) => (
-          <View key={week.week} style={styles.card}>
+          <View key={week.week} style={[styles.card, { borderLeftWidth: 4, borderLeftColor: themeColors[week.theme] }]}>
             <View style={styles.number}>
               <Text style={styles.numberText}>S{week.week}</Text>
             </View>
             <View style={styles.content}>
-              <Text style={styles.phase}>{week.phase.toUpperCase()}</Text>
+              <Text style={styles.phase}>
+                {week.phase.toUpperCase()} · <Text style={{ color: themeColors[week.theme] }}>{week.theme}</Text>
+              </Text>
               <Text style={styles.intention}>{week.intention}</Text>
               <Text style={styles.observable}>{week.observable}</Text>
             </View>
           </View>
         ))}
-        {cycleComplete ? (
+        {currentCycle ? (
+          <TouchableOpacity
+            onPress={() => (nextGuided ? openSeasonSlot(nextGuided.slot.sessionNumber, nextGuided.week, nextGuided.index) : router.push("/saison"))}
+            style={styles.sessionButton}
+          >
+            <Text style={styles.sessionButtonText}>{nextGuided ? "Préparer la prochaine séance →" : "Voir ma saison →"}</Text>
+          </TouchableOpacity>
+        ) : cycleComplete ? (
           <TouchableOpacity onPress={nextCycle} style={styles.sessionButton}>
             <Text style={styles.sessionButtonText}>Démarrer le cycle suivant →</Text>
           </TouchableOpacity>
