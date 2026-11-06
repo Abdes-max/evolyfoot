@@ -115,30 +115,30 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Prochaine séance</Text>
-        <View style={styles.sessionCard}>
+        <View style={[styles.sessionCard, styles.primaryCard]}>
+          <CardGlow variant="primary" />
           {upcoming?.meetingAt ? (
             <>
               <View style={styles.metaRow}>
-                <ClockIcon color={colors.muted} size={14} />
-                <Text style={styles.eyebrow}>{meetingLabel(upcoming.meetingAt).toUpperCase()}</Text>
+                <ClockIcon color={primaryMuted} size={14} />
+                <Text style={[styles.eyebrow, styles.primaryChip]}>{meetingLabel(upcoming.meetingAt)}</Text>
               </View>
-              <Text style={styles.cardTitle}>{upcoming.title}</Text>
-              <Text style={styles.cardBody}>
+              <Text style={[styles.cardTitle, styles.primaryInk]}>{upcoming.title}</Text>
+              <Text style={[styles.cardBody, styles.primaryMuted]}>
                 {sessionDuration(upcoming)} min · {upcoming.playerCount} joueurs · {upcoming.theme}
               </Text>
             </>
           ) : (
             <>
-              <Text style={styles.eyebrow}>À GÉNÉRER</Text>
-              <Text style={styles.cardTitle}>Ta prochaine séance t’attend</Text>
-              <Text style={styles.cardBody}>Une séance prête en un geste, à partir de ton plan.</Text>
+              <Text style={[styles.eyebrow, styles.primaryMuted]}>À GÉNÉRER</Text>
+              <Text style={[styles.cardTitle, styles.primaryInk]}>Ta prochaine séance t’attend</Text>
+              <Text style={[styles.cardBody, styles.primaryMuted]}>Une séance prête en un geste, à partir de ton plan.</Text>
             </>
           )}
           <Link href={`/session?week=${target.weekNumber}&slot=${target.slot}`} asChild>
-            <TouchableOpacity accessibilityRole="button" style={styles.button}>
-              <CardGlow variant="button" />
-              <Text style={styles.buttonText}>{upcoming ? "Ouvrir la séance" : "Générer ma séance"}</Text>
-              <Text style={styles.buttonText}>→</Text>
+            <TouchableOpacity accessibilityRole="button" style={[styles.button, styles.primaryButton]}>
+              <Text style={styles.primaryButtonText}>{upcoming ? "Ouvrir la séance" : "Générer ma séance"}</Text>
+              <Text style={styles.primaryButtonText}>→</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -272,6 +272,8 @@ export default function HomeScreen() {
   );
 }
 
+const primaryMuted = "rgba(6, 35, 48, 0.75)";
+
 const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   unreadBadge: { minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: "#ef4444" },
@@ -303,6 +305,31 @@ const styles = StyleSheet.create({
   },
   focusEyebrow: { fontSize: 9, letterSpacing: 1, color: colors.lime, fontWeight: "800" },
   matchCard: { overflow: "hidden" },
+  // Prochaine séance : carte cyan au texte foncé et bouton foncé, comme .session-card.home-primary.
+  primaryCard: {
+    overflow: "hidden",
+    borderWidth: 0,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+  },
+  primaryInk: { color: colors.primaryInk },
+  primaryMuted: { color: primaryMuted },
+  primaryChip: {
+    color: colors.primaryInk,
+    fontSize: 11,
+    letterSpacing: 0,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(6, 35, 48, 0.35)",
+    backgroundColor: "rgba(6, 35, 48, 0.12)",
+    overflow: "hidden",
+  },
+  primaryButton: { backgroundColor: colors.primaryInk },
+  primaryButtonText: { fontSize: 12, fontWeight: "800", color: "#ffffff" },
   pageGlow: { position: "absolute", top: 0, left: 0, right: 0, height: 320 },
   focusTitle: { fontSize: 23, lineHeight: 29, fontWeight: "800", color: colors.ink, marginTop: 24 },
   focusBody: { fontSize: 12, lineHeight: 19, color: colors.muted, marginTop: 10 },

@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ConvocationSettings } from "../components/convocation-settings";
 import { CalendarIcon } from "../components/icons";
+import { WeekSessions } from "../components/week-sessions";
 import { useAuth } from "../lib/auth-context";
 
 const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression: 4, reactionAfterLoss: 1 };
@@ -12,6 +13,8 @@ const demoScores: DiagnosticScores = { availability: 3, scanning: 2, progression
 export default function SeancesScreen() {
   const { team, diagnosticScores, listSessions } = useAuth();
   const [sessions, setSessions] = useState<readonly SavedTrainingSession[]>([]);
+  // Vue par semaine (séances datées, convocations) ou par cycle (créneaux à préparer).
+  const [view, setView] = useState<"week" | "cycle">("week");
   const plan = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores));
   const slotLabels: readonly string[] = team?.trainingDays.length ? team.trainingDays : ["Séance 1"];
 
@@ -35,40 +38,60 @@ export default function SeancesScreen() {
         <Text style={styles.step}>MES SÉANCES</Text>
         <Text style={styles.title}>Le cycle, séance par séance.</Text>
         <ConvocationSettings />
-        {plan.weeks.map((week) => (
-          <View key={week.week} style={styles.week}>
-            <Text style={styles.weekTitle}>
-              Semaine {week.week} · {week.phase}
-            </Text>
-            <Text style={styles.weekTheme}>{week.theme}</Text>
-            {slotLabels.map((label, slot) => {
-              const saved = sessions.find((session) => session.weekNumber === week.week && session.slot === slot);
-              return (
-                // Un vrai bouton par créneau : icône, jour, statut et action. router.push plutôt
-                // qu’un <Link asChild> (dont le style en tableau fait planter le rendu web).
-                <TouchableOpacity
-                  accessibilityHint={saved ? "Ouvre la séance préparée" : "Génère la séance à partir du plan"}
-                  accessibilityLabel={`${label}, semaine ${week.week} : ${saved ? "séance prête" : "à générer"}`}
-                  accessibilityRole="button"
-                  key={slot}
-                  onPress={() => router.push(`/session?week=${week.week}&slot=${slot}`)}
-                  style={[styles.slot, saved ? styles.slotSaved : styles.slotFree]}
-                >
-                  <View style={[styles.slotIcon, saved && styles.slotIconSaved]}>
-                    <CalendarIcon color={saved ? colors.primaryInk : colors.primary} size={18} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.slotLabel}>{label}</Text>
-                    <Text style={styles.slotStatus}>{saved ? (saved.title ?? "Séance prête") : "À générer"}</Text>
-                  </View>
-                  <View style={[styles.slotButton, saved ? styles.slotButtonSaved : styles.slotButtonFree]}>
-                    <Text style={[styles.slotButtonText, !saved && styles.slotButtonTextFree]}>{saved ? "Ouvrir" : "Générer"}</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
+        <View accessibilityRole="tablist" style={styles.tabs}>
+          {(
+            [
+              ["week", "Par semaine"],
+              ["cycle", "Par cycle"],
+            ] as const
+          ).map(([value, label]) => (
+            <TouchableOpacity
+              accessibilityRole="tab"
+              accessibilityState={{ selected: view === value }}
+              key={value}
+              onPress={() => setView(value)}
+              style={[styles.tab, view === value && styles.tabActive]}
+            >
+              <Text style={[styles.tabText, view === value && styles.tabTextActive]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {view === "week" ? <WeekSessions /> : null}
+        {view === "cycle" &&
+          plan.weeks.map((week) => (
+            <View key={week.week} style={styles.week}>
+              <Text style={styles.weekTitle}>
+                Semaine {week.week} · {week.phase}
+              </Text>
+              <Text style={styles.weekTheme}>{week.theme}</Text>
+              {slotLabels.map((label, slot) => {
+                const saved = sessions.find((session) => session.weekNumber === week.week && session.slot === slot);
+                return (
+                  // Un vrai bouton par créneau : icône, jour, statut et action. router.push plutôt
+                  // qu’un <Link asChild> (dont le style en tableau fait planter le rendu web).
+                  <TouchableOpacity
+                    accessibilityHint={saved ? "Ouvre la séance préparée" : "Génère la séance à partir du plan"}
+                    accessibilityLabel={`${label}, semaine ${week.week} : ${saved ? "séance prête" : "à générer"}`}
+                    accessibilityRole="button"
+                    key={slot}
+                    onPress={() => router.push(`/session?week=${week.week}&slot=${slot}`)}
+                    style={[styles.slot, saved ? styles.slotSaved : styles.slotFree]}
+                  >
+                    <View style={[styles.slotIcon, saved && styles.slotIconSaved]}>
+                      <CalendarIcon color={saved ? colors.primaryInk : colors.primary} size={18} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.slotLabel}>{label}</Text>
+                      <Text style={styles.slotStatus}>{saved ? (saved.title ?? "Séance prête") : "À générer"}</Text>
+                    </View>
+                    <View style={[styles.slotButton, saved ? styles.slotButtonSaved : styles.slotButtonFree]}>
+                      <Text style={[styles.slotButtonText, !saved && styles.slotButtonTextFree]}>{saved ? "Ouvrir" : "Générer"}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -79,6 +102,20 @@ const styles = StyleSheet.create({
   page: { padding: spacing.lg, paddingBottom: 48 },
   step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
   title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 20 },
+  tabs: {
+    flexDirection: "row",
+    gap: 6,
+    padding: 4,
+    marginBottom: spacing.md,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+  },
+  tab: { flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: radii.pill },
+  tabActive: { backgroundColor: colors.primary },
+  tabText: { color: colors.muted, fontSize: 13, fontWeight: "800" },
+  tabTextActive: { color: colors.primaryInk },
   week: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12 },
   weekTitle: { fontSize: 14, fontWeight: "800", color: colors.ink },
   weekTheme: { fontSize: 11, color: colors.muted, marginTop: 4, marginBottom: 10 },

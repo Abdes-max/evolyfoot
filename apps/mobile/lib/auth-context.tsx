@@ -79,6 +79,8 @@ export interface SeasonData {
   cycleNumber: number;
   // Séances du cycle en cours, pour situer la semaine active.
   cycleSessions: readonly SavedTrainingSession[];
+  // Créneaux de la saison guidée déjà préparés : les autres sont « à préparer » au calendrier.
+  preparedSlots: readonly { weekNumber: number; slot: number }[];
   // Vrai si une des listes n'a pas pu être lue : le calendrier affiché est alors incomplet.
   failed: boolean;
 }
@@ -404,7 +406,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { items: (body[key] as Item[]) ?? [], body };
     };
     const [season, cycle, matches, tournaments, plateaux] = await Promise.all([
-      read<{ id: string; title: string; meetingAt: string | null }>("/api/sessions?scope=season", "sessions"),
+      read<{ id: string; title: string; meetingAt: string | null; cycleNumber?: number; weekNumber: number; slot: number }>("/api/sessions?scope=season", "sessions"),
       read<SavedTrainingSession>("/api/sessions", "sessions"),
       read<{ id: string; opponent: string; date: string | null }>("/api/matches", "matches"),
       read<{ id: string; name: string; date: string | null }>("/api/tournaments", "tournaments"),
@@ -419,6 +421,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ],
       cycleNumber: typeof cycle.body.cycleNumber === "number" ? cycle.body.cycleNumber : 1,
       cycleSessions: cycle.items,
+      // Créneaux de la saison guidée déjà préparés (les autres sont « à préparer » au calendrier).
+      preparedSlots: season.items.filter((session) => session.cycleNumber === 0).map((session) => ({ weekNumber: session.weekNumber, slot: session.slot })),
       failed,
     };
   }, [sessionToken]);
