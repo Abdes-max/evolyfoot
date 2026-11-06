@@ -42,15 +42,13 @@ export class PlayerInviteService {
     private readonly now: () => Date = () => new Date(),
   ) {}
 
-  // Génère une invitation pour un joueur de l'effectif du coach. Plusieurs comptes peuvent suivre
-  // le même enfant (les deux parents) ; refuse seulement si une invitation est encore active.
+  // Génère une invitation pour un joueur de l'effectif du coach. Un nouveau lien à chaque demande :
+  // le lien n'est gardé que haché, on ne peut pas réafficher le précédent. Les liens déjà envoyés
+  // restent valables, chacun pour un compte (les deux parents peuvent suivre le même enfant).
   async create(educatorId: string, playerId: string): Promise<CreatedInvite> {
     const player = await this.playerRepository.findById(playerId, educatorId);
     if (!player) {
       throw new PlayerNotFoundError();
-    }
-    if (await this.playerInviteRepository.findActiveForPlayer(playerId)) {
-      throw new InviteInvalidError("Une invitation est déjà active pour ce joueur.");
     }
     const token = generateSessionToken();
     const expiresAt = new Date(this.now().getTime() + INVITE_DURATION_MS);
