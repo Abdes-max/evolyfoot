@@ -57,6 +57,29 @@
   color: var(--muted);
   font-size: 12px;
 }
+/* Composition du prochain match (next-match-lineup.tsx). */
+.roster-lineup {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: radial-gradient(80% 120% at 50% 50%, rgba(62, 198, 245, 0.08), transparent 70%), var(--surface);
+}
+.roster-lineup .roster-side-title {
+  margin-top: 0;
+}
+.roster-lineup-match {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.roster-lineup-match strong {
+  color: var(--ink);
+}
+.roster-lineup-cta {
+  justify-self: start;
+}
 .roster-side-title {
   margin-top: 6px;
   color: var(--muted);
