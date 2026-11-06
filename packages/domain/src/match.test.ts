@@ -12,6 +12,7 @@ import {
   listFormations,
   removeSubstitute,
   setCaptain,
+  transferLineup,
   validateMatchPlan,
 } from "./match";
 import type { GameFormat } from "./team";
@@ -127,16 +128,38 @@ describe("clearSlot", () => {
 });
 
 describe("changeFormation", () => {
-  it("vide la composition et le capitaine, les postes n'étant plus les mêmes", () => {
-    let plan = assignPlayerToSlot(createMatchPlan("US Vallée", "Samedi", "home", 8), "goalkeeper-1", { id: "p1", name: "Lina" });
-    plan = setCaptain(plan, "p1");
-    const nextFormation = listFormations(8)[1]!;
+  it("garde les joueurs placés et le capitaine", () => {
+    let plan = createMatchPlan("US Vallée", "Samedi", "home", 8);
+    formationSlots(8, plan.formationId).forEach((slot, index) => {
+      plan = assignPlayerToSlot(plan, slot.id, { id: `p${index}`, name: `Joueur ${index}` });
+    });
+    plan = setCaptain(plan, "p0");
+    const previous = new Map(
+      plan.lineup.map((assignment) => [assignment.playerId, formationSlots(8, plan.formationId).find((slot) => slot.id === assignment.slotId)!.role]),
+    );
 
-    plan = changeFormation(plan, nextFormation.id);
+    for (const formation of listFormations(8).slice(1)) {
+      const next = changeFormation(plan, formation.id);
+      const slots = formationSlots(8, formation.id);
+      expect(next.formationId).toBe(formation.id);
+      expect(next.lineup.map((assignment) => assignment.playerId).sort()).toEqual([...previous.keys()].sort());
+      expect(new Set(next.lineup.map((assignment) => assignment.slotId)).size).toBe(slots.length);
+      expect(next.captainPlayerId).toBe("p0");
+      // Le gardien reste dans les cages.
+      const keeper = next.lineup.find((assignment) => previous.get(assignment.playerId) === "goalkeeper")!;
+      expect(slots.find((slot) => slot.id === keeper.slotId)!.role).toBe("goalkeeper");
+    }
+  });
 
-    expect(plan.formationId).toBe(nextFormation.id);
-    expect(plan.lineup).toHaveLength(0);
-    expect(plan.captainPlayerId).toBeNull();
+  it("rend les joueurs sans place quand il y a moins de postes", () => {
+    let plan = createMatchPlan("US Vallée", "Samedi", "home", 8);
+    formationSlots(8, plan.formationId).forEach((slot, index) => {
+      plan = assignPlayerToSlot(plan, slot.id, { id: `p${index}`, name: `Joueur ${index}` });
+    });
+    const toSlots = formationSlots(5, listFormations(5)[0]!.id);
+    const result = transferLineup(plan.lineup, formationSlots(8, plan.formationId), toSlots);
+    expect(result.lineup).toHaveLength(toSlots.length);
+    expect(result.leftOver).toHaveLength(plan.lineup.length - toSlots.length);
   });
 });
 

@@ -26,7 +26,7 @@ export function MatchAnalysis({ matchId, gameFormat, formationId, opponentFormat
   const [opponent, setOpponent] = useState(opponentFormationId ?? "");
   const [saveError, setSaveError] = useState("");
   // Facultative : repliée tant que l’éducateur ne l’ouvre pas (ou qu’aucun système n’est enregistré).
-  const [open, setOpen] = useState(Boolean(opponentFormationId));
+  const [open, setOpen] = useState(false);
   const formations = listFormations(gameFormat);
   const known = formations.some((formation) => formation.id === opponent);
   const analysis = known ? analyzeMatchup(gameFormat, formationId, opponent) : null;

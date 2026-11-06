@@ -97,6 +97,7 @@ export {
   assignPlayerToSlot,
   canFinalizeMatchPlan,
   changeFormation,
+  transferLineup,
   clearSlot,
   createMatchPlan,
   defaultFormationId,

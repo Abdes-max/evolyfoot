@@ -244,7 +244,7 @@ nav {
   color: var(--muted);
   font-size: 11px;
 }
-.coach button {
+.coach > button {
   min-height: 44px;
   margin-left: auto;
   border: 0;

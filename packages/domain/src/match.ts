@@ -245,12 +245,62 @@ export function setCaptain(plan: MatchPlan, playerId: string | null): MatchPlan 
   return { ...plan, captainPlayerId: playerId };
 }
 
-// Change de formation : les postes (et donc leurs identifiants) diffèrent d'une formation à
-// l'autre pour un même format de jeu, une composition déjà commencée ne peut donc pas être
-// reportée telle quelle -- repart d'une composition vide plutôt que de laisser des affectations
-// orphelines pointer vers des postes qui n'existent plus.
+const roleOrder: readonly LineupRole[] = ["goalkeeper", "defender", "midfielder", "attacker"];
+
+// Reporte une composition sur d'autres postes (nouvelle formation ou nouveau format de jeu) : chaque
+// joueur garde son poste s'il existe encore, sinon prend le poste libre le plus proche de la même
+// ligne, sinon le plus proche sur le terrain (jamais les cages pour un joueur de champ). Les joueurs
+// sans place (moins de postes) sont rendus dans `leftOver`, dans l'ordre de la composition.
+export function transferLineup(
+  lineup: readonly MatchLineupAssignment[],
+  fromSlots: readonly MatchLineupSlot[],
+  toSlots: readonly MatchLineupSlot[],
+): { lineup: MatchLineupAssignment[]; leftOver: MatchLineupAssignment[] } {
+  const free = [...toSlots];
+  const placed: MatchLineupAssignment[] = [];
+  const leftOver: MatchLineupAssignment[] = [];
+  const fromById = new Map(fromSlots.map((slot) => [slot.id, slot]));
+  const take = (assignment: MatchLineupAssignment, slot: MatchLineupSlot) => {
+    free.splice(free.indexOf(slot), 1);
+    placed.push({ ...assignment, slotId: slot.id });
+  };
+  const distance = (a: MatchLineupSlot, b: MatchLineupSlot) => Math.hypot(a.x - b.x, a.y - b.y);
+  const nearest = (from: MatchLineupSlot, candidates: readonly MatchLineupSlot[]) => [...candidates].sort((a, b) => distance(from, a) - distance(from, b))[0];
+
+  const pending: { assignment: MatchLineupAssignment; from: MatchLineupSlot }[] = [];
+  for (const assignment of lineup) {
+    const sameId = free.find((slot) => slot.id === assignment.slotId);
+    const from = fromById.get(assignment.slotId);
+    if (sameId && from && sameId.role === from.role) take(assignment, sameId);
+    else if (from) pending.push({ assignment, from });
+    else leftOver.push(assignment);
+  }
+  // Ligne par ligne, de gauche à droite, pour garder l'ordre des joueurs sur le terrain.
+  pending.sort((a, b) => roleOrder.indexOf(a.from.role) - roleOrder.indexOf(b.from.role) || a.from.x - b.from.x);
+  const unplaced: typeof pending = [];
+  for (const item of pending) {
+    const slot = nearest(
+      item.from,
+      free.filter((candidate) => candidate.role === item.from.role),
+    );
+    if (slot) take(item.assignment, slot);
+    else unplaced.push(item);
+  }
+  for (const item of unplaced) {
+    const fieldSlots = free.filter((candidate) => candidate.role !== "goalkeeper");
+    const slot = nearest(item.from, item.from.role === "goalkeeper" || fieldSlots.length === 0 ? free : fieldSlots);
+    if (slot) take(item.assignment, slot);
+    else leftOver.push(item.assignment);
+  }
+  return { lineup: placed, leftOver };
+}
+
+// Change de formation en gardant les joueurs déjà placés (voir transferLineup) ; le capitaine reste
+// capitaine s'il est toujours titulaire.
 export function changeFormation(plan: MatchPlan, formationId: string): MatchPlan {
-  return { ...plan, formationId, lineup: [], captainPlayerId: null };
+  const { lineup } = transferLineup(plan.lineup, formationSlots(plan.gameFormat, plan.formationId), formationSlots(plan.gameFormat, formationId));
+  const captainPlayerId = lineup.some((assignment) => assignment.playerId === plan.captainPlayerId) ? plan.captainPlayerId : null;
+  return { ...plan, formationId, lineup, captainPlayerId };
 }
 
 export function isLineupComplete(plan: MatchPlan): boolean {

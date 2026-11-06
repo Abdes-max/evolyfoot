@@ -1,4 +1,13 @@
-import { defaultFormationId, formationSlots, gameFormats, listFormations, maxSubstitutes, validateMatchPlan, validateMatchResult } from "@evolyfoot/domain";
+import {
+  defaultFormationId,
+  formationSlots,
+  gameFormats,
+  listFormations,
+  maxSubstitutes,
+  transferLineup,
+  validateMatchPlan,
+  validateMatchResult,
+} from "@evolyfoot/domain";
 import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchResult, MatchVenue } from "@evolyfoot/domain";
 import { EducatorNotFoundError, MatchNotFoundError, ValidationError } from "./errors";
 import type { EducatorRepository, MatchRepository, PersistedMatch } from "./repositories";
@@ -219,10 +228,8 @@ export class MatchService {
     });
   }
 
-  // Change de formation, et/ou de format de jeu -- les postes diffèrent d'une formation à l'autre
-  // (même pour un même format de jeu), donc repart d'une composition vide plutôt que de laisser
-  // des affectations orphelines (même principe que `changeFormation` côté domaine, rejoué ici
-  // côté serveur). Un format de jeu différent peut aussi réduire le nombre de remplaçants
+  // Change de formation, et/ou de format de jeu -- la composition est reportée sur les nouveaux
+  // postes (voir transferLineup côté domaine). Un format de jeu différent peut aussi réduire le nombre de remplaçants
   // autorisés (voir maxSubstitutes) : le banc est alors tronqué plutôt que rejeté en bloc.
   async changeFormation(educatorId: string, matchId: string, input: { formationId: string; gameFormat?: number }): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
@@ -230,12 +237,20 @@ export class MatchService {
     if (!listFormations(gameFormat).some((formation) => formation.id === input.formationId)) {
       throw new ValidationError("Cette formation ne correspond pas au format de jeu.");
     }
-    const substitutePlayerIds = match.substitutePlayerIds.slice(0, maxSubstitutes(gameFormat));
+    // Les joueurs déjà placés suivent sur les nouveaux postes ; ceux qui n'ont plus de place (format
+    // plus petit) passent sur le banc tant qu'il reste de la place.
+    const { lineup, leftOver } = transferLineup(
+      match.lineup,
+      formationSlots(match.gameFormat, match.formationId),
+      formationSlots(gameFormat, input.formationId),
+    );
+    const substitutePlayerIds = [...match.substitutePlayerIds, ...leftOver.map((assignment) => assignment.playerId)].slice(0, maxSubstitutes(gameFormat));
+    const captainPlayerId = lineup.some((assignment) => assignment.playerId === match.captainPlayerId) ? match.captainPlayerId : null;
     return this.matchRepository.update(matchId, educatorId, {
       gameFormat,
       formationId: input.formationId,
-      lineup: [],
-      captainPlayerId: null,
+      lineup,
+      captainPlayerId,
       substitutePlayerIds,
     });
   }

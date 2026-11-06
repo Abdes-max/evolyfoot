@@ -364,6 +364,23 @@
   text-align: center;
 }
 
+/* Dans le bloc éducateur du menu : cloche discrète, à côté de Déconnexion. */
+.coach .notification-bell > button {
+  height: 30px;
+  width: 30px;
+}
+
+.coach .notification-bell svg {
+  height: 15px;
+  width: 15px;
+}
+
+.coach .notification-bell .unread-badge {
+  font-size: 0.6rem;
+  min-width: 15px;
+  padding: 2px 4px;
+}
+
 .notification-bell .unread-badge {
   position: absolute;
   right: -4px;
