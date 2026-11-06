@@ -127,7 +127,7 @@ describe("PostgreSQL match persistence", () => {
     expect(played.status).toBe("played");
   });
 
-  it("change de formation et repart d'une composition vide", async () => {
+  it("change de formation en gardant la composition et le capitaine", async () => {
     const educator = await createEducator("change-formation");
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
     const slots = formationSlots(8, match.formationId);
@@ -138,8 +138,8 @@ describe("PostgreSQL match persistence", () => {
     const updated = await service.changeFormation(educator.id, match.id, { formationId: nextFormationId });
 
     expect(updated.formationId).toBe(nextFormationId);
-    expect(updated.lineup).toEqual([]);
-    expect(updated.captainPlayerId).toBeNull();
+    expect(updated.lineup.map((assignment) => assignment.playerId).sort()).toEqual(lineup.map((assignment) => assignment.playerId).sort());
+    expect(updated.captainPlayerId).toBe("player-0");
   });
 
   it("rejette un changement vers une formation d'un autre format de jeu", async () => {
@@ -164,8 +164,7 @@ describe("PostgreSQL match persistence", () => {
 
     expect(updated.gameFormat).toBe(5);
     expect(updated.formationId).toBe(defaultFormationId(5));
-    expect(updated.lineup).toEqual([]);
-    expect(updated.captainPlayerId).toBeNull();
+    expect(updated.lineup).toHaveLength(formationSlots(5, defaultFormationId(5)).length);
     expect(updated.substitutePlayerIds).toEqual(["sub-0", "sub-1", "sub-2"]);
   });
 

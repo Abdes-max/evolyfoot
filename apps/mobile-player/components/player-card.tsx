@@ -8,14 +8,17 @@ import {
   type PlayerPosition,
   type PlayerSeasonTotals,
 } from "@evolyfoot/domain";
-import { Image, StyleSheet, Text, View } from "react-native";
-import Svg, { Defs, LinearGradient, Path, RadialGradient, Stop } from "react-native-svg";
+import { StyleSheet, Text, View } from "react-native";
+import Svg, { Defs, Image as SvgImage, LinearGradient, Mask, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 
 const CARD_WIDTH = 300;
 const CARD_HEIGHT = 470;
 // Écusson dessiné dans le repère de la carte. Le halo vient de contours superposés : les ombres
 // colorées ne s'appliquent pas à une forme SVG sur Android.
 const CREST = "M12 34 L34 12 H108 L122 24 H178 L192 12 H266 L288 34 V400 L150 458 L12 400 Z";
+// Photo du joueur, comme sur le web : grande, en haut à droite, fondue vers le bas dans la carte.
+const PHOTO_WIDTH = 176;
+const PHOTO_HEIGHT = 172;
 
 interface PlayerCardProps {
   name: string;
@@ -62,7 +65,23 @@ export function PlayerCard({ name, photo, position, jerseyNumber, preferredFoot,
           {jerseyNumber ? <Text style={styles.jersey}>N° {jerseyNumber}</Text> : null}
         </View>
         {photo ? (
-          <Image accessibilityLabel={`Photo de ${name}`} source={{ uri: photo }} style={styles.photo} />
+          <Svg accessibilityLabel={`Photo de ${name}`} height={PHOTO_HEIGHT} style={styles.photo} width={PHOTO_WIDTH}>
+            <Defs>
+              <LinearGradient id="photoFade" x1="0" x2="0" y1="0" y2="1">
+                <Stop offset="0.7" stopColor="#fff" stopOpacity="1" />
+                <Stop offset="1" stopColor="#fff" stopOpacity="0" />
+              </LinearGradient>
+              <RadialGradient cx="50%" cy="45%" id="photoGlow" r="50%">
+                <Stop offset="0" stopColor={colors.primary} stopOpacity="0.45" />
+                <Stop offset="1" stopColor={colors.primary} stopOpacity="0" />
+              </RadialGradient>
+              <Mask id="photoMask">
+                <Rect fill="url(#photoFade)" height={PHOTO_HEIGHT} width={PHOTO_WIDTH} />
+              </Mask>
+            </Defs>
+            <Rect fill="url(#photoGlow)" height={PHOTO_HEIGHT} width={PHOTO_WIDTH} />
+            <SvgImage height={PHOTO_HEIGHT} href={{ uri: photo }} mask="url(#photoMask)" preserveAspectRatio="xMidYMin slice" width={PHOTO_WIDTH} />
+          </Svg>
         ) : (
           <Text style={styles.initial}>{name.trim().slice(0, 1).toUpperCase() || "?"}</Text>
         )}
@@ -110,12 +129,12 @@ const glow = (color: string) => ({ textShadowColor: color, textShadowOffset: { w
 
 const styles = StyleSheet.create({
   card: { alignSelf: "center", width: CARD_WIDTH, height: CARD_HEIGHT, paddingHorizontal: 34, paddingTop: 34 },
-  top: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", minHeight: 124 },
-  rating: { alignItems: "center", minWidth: 68 },
+  top: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", minHeight: 150 },
+  rating: { alignItems: "center", minWidth: 68, zIndex: 1 },
   overall: { color: colors.lime, fontSize: 46, lineHeight: 50, fontWeight: "900", ...glow(colors.lime) },
   position: { color: colors.primary, fontSize: 20, fontWeight: "900", ...glow(colors.primary) },
   jersey: { color: colors.ink, fontSize: 11, fontWeight: "800", marginTop: 2 },
-  photo: { width: 124, height: 124, borderRadius: 62 },
+  photo: { position: "absolute", top: -22, right: -24 },
   initial: { color: colors.primary, fontSize: 96, lineHeight: 112, fontWeight: "900", marginRight: 22, ...glow(colors.primary) },
   name: {
     color: colors.ink,

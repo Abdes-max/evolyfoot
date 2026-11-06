@@ -15,12 +15,12 @@ interface MatchAnalysisProps {
   opponentFormationId: string | null;
 }
 
-// Analyse facultative : repliée tant que l’éducateur ne l’ouvre pas (ou qu’aucun système adverse
-// n’est enregistré). Le système adverse se choisit en un geste, puis le terrain et les lignes
+// Analyse facultative : toujours repliée à l’ouverture de la fiche, même avec un système adverse
+// enregistré. Le système adverse se choisit en un geste, puis le terrain et les lignes
 // montrent où l’équipe est en surnombre ou en infériorité.
 export function MatchAnalysis({ matchId, gameFormat, formationId, opponentFormationId }: MatchAnalysisProps) {
   const [opponent, setOpponent] = useState(opponentFormationId ?? "");
-  const [open, setOpen] = useState(Boolean(opponentFormationId));
+  const [open, setOpen] = useState(false);
   const [saveError, setSaveError] = useState("");
   const formations = listFormations(gameFormat);
   const known = formations.some((formation) => formation.id === opponent);
