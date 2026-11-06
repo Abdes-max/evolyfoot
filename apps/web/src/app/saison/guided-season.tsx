@@ -17,9 +17,12 @@ import {
   type DevelopmentTheme,
   type DiagnosticScores,
   type SeasonSlot,
+  type TrainingDay,
+  type TrainingSlotSchedule,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { TrainingScheduleBlock, TrainingScheduleFields } from "./training-schedule-editor";
 
 interface PreparedSession {
   id: string;
@@ -43,6 +46,7 @@ function preparedLabel(session: PreparedSession): string {
 
 interface Program {
   priorities: DevelopmentTheme[];
+  schedule?: TrainingSlotSchedule[];
   startDate: string;
 }
 
@@ -65,8 +69,20 @@ export function slotClass(slot: Pick<SeasonSlot, "type" | "subTheme" | "major">)
   return `season-slot ${themeSlugs[programSubThemes[slot.subTheme!].theme]}${slot.major ? " major" : ""}`;
 }
 
-function PriorityPicker({ initial, onSaved, onCancel }: { initial: DevelopmentTheme[]; onSaved: (program: Program) => void; onCancel?: () => void }) {
+function PriorityPicker({
+  initial,
+  onSaved,
+  onCancel,
+  trainingDays,
+}: {
+  initial: DevelopmentTheme[];
+  onSaved: (program: Program) => void;
+  onCancel?: () => void;
+  // Fourni à la création de la saison : les créneaux récurrents se définissent en même temps.
+  trainingDays?: readonly TrainingDay[];
+}) {
   const [selected, setSelected] = useState<DevelopmentTheme[]>(initial);
+  const [schedule, setSchedule] = useState<TrainingSlotSchedule[]>([]);
   const [state, setState] = useState<"idle" | "saving" | "error">("idle");
 
   function toggle(theme: DevelopmentTheme) {
@@ -78,7 +94,7 @@ function PriorityPicker({ initial, onSaved, onCancel }: { initial: DevelopmentTh
     const response = await fetch("/api/season-program", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ priorities: selected }),
+      body: JSON.stringify({ priorities: selected, ...(trainingDays && schedule.length > 0 ? { schedule } : {}) }),
     }).catch(() => null);
     const body = await response?.json().catch(() => null);
     if (response?.ok && body?.program) {
@@ -104,6 +120,12 @@ function PriorityPicker({ initial, onSaved, onCancel }: { initial: DevelopmentTh
           </button>
         ))}
       </div>
+      {trainingDays && (
+        <>
+          <p>Tes créneaux : l’heure et le lieu de chaque jour d’entraînement, repris par toutes les séances de la saison.</p>
+          <TrainingScheduleFields onChange={setSchedule} trainingDays={trainingDays} value={schedule} />
+        </>
+      )}
       <div className="guided-picker-actions">
         <button className="primary-button" disabled={selected.length === 0 || state === "saving"} onClick={save} type="button">
           {initial.length > 0 && onCancel ? "Mettre à jour ma saison" : "Lancer ma saison"}
@@ -126,6 +148,7 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
   const [suggested, setSuggested] = useState<DevelopmentTheme[]>([]);
   const [editing, setEditing] = useState(false);
   const [prepared, setPrepared] = useState<PreparedSession[]>([]);
+  const [trainingDays, setTrainingDays] = useState<TrainingDay[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -139,6 +162,7 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
       );
       if (cancelled) return;
       setSessionsPerWeek(teamBody?.profile?.sessionsPerWeek ?? 2);
+      setTrainingDays(teamBody?.profile?.trainingDays ?? []);
       const scores: DiagnosticScores | null = diagnosticBody?.scores ?? null;
       setSuggested(scores ? suggestSeasonPriorities(summarizeDiagnostic(scores)) : []);
       setPrepared(((sessionsBody?.sessions ?? []) as PreparedSession[]).filter((session) => session.cycleNumber === guidedSeasonCycle));
@@ -178,6 +202,7 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
           <PriorityPicker
             initial={program?.priorities ?? suggested}
             onCancel={program ? () => setEditing(false) : undefined}
+            trainingDays={program ? undefined : trainingDays}
             onSaved={(saved) => {
               setProgram(saved);
               setEditing(false);
@@ -191,6 +216,8 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
                 {preparedCount} séance{preparedCount > 1 ? "s" : ""} préparée{preparedCount > 1 ? "s" : ""} sur {totalSlots}
               </span>
             </p>
+
+            <TrainingScheduleBlock onSaved={(schedule) => setProgram({ ...program, schedule })} schedule={program.schedule ?? []} trainingDays={trainingDays} />
 
             {thisWeek && (
               <div className="guided-this-week">

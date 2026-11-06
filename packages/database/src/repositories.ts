@@ -20,6 +20,7 @@ import type {
   TeamProfile,
   MatchPlayerStat,
   PlayerSelection,
+  TrainingSlotSchedule,
 } from "@evolyfoot/domain";
 
 // "team" : espace d'une équipe supplémentaire d'un éducateur, sans connexion possible.
@@ -246,10 +247,13 @@ export interface PersistedSeasonProgram {
   educatorId: string;
   priorities: DevelopmentTheme[];
   startDate: Date;
+  // Créneaux récurrents (vide tant que l'éducateur ne les a pas définis).
+  schedule: TrainingSlotSchedule[];
 }
 
 export interface SeasonProgramRepository {
-  upsertForEducator(educatorId: string, priorities: DevelopmentTheme[], startDate: Date): Promise<PersistedSeasonProgram>;
+  upsertForEducator(educatorId: string, priorities: DevelopmentTheme[], startDate: Date, schedule?: TrainingSlotSchedule[]): Promise<PersistedSeasonProgram>;
+  saveSchedule(educatorId: string, schedule: TrainingSlotSchedule[]): Promise<PersistedSeasonProgram | null>;
   findForEducator(educatorId: string): Promise<PersistedSeasonProgram | null>;
 }
 

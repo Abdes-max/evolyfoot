@@ -1,5 +1,5 @@
 import { Prisma } from "./generated/prisma/client";
-import type { MatchPlayerStat, PersonalExercise, PersonalExerciseInput, PlayerSelection } from "@evolyfoot/domain";
+import type { MatchPlayerStat, PersonalExercise, PersonalExerciseInput, PlayerSelection, TrainingSlotSchedule } from "@evolyfoot/domain";
 import type { PrismaClient } from "./generated/prisma/client";
 import {
   DiagnosticNotFoundError,
@@ -637,20 +637,46 @@ export class PrismaDiagnosticRepository implements DiagnosticRepository {
   }
 }
 
+function toPersistedSeasonProgram(program: {
+  educatorId: string;
+  priorities: Parameters<typeof fromPrismaDevelopmentTheme>[0][];
+  startDate: Date;
+  schedule: unknown;
+}): PersistedSeasonProgram {
+  return {
+    educatorId: program.educatorId,
+    priorities: program.priorities.map(fromPrismaDevelopmentTheme),
+    startDate: program.startDate,
+    schedule: Array.isArray(program.schedule) ? (program.schedule as TrainingSlotSchedule[]) : [],
+  };
+}
+
 export class PrismaSeasonProgramRepository implements SeasonProgramRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async upsertForEducator(educatorId: string, priorities: DevelopmentTheme[], startDate: Date): Promise<PersistedSeasonProgram> {
-    const data = { priorities: priorities.map(toPrismaDevelopmentTheme), startDate };
+  async upsertForEducator(
+    educatorId: string,
+    priorities: DevelopmentTheme[],
+    startDate: Date,
+    schedule?: TrainingSlotSchedule[],
+  ): Promise<PersistedSeasonProgram> {
+    const data = {
+      priorities: priorities.map(toPrismaDevelopmentTheme),
+      startDate,
+      ...(schedule ? { schedule: schedule as unknown as Prisma.InputJsonValue } : {}),
+    };
     const program = await this.prisma.seasonProgram.upsert({ where: { educatorId }, create: { educatorId, ...data }, update: data });
-    return { educatorId: program.educatorId, priorities: program.priorities.map(fromPrismaDevelopmentTheme), startDate: program.startDate };
+    return toPersistedSeasonProgram(program);
+  }
+
+  async saveSchedule(educatorId: string, schedule: TrainingSlotSchedule[]): Promise<PersistedSeasonProgram | null> {
+    const { count } = await this.prisma.seasonProgram.updateMany({ where: { educatorId }, data: { schedule: schedule as unknown as Prisma.InputJsonValue } });
+    return count === 0 ? null : this.findForEducator(educatorId);
   }
 
   async findForEducator(educatorId: string): Promise<PersistedSeasonProgram | null> {
     const program = await this.prisma.seasonProgram.findUnique({ where: { educatorId } });
-    return program === null
-      ? null
-      : { educatorId: program.educatorId, priorities: program.priorities.map(fromPrismaDevelopmentTheme), startDate: program.startDate };
+    return program === null ? null : toPersistedSeasonProgram(program);
   }
 }
 

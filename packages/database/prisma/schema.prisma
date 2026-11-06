@@ -196,6 +196,9 @@ model SeasonProgram {
   educator   Educator           @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   priorities DevelopmentTheme[]
   startDate  DateTime           @map("start_date") @db.Date
+  // Créneaux récurrents [{ day, time, location }] (voir training-schedule.ts côté domaine) : heure
+  // et lieu de chaque jour d'entraînement, repris par toutes les séances de la saison.
+  schedule   Json?
   createdAt  DateTime           @default(now()) @map("created_at")
   updatedAt  DateTime           @updatedAt @map("updated_at")
 
