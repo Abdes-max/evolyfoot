@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createGetSeasonProgramHandler, createSaveSeasonProgramHandler } from "./season-program";
+import { createGetSeasonProgramHandler, createSaveSeasonProgramHandler, createSaveSeasonScheduleHandler } from "./season-program";
 
 const educator = { id: "educator-1", email: "coach@example.test", displayName: "Coach" };
 const authenticated = async () => educator;
 const anonymous = async () => null;
-const program = { priorities: ["Finir les actions" as const], startDate: "2026-11-02" };
+const program = { priorities: ["Finir les actions" as const], startDate: "2026-11-02", schedule: [] };
 
 function putRequest(body: unknown): Request {
   return new Request("https://evolyfoot.test/api/season-program", { method: "PUT", body: JSON.stringify(body) });
@@ -41,5 +41,25 @@ describe("saison guidée : API", () => {
     expect(invalid.status).toBe(400);
     expect(await invalid.json()).toEqual({ error: "Choisis un ou deux thèmes prioritaires." });
     expect(received).toEqual([["Finir les actions"], []]);
+  });
+
+  it("enregistre les créneaux récurrents et renvoie l’erreur au coach", async () => {
+    const received: unknown[] = [];
+    const handler = createSaveSeasonScheduleHandler(
+      authenticated,
+      {
+        saveSchedule: async (_educatorId, schedule) => {
+          received.push(schedule);
+          if (!Array.isArray(schedule)) throw new Error("Créneaux invalides.");
+          return { ...program, schedule: [{ day: "Lundi", time: "12:00", location: "Aix" }] };
+        },
+      },
+      () => undefined,
+    );
+    const response = await handler(putRequest({ schedule: [{ day: "Lundi", time: "12:00", location: "Aix" }] }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).program.schedule).toEqual([{ day: "Lundi", time: "12:00", location: "Aix" }]);
+    expect((await handler(putRequest({ schedule: "lundi" }))).status).toBe(400);
+    expect((await createSaveSeasonScheduleHandler(anonymous, { saveSchedule: async () => program }, () => undefined)(putRequest({}))).status).toBe(401);
   });
 });

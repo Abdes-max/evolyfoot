@@ -1,6 +1,7 @@
 "use client";
 
-import { seasonSlotDate, type AgeGroup, type TrainingDay } from "@evolyfoot/domain";
+import { scheduleForSlot, seasonSlotDate, sortTrainingDays, type AgeGroup, type TrainingDay, type TrainingSlotSchedule } from "@evolyfoot/domain";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { PlaceInput } from "../../../place-input";
@@ -24,14 +25,17 @@ function toTimeInput(date: Date): string {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-// « Préparer cette séance » : date, heure et lieu préremplis (jour d'entraînement de la semaine,
-// lieu de la dernière séance), le coach n'a souvent qu'à valider.
+// « Préparer cette séance » : date du jour d'entraînement de la semaine, heure et lieu de son créneau
+// récurrent. Avec un créneau défini, ils se règlent sur le créneau uniquement (bloc « Mes créneaux »
+// de la saison) ; sans créneau, les champs restent à remplir.
 export function PrepareSeasonSession({ sessionNumber, week, slot }: PrepareSeasonSessionProps) {
   const router = useRouter();
   const [team, setTeam] = useState<{ ageGroup: AgeGroup; playerCount: number } | null>(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("18:00");
   const [location, setLocation] = useState("");
+  // Créneau récurrent du jour de cette séance (null : pas encore défini, champs modifiables).
+  const [recurring, setRecurring] = useState<(TrainingSlotSchedule & { dayLabel: string }) | null>(null);
   const [state, setState] = useState<"idle" | "saving" | "error">("idle");
   const [error, setError] = useState("");
   // Début de la préparation (ouverture de l'écran), pour l'indicateur « première séance en moins de 10 minutes ».
@@ -54,9 +58,21 @@ export function PrepareSeasonSession({ sessionNumber, week, slot }: PrepareSeaso
       const profile = teamBody?.profile;
       setTeam(profile ? { ageGroup: profile.ageGroup, playerCount: profile.playerCount } : null);
       const start = programBody?.program?.startDate ? new Date(`${programBody.program.startDate}T00:00:00`) : new Date();
-      const proposed = seasonSlotDate(start, week, slot, (profile?.trainingDays ?? []) as TrainingDay[]);
+      const trainingDays = (profile?.trainingDays ?? []) as TrainingDay[];
+      const proposed = seasonSlotDate(start, week, slot, trainingDays);
       setDate(toDateInput(proposed));
       setTime(toTimeInput(proposed));
+      const schedule: TrainingSlotSchedule[] = programBody?.program?.schedule ?? [];
+      const sorted = sortTrainingDays(trainingDays);
+      const day = sorted[slot] ?? sorted[sorted.length - 1];
+      const entry = schedule.find((candidate) => candidate.day === day);
+      if (entry) {
+        const fromSchedule = scheduleForSlot(schedule, trainingDays, slot);
+        setTime(fromSchedule.time);
+        if (fromSchedule.location) setLocation(fromSchedule.location);
+        setRecurring({ ...entry, dayLabel: day! });
+        return;
+      }
       const sessions: Array<{ location: string | null; createdAt: string }> = sessionsBody?.sessions ?? [];
       const last = [...sessions].filter((session) => session.location).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
       if (last?.location) setLocation((current) => current || last.location!);
@@ -106,20 +122,40 @@ export function PrepareSeasonSession({ sessionNumber, week, slot }: PrepareSeaso
     <form className="program-situation prepare-season-session" onSubmit={submit}>
       <h2>Préparer cette séance</h2>
       <p>Semaine {week} de ta saison. Elle rejoint ton calendrier, avec convocation et présences.</p>
-      <div className="prepare-season-fields">
-        <label>
-          <span>Date</span>
-          <input onChange={(event) => setDate(event.target.value)} required type="date" value={date} />
-        </label>
-        <label>
-          <span>Heure</span>
-          <input onChange={(event) => setTime(event.target.value)} required type="time" value={time} />
-        </label>
-      </div>
-      <label>
-        <span>Lieu</span>
-        <PlaceInput onChange={setLocation} value={location} />
-      </label>
+      {recurring ? (
+        <div className="prepare-season-recurring">
+          <p>
+            <strong>
+              {date ? new Date(`${date}T${time}`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) : recurring.dayLabel}
+            </strong>{" "}
+            à {time}
+            {location ? ` · ${location}` : ""}
+          </p>
+          <span>
+            Créneau récurrent du {recurring.dayLabel.toLowerCase()}. <Link href="/saison#creneaux">Modifier mes créneaux</Link>
+          </span>
+        </div>
+      ) : (
+        <>
+          <div className="prepare-season-fields">
+            <label>
+              <span>Date</span>
+              <input onChange={(event) => setDate(event.target.value)} required type="date" value={date} />
+            </label>
+            <label>
+              <span>Heure</span>
+              <input onChange={(event) => setTime(event.target.value)} required type="time" value={time} />
+            </label>
+          </div>
+          <label>
+            <span>Lieu</span>
+            <PlaceInput onChange={setLocation} value={location} />
+          </label>
+          <p className="prepare-season-tip">
+            Astuce : définis l’heure et le lieu de chaque jour une fois pour toutes dans <Link href="/saison#creneaux">Mes créneaux</Link>.
+          </p>
+        </>
+      )}
       <button className="primary-button" disabled={state === "saving" || !date} type="submit">
         {state === "saving" ? "Préparation…" : "Préparer cette séance"}
       </button>
