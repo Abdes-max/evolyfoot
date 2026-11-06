@@ -20,7 +20,8 @@
     "next": "16.4.3",
     "nodemailer": "10.3.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@evolyfoot/typescript-config": "workspace:*",
