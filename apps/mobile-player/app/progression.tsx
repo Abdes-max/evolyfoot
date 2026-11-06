@@ -38,8 +38,18 @@ function signed(value: number): string {
   return `${value > 0 ? "+" : ""}${value.toLocaleString("fr-FR")}`;
 }
 
-// L’évaluation choisie en plein, la précédente en pointillés pour voir ce qui a bougé.
-function Radar({ coach, previous }: { coach: PlayerEvaluationScores | null; previous: PlayerEvaluationScores | null }) {
+// Couleurs des évaluations superposées, de la plus récente à la plus ancienne.
+const layerColors = [colors.primary, colors.lime, "#ff9f43", "#c084fc", "#f472b6", "#facc15", "#60a5fa", "#34d399"];
+
+interface RadarLayer {
+  id: string;
+  scores: PlayerEvaluationScores;
+  color: string;
+}
+
+// Une seule évaluation : en plein, la précédente en pointillés pour voir ce qui a bougé. Plusieurs :
+// chacune avec sa couleur, la plus récente au premier plan.
+function Radar({ layers, previous }: { layers: readonly RadarLayer[]; previous: PlayerEvaluationScores | null }) {
   return (
     <Svg accessibilityLabel="Toile d’évaluation" height={RADAR_SIZE} style={styles.radar} width={RADAR_SIZE}>
       {[0.25, 0.5, 0.75, 1].map((ratio) => (
@@ -58,7 +68,16 @@ function Radar({ coach, previous }: { coach: PlayerEvaluationScores | null; prev
         );
       })}
       {previous ? <Polygon fill="none" points={polygon(previous)} stroke={colors.lime} strokeDasharray="5 4" strokeWidth={1.5} /> : null}
-      {coach ? <Polygon fill={colors.primary} fillOpacity={0.25} points={polygon(coach)} stroke={colors.primary} strokeWidth={2} /> : null}
+      {[...layers].reverse().map((layer) => (
+        <Polygon
+          fill={layer.color}
+          fillOpacity={layers.length > 1 ? 0.08 : 0.25}
+          key={layer.id}
+          points={polygon(layer.scores)}
+          stroke={layer.color}
+          strokeWidth={2}
+        />
+      ))}
     </Svg>
   );
 }
@@ -68,14 +87,31 @@ export default function ProgressionScreen() {
 
   // Historique complet des notes de l’éducateur, la plus récente d’abord (ordre de l’API).
   const history = dashboard?.evaluations.filter((evaluation) => evaluation.source !== "player") ?? [];
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selectedIndex = Math.max(
-    0,
-    history.findIndex((evaluation) => evaluation.id === selectedId),
-  );
-  const selected = history[selectedIndex] ?? null;
-  const previous = history[selectedIndex + 1] ?? null;
-  const coach = selected?.scores ?? null;
+  // Évaluations tracées sur la toile (la dernière par défaut) et fiches dépliées (la dernière par
+  // défaut) ; `null` = choix par défaut, tant que le joueur n'a rien touché.
+  const [selectedIds, setSelectedIds] = useState<readonly string[] | null>(null);
+  const [expandedIds, setExpandedIds] = useState<readonly string[] | null>(null);
+  const latestId = history[0]?.id;
+  const shownIds = selectedIds ?? (latestId ? [latestId] : []);
+  const openIds = expandedIds ?? (latestId ? [latestId] : []);
+  const shown = history.filter((evaluation) => shownIds.includes(evaluation.id));
+  const layers: RadarLayer[] = shown.map((evaluation) => ({
+    id: evaluation.id,
+    scores: evaluation.scores,
+    color: layerColors[history.indexOf(evaluation) % layerColors.length]!,
+  }));
+  const single = shown.length === 1 ? shown[0]! : null;
+  const previous = single ? (history[history.indexOf(single) + 1] ?? null) : null;
+  const allShown = history.length > 0 && shown.length === history.length;
+
+  function toggleShown(id: string) {
+    const next = shownIds.includes(id) ? shownIds.filter((value) => value !== id) : [...shownIds, id];
+    setSelectedIds(next);
+  }
+
+  function toggleOpen(id: string) {
+    setExpandedIds(openIds.includes(id) ? openIds.filter((value) => value !== id) : [...openIds, id]);
+  }
   const seasons = buildPlayerEvaluationSeasons(dashboard?.evaluations ?? []);
 
   return (
@@ -94,14 +130,35 @@ export default function ProgressionScreen() {
             </View>
           </View>
 
-          <Radar coach={coach} previous={previous?.scores ?? null} />
-          {selected ? (
-            <View style={styles.legend}>
-              <Text style={[styles.legendText, { color: colors.primary }]}>{formatDate(selected.createdAt)}</Text>
-              {previous ? <Text style={[styles.legendText, { color: colors.lime }]}>Précédente · {formatDate(previous.createdAt)}</Text> : null}
-            </View>
-          ) : (
+          <Radar layers={layers} previous={previous?.scores ?? null} />
+          {history.length === 0 ? (
             <Text style={styles.note}>Pas encore d’évaluation.</Text>
+          ) : (
+            <>
+              <View style={styles.legend}>
+                {single ? (
+                  <>
+                    <Text style={[styles.legendText, { color: layers[0]!.color }]}>{formatDate(single.createdAt)}</Text>
+                    {previous ? <Text style={[styles.legendText, { color: colors.lime }]}>Précédente · {formatDate(previous.createdAt)}</Text> : null}
+                  </>
+                ) : (
+                  layers.map((layer) => (
+                    <Text key={layer.id} style={[styles.legendText, { color: layer.color }]}>
+                      {formatDate(history.find((evaluation) => evaluation.id === layer.id)!.createdAt)}
+                    </Text>
+                  ))
+                )}
+              </View>
+              {history.length > 1 ? (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => setSelectedIds(allShown ? (latestId ? [latestId] : []) : history.map((evaluation) => evaluation.id))}
+                  style={styles.showAll}
+                >
+                  <Text style={styles.showAllText}>{allShown ? "Revenir à la dernière" : "Afficher toutes les évaluations"}</Text>
+                </TouchableOpacity>
+              ) : null}
+            </>
           )}
 
           {history.length > 0 ? (
@@ -110,35 +167,51 @@ export default function ProgressionScreen() {
               {history.map((evaluation, index) => {
                 const before = history[index + 1];
                 const delta = before ? Math.round((overall(evaluation.scores) - overall(before.scores)) * 10) / 10 : null;
-                const active = index === selectedIndex;
+                const active = shownIds.includes(evaluation.id);
+                const open = openIds.includes(evaluation.id);
+                const color = layerColors[index % layerColors.length]!;
                 return (
-                  <TouchableOpacity
-                    accessibilityLabel={`Évaluation du ${formatDate(evaluation.createdAt)}, ${overall(evaluation.scores)} sur ${playerEvaluationMaxScore}`}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
-                    key={evaluation.id}
-                    onPress={() => setSelectedId(evaluation.id)}
-                    style={[styles.season, active && styles.evaluationActive]}
-                  >
-                    <View style={styles.seasonHead}>
-                      <Text style={styles.seasonLabel}>{formatDate(evaluation.createdAt)}</Text>
-                      <Text style={styles.seasonOverall}>
-                        {overall(evaluation.scores).toLocaleString("fr-FR")}/{playerEvaluationMaxScore}
-                        {delta === null ? "" : <Text style={delta >= 0 ? styles.up : styles.down}>{`  ${signed(delta)}`}</Text>}
-                      </Text>
+                  <View key={evaluation.id} style={[styles.season, active && { borderColor: color }]}>
+                    <View style={styles.evaluationHead}>
+                      <TouchableOpacity
+                        accessibilityLabel={`Afficher sur la toile l’évaluation du ${formatDate(evaluation.createdAt)}`}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: active }}
+                        hitSlop={8}
+                        onPress={() => toggleShown(evaluation.id)}
+                        style={[styles.check, active && { backgroundColor: color, borderColor: color }]}
+                      >
+                        {active ? <Text style={styles.checkMark}>✓</Text> : null}
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        accessibilityLabel={`Évaluation du ${formatDate(evaluation.createdAt)}, ${overall(evaluation.scores)} sur ${playerEvaluationMaxScore}`}
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: open }}
+                        onPress={() => toggleOpen(evaluation.id)}
+                        style={styles.evaluationToggle}
+                      >
+                        <Text style={styles.seasonLabel}>{formatDate(evaluation.createdAt)}</Text>
+                        <Text style={styles.seasonOverall}>
+                          {overall(evaluation.scores).toLocaleString("fr-FR")}/{playerEvaluationMaxScore}
+                          {delta === null ? "" : <Text style={delta >= 0 ? styles.up : styles.down}>{`  ${signed(delta)}`}</Text>}
+                          <Text style={styles.chevron}>{open ? "  ▾" : "  ▸"}</Text>
+                        </Text>
+                      </TouchableOpacity>
                     </View>
-                    <View style={styles.chips}>
-                      {playerEvaluationAspects.map((aspect) => {
-                        const change = before ? evaluation.scores[aspect] - before.scores[aspect] : 0;
-                        return (
-                          <Text key={aspect} style={styles.chip}>
-                            {playerEvaluationAspectLabels[aspect]} {evaluation.scores[aspect]}
-                            {change !== 0 ? <Text style={change > 0 ? styles.up : styles.down}>{` ${change > 0 ? "▲" : "▼"}`}</Text> : null}
-                          </Text>
-                        );
-                      })}
-                    </View>
-                  </TouchableOpacity>
+                    {open ? (
+                      <View style={styles.chips}>
+                        {playerEvaluationAspects.map((aspect) => {
+                          const change = before ? evaluation.scores[aspect] - before.scores[aspect] : 0;
+                          return (
+                            <Text key={aspect} style={styles.chip}>
+                              {playerEvaluationAspectLabels[aspect]} {evaluation.scores[aspect]}
+                              {change !== 0 ? <Text style={change > 0 ? styles.up : styles.down}>{` ${change > 0 ? "▲" : "▼"}`}</Text> : null}
+                            </Text>
+                          );
+                        })}
+                      </View>
+                    ) : null}
+                  </View>
                 );
               })}
             </>
@@ -197,7 +270,21 @@ const styles = StyleSheet.create({
   counterLabel: { color: colors.muted, fontSize: 12, fontWeight: "700" },
   radar: { alignSelf: "center" },
   legend: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: spacing.md },
-  evaluationActive: { borderColor: colors.primary },
+  evaluationHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  evaluationToggle: { flex: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
+  check: { width: 22, height: 22, alignItems: "center", justifyContent: "center", borderRadius: 6, borderWidth: 1.5, borderColor: colors.line },
+  checkMark: { color: colors.paper, fontSize: 13, fontWeight: "900" },
+  chevron: { color: colors.muted },
+  showAll: {
+    alignSelf: "center",
+    marginTop: spacing.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  showAllText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
   chip: {
     color: colors.ink,
