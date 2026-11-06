@@ -739,18 +739,18 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                 Génère un lien à transmettre au tuteur : il crée un compte séparé qui ne voit que le suivi de {player.name} (évaluations, présences, calendrier,
                 convocations).
               </p>
-              {inviteUrl ? (
+              {inviteUrl && (
                 <div className="player-invite-result">
                   <input aria-label="Lien d’invitation" readOnly value={inviteUrl} />
                   <button className="player-ghost" onClick={copyInvite} type="button">
                     {inviteCopied ? "Copié" : "Copier"}
                   </button>
                 </div>
-              ) : (
-                <button className="player-primary" disabled={invitingTutor} onClick={inviteTutor} type="button">
-                  {invitingTutor ? "…" : "Générer un lien d’invitation"}
-                </button>
               )}
+              {/* Un nouveau lien à chaque fois (deuxième parent, lien perdu) : les précédents restent valables. */}
+              <button className={inviteUrl ? "player-ghost" : "player-primary"} disabled={invitingTutor} onClick={inviteTutor} type="button">
+                {invitingTutor ? "…" : inviteUrl ? "Générer un autre lien" : "Générer un lien d’invitation"}
+              </button>
               {inviteError && (
                 <p className="player-error" role="alert">
                   {inviteError}

@@ -128,6 +128,17 @@ describe("PostgreSQL player accounts", () => {
     await expect(children.select(second.educator.id, ines.id)).rejects.toBeInstanceOf(PlayerNotFoundError);
   });
 
+  it("generates a new link on each request, every link staying valid once", async () => {
+    const coach = await createCoach("again");
+    const player = await playerRepository.create(coach.id, "Lou");
+    const first = await inviteService.create(coach.id, player.id);
+    const second = await inviteService.create(coach.id, player.id);
+
+    expect(second.token).not.toBe(first.token);
+    expect(await inviteService.preview(first.token)).not.toBeNull();
+    expect(await inviteService.preview(second.token)).not.toBeNull();
+  });
+
   it("rejects a consumed or unknown invite token", async () => {
     const coach = await createCoach("consumed");
     const player = await playerRepository.create(coach.id, "Noah");
