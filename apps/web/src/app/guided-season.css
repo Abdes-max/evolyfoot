@@ -534,3 +534,36 @@
 .guided-grid .season-slot.is-prepared::after {
   content: "✓";
 }
+
+/* Cycles de 4 semaines de la saison (guided-season.tsx), aux couleurs de leur thème. */
+.guided-cycles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.guided-cycles button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+  font-size: 11px;
+  cursor: pointer;
+}
+.guided-cycles button strong {
+  font-size: 12.5px;
+}
+.guided-cycles button span:first-of-type {
+  color: var(--muted);
+}
+.guided-cycles button.is-current {
+  box-shadow: 0 0 0 2px var(--accent);
+}

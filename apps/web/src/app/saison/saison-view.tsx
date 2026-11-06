@@ -4,7 +4,9 @@ import {
   buildPrioritizedSeason,
   buildSeasonCalendar,
   guidedSeasonCycle,
+  seasonSlotColor,
   seasonSlotDate,
+  themeColors,
   type DevelopmentTheme,
   type SeasonEvent,
   type SeasonEventInput,
@@ -28,6 +30,8 @@ const typeLabels: Record<SeasonEventType, string> = {
 interface CalendarEvent extends SeasonEventInput {
   href?: string;
   planned?: boolean;
+  // Couleur du thème de la séance (voir themeColors).
+  color?: string;
 }
 
 const weekdayHeaders = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -69,6 +73,7 @@ interface SeasonSessionSummary {
   cycleNumber: number;
   weekNumber: number;
   slot: number;
+  theme?: DevelopmentTheme;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- corps JSON lu champ par champ
@@ -120,6 +125,7 @@ export function SaisonView() {
                         date: seasonSlotDate(new Date(`${program.startDate}T00:00:00`), week.week, index, profile?.trainingDays ?? []).toISOString(),
                         href: `/saison/seance/${slot.sessionNumber}?semaine=${week.week}&creneau=${index}`,
                         planned: true,
+                        color: seasonSlotColor(slot),
                       },
                     ],
               ),
@@ -127,7 +133,13 @@ export function SaisonView() {
           : [];
         setEvents([
           ...planned,
-          ...sessions.map((session) => ({ id: session.id, type: "session" as const, title: session.title, date: session.meetingAt })),
+          ...sessions.map((session) => ({
+            id: session.id,
+            type: "session" as const,
+            title: session.title,
+            date: session.meetingAt,
+            color: session.theme ? themeColors[session.theme] : undefined,
+          })),
           ...matches.map((match) => ({ id: match.id, type: "match" as const, title: `Contre ${match.opponent}`, date: match.date })),
           ...tournaments.map((tournament) => ({ id: tournament.id, type: "tournament" as const, title: tournament.name, date: tournament.date })),
           ...plateaux.map((plateau) => ({ id: plateau.id, type: "plateau" as const, title: plateau.name, date: plateau.date })),
@@ -186,6 +198,7 @@ export function SaisonView() {
                         .map((event: SeasonEvent<CalendarEvent>) => (
                           <Link
                             className={`season-event ${event.type}${event.planned ? " planned" : ""}`}
+                            style={event.color ? { borderLeftColor: event.color, borderLeftWidth: 3, borderLeftStyle: "solid" } : undefined}
                             href={eventHref(event)}
                             key={`${event.type}-${event.id}`}
                             title={`${typeLabels[event.type]}${event.planned ? " à préparer" : ""} · ${event.title} · ${timeLabel(event.date)}`}

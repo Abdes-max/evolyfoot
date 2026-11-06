@@ -8,10 +8,15 @@ import {
   firstFreeCycleSlot,
   formationSlots,
   guidedSeasonCycle,
+  nextSeasonSlot,
+  seasonCycleAsPlan,
+  seasonCycleAt,
+  seasonCycles,
   seasonWeekAt,
   summarizeDiagnostic,
   suggestAdjustmentFromObservation,
   trainingCycleWeekCount,
+  type DevelopmentTheme,
   type DiagnosticScores,
   type GameFormat,
   type MatchLineupAssignment,
@@ -50,6 +55,8 @@ interface DashboardData {
   matches: readonly UpcomingMatch[];
   seasonProgram: SeasonProgram | null;
   seasonPreparedCount: number;
+  // Toutes les séances (cycles et saison guidée) : prochaine séance datée et séances préparées de la saison.
+  allSessions: readonly SavedTrainingSession[];
   trainingDayCount: number;
   scores: DiagnosticScores | null;
   sessions: readonly SavedTrainingSession[];
@@ -116,6 +123,7 @@ export function DashboardView() {
           seasonPreparedCount: ((seasonSessionsBody.sessions ?? []) as Array<{ cycleNumber: number }>).filter(
             (session) => session.cycleNumber === guidedSeasonCycle,
           ).length,
+          allSessions: seasonSessionsBody.sessions ?? [],
           trainingDayCount: teamBody.profile?.trainingDays?.length ?? 0,
           scores: diagnosticBody.scores ?? null,
           sessions: sessionsBody.sessions ?? [],
@@ -134,17 +142,41 @@ export function DashboardView() {
   const firstName = data?.displayName.split(" ")[0];
   const slotsPerWeek = Math.max(data?.trainingDayCount ?? 1, 1);
   const sessions = data?.sessions ?? [];
-  const activeWeek = currentCycleWeek(sessions, slotsPerWeek);
-  const plan = data?.scores ? buildDevelopmentPlan(summarizeDiagnostic(data.scores)) : null;
+  // Avec une saison guidée, le cycle affiché est celui de la saison (4 semaines de ses séances) ;
+  // sans saison, le cycle court construit depuis le diagnostic.
+  const seasonProgram = data?.seasonProgram ?? null;
+  const seasonPlanWeeks = seasonProgram
+    ? buildPrioritizedSeason({ priorities: seasonProgram.priorities as DevelopmentTheme[], sessionsPerWeek: data?.sessionsPerWeek ?? 2 })
+    : [];
+  const currentSeasonWeek = seasonProgram ? seasonWeekAt(new Date(`${seasonProgram.startDate}T00:00:00`), new Date(now)) : 0;
+  const seasonCycle = seasonProgram ? seasonCycleAt(seasonCycles(seasonPlanWeeks), currentSeasonWeek) : null;
+  const preparedSeasonSlots = (data?.allSessions ?? []).filter((session) => session.cycleNumber === guidedSeasonCycle);
+  const activeWeek = seasonCycle
+    ? (seasonCycle.weeks.find((cycleWeek) => cycleWeek.seasonWeek === currentSeasonWeek)?.weekInCycle ?? 1)
+    : currentCycleWeek(sessions, slotsPerWeek);
+  const plan = seasonCycle ? seasonCycleAsPlan(seasonCycle) : data?.scores ? buildDevelopmentPlan(summarizeDiagnostic(data.scores)) : null;
   const week = plan?.weeks[activeWeek - 1];
-  const totalSlots = slotsPerWeek * trainingCycleWeekCount;
-  const doneSlots = Math.min(sessions.length, totalSlots);
-  const progress = Math.round((doneSlots / totalSlots) * 100);
+  const totalSlots = seasonCycle
+    ? Math.max(
+        seasonCycle.weeks.reduce((sum, cycleWeek) => sum + cycleWeek.slots.length, 0),
+        1,
+      )
+    : slotsPerWeek * trainingCycleWeekCount;
+  const doneSlots = seasonCycle
+    ? preparedSeasonSlots.filter((session) => seasonCycle.weeks.some((cycleWeek) => cycleWeek.seasonWeek === session.weekNumber)).length
+    : Math.min(sessions.length, totalSlots);
+  const progress = Math.min(100, Math.round((doneSlots / totalSlots) * 100));
 
-  const upcoming = [...sessions]
+  const upcoming = [...(data?.allSessions ?? sessions)]
     .filter((session) => session.meetingAt && new Date(session.meetingAt).getTime() >= now)
     .sort((a, b) => new Date(a.meetingAt!).getTime() - new Date(b.meetingAt!).getTime())[0];
-  const freeSlot = firstFreeCycleSlot(sessions, slotsPerWeek);
+  const nextGuided = seasonProgram ? nextSeasonSlot(seasonPlanWeeks, preparedSeasonSlots, currentSeasonWeek) : null;
+  const freeSlot = seasonProgram ? null : firstFreeCycleSlot(sessions, slotsPerWeek);
+  const freeHref = nextGuided
+    ? `/saison/seance/${nextGuided.slot.sessionNumber}?semaine=${nextGuided.week}&creneau=${nextGuided.index}`
+    : freeSlot
+      ? `/session?week=${freeSlot.weekNumber}&slot=${freeSlot.slot}`
+      : null;
 
   const latestObservation = data?.observations[0];
   const signals = latestObservation
@@ -163,9 +195,9 @@ export function DashboardView() {
     .filter((match) => match.status === "scheduled" && (!match.date || new Date(match.date).getTime() >= now - 3 * 3600_000))
     .sort((a, b) => (a.date ? new Date(a.date).getTime() : Infinity) - (b.date ? new Date(b.date).getTime() : Infinity))[0];
 
-  const season = data?.seasonProgram ?? null;
-  const seasonWeeks = season ? buildPrioritizedSeason({ priorities: season.priorities as never, sessionsPerWeek: data?.sessionsPerWeek ?? 2 }) : [];
-  const seasonWeek = season ? seasonWeekAt(new Date(`${season.startDate}T00:00:00`), new Date(now)) : 0;
+  const season = seasonProgram;
+  const seasonWeeks = seasonPlanWeeks;
+  const seasonWeek = currentSeasonWeek;
   const seasonSlots = seasonWeeks.reduce((sum, seasonWeekItem) => sum + seasonWeekItem.slots.length, 0);
 
   return (
@@ -184,14 +216,14 @@ export function DashboardView() {
             <Link
               aria-label={upcoming ? `Ouvrir la séance : ${upcoming.title}` : "Préparer ma prochaine séance"}
               className="session-card home-primary card-link"
-              href={upcoming ? `/session/${upcoming.id}` : freeSlot ? `/session?week=${freeSlot.weekNumber}&slot=${freeSlot.slot}` : "/seances"}
+              href={upcoming ? `/session/${upcoming.id}` : (freeHref ?? "/seances")}
               id="session"
             >
               <div className="card-top">
                 <span className="eyebrow">PROCHAINE SÉANCE</span>
                 {upcoming?.meetingAt && <span className="date-chip">{meetingLabel(upcoming.meetingAt)}</span>}
               </div>
-              <h2>{upcoming ? upcoming.title : freeSlot ? "Ta prochaine séance t’attend" : "Toutes tes séances sont prêtes"}</h2>
+              <h2>{upcoming ? upcoming.title : freeHref ? "Ta prochaine séance t’attend" : "Toutes tes séances sont prêtes"}</h2>
               {upcoming ? (
                 <div className="session-meta">
                   <span>{sessionDuration(upcoming)} min</span>
@@ -199,10 +231,16 @@ export function DashboardView() {
                   <span>{upcoming.theme}</span>
                 </div>
               ) : (
-                <p>{freeSlot ? "Une séance prête en un geste, à partir de ton plan." : "Retrouve-les semaine par semaine."}</p>
+                <p>
+                  {nextGuided
+                    ? `Semaine ${nextGuided.week} de ta saison : une séance prête en un geste.`
+                    : freeSlot
+                      ? "Une séance prête en un geste, à partir de ton plan."
+                      : "Retrouve-les semaine par semaine."}
+                </p>
               )}
               <span aria-hidden="true" className="primary-button">
-                {upcoming ? "Ouvrir la séance" : freeSlot ? "Préparer ma séance" : "Voir mes séances"} <span>→</span>
+                {upcoming ? "Ouvrir la séance" : freeHref ? "Préparer ma séance" : "Voir mes séances"} <span>→</span>
               </span>
             </Link>
 
@@ -239,7 +277,8 @@ export function DashboardView() {
               <Link aria-label="Voir le plan de progression" className="focus-card card-link" href="/plan">
                 <div className="card-top">
                   <span className="eyebrow light">
-                    PRIORITÉ DU CYCLE · SEMAINE {activeWeek}/{trainingCycleWeekCount}
+                    {seasonCycle ? `CYCLE ${seasonCycle.number}/${seasonCycle.count} DE LA SAISON` : "PRIORITÉ DU CYCLE"} · SEMAINE {activeWeek}/
+                    {trainingCycleWeekCount}
                   </span>
                   <span className="trend">{week.phase}</span>
                 </div>
