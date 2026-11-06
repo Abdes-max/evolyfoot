@@ -68,9 +68,9 @@ export default async function ProgramSessionPage({ params, searchParams }: Progr
         </header>
 
         <section className="seances-content">
-          <p>
-            <Link href="/saison">← Retour à ma saison</Link>
-          </p>
+          <Link className="page-back-button" href="/saison">
+            <span aria-hidden="true">←</span> Retour à ma saison
+          </Link>
           {preparable && <PrepareSeasonSession sessionNumber={session.number} slot={slot} week={week} />}
 
           {session.type === "evaluation" ? (
