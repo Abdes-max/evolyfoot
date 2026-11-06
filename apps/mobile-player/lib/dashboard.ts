@@ -31,6 +31,10 @@ export interface TrainingSession {
   meetingTime: string | null;
   location: string | null;
   myStatus: AttendanceStatus | null;
+  // Présence posée par défaut à la convocation, pas encore confirmée.
+  myStatusByDefault?: boolean;
+  // Convocation envoyée : avant, la séance est seulement « programmée », sans réponse possible.
+  convoked?: boolean;
 }
 
 export interface Dashboard {
@@ -62,8 +66,10 @@ export interface AgendaEvent {
   location: string | null;
   date: string | null;
   myStatus: AttendanceStatus | null;
-  // Un joueur hors de la composition n'a pas à répondre pour ce match.
+  // Un joueur hors de la composition n'a pas à répondre pour ce match ; une séance pas encore
+  // convoquée est seulement « programmée ».
   canRespond: boolean;
+  byDefault: boolean;
 }
 
 // Matchs et séances à venir, du plus proche au plus lointain. Un événement sans date réelle ferme
@@ -81,6 +87,7 @@ export function buildAgenda(dashboard: Dashboard, now: number, scope: "upcoming"
       date: match.date,
       myStatus: match.myStatus,
       canRespond: match.convoked,
+      byDefault: false,
     })),
     ...dashboard.trainingSessions.map((session) => ({
       key: `training-${session.id}`,
@@ -92,7 +99,8 @@ export function buildAgenda(dashboard: Dashboard, now: number, scope: "upcoming"
       location: session.location,
       date: session.date,
       myStatus: session.myStatus,
-      canRespond: true,
+      canRespond: session.convoked !== false,
+      byDefault: session.myStatusByDefault === true,
     })),
   ];
   if (scope === "past") {

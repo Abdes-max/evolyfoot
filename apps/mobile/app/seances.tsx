@@ -3,6 +3,7 @@ import { buildDevelopmentPlan, summarizeDiagnostic, type DiagnosticScores, type 
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ConvocationSettings } from "../components/convocation-settings";
 import { CalendarIcon } from "../components/icons";
 import { useAuth } from "../lib/auth-context";
 
@@ -33,6 +34,7 @@ export default function SeancesScreen() {
       <ScrollView contentContainerStyle={styles.page}>
         <Text style={styles.step}>MES SÉANCES</Text>
         <Text style={styles.title}>Le cycle, séance par séance.</Text>
+        <ConvocationSettings />
         {plan.weeks.map((week) => (
           <View key={week.week} style={styles.week}>
             <Text style={styles.weekTitle}>

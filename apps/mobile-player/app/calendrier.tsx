@@ -115,28 +115,35 @@ export default function CalendarScreen() {
                       <Text style={styles.meta}>Ta réponse : {attendanceStatusLabels[event.myStatus]}</Text>
                     ) : null
                   ) : event.canRespond ? (
-                    <View style={styles.choices}>
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: present }}
-                        disabled={busyKey === event.key}
-                        onPress={() => respond(event, "present")}
-                        style={[styles.choice, present && styles.choicePresent]}
-                      >
-                        <Text style={[styles.choiceText, present && styles.choiceTextActive]}>Présent</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: absent }}
-                        disabled={busyKey === event.key}
-                        onPress={() => askAbsenceReason(event)}
-                        style={[styles.choice, absent && styles.choiceAbsent]}
-                      >
-                        <Text style={styles.choiceText}>{absent ? attendanceStatusLabels[event.myStatus!] : "Absent"}</Text>
-                      </TouchableOpacity>
+                    <View>
+                      {event.byDefault && event.myStatus === "present" ? (
+                        <Text style={styles.meta}>Tu es compté présent par défaut. Préviens si tu ne peux pas venir.</Text>
+                      ) : null}
+                      <View style={styles.choices}>
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: present }}
+                          disabled={busyKey === event.key}
+                          onPress={() => respond(event, "present")}
+                          style={[styles.choice, present && styles.choicePresent]}
+                        >
+                          <Text style={[styles.choiceText, present && styles.choiceTextActive]}>Présent</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: absent }}
+                          disabled={busyKey === event.key}
+                          onPress={() => askAbsenceReason(event)}
+                          style={[styles.choice, absent && styles.choiceAbsent]}
+                        >
+                          <Text style={styles.choiceText}>{absent ? attendanceStatusLabels[event.myStatus!] : "Absent"}</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ) : (
-                    <Text style={styles.meta}>Pas convoqué pour ce match.</Text>
+                    <Text style={styles.meta}>
+                      {event.kind === "training" ? "Séance programmée : tu pourras répondre quand la convocation sera envoyée." : "Pas convoqué pour ce match."}
+                    </Text>
                   )}
                 </View>
               </View>
