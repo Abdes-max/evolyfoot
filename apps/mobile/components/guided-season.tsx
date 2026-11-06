@@ -11,15 +11,18 @@ import {
   summarizeDiagnostic,
   type DevelopmentTheme,
   type SeasonSlot,
+  type TrainingSlotSchedule,
 } from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { TrainingScheduleBlock, TrainingScheduleFields } from "./training-schedule";
 
 interface Program {
   priorities: DevelopmentTheme[];
   startDate: string;
+  schedule?: TrainingSlotSchedule[];
 }
 
 interface PreparedSession {
@@ -66,6 +69,8 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
   // `null` tant que le coach n’a rien touché : on part alors des priorités actuelles ou suggérées.
   const [selected, setSelected] = useState<DevelopmentTheme[] | null>(null);
   const [error, setError] = useState("");
+  // Créneaux récurrents saisis à la création de la saison.
+  const [schedule, setSchedule] = useState<TrainingSlotSchedule[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -107,7 +112,10 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
 
   async function save() {
     setError("");
-    const response = await apiRequest("/api/season-program", { method: "PUT", body: JSON.stringify({ priorities: choice }) });
+    const response = await apiRequest("/api/season-program", {
+      method: "PUT",
+      body: JSON.stringify({ priorities: choice, ...(!program && schedule.length > 0 ? { schedule } : {}) }),
+    });
     const body = response?.ok ? await response.json().catch(() => null) : null;
     if (!body?.program) {
       setError("La saison n’a pas pu être enregistrée.");
@@ -143,6 +151,12 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
                 );
               })}
             </View>
+            {!program ? (
+              <>
+                <Text style={styles.muted}>Tes créneaux : l’heure et le lieu de chaque jour d’entraînement, repris par toutes les séances.</Text>
+                <TrainingScheduleFields onChange={setSchedule} trainingDays={team?.trainingDays ?? []} value={schedule} />
+              </>
+            ) : null}
             <TouchableOpacity
               accessibilityRole="button"
               disabled={choice.length === 0}
@@ -173,6 +187,11 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
             <TouchableOpacity accessibilityRole="button" onPress={() => setEditing(true)}>
               <Text style={styles.link}>Modifier mes priorités</Text>
             </TouchableOpacity>
+            <TrainingScheduleBlock
+              onSaved={(saved) => setProgram({ ...program, schedule: saved })}
+              schedule={program.schedule ?? []}
+              trainingDays={team?.trainingDays ?? []}
+            />
 
             {thisWeek && (
               <>
