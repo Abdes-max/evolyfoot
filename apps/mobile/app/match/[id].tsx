@@ -1,9 +1,19 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { assignPlayerToSlot, canFinalizeMatchPlan, clearSlot, concernedPlayers, formationSlots, listFormations } from "@evolyfoot/domain";
+import {
+  addSubstitute,
+  assignPlayerToSlot,
+  canFinalizeMatchPlan,
+  clearSlot,
+  concernedPlayers,
+  formationSlots,
+  listFormations,
+  maxSubstitutes,
+  removeSubstitute,
+} from "@evolyfoot/domain";
 import type { GameFormat, MatchLineupSlot, MatchPlan, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConcernedPlayersPicker } from "../../components/concerned-players-picker";
 import { MatchAnalysis } from "../../components/match-analysis";
@@ -160,6 +170,7 @@ export default function MatchDetailScreen() {
   const [saveError, setSaveError] = useState("");
   const [finalizing, setFinalizing] = useState(false);
   const [pickerSlotId, setPickerSlotId] = useState<string | null>(null);
+  const [benchPicking, setBenchPicking] = useState(false);
   const [location, setLocation] = useState("");
   const [locationFeedback, setLocationFeedback] = useState("");
   const [selection, setSelection] = useState<PlayerSelection>(null);
@@ -207,7 +218,7 @@ export default function MatchDetailScreen() {
   async function persist(nextMatch: MobileMatch) {
     setSaveError("");
     setMatch(nextMatch);
-    const result = await updateMatchLineup(id, nextMatch.lineup, nextMatch.captainPlayerId);
+    const result = await updateMatchLineup(id, nextMatch.lineup, nextMatch.captainPlayerId, nextMatch.substitutePlayerIds);
     if (!result.ok) {
       setSaveError(result.error);
       return;
@@ -230,6 +241,22 @@ export default function MatchDetailScreen() {
     }
     const plan = assignPlayerToSlot(toMatchPlan(match), slotId, player);
     persist({ ...match, lineup: [...plan.lineup], captainPlayerId: plan.captainPlayerId });
+  }
+
+  // Banc des remplaçants (même principe que le web, match-prep-view.tsx) : un joueur placé sur le
+  // banc quitte son poste de titulaire.
+  function addToBench(playerId: string) {
+    if (!match) return;
+    const player = roster.find((candidate) => candidate.id === playerId);
+    if (!player) return;
+    const plan = addSubstitute(toMatchPlan(match), player);
+    persist({ ...match, lineup: [...plan.lineup], captainPlayerId: plan.captainPlayerId, substitutePlayerIds: [...plan.substitutePlayerIds] });
+  }
+
+  function removeFromBench(playerId: string) {
+    if (!match) return;
+    const plan = removeSubstitute(toMatchPlan(match), playerId);
+    persist({ ...match, substitutePlayerIds: [...plan.substitutePlayerIds] });
   }
 
   function setCaptain(playerId: string | null) {
@@ -359,6 +386,40 @@ export default function MatchDetailScreen() {
           />
         </View>
 
+        <View style={styles.bench}>
+          <Text style={styles.benchTitle}>Remplaçants{readOnly ? "" : ` (max. ${maxSubstitutes(match.gameFormat as GameFormat)})`}</Text>
+          <View style={styles.benchRow}>
+            {Array.from({ length: maxSubstitutes(match.gameFormat as GameFormat) }, (_, index) => {
+              const playerId = match.substitutePlayerIds[index];
+              const player = playerId ? roster.find((candidate) => candidate.id === playerId) : null;
+              return (
+                <TouchableOpacity
+                  accessibilityLabel={player ? `Remplaçant : ${player.name}` : "Remplaçant : aucun joueur, toucher pour affecter"}
+                  accessibilityRole="button"
+                  disabled={readOnly}
+                  key={index}
+                  onPress={() =>
+                    player
+                      ? Alert.alert(`Retirer ${player.name} du banc ?`, undefined, [
+                          { text: "Annuler", style: "cancel" },
+                          { text: "Retirer", style: "destructive", onPress: () => removeFromBench(player.id) },
+                        ])
+                      : setBenchPicking(true)
+                  }
+                  style={styles.benchItem}
+                >
+                  <View style={[pitchStyles.token, player && pitchStyles.tokenFilled]}>
+                    <Text style={[pitchStyles.tokenText, player && pitchStyles.tokenTextFilled]}>{player ? initials(player.name) : "+"}</Text>
+                  </View>
+                  <Text numberOfLines={1} style={[styles.benchName, !player && styles.benchNameFree]}>
+                    {player ? player.name.split(" ")[0] : "Libre"}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         {/* La composition se fait directement sur le terrain : pas de liste des postes en dessous. */}
         {!readOnly && <Text style={styles.sectionHint}>Touche un poste sur le terrain pour y affecter un joueur.</Text>}
 
@@ -409,6 +470,19 @@ export default function MatchDetailScreen() {
         title={`Choisir un joueur${slots.find((slot) => slot.id === pickerSlotId) ? ` · ${slots.find((slot) => slot.id === pickerSlotId)!.roleLabel}` : ""}`}
         visible={pickerSlotId !== null}
       />
+      <PlayerPicker
+        onClose={() => setBenchPicking(false)}
+        onPick={(playerId) => {
+          addToBench(playerId);
+          setBenchPicking(false);
+        }}
+        players={roster.filter(
+          (player) => concernedPlayers([player], match.selectedPlayerIds ?? null).length > 0 && !match.substitutePlayerIds.includes(player.id),
+        )}
+        statusOf={(playerId) => (match.lineup.some((assignment) => assignment.playerId === playerId) ? "déjà titulaire" : null)}
+        title="Choisir un remplaçant"
+        visible={benchPicking}
+      />
     </SafeAreaView>
   );
 }
@@ -422,6 +496,12 @@ const styles = StyleSheet.create({
   locationBlock: { marginTop: spacing.md, gap: 6 },
   locationLabel: { fontSize: 11, fontWeight: "800", color: colors.muted },
   concerned: { marginTop: spacing.md, gap: spacing.sm },
+  bench: { marginTop: spacing.md, padding: spacing.md, borderRadius: 20, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+  benchTitle: { color: colors.ink, fontSize: 15, fontWeight: "800", marginBottom: spacing.sm },
+  benchRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  benchItem: { width: 64, alignItems: "center", gap: 4 },
+  benchName: { maxWidth: 64, color: colors.ink, fontSize: 11, fontWeight: "800" },
+  benchNameFree: { color: colors.muted, fontWeight: "700" },
   locationSave: {
     alignSelf: "flex-start",
     paddingHorizontal: spacing.md,

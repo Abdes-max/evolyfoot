@@ -1010,6 +1010,7 @@ export class PrismaMatchRepository implements MatchRepository {
       location?: string | null;
       description?: string | null;
       selectedPlayerIds?: PlayerSelection;
+      convokedAt?: Date | null;
     },
   ): Promise<PersistedMatch> {
     const { count } = await this.prisma.matchRecord.updateMany({
@@ -1035,6 +1036,7 @@ export class PrismaMatchRepository implements MatchRepository {
         ...(input.goalsAgainst !== undefined ? { goalsAgainst: input.goalsAgainst } : {}),
         ...(input.playerStats !== undefined ? { playerStats: input.playerStats as unknown as Prisma.InputJsonValue } : {}),
         ...(input.selectedPlayerIds !== undefined ? { selectedPlayerIds: toSelectionJson(input.selectedPlayerIds) } : {}),
+        ...(input.convokedAt !== undefined ? { convokedAt: input.convokedAt } : {}),
       },
     });
     if (count === 0) {

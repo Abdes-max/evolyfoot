@@ -551,6 +551,8 @@ model MatchRecord {
   // Joueurs concernés (voir concerned-players.ts côté domaine) : tableau d'ids, null = tout
   // l'effectif ou, pour un match créé avant ce choix, la composition.
   selectedPlayerIds    Json?               @map("selected_player_ids")
+  // Dernier envoi de la convocation (null tant qu'elle n'est pas partie).
+  convokedAt           DateTime?           @map("convoked_at")
   observations         ObservationRecord[]
   createdAt            DateTime            @default(now()) @map("created_at")
   updatedAt            DateTime            @updatedAt @map("updated_at")

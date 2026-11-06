@@ -440,6 +440,7 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     goalsAgainst: record.goalsAgainst,
     playerStats: (record.playerStats as unknown as readonly MatchPlayerStat[] | null) ?? [],
     selectedPlayerIds: toPlayerSelection(record.selectedPlayerIds),
+    convokedAt: record.convokedAt,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   });

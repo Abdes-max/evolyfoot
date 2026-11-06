@@ -33,6 +33,7 @@ const match: MatchSummary = {
   captainPlayerId: null,
   substitutePlayerIds: [],
   selectedPlayerIds: null,
+  convokedAt: null,
   opponentFormationId: null,
   goalsFor: null,
   goalsAgainst: null,
