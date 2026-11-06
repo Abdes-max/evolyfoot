@@ -5,8 +5,11 @@ import {
   findProgramSituation,
   programSource,
   programSubThemes,
+  scheduleForSlot,
   seasonSlotDate,
   situationKindLabels,
+  sortTrainingDays,
+  type TrainingSlotSchedule,
 } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -35,6 +38,8 @@ export default function ProgramSessionScreen() {
   const preparable = Number.isInteger(week) && week >= 1 && week <= 36 && Number.isInteger(slot) && slot >= 0 && slot <= 3;
   const [meetingAt, setMeetingAt] = useState<Date | null>(null);
   const [location, setLocation] = useState("");
+  // Créneau récurrent du jour de cette séance : l'heure et le lieu se règlent alors sur la saison uniquement.
+  const [recurring, setRecurring] = useState<TrainingSlotSchedule | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   // Début de la préparation (ouverture de l'écran), pour l'indicateur « première séance en moins de 10 minutes ».
@@ -53,7 +58,23 @@ export default function ProgramSessionScreen() {
       const sessionsBody = sessionsResponse?.ok ? await sessionsResponse.json().catch(() => null) : null;
       if (cancelled) return;
       const start = programBody?.program?.startDate ? new Date(`${programBody.program.startDate}T00:00:00`) : new Date();
-      setMeetingAt(seasonSlotDate(start, week, slot, team?.trainingDays ?? []));
+      const proposed = seasonSlotDate(start, week, slot, team?.trainingDays ?? []);
+      const schedule: TrainingSlotSchedule[] = programBody?.program?.schedule ?? [];
+      const days = sortTrainingDays(team?.trainingDays ?? []);
+      const entry = schedule.find((candidate) => candidate.day === (days[slot] ?? days[days.length - 1]));
+      if (entry) {
+        const { time, location: place } = scheduleForSlot(schedule, team?.trainingDays ?? [], slot);
+        const [hours, minutes] = time.split(":").map(Number);
+        proposed.setHours(hours ?? 18, minutes ?? 0, 0, 0);
+        setMeetingAt(proposed);
+        setRecurring(entry);
+        if (place) {
+          setLocation(place);
+          return;
+        }
+      } else {
+        setMeetingAt(proposed);
+      }
       const sessions: { location: string | null; createdAt: string }[] = sessionsBody?.sessions ?? [];
       const last = [...sessions].filter((item) => item.location).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
       if (last?.location) setLocation((current) => current || last.location!);
@@ -122,10 +143,22 @@ export default function ProgramSessionScreen() {
         {preparable && meetingAt && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Préparer cette séance</Text>
-            <Text style={styles.label}>RENDEZ-VOUS</Text>
-            <DateTimeField label="Rendez-vous" onChange={setMeetingAt} value={meetingAt} />
-            <Text style={styles.label}>LIEU</Text>
-            <PlaceInput onChange={setLocation} value={location} />
+            {recurring ? (
+              <View style={styles.recurring}>
+                <Text style={styles.recurringWhen}>
+                  {meetingAt.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })} à {recurring.time}
+                  {location ? ` · ${location}` : ""}
+                </Text>
+                <Text style={styles.recurringHint}>Créneau récurrent du {recurring.day.toLowerCase()} : il se modifie dans Ma saison, « Mes créneaux ».</Text>
+              </View>
+            ) : (
+              <>
+                <Text style={styles.label}>RENDEZ-VOUS</Text>
+                <DateTimeField label="Rendez-vous" onChange={setMeetingAt} value={meetingAt} />
+                <Text style={styles.label}>LIEU</Text>
+                <PlaceInput onChange={setLocation} value={location} />
+              </>
+            )}
             <TouchableOpacity accessibilityRole="button" disabled={saving} onPress={prepare} style={[styles.primary, saving && styles.disabled]}>
               <Text style={styles.primaryText}>{saving ? "Préparation…" : "Préparer cette séance"}</Text>
             </TouchableOpacity>
@@ -176,6 +209,9 @@ export default function ProgramSessionScreen() {
 }
 
 const styles = StyleSheet.create({
+  recurring: { gap: 4, padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
+  recurringWhen: { color: colors.ink, fontSize: 15, fontWeight: "800" },
+  recurringHint: { color: colors.muted, fontSize: 12 },
   safe: { flex: 1, backgroundColor: colors.paper },
   page: { padding: spacing.lg, paddingBottom: 48 },
   back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
