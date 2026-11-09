@@ -2,6 +2,7 @@ import type {
   AttendanceEntry,
   DiagnosticScores,
   MatchLineupAssignment,
+  MatchPlayerStat,
   MatchStatus,
   MatchVenue,
   ObservationDraft,
@@ -51,6 +52,10 @@ export interface MobileMatch {
   convokedAt?: string | null;
   // Réponses des joueurs (présent, absent, motif).
   attendance?: AttendanceEntry[];
+  // Résultat saisi après le match : `null` tant qu'il n'est pas renseigné.
+  goalsFor?: number | null;
+  goalsAgainst?: number | null;
+  playerStats?: MatchPlayerStat[];
 }
 
 // `PlayerReference` (domaine) reste { id, name } -- générique, utilisé aussi pour les signaux
