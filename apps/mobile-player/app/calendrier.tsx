@@ -3,6 +3,7 @@ import { attendanceStatusLabels, attendanceStatuses, type AttendanceStatus } fro
 import { Fragment, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Screen } from "../components/screen";
+import { WeekCalendar } from "../components/week-calendar";
 import { WaitingApproval } from "../components/waiting-approval";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
@@ -71,6 +72,7 @@ export default function CalendarScreen() {
 
   return (
     <Screen title="Calendrier">
+      {dashboard ? <WeekCalendar dashboard={dashboard} now={now} /> : null}
       <View accessibilityRole="tablist" style={styles.filters}>
         {(
           [
