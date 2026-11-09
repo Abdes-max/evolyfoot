@@ -59,7 +59,8 @@ export interface Dashboard {
     preferredFoot: string | null;
   };
   season: PlayerSeasonTotals;
-  team: { name: string; ageGroup: string } | null;
+  // Jours d'entraînement de l'équipe (Lundi, Mardi…), pour le calendrier de la semaine.
+  team: { name: string; ageGroup: string; trainingDays?: string[] } | null;
   evaluations: Evaluation[];
   trainingAttendance: { rate: number; total: number };
   matchAttendance: { rate: number; total: number };
