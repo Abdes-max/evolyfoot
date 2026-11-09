@@ -2,14 +2,12 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { attendanceStatusLabels, attendanceStatuses, type AttendanceStatus } from "@evolyfoot/domain";
 import { Fragment, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { EventCard } from "../components/event-card";
 import { Screen } from "../components/screen";
 import { WaitingApproval } from "../components/waiting-approval";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { buildAgenda, useDashboard, type AgendaEvent } from "../lib/dashboard";
-import { openInMaps } from "../lib/open-in-maps";
-
-const kindLabels: Record<AgendaEvent["kind"], string> = { match: "MATCH", training: "ENTRAÎNEMENT", tournament: "TOURNOI", plateau: "PLATEAU" };
 
 const absenceReasons = attendanceStatuses.filter((status) => status !== "present");
 
@@ -99,64 +97,46 @@ export default function CalendarScreen() {
         const absent = event.myStatus !== null && !present;
         const week = weekLabel(event.date, now);
         const newWeek = index === 0 || weekLabel(agenda[index - 1]!.date, now) !== week;
-        const day = event.date ? new Date(event.date) : null;
         return (
           <Fragment key={event.key}>
             {newWeek ? <Text style={styles.weekTitle}>{week}</Text> : null}
-            <View style={styles.event}>
-              <View style={styles.eventRow}>
-                <View style={styles.dateBlock}>
-                  <Text style={styles.dateMonth}>{day ? day.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "").toUpperCase() : "—"}</Text>
-                  <Text style={styles.dateDay}>{day ? day.getDate() : "?"}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.kind}>{kindLabels[event.kind]}</Text>
-                  <Text style={styles.title}>{event.title}</Text>
-                  <Text style={styles.meta}>{[event.dateLabel, event.time].filter(Boolean).join(" · ")}</Text>
-                  {event.location ? (
-                    <TouchableOpacity accessibilityRole="link" onPress={() => void openInMaps(event.location!)} style={styles.place}>
-                      <Text style={styles.placeText}>{event.location}</Text>
-                      <Text style={styles.placeLink}>Y aller (Plans, Google Maps, Waze…) →</Text>
-                    </TouchableOpacity>
+            <EventCard event={event}>
+              {scope === "past" ? (
+                event.myStatus ? (
+                  <Text style={styles.meta}>Ta réponse : {attendanceStatusLabels[event.myStatus]}</Text>
+                ) : null
+              ) : event.canRespond ? (
+                <View>
+                  {event.byDefault && event.myStatus === "present" ? (
+                    <Text style={styles.meta}>Tu es compté présent par défaut. Préviens si tu ne peux pas venir.</Text>
                   ) : null}
-                  {scope === "past" ? (
-                    event.myStatus ? (
-                      <Text style={styles.meta}>Ta réponse : {attendanceStatusLabels[event.myStatus]}</Text>
-                    ) : null
-                  ) : event.canRespond ? (
-                    <View>
-                      {event.byDefault && event.myStatus === "present" ? (
-                        <Text style={styles.meta}>Tu es compté présent par défaut. Préviens si tu ne peux pas venir.</Text>
-                      ) : null}
-                      <View style={styles.choices}>
-                        <TouchableOpacity
-                          accessibilityRole="button"
-                          accessibilityState={{ selected: present }}
-                          disabled={busyKey === event.key}
-                          onPress={() => respond(event, "present")}
-                          style={[styles.choice, present && styles.choicePresent]}
-                        >
-                          <Text style={[styles.choiceText, present && styles.choiceTextActive]}>Présent</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          accessibilityRole="button"
-                          accessibilityState={{ selected: absent }}
-                          disabled={busyKey === event.key}
-                          onPress={() => askAbsenceReason(event)}
-                          style={[styles.choice, absent && styles.choiceAbsent]}
-                        >
-                          <Text style={styles.choiceText}>{absent ? attendanceStatusLabels[event.myStatus!] : "Absent"}</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ) : (
-                    <Text style={styles.meta}>
-                      {event.kind === "match" ? "Pas convoqué pour ce match." : "Programmé : tu pourras répondre quand la convocation sera envoyée."}
-                    </Text>
-                  )}
+                  <View style={styles.choices}>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: present }}
+                      disabled={busyKey === event.key}
+                      onPress={() => respond(event, "present")}
+                      style={[styles.choice, present && styles.choicePresent]}
+                    >
+                      <Text style={[styles.choiceText, present && styles.choiceTextActive]}>Présent</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: absent }}
+                      disabled={busyKey === event.key}
+                      onPress={() => askAbsenceReason(event)}
+                      style={[styles.choice, absent && styles.choiceAbsent]}
+                    >
+                      <Text style={styles.choiceText}>{absent ? attendanceStatusLabels[event.myStatus!] : "Absent"}</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            </View>
+              ) : (
+                <Text style={styles.meta}>
+                  {event.kind === "match" ? "Pas convoqué pour ce match." : "Programmé : tu pourras répondre quand la convocation sera envoyée."}
+                </Text>
+              )}
+            </EventCard>
           </Fragment>
         );
       })}
@@ -166,25 +146,8 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   note: { color: colors.muted, fontSize: 14, lineHeight: 20 },
-  event: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.primaryDark,
-    backgroundColor: colors.surface,
-  },
   weekTitle: { color: colors.muted, fontSize: 14, fontWeight: "800", marginTop: spacing.sm, marginBottom: spacing.sm },
-  eventRow: { flexDirection: "row", gap: spacing.md },
-  dateBlock: { width: 52, alignItems: "center", paddingTop: 2 },
-  dateMonth: { color: colors.muted, fontSize: 12, fontWeight: "800", letterSpacing: 0.5 },
-  dateDay: { color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 32 },
-  kind: { color: colors.lime, fontSize: 11, fontWeight: "900" },
-  title: { color: colors.ink, fontSize: 17, fontWeight: "800", marginTop: 3 },
   meta: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 3 },
-  place: { minHeight: 44, marginTop: spacing.sm, padding: spacing.sm, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primaryDark },
-  placeText: { color: colors.ink, fontSize: 13, fontWeight: "700" },
-  placeLink: { color: colors.primary, fontSize: 12, fontWeight: "800", marginTop: 2 },
   choices: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
   filters: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md },
   filter: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
