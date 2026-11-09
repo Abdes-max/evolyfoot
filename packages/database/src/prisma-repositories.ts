@@ -48,6 +48,7 @@ import type {
   CompetitionUpdate,
   NotificationInput,
   NotificationKind,
+  NotificationPreferenceRepository,
   NotificationRecord,
   NotificationRepository,
   PushDeviceRepository,
@@ -113,6 +114,7 @@ import type {
   MatchStatus,
   MatchVenue,
   MessageAuthorRole as DomainMessageAuthorRole,
+  NotificationPreferences,
   ObservationReport,
   PlayerEvaluationScores,
   TeamProfile,
@@ -581,6 +583,24 @@ export class PrismaPushDeviceRepository implements PushDeviceRepository {
 
   async removeTokens(tokens: string[]): Promise<void> {
     await this.prisma.pushDevice.deleteMany({ where: { token: { in: tokens } } });
+  }
+}
+
+export class PrismaNotificationPreferenceRepository implements NotificationPreferenceRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async get(educatorId: string): Promise<unknown> {
+    const educator = await this.prisma.educator.findUnique({ where: { id: educatorId }, select: { notificationPreferences: true } });
+    return educator?.notificationPreferences ?? null;
+  }
+
+  async getMany(educatorIds: string[]): Promise<Map<string, unknown>> {
+    const educators = await this.prisma.educator.findMany({ where: { id: { in: educatorIds } }, select: { id: true, notificationPreferences: true } });
+    return new Map(educators.map((educator) => [educator.id, educator.notificationPreferences]));
+  }
+
+  async save(educatorId: string, preferences: NotificationPreferences): Promise<void> {
+    await this.prisma.educator.update({ where: { id: educatorId }, data: { notificationPreferences: { ...preferences } } });
   }
 }
 

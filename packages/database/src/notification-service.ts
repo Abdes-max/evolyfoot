@@ -1,8 +1,10 @@
+import { isPushEnabled, parseNotificationPreferences, pushText, type NotificationPreferences } from "@evolyfoot/domain";
 import { ValidationError } from "./errors";
 import type {
   MessageRepository,
   NotificationInput,
   NotificationKind,
+  NotificationPreferenceRepository,
   NotificationRecord,
   NotificationRepository,
   PersistedMessage,
@@ -12,7 +14,7 @@ import type {
 // Envoi des push (service Expo côté web) : jamais bloquant, une notification reste visible dans
 // l'app même si le téléphone n'a pas pu être prévenu.
 export interface PushSender {
-  send(messages: Array<{ token: string; title: string; body: string; link: string; badge: number }>): Promise<{ invalidTokens: string[] }>;
+  send(messages: Array<{ token: string; title: string; body: string; link: string; badge: number; sound: boolean }>): Promise<{ invalidTokens: string[] }>;
 }
 
 export interface FollowRequestNotice {
@@ -35,6 +37,7 @@ export class NotificationService {
     private readonly pushDeviceRepository?: PushDeviceRepository,
     private readonly pushSender?: PushSender,
     private readonly log: (error: unknown) => void = () => undefined,
+    private readonly preferenceRepository?: NotificationPreferenceRepository,
   ) {}
 
   // Un message dans un fil coach-joueur (messagerie ou convocation) prévient l'autre côté.
@@ -115,6 +118,18 @@ export class NotificationService {
     return this.notificationRepository.markRead(recipientId, filter);
   }
 
+  async preferences(educatorId: string): Promise<NotificationPreferences> {
+    return parseNotificationPreferences(await this.preferenceRepository?.get(educatorId));
+  }
+
+  async savePreferences(educatorId: string, value: unknown): Promise<NotificationPreferences> {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) throw new ValidationError("Réglages invalides.");
+    if (!this.preferenceRepository) throw new ValidationError("Réglages indisponibles.");
+    const preferences = parseNotificationPreferences(value);
+    await this.preferenceRepository.save(educatorId, preferences);
+    return preferences;
+  }
+
   async registerDevice(educatorId: string, token: unknown, platform: unknown): Promise<void> {
     if (typeof token !== "string" || !/^Expo(nent)?PushToken\[.+\]$/.test(token) || (platform !== "ios" && platform !== "android")) {
       throw new ValidationError("Téléphone invalide.");
@@ -133,15 +148,26 @@ export class NotificationService {
     if (!this.pushDeviceRepository || !this.pushSender) return;
     try {
       const recipients = [...new Set(inputs.map((input) => input.recipientId))];
-      const [devices, badges] = await Promise.all([
+      const [devices, badges, stored] = await Promise.all([
         this.pushDeviceRepository.tokensFor(recipients),
         Promise.all(recipients.map(async (id) => [id, await this.notificationRepository.countUnread(id)] as const)),
+        this.preferenceRepository?.getMany(recipients) ?? new Map<string, unknown>(),
       ]);
       const badgeOf = new Map(badges);
+      const preferencesOf = (id: string) => parseNotificationPreferences(stored.get(id));
       const messages = devices.flatMap((device) =>
         inputs
-          .filter((input) => input.recipientId === device.educatorId)
-          .map((input) => ({ token: device.token, title: input.title, body: input.body, link: input.link, badge: badgeOf.get(device.educatorId) ?? 0 })),
+          .filter((input) => input.recipientId === device.educatorId && isPushEnabled(preferencesOf(device.educatorId), input.kind))
+          .map((input) => {
+            const preferences = preferencesOf(device.educatorId);
+            return {
+              token: device.token,
+              ...pushText(preferences, input),
+              link: input.link,
+              badge: badgeOf.get(device.educatorId) ?? 0,
+              sound: preferences.sound,
+            };
+          }),
       );
       if (messages.length === 0) return;
       const { invalidTokens } = await this.pushSender.send(messages);

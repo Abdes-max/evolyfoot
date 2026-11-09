@@ -57,6 +57,7 @@ export default function MyCardScreen() {
   function confirmLogout() {
     Alert.alert("Mon compte", undefined, [
       { text: "Annuler", style: "cancel" },
+      { text: "Notifications", onPress: () => router.push("/reglages-notifications") },
       { text: "Se déconnecter", onPress: logout },
       { text: "Supprimer mon compte", style: "destructive", onPress: () => router.push("/compte") },
     ]);

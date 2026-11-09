@@ -253,3 +253,13 @@ export {
   tick as tickField,
   toggle as toggleField,
 } from "./field-timer";
+export {
+  defaultNotificationPreferences,
+  hiddenNotificationText,
+  isPushEnabled,
+  notificationCategories,
+  notificationCategoryLabels,
+  parseNotificationPreferences,
+  pushText,
+} from "./notification-preferences";
+export type { NotificationCategory, NotificationPreferences } from "./notification-preferences";

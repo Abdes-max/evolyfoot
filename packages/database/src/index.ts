@@ -28,6 +28,7 @@ export {
   PrismaTeamSpaceRepository,
   PrismaDiagnosticRepository,
   PrismaSeasonProgramRepository,
+  PrismaNotificationPreferenceRepository,
   PrismaNotificationRepository,
   PrismaPushDeviceRepository,
   PrismaEducatorRepository,

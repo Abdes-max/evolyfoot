@@ -8,6 +8,7 @@ import type {
   MatchStatus,
   MatchVenue,
   MessageAuthorRole,
+  NotificationPreferences,
   ObservationEventType,
   ObservationReport,
   ObservationReportRating,
@@ -746,6 +747,13 @@ export interface PushDeviceRepository {
   unregister(educatorId: string, token: string): Promise<void>;
   tokensFor(educatorIds: string[]): Promise<Array<{ educatorId: string; token: string }>>;
   removeTokens(tokens: string[]): Promise<void>;
+}
+
+// Réglages de notification d'un compte, tels que stockés (le domaine les interprète et complète).
+export interface NotificationPreferenceRepository {
+  get(educatorId: string): Promise<unknown>;
+  getMany(educatorIds: string[]): Promise<Map<string, unknown>>;
+  save(educatorId: string, preferences: NotificationPreferences): Promise<void>;
 }
 
 export interface MessageRepository {

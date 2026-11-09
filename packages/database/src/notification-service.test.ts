@@ -4,6 +4,7 @@ import type {
   MessageRepository,
   NotificationInput,
   NotificationKind,
+  NotificationPreferenceRepository,
   NotificationRecord,
   NotificationRepository,
   PersistedMessage,
@@ -63,6 +64,19 @@ class InMemoryDevices implements PushDeviceRepository {
   }
 }
 
+class InMemoryPreferences implements NotificationPreferenceRepository {
+  readonly stored = new Map<string, unknown>();
+  async get(educatorId: string) {
+    return this.stored.get(educatorId) ?? null;
+  }
+  async getMany(educatorIds: string[]) {
+    return new Map(educatorIds.map((id) => [id, this.stored.get(id) ?? null]));
+  }
+  async save(educatorId: string, preferences: unknown) {
+    this.stored.set(educatorId, preferences);
+  }
+}
+
 const message = { educatorId: "team-1", playerId: "player-1", authorName: "Lina", text: "Bonjour coach, je serai en retard." };
 
 describe("NotificationService", () => {
@@ -83,7 +97,7 @@ describe("NotificationService", () => {
       ["assistant-1", "Message de Lina", "/messagerie?joueur=player-1"],
     ]);
     expect(sent).toEqual([
-      [{ token: "ExponentPushToken[coach]", title: "Message de Lina", body: message.text, link: "/messagerie?joueur=player-1", badge: 1 }],
+      [{ token: "ExponentPushToken[coach]", title: "Message de Lina", body: message.text, link: "/messagerie?joueur=player-1", badge: 1, sound: true }],
     ]);
   });
 
@@ -101,6 +115,64 @@ describe("NotificationService", () => {
       ["account-1", "evaluation", "/joueur"],
     ]);
     expect(devices.devices.map((device) => device.token)).toEqual(["ExponentPushToken[coach]"]);
+  });
+
+  describe("réglages de notification", () => {
+    function setup() {
+      const notifications = new InMemoryNotifications({ "team-1": ["coach-1"] }, { "player-1": "account-1" });
+      const preferences = new InMemoryPreferences();
+      const sent: Parameters<PushSender["send"]>[0][] = [];
+      const service = new NotificationService(
+        notifications,
+        new InMemoryDevices(),
+        {
+          send: async (messages) => {
+            sent.push(messages);
+            return { invalidTokens: [] };
+          },
+        },
+        () => undefined,
+        preferences,
+      );
+      return { notifications, preferences, sent, service };
+    }
+
+    it("une catégorie désactivée coupe le push mais garde la notification dans la liste", async () => {
+      const { notifications, sent, service } = setup();
+      await service.savePreferences("coach-1", { messages: false });
+
+      await service.onMessage({ ...message, authorRole: "player" });
+
+      expect(notifications.records).toHaveLength(1);
+      expect(sent).toEqual([]);
+    });
+
+    it("masque le texte sur l'écran verrouillé et coupe le son si demandé", async () => {
+      const { sent, service } = setup();
+      await service.savePreferences("coach-1", { lockScreenContent: false, sound: false });
+
+      await service.onMessage({ ...message, authorRole: "player" });
+
+      expect(sent[0]?.[0]).toMatchObject({ title: "EvolyFoot", body: "Nouvelle notification", sound: false, link: "/messagerie?joueur=player-1" });
+    });
+
+    it("sans réglage enregistré, tout est activé", async () => {
+      const { sent, service } = setup();
+      expect(await service.preferences("coach-1")).toMatchObject({ messages: true, lockScreenContent: true, sound: true });
+
+      await service.onMessage({ ...message, authorRole: "player" });
+
+      expect(sent[0]?.[0]).toMatchObject({ title: "Message de Lina", sound: true });
+    });
+
+    it("enregistre des réglages complets et refuse un corps invalide", async () => {
+      const { preferences, service } = setup();
+      const saved = await service.savePreferences("coach-1", { evaluations: false, sound: "non" });
+      expect(saved).toMatchObject({ evaluations: false, sound: true, messages: true });
+      expect(preferences.stored.get("coach-1")).toEqual(saved);
+      await expect(service.savePreferences("coach-1", null)).rejects.toThrow("Réglages invalides.");
+      await expect(service.savePreferences("coach-1", [])).rejects.toThrow("Réglages invalides.");
+    });
   });
 
   it("compte les non lus et marque un fil lu", async () => {

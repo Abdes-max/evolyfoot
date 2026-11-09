@@ -1,5 +1,6 @@
 import { ValidationError } from "@evolyfoot/database";
 import type { createDatabaseClient, NotificationService, PushSender } from "@evolyfoot/database";
+import type { NotificationPreferences } from "@evolyfoot/domain";
 import type { PublicAccount } from "./auth";
 
 type Database = ReturnType<typeof createDatabaseClient>;
@@ -17,6 +18,8 @@ export interface NotificationSummary {
 export interface NotificationGateway {
   list(recipientId: string): Promise<{ notifications: NotificationSummary[]; unreadCount: number; unreadMessages: number }>;
   markRead(recipientId: string, filter: { ids?: string[]; threadPlayerId?: string; kind?: "message" | "evaluation" }): Promise<void>;
+  preferences(educatorId: string): Promise<NotificationPreferences>;
+  savePreferences(educatorId: string, value: unknown): Promise<NotificationPreferences>;
   registerDevice(educatorId: string, token: unknown, platform: unknown): Promise<void>;
   unregisterDevice(educatorId: string, token: unknown): Promise<void>;
 }
@@ -40,8 +43,11 @@ export function createExpoPushSender(fetchImpl: typeof fetch = fetch): PushSende
               to: message.token,
               title: message.title,
               body: message.body,
-              sound: "default",
+              sound: message.sound ? "default" : null,
               badge: message.badge,
+              // Bandeau déverrouillé et écran verrouillé : priorité haute, sur le canal Android « default ».
+              priority: "high",
+              channelId: "default",
               data: { link: message.link },
             })),
           ),
@@ -59,12 +65,14 @@ export function createExpoPushSender(fetchImpl: typeof fetch = fetch): PushSende
 // Service de notifications branché sur la base et sur le push Expo, partagé par les passerelles
 // qui créent des messages ou des évaluations.
 export async function notificationServiceFor(database: Database): Promise<NotificationService> {
-  const { NotificationService, PrismaNotificationRepository, PrismaPushDeviceRepository } = await import("@evolyfoot/database");
+  const { NotificationService, PrismaNotificationPreferenceRepository, PrismaNotificationRepository, PrismaPushDeviceRepository } =
+    await import("@evolyfoot/database");
   return new NotificationService(
     new PrismaNotificationRepository(database.prisma),
     new PrismaPushDeviceRepository(database.prisma),
     createExpoPushSender(),
     console.error,
+    new PrismaNotificationPreferenceRepository(database.prisma),
   );
 }
 
@@ -90,6 +98,8 @@ export async function createNotificationGateway(): Promise<{ gateway: Notificati
         };
       },
       markRead: (recipientId, filter) => service.markRead(recipientId, filter),
+      preferences: (educatorId) => service.preferences(educatorId),
+      savePreferences: (educatorId, value) => service.savePreferences(educatorId, value),
       registerDevice: (educatorId, token, platform) => service.registerDevice(educatorId, token, platform),
       unregisterDevice: (educatorId, token) => service.unregisterDevice(educatorId, token),
     },
@@ -155,6 +165,29 @@ export function createMarkNotificationsReadHandler(
     try {
       await notifications.markRead(account.id, ids ? { ids: ids as string[] } : kind ? { kind } : {});
       return new Response(null, { status: 204 });
+    } catch (error) {
+      if (error instanceof ValidationError) return Response.json({ error: error.message }, { status: 400 });
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  };
+}
+
+// Réglages de notification du compte : GET les lit (valeurs par défaut comprises), PUT les enregistre.
+export function createNotificationPreferencesHandler(
+  resolveAccount: ResolveAccount,
+  notifications: Pick<NotificationGateway, "preferences" | "savePreferences">,
+  log: (error: unknown) => void,
+) {
+  return async (request: Request): Promise<Response> => {
+    const account = await resolveAccount(request);
+    if (!account) return Response.json({ error: "Authentification requise." }, { status: 401 });
+    try {
+      if (request.method === "PUT") {
+        const body = await readJsonBody(request);
+        return Response.json({ preferences: await notifications.savePreferences(account.id, body) });
+      }
+      return Response.json({ preferences: await notifications.preferences(account.id) });
     } catch (error) {
       if (error instanceof ValidationError) return Response.json({ error: error.message }, { status: 400 });
       log(error);

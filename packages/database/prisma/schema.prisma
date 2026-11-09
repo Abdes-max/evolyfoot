@@ -98,6 +98,9 @@ model Educator {
   phone              String?
   diploma            String?
   seasonFormat       String?                  @map("season_format")
+  // Réglages de notification (catégories, contenu sur l'écran verrouillé, bandeau, son) : voir
+  // `notification-preferences.ts` côté domaine. `null` = réglages par défaut (tout activé).
+  notificationPreferences Json?               @map("notification_preferences")
   // Profil de coach : valeurs contrôlées par EducatorProfileService (playStyles côté domaine).
   // Cycle de 4 semaines en cours : les écrans de planification ne lisent que ses séances.
   currentCycle       Int                      @default(1) @map("current_cycle")

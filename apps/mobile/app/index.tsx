@@ -143,6 +143,7 @@ export default function HomeScreen() {
     Alert.alert("Mon compte", undefined, [
       { text: "Annuler", style: "cancel" },
       { text: "Mon profil", onPress: () => router.push("/profil") },
+      { text: "Notifications", onPress: () => router.push("/reglages-notifications") },
       { text: "Se déconnecter", onPress: logout },
       { text: "Supprimer mon compte", style: "destructive", onPress: () => router.push("/compte") },
     ]);
