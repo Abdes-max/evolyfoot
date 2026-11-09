@@ -16,7 +16,8 @@ async function readError(response: Response | null): Promise<string> {
 
 // Section « Tournois » ou « Plateaux » de l'onglet Matchs, comme competitions-panel.tsx côté web :
 // ajout rapide (nom, date, bilan) puis une carte par compétition menant à sa fiche.
-export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
+// `scope` : n'affiche que les compétitions à venir ou passées (l'ajout reste toujours possible).
+export function CompetitionsPanel({ kind, scope }: { kind: CompetitionKind; scope?: "upcoming" | "past" }) {
   const { apiRequest } = useAuth();
   const { endpoint, listKey, itemKey, title, singular } = competitionKinds[kind];
   const [items, setItems] = useState<Competition[]>([]);
@@ -51,6 +52,10 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
       };
     }, [apiRequest, endpoint, listKey]),
   );
+
+  const filtered = scope ? items.filter((item) => isPastCompetition(item) === (scope === "past")) : items;
+  // À venir : les plus proches d'abord ; passées : les plus récentes d'abord.
+  const visible = scope === "past" ? sortCompetitions(filtered).reverse() : sortCompetitions(filtered);
 
   async function add() {
     // Jour choisi à l’heure locale, enregistré à minuit UTC comme avant (format de l’API).
@@ -128,7 +133,7 @@ export function CompetitionsPanel({ kind }: { kind: CompetitionKind }) {
       {items.length === 0 ? (
         <Text style={styles.empty}>Aucun {singular} pour l’instant.</Text>
       ) : (
-        sortCompetitions(items).map((item) => {
+        (scope ? visible : sortCompetitions(items)).map((item) => {
           const past = isPastCompetition(item);
           return (
             <TouchableOpacity

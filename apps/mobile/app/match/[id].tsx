@@ -12,11 +12,13 @@ import {
 } from "@evolyfoot/domain";
 import type { GameFormat, MatchLineupSlot, MatchPlan, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConcernedPlayersPicker } from "../../components/concerned-players-picker";
 import { MatchAnalysis } from "../../components/match-analysis";
+import { MatchClockPanel } from "../../components/match-clock";
+import { MatchResultForm } from "../../components/match-result-form";
 import { PlayerPicker } from "../../components/player-picker";
 import { PlaceInput } from "../../components/place-input";
 import { useAuth, type MobileMatch } from "../../lib/auth-context";
@@ -171,6 +173,7 @@ export default function MatchDetailScreen() {
   const [finalizing, setFinalizing] = useState(false);
   const [pickerSlotId, setPickerSlotId] = useState<string | null>(null);
   const [benchPicking, setBenchPicking] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
   const [location, setLocation] = useState("");
   const [locationFeedback, setLocationFeedback] = useState("");
   const [selection, setSelection] = useState<PlayerSelection>(null);
@@ -288,7 +291,9 @@ export default function MatchDetailScreen() {
       setSaveError(result.error);
       return;
     }
-    router.push(`/observation?type=match&matchId=${id}`);
+    // Reste sur la fiche : le résultat (score, buteurs, passeurs) se saisit tout de suite, l'observation ensuite.
+    setMatch(result.match);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
   }
 
   if (loadError) {
@@ -310,10 +315,18 @@ export default function MatchDetailScreen() {
   const slots = formationSlots(gameFormat, match.formationId);
   const readOnly = match.status === "played";
   const canFinalize = canFinalizeMatchPlan(toMatchPlan(match));
+  // Joueurs de la feuille de match, titulaires puis remplaçants : ceux à qui attribuer buts et passes.
+  const resultPlayers = [
+    ...match.lineup.map((assignment) => ({ id: assignment.playerId, name: assignment.playerName })),
+    ...match.substitutePlayerIds.flatMap((playerId) => {
+      const player = roster.find((candidate) => candidate.id === playerId);
+      return player ? [{ id: player.id, name: player.name }] : [];
+    }),
+  ].filter((player, index, all) => all.findIndex((other) => other.id === player.id) === index);
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.page}>
+      <ScrollView contentContainerStyle={styles.page} ref={scrollRef}>
         <Text style={styles.step}>{match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</Text>
         <Text style={styles.title}>{match.opponent}</Text>
         <Text style={styles.body}>
@@ -353,6 +366,20 @@ export default function MatchDetailScreen() {
             )}
             {selectionFeedback ? <Text style={styles.body}>{selectionFeedback}</Text> : null}
           </View>
+        )}
+
+        {readOnly ? (
+          <MatchResultForm
+            goalsAgainst={match.goalsAgainst ?? null}
+            goalsFor={match.goalsFor ?? null}
+            key={match.id}
+            matchId={match.id}
+            onSaved={(result) => setMatch((current) => (current ? { ...current, ...result } : current))}
+            playerStats={match.playerStats ?? []}
+            players={resultPlayers}
+          />
+        ) : (
+          <MatchClockPanel matchId={match.id} />
         )}
 
         {!readOnly && formations.length > 1 && (
@@ -435,7 +462,7 @@ export default function MatchDetailScreen() {
             onPress={finalize}
             style={[styles.finalizeButton, (!canFinalize || finalizing) && styles.finalizeButtonDisabled]}
           >
-            <Text style={styles.finalizeButtonText}>{finalizing ? "…" : "Marquer comme joué & observer →"}</Text>
+            <Text style={styles.finalizeButtonText}>{finalizing ? "…" : "Marquer comme joué →"}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity accessibilityRole="button" onPress={() => router.push(`/observation?type=match&matchId=${id}`)} style={styles.finalizeButton}>

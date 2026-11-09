@@ -171,6 +171,24 @@ export {
 } from "./training-convocation";
 export type { AttendanceDefault, ResponsePlayer, TrainingConvocationSettings, TrainingResponses } from "./training-convocation";
 export { concernedPlayers, isConcerned, parsePlayerSelection } from "./concerned-players";
+export { isPastMatch, matchesInScope, matchScopeLabels } from "./match-scope";
+export type { MatchScope } from "./match-scope";
+export {
+  createMatchClock,
+  defaultMatchClockSettings,
+  endMatchPeriod,
+  formatClock as formatMatchClock,
+  isPeriodOver,
+  isValidMatchClockSettings,
+  matchClockMinutesRange,
+  matchPlayedSeconds,
+  pauseMatchClock,
+  periodElapsed,
+  readMatchClock,
+  resetMatchClock,
+  startMatchClock,
+} from "./match-clock";
+export type { MatchClock, MatchClockReading, MatchClockSettings, MatchClockStatus } from "./match-clock";
 export { defaultTrainingTime, parseTrainingSchedule, scheduleForSlot } from "./training-schedule";
 export type { TrainingSlotSchedule } from "./training-schedule";
 export { nextSeasonSlot, seasonCycleAsPlan, seasonCycleAt, seasonCycleLength, seasonCycles, seasonSlotColor, themeColors } from "./season-cycle";

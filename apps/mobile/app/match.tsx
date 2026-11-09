@@ -1,8 +1,8 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { concernedPlayers, gameFormats, listFormations, summarizeTrainingResponses } from "@evolyfoot/domain";
-import type { GameFormat, MatchStatus, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { concernedPlayers, gameFormats, listFormations, matchesInScope, matchScopeLabels, summarizeTrainingResponses } from "@evolyfoot/domain";
+import type { GameFormat, MatchScope, MatchStatus, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CalendarImport } from "../components/calendar-import";
@@ -37,9 +37,25 @@ function MatchConvocation({ match, roster }: { match: MobileMatch; roster: reado
   );
 }
 
+// Score d'un match joué, en vert pour une victoire, en rouge pour une défaite ; sinon rappel de le saisir.
+function MatchScore({ match }: { match: MobileMatch }) {
+  if (match.goalsFor == null || match.goalsAgainst == null) {
+    return <Text style={styles.scoreMissing}>Résultat à saisir</Text>;
+  }
+  const color = match.goalsFor > match.goalsAgainst ? colors.lime : match.goalsFor < match.goalsAgainst ? colors.danger : colors.ink;
+  return (
+    <Text style={[styles.score, { color }]}>
+      Score : {match.goalsFor} – {match.goalsAgainst}
+    </Text>
+  );
+}
+
 export default function MatchListScreen() {
   const { team, roster, listMatches, createMatch } = useAuth();
   const [matches, setMatches] = useState<MobileMatch[]>([]);
+  // Filtre À venir / Passés : s'applique aux matchs, tournois et plateaux.
+  const [scope, setScope] = useState<MatchScope>("upcoming");
+  const [now] = useState(() => Date.now());
   const [creating, setCreating] = useState(false);
   const [opponent, setOpponent] = useState("");
   const [date, setDate] = useState<Date | null>(null);
@@ -59,14 +75,23 @@ export default function MatchListScreen() {
   // Joueurs concernés, tout l'effectif par défaut (voir ConcernedPlayersPicker).
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<PlayerSelection>(null);
 
-  useEffect(() => {
-    (async () => {
-      const result = await listMatches();
-      if (result.ok) {
-        setMatches(result.matches);
-      }
-    })();
-  }, [listMatches]);
+  // Relue à chaque retour sur l'écran : un match vient peut-être d'être joué ou son résultat saisi.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      void (async () => {
+        const result = await listMatches();
+        if (!cancelled && result.ok) {
+          setMatches(result.matches);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [listMatches]),
+  );
+
+  const shownMatches = matchesInScope(matches, scope, now);
 
   async function submitCreate() {
     setSubmitting(true);
@@ -194,10 +219,26 @@ export default function MatchListScreen() {
           </View>
         )}
 
+        <View accessibilityRole="tablist" style={styles.filters}>
+          {(["upcoming", "past"] as const).map((value) => (
+            <TouchableOpacity
+              accessibilityRole="tab"
+              accessibilityState={{ selected: scope === value }}
+              key={value}
+              onPress={() => setScope(value)}
+              style={[styles.filter, scope === value && styles.filterActive]}
+            >
+              <Text style={[styles.filterText, scope === value && styles.filterTextActive]}>{matchScopeLabels[value]}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {matches.length === 0 ? (
           <Text style={styles.empty}>Aucun match préparé pour l’instant.</Text>
+        ) : shownMatches.length === 0 ? (
+          <Text style={styles.empty}>{scope === "past" ? "Aucun match passé." : "Aucun match à venir."}</Text>
         ) : (
-          matches.map((match) => (
+          shownMatches.map((match) => (
             <TouchableOpacity
               accessibilityRole="button"
               key={match.id}
@@ -229,14 +270,15 @@ export default function MatchListScreen() {
                   {match.lineup.length}/{match.gameFormat} postes pourvus
                 </Text>
               </View>
+              {match.status === "played" ? <MatchScore match={match} /> : null}
               {match.status === "scheduled" ? <MatchConvocation match={match} roster={roster} /> : null}
               <Text style={styles.cardLink}>{match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}</Text>
             </TouchableOpacity>
           ))
         )}
 
-        <CompetitionsPanel kind="tournament" />
-        <CompetitionsPanel kind="plateau" />
+        <CompetitionsPanel kind="tournament" scope={scope} />
+        <CompetitionsPanel kind="plateau" scope={scope} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -310,6 +352,13 @@ const styles = StyleSheet.create({
   statusTextPlayed: { color: "#34d399" },
   cardFormat: { color: colors.muted, fontSize: 10, fontWeight: "700" },
   cardTitle: { fontSize: 17, fontWeight: "800", color: colors.ink, marginTop: 6 },
+  filters: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
+  filter: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+  filterActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  filterText: { color: colors.muted, fontSize: 13, fontWeight: "800" },
+  filterTextActive: { color: colors.primaryInk },
+  score: { fontSize: 15, fontWeight: "900", marginTop: 8 },
+  scoreMissing: { color: colors.primary, fontSize: 12, fontWeight: "800", marginTop: 8 },
   convocation: { marginTop: 8, gap: 2 },
   convocationSent: { color: colors.lime, fontSize: 12, fontWeight: "800" },
   convocationPending: { color: colors.muted, fontSize: 12, fontWeight: "800", marginTop: 8 },
