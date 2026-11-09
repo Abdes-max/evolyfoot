@@ -148,6 +148,11 @@ describe("joueurs concernés", () => {
     ]);
     expect((await dashboard.get(kylian.account.id)).trainingSessions).toEqual([]);
     expect((await dashboard.get(nael.account.id)).trainingSessions).toHaveLength(1);
+    // Le joueur ne voit ni le titre du programme, ni le contenu de la séance : seulement « Entraînement ».
+    expect((await dashboard.get(nael.account.id)).trainingSessions[0]?.title).toBe("Entraînement");
+    const [convocation] = await messageRepository.listByPlayer(coach.id, nael.player.id);
+    expect(convocation?.text).toContain("Convocation : entraînement");
+    expect(convocation?.text).not.toContain(generated.title);
     await expect(rsvp.respondToTrainingSession(kylian.account.id, session.id, "present")).rejects.toBeInstanceOf(EducatorNotFoundError);
   });
 

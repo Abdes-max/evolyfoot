@@ -62,7 +62,8 @@ function trainingSessionConvocationText(session: PersistedTrainingSession): stri
   const time = trainingSessionMeetingTime(session);
   const when = time ? `${trainingSessionDateLabel(session)} · ${time}` : trainingSessionDateLabel(session);
   const where = session.location ? ` — ${session.location}` : "";
-  return `Convocation : séance « ${session.title} », ${when}${where}. Merci de répondre présent ou absent dans l'appli.`;
+  // Sans le titre de la séance : le joueur n'a pas à connaître son contenu.
+  return `Convocation : entraînement, ${when}${where}. Merci de répondre présent ou absent dans l'appli.`;
 }
 
 // Adresses e-mail à prévenir pour ces joueurs : celles des comptes qui les suivent et celle de la
@@ -166,7 +167,7 @@ export class ConvocationService {
     await this.trainingSessionRepository.update(sessionId, educatorId, { convokedAt: this.now(), ...(attendance ? { attendance } : {}) });
     return {
       sentCount: roster.length,
-      subject: `Convocation : séance « ${session.title} »`,
+      subject: "Convocation : entraînement",
       text,
       recipients: await convocationRecipients(this.educatorRepository, roster),
     };

@@ -19,7 +19,8 @@ export function EventCard({ event, children }: { event: AgendaEvent; children?: 
           <Text style={styles.dateDay}>{day ? day.getDate() : "?"}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.kind}>{kindLabels[event.kind]}</Text>
+          {/* Le titre d'un entraînement est déjà « Entraînement » : pas de surtitre en double. */}
+          {event.kind === "training" ? null : <Text style={styles.kind}>{kindLabels[event.kind]}</Text>}
           <Text style={styles.title}>{event.title}</Text>
           <Text style={styles.meta}>{[event.dateLabel, event.time].filter(Boolean).join(" · ")}</Text>
           {event.location ? (
