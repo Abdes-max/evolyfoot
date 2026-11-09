@@ -233,6 +233,7 @@ export {
   subThemesOf,
   mondayOf,
   seasonSlotDate,
+  seasonSlotDateLabel,
   seasonThemeCounts,
   seasonWeekAt,
   suggestSeasonPriorities,

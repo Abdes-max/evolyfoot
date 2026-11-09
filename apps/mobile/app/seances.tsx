@@ -68,6 +68,8 @@ export default function SeancesScreen() {
             cycles={season.cycles}
             prepared={season.prepared}
             slotLabels={slotLabels}
+            startDate={season.program?.startDate ?? null}
+            trainingDays={team?.trainingDays ?? []}
           />
         ) : null}
         {view === "cycle" &&

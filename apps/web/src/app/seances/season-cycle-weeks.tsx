@@ -1,6 +1,6 @@
 "use client";
 
-import { seasonSlotColor, type SeasonCycle } from "@evolyfoot/domain";
+import { seasonSlotColor, seasonSlotDateLabel, type SeasonCycle, type TrainingDay } from "@evolyfoot/domain";
 import Link from "next/link";
 import { slotLabel } from "../saison/guided-season";
 
@@ -37,12 +37,14 @@ export function SeasonCycleWeeks({
   currentSeasonWeek,
   startDate,
   slotLabels,
+  trainingDays,
   prepared,
 }: {
   cycle: SeasonCycle;
   currentSeasonWeek: number;
   startDate: string;
   slotLabels: readonly string[];
+  trainingDays: readonly TrainingDay[];
   prepared: readonly PreparedSession[];
 }) {
   return (
@@ -71,7 +73,11 @@ export function SeasonCycleWeeks({
               const color = seasonSlotColor(slot);
               return (
                 <li className="seances-slot" key={index}>
-                  <span className="seances-slot-label">{slotLabels[index] ?? `Séance ${index + 1}`}</span>
+                  <span className="seances-slot-label">
+                    {trainingDays.length > 0
+                      ? seasonSlotDateLabel(new Date(`${startDate}T00:00:00`), week.seasonWeek, index, trainingDays)
+                      : (slotLabels[index] ?? `Séance ${index + 1}`)}
+                  </span>
                   {saved ? (
                     <Link className="seances-slot-card generated" href={`/session/${saved.id}`} style={{ borderLeft: `4px solid ${color}` }}>
                       <strong>{saved.title}</strong>
