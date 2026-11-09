@@ -1,15 +1,15 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { PhotoChoice } from "../components/photo-choice";
+import { EventCard } from "../components/event-card";
 import { PlayerCard } from "../components/player-card";
 import { Screen } from "../components/screen";
 import { WaitingApproval } from "../components/waiting-approval";
 import { useAuth } from "../lib/auth-context";
 import { buildAgenda, endOfCurrentWeek, useDashboard } from "../lib/dashboard";
 import { apiFetch } from "../lib/api";
-import { openInMaps } from "../lib/open-in-maps";
 import { pickPhoto } from "../lib/photo";
 import { markEvaluationsRead } from "../lib/push";
 
@@ -110,21 +110,9 @@ export default function MyCardScreen() {
 
           <Text style={styles.section}>Cette semaine</Text>
           {agenda.length === 0 ? <Text style={styles.note}>Rien de prévu cette semaine.</Text> : null}
+          {/* Mêmes cartes que le calendrier, sans la réponse présent / absent (à donner dans l'onglet Calendrier). */}
           {agenda.map((event) => (
-            <View key={event.key} style={styles.event}>
-              <Text style={styles.eventTitle}>{event.title}</Text>
-              <Text style={styles.eventMeta}>{[event.dateLabel, event.time].filter(Boolean).join(" · ")}</Text>
-              {event.location ? (
-                <TouchableOpacity
-                  accessibilityHint="Ouvre le lieu dans une appli de cartes"
-                  accessibilityRole="link"
-                  hitSlop={6}
-                  onPress={() => void openInMaps(event.location!)}
-                >
-                  <Text style={styles.eventPlace}>📍 {event.location}</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
+            <EventCard event={event} key={event.key} />
           ))}
         </>
       ) : null}
@@ -148,15 +136,4 @@ const styles = StyleSheet.create({
   note: { color: colors.muted, fontSize: 14, lineHeight: 20 },
   team: { color: colors.lime, fontSize: 13, fontWeight: "800", textAlign: "center", marginBottom: spacing.sm },
   section: { color: colors.ink, fontSize: 22, fontWeight: "900", textTransform: "uppercase", marginTop: spacing.lg, marginBottom: spacing.sm },
-  event: {
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.primaryDark,
-    backgroundColor: colors.surface,
-  },
-  eventTitle: { color: colors.ink, fontSize: 15, fontWeight: "800" },
-  eventMeta: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 3 },
-  eventPlace: { color: colors.primary, fontSize: 12, fontWeight: "800", lineHeight: 18, marginTop: 3, textDecorationLine: "underline" },
 });
