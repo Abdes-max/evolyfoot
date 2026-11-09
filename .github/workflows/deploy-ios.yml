@@ -307,8 +307,13 @@ jobs:
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination 'generic/platform=iOS' \
             COMPILER_INDEX_STORE_ENABLE=NO \
+            -showBuildTimingSummary \
             archive > "$RUNNER_TEMP/archive.log" 2>&1 || { grep -E "error:" "$RUNNER_TEMP/archive.log" | head -50; tail -100 "$RUNNER_TEMP/archive.log"; ccache --show-stats || true; exit 1; }
           tail -5 "$RUNNER_TEMP/archive.log"
+          # Où passe le temps : compilation C/C++, Swift, édition de liens, scripts, signature.
+          echo "::group::Durées par type de tâche Xcode"
+          grep -A30 "Build Timing Summary" "$RUNNER_TEMP/archive.log" | head -45 || true
+          echo "::endgroup::"
           # Taux de réussite du cache : le premier build d'une série est à froid, les suivants non.
           ccache --show-stats
 
