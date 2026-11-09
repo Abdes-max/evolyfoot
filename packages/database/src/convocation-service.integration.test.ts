@@ -116,7 +116,9 @@ describe("ConvocationService", () => {
     expect(result).toMatchObject({ sentCount: 2, recipients: [] });
     const p1Messages = await messageRepository.listByPlayer(coach.id, p1.id);
     expect(p1Messages).toHaveLength(1);
-    expect(p1Messages[0]!.text).toContain(session.title);
+    // Le joueur ne voit pas le titre (contenu) de la séance : seulement l'entraînement.
+    expect(p1Messages[0]!.text).toContain("Convocation : entraînement");
+    expect(p1Messages[0]!.text).not.toContain(session.title);
     const p2Messages = await messageRepository.listByPlayer(coach.id, p2.id);
     expect(p2Messages).toHaveLength(1);
   });

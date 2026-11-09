@@ -237,7 +237,9 @@ export class PlayerDashboardService {
         const myEntry = session.attendance?.find((entry) => entry.playerId === playerId);
         return {
           id: session.id,
-          title: session.title,
+          // Le joueur ne voit pas le contenu de la séance (titre du programme) : seulement l'entraînement,
+          // sa date, son lieu et sa réponse.
+          title: "Entraînement",
           dateLabel: trainingSessionDateLabel(session.meetingAt, session.weekNumber, session.slot),
           date: session.meetingAt,
           meetingTime: trainingSessionMeetingTime(session.meetingAt),
