@@ -6,10 +6,30 @@ import { useCallback, useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { apiFetch } from "./api";
 
-// Une notification reçue appli ouverte s'affiche quand même en bandeau.
+// Réglages du compte appliqués aux notifications reçues appli ouverte (téléphone déverrouillé) : bandeau et son.
+// Les notifications reçues appli fermée ou téléphone verrouillé sont affichées par le système ; le serveur
+// applique déjà les catégories, le son et le masquage du texte (voir NotificationService).
+let foreground = { banner: true, sound: true };
+
+export function applyForegroundPreferences(preferences: { inAppBanner: boolean; sound: boolean }): void {
+  foreground = { banner: preferences.inAppBanner, sound: preferences.sound };
+}
+
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true }),
+  handleNotification: async () => ({
+    shouldShowBanner: foreground.banner,
+    shouldShowList: true,
+    shouldPlaySound: foreground.sound,
+    shouldSetBadge: true,
+  }),
 });
+
+// Réglages relus à chaque connexion : le bandeau appli ouverte en dépend.
+async function loadPreferences(sessionToken: string): Promise<void> {
+  const response = await apiFetch("/api/notification-preferences", { sessionToken }).catch(() => null);
+  const body = response?.ok ? await response.json().catch(() => null) : null;
+  if (body?.preferences) applyForegroundPreferences(body.preferences);
+}
 
 let registeredToken: string | null = null;
 
@@ -20,7 +40,12 @@ async function registerForPush(sessionToken: string): Promise<void> {
     const projectId = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId;
     if (!Device.isDevice || !projectId) return;
     if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", { name: "EvolyFoot", importance: Notifications.AndroidImportance.HIGH });
+      // Importance haute : bandeau déverrouillé ; visibilité publique : la notification s'affiche aussi sur l'écran verrouillé.
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "EvolyFoot",
+        importance: Notifications.AndroidImportance.HIGH,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      });
     }
     const current = await Notifications.getPermissionsAsync();
     const status = current.granted ? "granted" : (await Notifications.requestPermissionsAsync()).status;
@@ -71,6 +96,7 @@ export function usePushNotifications(sessionToken: string | null, routeForLink: 
   useEffect(() => {
     if (!sessionToken) return;
     void registerForPush(sessionToken);
+    void loadPreferences(sessionToken);
     void readUnread(sessionToken);
     const appState = AppState.addEventListener("change", (state) => {
       if (state === "active") void readUnread(sessionToken);

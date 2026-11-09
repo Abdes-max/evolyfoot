@@ -7,6 +7,8 @@ import { apiFetch } from "./api";
 
 export async function unregisterPush(): Promise<void> {}
 
+export function applyForegroundPreferences(): void {}
+
 export interface UnreadCounts {
   unreadCount: number;
   unreadMessages: number;
