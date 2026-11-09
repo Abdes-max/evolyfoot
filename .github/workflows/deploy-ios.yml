@@ -8,6 +8,15 @@ name: Deploy iOS to TestFlight
 #
 # Le dossier ios/ n'est jamais commité : `expo prebuild` le régénère à chaque run depuis app.json.
 #
+# Vitesse (un build complet à froid dépasse 25 minutes) :
+#   - le job `plan` ne retient que les applis concernées par le push (Coach : apps/mobile ;
+#     Player : apps/mobile-player ; les deux : code partagé, lockfile, ce fichier). Un push qui ne
+#     touche ni l'une ni l'autre ne lance aucun build macOS ;
+#   - pas de file d'attente : plusieurs pushes de suite construisent en parallèle (le numéro de
+#     build est le numéro de run, unique) au lieu de s'attendre ;
+#   - la compilation des Pods (React Native, Expo, reanimated, screens, svg…) passe par ccache, mis
+#     en cache entre les runs : seul ce qui change est recompilé.
+#
 # Inerte tant que les secrets ne sont pas configurés : le job s'arrête VERT avec un avertissement.
 # Checklist unique (voir docs/delivery.md) :
 #   1. developer.apple.com → Identifiers : App IDs com.evolyfoot.coach et com.evolyfoot.player,
@@ -43,25 +52,93 @@ on:
           CFBundleVersion de cet envoi -- strictement supérieur au dernier build TestFlight de la
           version en cours. Par défaut, le numéro de run GitHub Actions.
         required: false
-
-concurrency:
-  group: deploy-ios
-  cancel-in-progress: false
+      apps:
+        description: "Applis à construire : both (défaut), mobile (Coach) ou mobile-player (Player)."
+        type: choice
+        options: [both, mobile, mobile-player]
+        default: both
+      upload:
+        description: "Envoyer sur TestFlight. Décoché : archive seule, pour mesurer ou tester ce workflow."
+        type: boolean
+        default: true
 
 jobs:
+  # Choisit les applis à construire d'après les fichiers du push. En cas de doute (comparaison
+  # impossible), les deux sont construites : mieux vaut un build de trop qu'un build manquant.
+  plan:
+    name: Choisir les applis à construire
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+      any: ${{ steps.pick.outputs.any }}
+    steps:
+      - name: Comparer les fichiers modifiés
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          APPS_INPUT: ${{ inputs.apps }}
+          REPO: ${{ github.repository }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          coach=false
+          player=false
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            case "${APPS_INPUT:-both}" in
+              mobile) coach=true ;;
+              mobile-player) player=true ;;
+              *)
+                coach=true
+                player=true
+                ;;
+            esac
+          else
+            files=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --paginate --jq '.files[].filename' || true)
+            if [ -z "$files" ]; then
+              echo "::warning::Fichiers modifiés introuvables : les deux applis sont construites par précaution."
+              coach=true
+              player=true
+            else
+              while IFS= read -r file; do
+                case "$file" in
+                  # Les tests du domaine n'entrent pas dans les applications.
+                  packages/domain/*.test.ts) ;;
+                  apps/mobile/*) coach=true ;;
+                  apps/mobile-player/*) player=true ;;
+                  packages/domain/*|packages/design-tokens/*|pnpm-lock.yaml|.github/workflows/deploy-ios.yml)
+                    coach=true
+                    player=true
+                    ;;
+                esac
+              done <<< "$files"
+            fi
+          fi
+
+          any=false
+          if [ "$coach" = true ] || [ "$player" = true ]; then
+            any=true
+          fi
+          matrix=$(jq -cn --argjson coach "$coach" --argjson player "$player" '{include: (
+            [ (if $coach then {app: "mobile", bundle_id: "com.evolyfoot.coach", profile_secret: "IOS_COACH_PROVISIONING_PROFILE_BASE64"} else empty end),
+              (if $player then {app: "mobile-player", bundle_id: "com.evolyfoot.player", profile_secret: "IOS_PLAYER_PROVISIONING_PROFILE_BASE64"} else empty end) ]
+            | if length == 0 then [{app: "aucune", bundle_id: "", profile_secret: ""}] else . end
+          )}')
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "any=$any" >> "$GITHUB_OUTPUT"
+          echo "Coach : $coach -- Player : $player"
+
   ios:
     name: Archiver et envoyer sur TestFlight (${{ matrix.app }})
+    needs: plan
+    if: needs.plan.outputs.any == 'true'
     runs-on: macos-latest
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - app: mobile
-            bundle_id: com.evolyfoot.coach
-            profile_secret: IOS_COACH_PROVISIONING_PROFILE_BASE64
-          - app: mobile-player
-            bundle_id: com.evolyfoot.player
-            profile_secret: IOS_PLAYER_PROVISIONING_PROFILE_BASE64
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     env:
       EXPO_PUBLIC_API_URL: https://evolyfoot.com
       BUILD_NUMBER: ${{ inputs.build_number || github.run_number }}
@@ -73,12 +150,21 @@ jobs:
           PROFILE_BASE64: ${{ secrets[matrix.profile_secret] }}
           API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          EVENT: ${{ github.event_name }}
+          UPLOAD_INPUT: ${{ inputs.upload }}
         run: |
           if [ -z "$CERTIFICATE_BASE64" ] || [ -z "$PROFILE_BASE64" ] || [ -z "$API_KEY_BASE64" ] || [ -z "$APPLE_TEAM_ID" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Envoi TestFlight ignoré pour ${{ matrix.app }} : secrets Apple manquants. Voir l'en-tête de .github/workflows/deploy-ios.yml."
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+          # Lancement manuel avec « Envoyer sur TestFlight » décoché : on archive sans rien envoyer.
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$UPLOAD_INPUT" = "false" ]; then
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Archive seule : rien n'est envoyé sur TestFlight."
+          else
+            echo "upload=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Récupérer le code
@@ -100,12 +186,46 @@ jobs:
         if: steps.secrets-check.outputs.ready == 'true'
         run: pnpm install --frozen-lockfile
 
+      # La compilation des Pods domine la durée du build : ccache la garde d'un run à l'autre.
+      # React Native l'active tout seul quand USE_CCACHE=1 est posé au `pod install` ; la version de
+      # Xcode est dans la clé de hachage, un changement d'image du runner n'utilise donc jamais
+      # d'objets compilés par un autre compilateur.
+      - name: Installer et configurer ccache
+        if: steps.secrets-check.outputs.ready == 'true'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+        run: |
+          set -euo pipefail
+          brew install ccache
+          {
+            echo "USE_CCACHE=1"
+            echo "CCACHE_DIR=$HOME/.ccache"
+            echo "CCACHE_MAXSIZE=2G"
+            echo "CCACHE_BASEDIR=$GITHUB_WORKSPACE"
+            echo "CCACHE_COMPILERCHECK=string:$(xcodebuild -version | tr '\n' ' ')"
+            echo "CCACHE_SLOPPINESS=clang_index_store,file_stat_matches,include_file_ctime,include_file_mtime,ivfsoverlay,modules,pch_defines,system_headers,time_macros"
+          } >> "$GITHUB_ENV"
+
+      # Clé liée au lockfile : les Pods ne changent que quand les dépendances changent. Sans
+      # correspondance exacte, le cache de la même appli le plus récent est repris puis complété.
+      - name: Restaurer le cache de compilation
+        if: steps.secrets-check.outputs.ready == 'true'
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: ~/.ccache
+          key: ccache-ios-${{ matrix.app }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ccache-ios-${{ matrix.app }}-
+
       - name: Générer le projet iOS natif
         if: steps.secrets-check.outputs.ready == 'true'
         working-directory: apps/${{ matrix.app }}
         run: |
           set -euo pipefail
           npx expo prebuild --platform ios --clean --no-install
+          # Le Podfile Expo lit aussi ce réglage : ccache pour les Pods (voir ci-dessus).
+          node -e 'const fs=require("fs");const p="ios/Podfile.properties.json";const j=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,"utf8")):{};j["apple.ccacheEnabled"]="true";fs.writeFileSync(p,JSON.stringify(j,null,2)+"\n")'
           cd ios && pod install
           WORKSPACE=$(ls -d *.xcworkspace | head -1)
           SCHEME="${WORKSPACE%.xcworkspace}"
@@ -181,14 +301,19 @@ jobs:
         working-directory: apps/${{ matrix.app }}/ios
         run: |
           set -euo pipefail
+          ccache --zero-stats
+          # COMPILER_INDEX_STORE_ENABLE=NO : pas d'index de code (utile à l'éditeur, pas au build).
           xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination 'generic/platform=iOS' \
-            archive > "$RUNNER_TEMP/archive.log" 2>&1 || { grep -E "error:" "$RUNNER_TEMP/archive.log" | head -50; tail -100 "$RUNNER_TEMP/archive.log"; exit 1; }
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            archive > "$RUNNER_TEMP/archive.log" 2>&1 || { grep -E "error:" "$RUNNER_TEMP/archive.log" | head -50; tail -100 "$RUNNER_TEMP/archive.log"; ccache --show-stats || true; exit 1; }
           tail -5 "$RUNNER_TEMP/archive.log"
+          # Taux de réussite du cache : le premier build d'une série est à froid, les suivants non.
+          ccache --show-stats
 
       - name: Écrire ExportOptions.plist
-        if: steps.secrets-check.outputs.ready == 'true'
+        if: steps.secrets-check.outputs.ready == 'true' && steps.secrets-check.outputs.upload == 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
@@ -216,7 +341,7 @@ jobs:
           PLIST
 
       - name: Exporter et envoyer sur TestFlight
-        if: steps.secrets-check.outputs.ready == 'true'
+        if: steps.secrets-check.outputs.ready == 'true' && steps.secrets-check.outputs.upload == 'true'
         env:
           API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
           API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}

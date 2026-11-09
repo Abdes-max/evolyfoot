@@ -171,6 +171,14 @@ Les étapes ci-dessous sont à faire une fois pour chaque dossier ; `eas.json` y
 
 Il reste vert et ne fait rien tant que ses secrets manquent.
 
+**Durée.** Un build complet à froid dépasse 25 minutes ; le workflow réduit l'attente de trois façons :
+
+- un job `plan` ne construit que les applis concernées par le push : Coach pour `apps/mobile`, Player pour `apps/mobile-player`, les deux pour le code partagé (`packages/domain`, hors fichiers de test, `packages/design-tokens`, `pnpm-lock.yaml`) ;
+- il n'y a pas de file d'attente : plusieurs merges de suite construisent en parallèle, le numéro de build étant le numéro de run, unique ;
+- la compilation des Pods passe par ccache, mis en cache entre les runs (clé : appli et lockfile). Le premier build après un changement du lockfile est à froid, les suivants beaucoup plus courts.
+
+Lancement manuel : choisir l'appli (`apps`) et décocher « Envoyer sur TestFlight » pour archiver sans rien publier, par exemple pour mesurer la durée.
+
 À faire une fois :
 
 1. **developer.apple.com, Identifiers** : créer les App IDs `com.evolyfoot.coach` et `com.evolyfoot.player`, avec la capacité Push Notifications.
