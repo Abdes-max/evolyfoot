@@ -11,6 +11,7 @@ import {
   themeColors,
   type DevelopmentTheme,
   type DiagnosticScores,
+  type TrainingDay,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { ConvocationSettings } from "../convocation-settings";
@@ -197,6 +198,7 @@ export function SeancesView() {
               prepared={seasonSessions}
               slotLabels={slotLabels}
               startDate={program.startDate}
+              trainingDays={trainingDays as readonly TrainingDay[]}
             />
           </>
         )}

@@ -8,6 +8,7 @@ import {
   mondayOf,
   programSessionPlan,
   seasonSlotDate,
+  seasonSlotDateLabel,
   seasonThemeCounts,
   seasonWeekAt,
   validateSeasonPriorities,
@@ -185,5 +186,13 @@ describe("préparer une séance de la saison", () => {
     expect(seasonSlotDate(start, 1, 0, ["Vendredi", "Mardi"])).toEqual(new Date(2026, 8, 8, 18));
     expect(seasonSlotDate(start, 2, 1, ["Vendredi", "Mardi"])).toEqual(new Date(2026, 8, 18, 18));
     expect(seasonSlotDate(start, 1, 0, [])).toEqual(new Date(2026, 8, 9, 18));
+  });
+});
+
+describe("seasonSlotDateLabel", () => {
+  it("donne le jour, la date et l'année du créneau", () => {
+    const start = new Date("2026-11-09T00:00:00");
+    expect(seasonSlotDateLabel(start, 1, 0, ["Mardi", "Jeudi"])).toBe("mardi 10 novembre 2026");
+    expect(seasonSlotDateLabel(start, 2, 1, ["Mardi", "Jeudi"])).toBe("jeudi 19 novembre 2026");
   });
 });

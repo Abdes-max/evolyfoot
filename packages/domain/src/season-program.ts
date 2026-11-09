@@ -444,3 +444,8 @@ export function seasonSlotDate(startDate: Date, week: number, slot: number, trai
   date.setHours(18, 0, 0, 0);
   return date;
 }
+
+// Date complète d'un créneau pour l'affichage, ex. « mardi 10 novembre 2026 ».
+export function seasonSlotDateLabel(startDate: Date, week: number, slot: number, trainingDays: readonly TrainingDay[]): string {
+  return seasonSlotDate(startDate, week, slot, trainingDays).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}

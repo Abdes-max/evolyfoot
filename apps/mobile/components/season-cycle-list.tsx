@@ -1,5 +1,5 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { seasonSlotColor, themeColors, type SavedTrainingSession, type SeasonCycle } from "@evolyfoot/domain";
+import { seasonSlotColor, seasonSlotDateLabel, themeColors, type SavedTrainingSession, type SeasonCycle, type TrainingDay } from "@evolyfoot/domain";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { openSeasonSlot } from "../lib/season-cycle";
@@ -13,12 +13,16 @@ export function SeasonCycleList({
   currentSeasonWeek,
   prepared,
   slotLabels,
+  startDate,
+  trainingDays,
 }: {
   cycles: readonly SeasonCycle[];
   currentCycle: SeasonCycle;
   currentSeasonWeek: number;
   prepared: readonly SavedTrainingSession[];
   slotLabels: readonly string[];
+  startDate: string | null;
+  trainingDays: readonly TrainingDay[];
 }) {
   const [index, setIndex] = useState(currentCycle.number - 1);
   const cycle = cycles[Math.min(cycles.length - 1, Math.max(0, index))] ?? currentCycle;
@@ -68,7 +72,11 @@ export function SeasonCycleList({
                 style={[styles.slot, { borderLeftColor: color }]}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.slotDay}>{slotLabels[position] ?? `Séance ${position + 1}`}</Text>
+                  <Text style={styles.slotDay}>
+                    {startDate && trainingDays.length > 0
+                      ? seasonSlotDateLabel(new Date(`${startDate}T00:00:00`), week.seasonWeek, position, trainingDays)
+                      : (slotLabels[position] ?? `Séance ${position + 1}`)}
+                  </Text>
                   <Text style={[styles.slotTitle, { color }]}>
                     {slotLabel(slot)}
                     {slot.major ? " · prioritaire" : ""}
