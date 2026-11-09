@@ -22,6 +22,7 @@ import "./page-backgrounds.css";
 import "./exercise-sheet.css";
 import "./design-impact.css";
 import { AuthGate } from "./auth-gate";
+import { InstallAppBanner } from "./install-app-banner";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 const barlowCondensed = Barlow_Condensed({ subsets: ["latin"], weight: ["700", "800"], variable: "--font-display", display: "swap" });
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html className={`${manrope.variable} ${barlowCondensed.variable}`} lang="fr">
       <body>
+        <InstallAppBanner />
         <AuthGate>{children}</AuthGate>
       </body>
     </html>
