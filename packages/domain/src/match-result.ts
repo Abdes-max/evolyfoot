@@ -56,8 +56,13 @@ interface PlayedMatchFacts {
   readonly playerStats?: ReadonlyArray<MatchPlayerStat>;
 }
 
-// Totaux d'un joueur sur ses matchs joués : présent dans la feuille de match et pas signalé absent.
-export function playerSeasonTotals(matches: readonly PlayedMatchFacts[], playerId: string): PlayerSeasonTotals {
+// Totaux d'un joueur sur ses matchs joués : présent dans la feuille de match et pas signalé absent. Les buts et
+// passes des rencontres de tournois et de plateaux s'y ajoutent ; ils ne comptent pas comme des matchs joués.
+export function playerSeasonTotals(
+  matches: readonly PlayedMatchFacts[],
+  playerId: string,
+  competitions: ReadonlyArray<{ readonly games?: ReadonlyArray<{ readonly playerStats: ReadonlyArray<MatchPlayerStat> }> }> = [],
+): PlayerSeasonTotals {
   let played = 0;
   let goals = 0;
   let assists = 0;
@@ -73,6 +78,13 @@ export function playerSeasonTotals(matches: readonly PlayedMatchFacts[], playerI
     const stat = match.playerStats?.find((entry) => entry.playerId === playerId);
     goals += stat?.goals ?? 0;
     assists += stat?.assists ?? 0;
+  }
+  for (const competition of competitions) {
+    for (const game of competition.games ?? []) {
+      const stat = game.playerStats.find((entry) => entry.playerId === playerId);
+      goals += stat?.goals ?? 0;
+      assists += stat?.assists ?? 0;
+    }
   }
   return { matches: played, goals, assists };
 }

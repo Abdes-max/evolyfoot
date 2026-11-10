@@ -218,7 +218,8 @@ export class PlayerDashboardService {
         preferredFoot: owned.preferredFoot,
       },
       // Totaux sur tous les matchs : un joueur retiré d'un match n'y a de toute façon pas de statistiques.
-      season: playerSeasonTotals(allMatches, playerId),
+      // Buts et passes des rencontres de tournois et de plateaux inclus.
+      season: playerSeasonTotals(allMatches, playerId, [...allPlateaux, ...allTournaments]),
       team: team ? { name: team.profile.name, ageGroup: team.profile.ageGroup, trainingDays: team.profile.trainingDays } : null,
       evaluations: evaluations.map((evaluation) => ({
         id: evaluation.id,

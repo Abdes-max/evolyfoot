@@ -51,6 +51,7 @@ export {
 export { AuthService } from "./auth-service";
 export { ConvocationService } from "./convocation-service";
 export { CompetitionConvocationService } from "./competition-convocation-service";
+export { CompetitionGamesService } from "./competition-games-service";
 export type { CompetitionKind } from "./competition-convocation-service";
 export { PrismaTrainingConvocationRepository } from "./training-convocation-repository";
 export type { AwaitingConvocation, TrainingConvocationRepository } from "./training-convocation-repository";

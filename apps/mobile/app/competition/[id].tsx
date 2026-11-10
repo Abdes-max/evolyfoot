@@ -1,12 +1,13 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, useLocalSearchParams } from "expo-router";
-import type { PlayerSelection } from "@evolyfoot/domain";
+import { concernedPlayers, type PlayerSelection } from "@evolyfoot/domain";
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "../../components/concerned-players-picker";
 import { PlaceInput } from "../../components/place-input";
 import { CollapsibleSection } from "../../components/collapsible-section";
+import { CompetitionGames } from "../../components/competition-games";
 import { ConvocationActions } from "../../components/convocation-actions";
 import { useAuth } from "../../lib/auth-context";
 import { selectionSummary } from "../../lib/selection-summary";
@@ -187,6 +188,20 @@ export default function CompetitionDetailScreen() {
           />
         </View>
 
+        <View style={styles.form}>
+          <Text style={styles.formTitle}>Rencontres et scores</Text>
+          <Text style={styles.gamesHint}>Une ligne par rencontre jouée : équipe rencontrée, score, buteurs et passeurs décisifs.</Text>
+          <View style={{ marginTop: spacing.md }}>
+            <CompetitionGames
+              gamesUrl={`${endpoint}/${id}/games`}
+              games={item.games ?? []}
+              key={item.id}
+              onSaved={(games) => setItem((current) => (current ? { ...current, games } : current))}
+              players={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
+            />
+          </View>
+        </View>
+
         <TouchableOpacity accessibilityRole="button" onPress={confirmRemove} style={styles.removeButton}>
           <Text style={styles.removeButtonText}>{`Retirer ce ${singular}`}</Text>
         </TouchableOpacity>
@@ -208,6 +223,7 @@ const styles = StyleSheet.create({
   input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
   multiline: { minHeight: 80, textAlignVertical: "top" },
   picker: { marginTop: 14 },
+  gamesHint: { color: colors.muted, fontSize: 12.5, marginTop: 6 },
   fieldError: { color: colors.danger, fontSize: 10, marginTop: 10 },
   feedback: { color: colors.primary, fontSize: 11, fontWeight: "700", marginTop: 10 },
   submitButton: { minHeight: 44, marginTop: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
