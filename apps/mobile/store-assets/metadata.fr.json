@@ -1,0 +1,17 @@
+{
+  "locale": "fr-FR",
+  "primaryCategory": "SPORTS",
+  "app": {
+    "name": "EvolyFoot Coach",
+    "subtitle": "Entraîne, convoque, progresse",
+    "privacyPolicyUrl": "https://evolyfoot.com/confidentialite"
+  },
+  "version": {
+    "promotionalText": "Prépare tes séances de la saison, convoque tes joueurs et suis leur progression, du bout des doigts.",
+    "description": "EvolyFoot Coach est l'application des éducateurs de football de jeunes (U10 à U13) pour préparer la saison, animer les séances et suivre chaque joueur.\n\nUNE SAISON CLÉ EN MAIN\n• Choisis tes priorités : EvolyFoot construit une saison de 36 semaines adaptée à ta catégorie (U10-U11 ou U12-U13), en alternant évaluations, séances à thème et séances récréatives.\n• Chaque séance se prépare en quelques minutes : situations animées, consignes, règles et points de coaching. Change un ou plusieurs exercices avant de la valider.\n• Mode terrain : minuteur de séquences et score du défi, écran allumé pendant la séance.\n\nTES JOUEURS, TOUJOURS INFORMÉS\n• Convoque tes joueurs aux entraînements, matchs, tournois et plateaux, avec un message dans l'application et un rappel par e-mail.\n• Suis les présents, les absents et les sans-réponse, et relance seulement ceux qui n'ont pas répondu.\n• Annule un entraînement ou un match en un geste : les joueurs concernés sont prévenus avec ton message.\n\nDES MATCHS COMPLETS\n• Compose ton équipe sur le terrain, désigne un capitaine, gère les remplaçants.\n• Saisis le score, les buteurs et les passeurs, avec un chronomètre facultatif.\n• Tournois et plateaux : plusieurs rencontres, chacune avec son score.\n\nUN SUIVI QUI PROGRESSE\n• Fiche joueur : évaluation, radar des qualités, matchs, buts et passes décisives.\n• Bibliothèque de plus de 200 exercices avec schémas animés, étiquetés par catégorie.\n• Statistiques de l'équipe, rapport de saison et bilan de chaque joueur en PDF.\n\nCrée ton compte sur evolyfoot.com ou directement dans l’application.",
+    "keywords": "football,éducateur,entraînement,U10,U11,U12,U13,séance,convocation,club,jeunes,coach,match,tournoi",
+    "supportUrl": "https://evolyfoot.com/contact",
+    "marketingUrl": "https://evolyfoot.com",
+    "whatsNew": "Programmation U12-U13, annulation d'un entraînement, d'un match, d'un tournoi ou d'un plateau avec message aux joueurs, filtre À venir / Passées, logo d'équipe et nombreuses améliorations."
+  }
+}
