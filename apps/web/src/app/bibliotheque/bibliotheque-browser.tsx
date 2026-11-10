@@ -10,7 +10,7 @@ import {
   type TrainingBlockKind,
 } from "@evolyfoot/domain";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { TacticalDiagramView } from "../tactical-diagram";
 
 const kindLabels: Record<TrainingBlockKind, string> = {
@@ -50,22 +50,8 @@ export function BibliothequeBrowser() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<TrainingBlockKind | "all">("all");
   const [theme, setTheme] = useState<DevelopmentTheme | "all">("all");
+  // Tout le catalogue par défaut ; le filtre garde une catégorie (et les exercices communs).
   const [category, setCategory] = useState<CategoryFilter>("all");
-
-  // Par défaut, la catégorie de l'équipe (modifiable) ; sans équipe, tout le catalogue.
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/team")
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body) => {
-        const age = body?.profile?.ageGroup;
-        if (!cancelled && age) setCategory(age === "U12" || age === "U13" ? "U12-U13" : "U10-U11");
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const activities = useMemo(
     () =>
