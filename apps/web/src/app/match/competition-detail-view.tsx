@@ -21,6 +21,8 @@ interface Competition {
   selectedPlayerIds: string[] | null;
   convokedAt: string | null;
   attendance?: AttendanceEntry[];
+  // Date où il a été marqué terminé, `null` tant qu'il est en cours.
+  finishedAt?: string | null;
 }
 
 interface CompetitionDetailViewProps {
@@ -203,17 +205,42 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
     );
   }
 
+  // Marque la fiche comme terminée, ou la rouvre : une fiche terminée passe dans « Passés » même avant sa date.
+  async function toggleFinished() {
+    if (!item) return;
+    setSaving(true);
+    setSaveError("");
+    try {
+      const response = await fetch(`${endpoint}/${competitionId}/details`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ finished: !item.finishedAt }),
+      });
+      if (!response.ok) {
+        setSaveError(await readErrorMessage(response));
+        return;
+      }
+      setItem((await response.json())[itemKey]);
+    } catch {
+      setSaveError("Une erreur est survenue.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (!item) {
     return <main className="match-shell" />;
   }
 
-  const isPast = item.date ? new Date(item.date).getTime() < new Date().getTime() : false;
+  const isPast = Boolean(item.finishedAt) || (item.date ? new Date(item.date).getTime() < new Date().getTime() : false);
 
   return (
     <main className="match-shell">
       <header className="page-header match-header">
         <div>
-          <span className="eyebrow light">{isPast ? `${singular.toUpperCase()} PASSÉ` : `${singular.toUpperCase()} À VENIR`}</span>
+          <span className="eyebrow light">
+            {item.finishedAt ? `${singular.toUpperCase()} TERMINÉ` : isPast ? `${singular.toUpperCase()} PASSÉ` : `${singular.toUpperCase()} À VENIR`}
+          </span>
           <h1 title={item.name}>{item.name}</h1>
           <p title={item.dateLabel}>{item.dateLabel}</p>
         </div>
@@ -272,6 +299,10 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
               {saveError}
             </p>
           )}
+
+          <button className="match-details-save" disabled={saving} onClick={toggleFinished} type="button">
+            {item.finishedAt ? `Rouvrir ce ${singular}` : `Marquer ce ${singular} comme terminé`}
+          </button>
 
           <button className="competition-detail-remove" disabled={removing} onClick={remove} type="button">
             {removing ? "…" : `Retirer ce ${singular}`}

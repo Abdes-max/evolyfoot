@@ -14,6 +14,7 @@ interface Competition {
   date: string | null;
   location?: string | null;
   result: string | null;
+  finishedAt?: string | null;
 }
 
 interface CompetitionsPanelProps {
@@ -140,12 +141,14 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
         // "Retirer" -- la suppression se fait désormais depuis la fiche détail.
         <ul className="match-list competitions-list" aria-label={title}>
           {sortChronologically(items, (item) => (item.date ? new Date(item.date) : null)).map((item) => {
-            const isPast = item.date ? new Date(item.date).getTime() < new Date().getTime() : false;
+            const isPast = Boolean(item.finishedAt) || (item.date ? new Date(item.date).getTime() < new Date().getTime() : false);
             return (
               <li key={item.id}>
                 <Link aria-label={`${item.name} — Voir le détail`} className="match-card card-link" href={`${detailBasePath}/${item.id}`}>
                   <div className="match-card-top">
-                    <span className={isPast ? "match-status match-status-played" : "match-status match-status-scheduled"}>{isPast ? "Passé" : "À venir"}</span>
+                    <span className={isPast ? "match-status match-status-played" : "match-status match-status-scheduled"}>
+                      {item.finishedAt ? "Terminé" : isPast ? "Passé" : "À venir"}
+                    </span>
                   </div>
                   <h2 aria-hidden="true">{item.name}</h2>
                   <p aria-hidden="true">
