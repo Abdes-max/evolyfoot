@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { PhotoChoice } from "../components/photo-choice";
 import { EventCard } from "../components/event-card";
+import { GamesList } from "../components/games-list";
 import { PlayerCard } from "../components/player-card";
 import { Screen } from "../components/screen";
 import { WaitingApproval } from "../components/waiting-approval";
@@ -108,6 +109,8 @@ export default function MyCardScreen() {
             }}
             original={photoChoice?.original ?? null}
           />
+
+          <GamesList games={dashboard.games ?? []} />
 
           <Text style={styles.section}>Cette semaine</Text>
           {agenda.length === 0 ? <Text style={styles.note}>Rien de prévu cette semaine.</Text> : null}

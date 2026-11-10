@@ -1,5 +1,13 @@
-import { attendanceStatusOf, isConcerned, playerSeasonTotals, summarizeAttendance } from "@evolyfoot/domain";
-import type { AttendanceEntry, AttendanceStatus, AttendanceSummary, PlayerEvaluationScores, PlayerSeasonTotals, TrainingDay } from "@evolyfoot/domain";
+import { attendanceStatusOf, isConcerned, playerCompetitionGames, playerMatchGames, playerSeasonTotals, summarizeAttendance } from "@evolyfoot/domain";
+import type {
+  AttendanceEntry,
+  AttendanceStatus,
+  AttendanceSummary,
+  PlayerCompetitionGame,
+  PlayerEvaluationScores,
+  PlayerSeasonTotals,
+  TrainingDay,
+} from "@evolyfoot/domain";
 import { EducatorNotFoundError } from "./errors";
 import { matchKickoffTime, matchMeetingTime } from "./match-time";
 import type {
@@ -92,6 +100,8 @@ export interface PlayerDashboard {
     preferredFoot: string | null;
   };
   season: PlayerSeasonTotals;
+  // Matchs joués, puis rencontres de tournois et plateaux où il a marqué ou fait une passe.
+  games: PlayerCompetitionGame[];
   team: { name: string; ageGroup: string; trainingDays: readonly TrainingDay[] } | null;
   evaluations: PlayerDashboardEvaluation[];
   trainingAttendance: AttendanceSummary;
@@ -220,6 +230,7 @@ export class PlayerDashboardService {
       // Totaux sur tous les matchs : un joueur retiré d'un match n'y a de toute façon pas de statistiques.
       // Buts et passes des rencontres de tournois et de plateaux inclus.
       season: playerSeasonTotals(allMatches, playerId, [...allPlateaux, ...allTournaments]),
+      games: [...playerMatchGames(allMatches, playerId), ...playerCompetitionGames([...allPlateaux, ...allTournaments], playerId)],
       team: team ? { name: team.profile.name, ageGroup: team.profile.ageGroup, trainingDays: team.profile.trainingDays } : null,
       evaluations: evaluations.map((evaluation) => ({
         id: evaluation.id,
