@@ -6,6 +6,7 @@ import {
   playerEvaluationMaxScore,
   playerEvaluationMinScore,
   playerCompetitionGames,
+  playerMatchGames,
   playerSeasonTotals,
   type PlayerCompetitionGame,
   type PlayerEvaluationScores,
@@ -87,7 +88,7 @@ export default function PlayerScreen() {
       setEvaluations(evaluationsBody?.evaluations ?? []);
       const competitions = [...(tournamentsBody?.tournaments ?? []), ...(plateauxBody?.plateaux ?? [])];
       setSeason(playerSeasonTotals(matchesBody?.matches ?? [], id, competitions));
-      setCompetitionGames(playerCompetitionGames(competitions, id));
+      setCompetitionGames([...playerMatchGames(matchesBody?.matches ?? [], id), ...playerCompetitionGames(competitions, id)]);
       setStatus("ready");
     })();
     return () => {
@@ -258,8 +259,8 @@ export default function PlayerScreen() {
             {competitionGames.length > 0 ? (
               <View style={{ marginBottom: 12 }}>
                 <CollapsibleSection
-                  summary={`${competitionGames.length} rencontre${competitionGames.length > 1 ? "s" : ""} avec but ou passe`}
-                  title="Tournois et plateaux"
+                  summary={`${competitionGames.length} rencontre${competitionGames.length > 1 ? "s" : ""}`}
+                  title="Matchs, tournois et plateaux"
                 >
                   {competitionGames.map((game, index) => (
                     <View key={`${game.competitionName}-${index}`} style={styles.gameRow}>
@@ -267,7 +268,9 @@ export default function PlayerScreen() {
                         {game.competitionName} · {game.dateLabel}
                       </Text>
                       <Text style={styles.gameDetail}>
-                        contre {game.opponent} ({game.goalsFor}-{game.goalsAgainst}) : {game.goals} but{game.goals > 1 ? "s" : ""}, {game.assists} passe
+                        contre {game.opponent}
+                        {game.goalsFor !== null && game.goalsAgainst !== null ? ` (${game.goalsFor}-${game.goalsAgainst})` : ""} : {game.goals} but
+                        {game.goals > 1 ? "s" : ""}, {game.assists} passe
                         {game.assists > 1 ? "s" : ""} déc.
                       </Text>
                     </View>

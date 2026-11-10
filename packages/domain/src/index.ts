@@ -270,6 +270,7 @@ export {
   competitionRecord,
   competitionRecordLabel,
   playerCompetitionGames,
+  playerMatchGames,
   parseCompetitionGames,
   validateCompetitionGames,
 } from "./competition-games";
