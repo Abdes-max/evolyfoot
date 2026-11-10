@@ -3,6 +3,7 @@ import {
   competitionRecord,
   competitionRecordLabel,
   playerCompetitionGames,
+  playerMatchGames,
   parseCompetitionGames,
   validateCompetitionGames,
   type CompetitionGame,
@@ -70,5 +71,31 @@ describe("playerCompetitionGames", () => {
       { competitionName: "Tournoi de Noël", dateLabel: "20 décembre 2026", opponent: "US Vallée", goalsFor: 3, goalsAgainst: 1, goals: 2, assists: 0 },
     ]);
     expect(playerCompetitionGames(competitions, "sam")).toEqual([]);
+  });
+});
+
+describe("playerMatchGames", () => {
+  const played = {
+    status: "played",
+    opponent: "FC Nord",
+    dateLabel: "samedi 3 octobre",
+    goalsFor: 2,
+    goalsAgainst: 2,
+    lineup: [{ playerId: "lina" }],
+    substitutePlayerIds: ["sam"],
+    playerStats: [lina],
+  };
+  it("liste les matchs joués par le joueur, même sans but, hors absents et matchs non joués", () => {
+    const matches = [
+      played,
+      { ...played, opponent: "AS Est", goalsFor: null, goalsAgainst: null, playerStats: [] },
+      { ...played, opponent: "Absent", attendance: [{ playerId: "lina", present: false }] },
+      { ...played, opponent: "À venir", status: "scheduled" },
+    ];
+    expect(playerMatchGames(matches, "lina").map((game) => [game.opponent, game.goalsFor, game.goals])).toEqual([
+      ["FC Nord", 2, 2],
+      ["AS Est", null, 0],
+    ]);
+    expect(playerMatchGames(matches, "sam")).toHaveLength(3);
   });
 });

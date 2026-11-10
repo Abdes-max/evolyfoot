@@ -104,8 +104,9 @@ export interface PlayerCompetitionGame {
   readonly competitionName: string;
   readonly dateLabel: string;
   readonly opponent: string;
-  readonly goalsFor: number;
-  readonly goalsAgainst: number;
+  // `null` quand le score d'un match n'est pas saisi.
+  readonly goalsFor: number | null;
+  readonly goalsAgainst: number | null;
   readonly goals: number;
   readonly assists: number;
 }
@@ -132,4 +133,40 @@ export function playerCompetitionGames(
       ];
     }),
   );
+}
+
+// Matchs joués par le joueur (dans la feuille de match, pas signalé absent), avec le score s'il est saisi et ses buts
+// et passes, même nuls. Même forme que les rencontres de tournoi pour partager la liste de la fiche joueur.
+export function playerMatchGames(
+  matches: ReadonlyArray<{
+    readonly status: string;
+    readonly opponent: string;
+    readonly dateLabel: string;
+    readonly goalsFor?: number | null;
+    readonly goalsAgainst?: number | null;
+    readonly lineup: ReadonlyArray<{ readonly playerId: string }>;
+    readonly substitutePlayerIds: readonly string[];
+    readonly attendance?: ReadonlyArray<{ readonly playerId: string; readonly present: boolean }>;
+    readonly playerStats?: ReadonlyArray<MatchPlayerStat>;
+  }>,
+  playerId: string,
+): PlayerCompetitionGame[] {
+  return matches.flatMap((match) => {
+    if (match.status !== "played") return [];
+    const selected = match.lineup.some((entry) => entry.playerId === playerId) || match.substitutePlayerIds.includes(playerId);
+    const absent = match.attendance?.some((entry) => entry.playerId === playerId && !entry.present) ?? false;
+    if (!selected || absent) return [];
+    const stat = match.playerStats?.find((entry) => entry.playerId === playerId);
+    return [
+      {
+        competitionName: "Match",
+        dateLabel: match.dateLabel,
+        opponent: match.opponent,
+        goalsFor: match.goalsFor ?? null,
+        goalsAgainst: match.goalsAgainst ?? null,
+        goals: stat?.goals ?? 0,
+        assists: stat?.assists ?? 0,
+      },
+    ];
+  });
 }

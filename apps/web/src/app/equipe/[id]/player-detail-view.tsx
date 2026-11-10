@@ -10,6 +10,7 @@ import {
   playerFeet,
   playerPositions,
   playerCompetitionGames,
+  playerMatchGames,
   playerSeasonTotals,
   seasonStartDate,
   type PlayerEvaluationScores,
@@ -166,7 +167,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
         setPlayer(found);
         const competitions = [...(tournamentsBody.tournaments ?? []), ...(plateauxBody.plateaux ?? [])];
         setSeason(playerSeasonTotals(matchesBody.matches ?? [], playerId, competitions));
-        setCompetitionGames(playerCompetitionGames(competitions, playerId));
+        setCompetitionGames([...playerMatchGames(matchesBody.matches ?? [], playerId), ...playerCompetitionGames(competitions, playerId)]);
         const loadedEvaluations: Evaluation[] = evaluationsResponse.ok ? (evaluationsBody.evaluations ?? []) : [];
         setEvaluations(loadedEvaluations);
         setComparedEvaluationIds(defaultComparedEvaluationIds(loadedEvaluations));
@@ -433,7 +434,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                 {competitionGames.length > 0 && (
                   <details className="player-games">
                     <summary>
-                      Tournois et plateaux ({competitionGames.length} rencontre{competitionGames.length > 1 ? "s" : ""})
+                      Matchs, tournois et plateaux ({competitionGames.length} rencontre{competitionGames.length > 1 ? "s" : ""})
                     </summary>
                     <ul>
                       {competitionGames.map((game, index) => (
@@ -442,7 +443,9 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
                             {game.competitionName} · {game.dateLabel}
                           </strong>
                           <span>
-                            contre {game.opponent} ({game.goalsFor}-{game.goalsAgainst}) : {game.goals} but{game.goals > 1 ? "s" : ""}, {game.assists} passe
+                            contre {game.opponent}
+                            {game.goalsFor !== null && game.goalsAgainst !== null ? ` (${game.goalsFor}-${game.goalsAgainst})` : ""} : {game.goals} but
+                            {game.goals > 1 ? "s" : ""}, {game.assists} passe
                             {game.assists > 1 ? "s" : ""} déc.
                           </span>
                         </li>
