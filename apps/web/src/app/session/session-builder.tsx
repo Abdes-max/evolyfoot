@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { parseDatetimeInputValue, toDatetimeInputValue } from "../date-format";
 import { ExerciseSheet } from "../exercise-sheet";
+import { PrintTeamLogo } from "../print-team-logo";
 import { TacticalDiagramView } from "../tactical-diagram";
 
 interface RosterPlayer {
@@ -204,6 +205,7 @@ export function SessionBuilder({
         </strong>
       </div>
 
+      <PrintTeamLogo />
       <button className="session-print" onClick={exportPdf} type="button">
         Exporter en PDF
       </button>

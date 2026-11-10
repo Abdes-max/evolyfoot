@@ -201,7 +201,10 @@ export default function PlayerScreen() {
     if (!player) {
       return;
     }
-    const result = await sharePdf(playerReportHtml(player, team?.name ?? "", season, latestCoach, coachEvaluations.length), `Bilan de ${player.name}`);
+    const result = await sharePdf(
+      playerReportHtml(player, team?.name ?? "", season, latestCoach, coachEvaluations.length, team?.logo),
+      `Bilan de ${player.name}`,
+    );
     if (!result.ok) {
       Alert.alert(result.error);
     }

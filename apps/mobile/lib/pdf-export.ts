@@ -18,6 +18,13 @@ import { kindLabels } from "./exercise-labels";
 // sombre, couleurs réservées au schéma.
 const escapeHtml = (value: string): string => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+// Logo de l'équipe en tête du document, ou rien tant qu'aucun logo n'a été choisi.
+function logoHtml(logo: string | null | undefined): string {
+  return logo?.startsWith("data:image/")
+    ? `<img alt="" src="${escapeHtml(logo)}" style="width:56px;height:56px;object-fit:contain;float:left;margin:0 14px 8px 0">`
+    : "";
+}
+
 const tokenFill: Record<DiagramTokenRole, string> = { attacker: "#2fd4ff", defender: "#ff8f7a", goalkeeper: "#ffffff" };
 const labelFill: Record<DiagramTokenRole, string> = { attacker: "#062330", defender: "#3a140c", goalkeeper: "#152a22" };
 
@@ -51,7 +58,7 @@ function page(title: string, body: string): string {
   </style></head><body>${body}<footer>EvolyFoot · ${escapeHtml(new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }))}</footer></body></html>`;
 }
 
-export function sessionHtml(session: TrainingSession, meetingLabel: string): string {
+export function sessionHtml(session: TrainingSession, meetingLabel: string, logo?: string | null): string {
   const total = session.blocks.reduce((sum, block) => sum + block.durationMinutes, 0);
   const blocks = session.blocks
     .map(
@@ -67,13 +74,13 @@ export function sessionHtml(session: TrainingSession, meetingLabel: string): str
     .join("");
   return page(
     session.title,
-    `<h1>${escapeHtml(session.title)}</h1>
+    `${logoHtml(logo)}<h1>${escapeHtml(session.title)}</h1>
     <p class="muted">${escapeHtml(session.theme)} · ${session.playerCount} joueurs · ${total} min · ${escapeHtml(meetingLabel)}</p>
     <p>${escapeHtml(session.intention)}</p>${blocks}`,
   );
 }
 
-export function statsHtml(stats: TeamStats, teamName: string): string {
+export function statsHtml(stats: TeamStats, teamName: string, logo?: string | null): string {
   const rows: Array<[string, string]> = [
     ["Séances", String(stats.trainingCount)],
     ["Matchs", `${stats.matchCount} (${stats.matchesPlayed} joués, ${stats.matchesScheduled} à venir)`],
@@ -84,7 +91,7 @@ export function statsHtml(stats: TeamStats, teamName: string): string {
   ];
   return page(
     "Rapport de saison",
-    `<h1>Rapport de saison</h1><p class="muted">${escapeHtml(teamName)}</p>
+    `${logoHtml(logo)}<h1>Rapport de saison</h1><p class="muted">${escapeHtml(teamName)}</p>
     <section class="block"><dl>${rows.map(([label, value]) => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`).join("")}</dl></section>
     <h2>Synthèse</h2><ul>${buildTeamStatsReport(stats)
       .map((line) => `<li>${escapeHtml(line)}</li>`)
@@ -115,6 +122,7 @@ export function playerReportHtml(
   season: PlayerSeasonTotals,
   scores: PlayerEvaluationScores | null,
   evaluationCount: number,
+  logo?: string | null,
 ): string {
   const identity = [
     player.position,
@@ -135,7 +143,7 @@ export function playerReportHtml(
     : "";
   return page(
     `Bilan de ${player.name}`,
-    `${player.photo?.startsWith("data:image/") ? `<img alt="" src="${escapeHtml(player.photo)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;float:right">` : ""}<h1>Bilan de ${escapeHtml(player.name)}</h1><p class="muted">${identity}</p>
+    `${logoHtml(logo)}${player.photo?.startsWith("data:image/") ? `<img alt="" src="${escapeHtml(player.photo)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;float:right">` : ""}<h1>Bilan de ${escapeHtml(player.name)}</h1><p class="muted">${identity}</p>
     <section class="block"><dl><dt>Matchs joués</dt><dd>${season.matches}</dd><dt>Buts</dt><dd>${season.goals}</dd><dt>Passes décisives</dt><dd>${season.assists}</dd></dl></section>
     <h2>Dernière évaluation de l’éducateur</h2>${scores ? `<table>${bars}</table><p class="muted">${evaluationCount} évaluation${evaluationCount > 1 ? "s" : ""} enregistrée${evaluationCount > 1 ? "s" : ""}.</p>` : '<p class="muted">Pas encore d’évaluation.</p>'}
     ${player.strengths ? `<h2>Points forts</h2><p>${escapeHtml(player.strengths)}</p>` : ""}

@@ -57,7 +57,7 @@ export default function StatistiquesScreen() {
 
   async function exportPdf(current: TeamStats) {
     setExporting(true);
-    const result = await sharePdf(statsHtml(current, team?.name ?? ""), "Rapport de saison");
+    const result = await sharePdf(statsHtml(current, team?.name ?? "", team?.logo), "Rapport de saison");
     setExporting(false);
     if (!result.ok) {
       Alert.alert(result.error);
