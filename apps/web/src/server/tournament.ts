@@ -1,5 +1,5 @@
 import { EducatorNotFoundError, TournamentNotFoundError } from "@evolyfoot/database";
-import type { AttendanceEntry } from "@evolyfoot/domain";
+import type { AttendanceEntry, CompetitionGame } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface TournamentSummary {
@@ -16,6 +16,8 @@ export interface TournamentSummary {
   selectedPlayerIds: readonly string[] | null;
   convokedAt: string | null;
   attendance?: readonly AttendanceEntry[];
+  // Rencontres saisies (équipe rencontrée, score, buteurs et passeurs).
+  games?: readonly CompetitionGame[];
   createdAt: string;
 }
 
@@ -203,6 +205,7 @@ export async function createTournamentGateway(): Promise<{ gateway: TournamentGa
       selectedPlayerIds: tournament.selectedPlayerIds,
       convokedAt: tournament.convokedAt ? tournament.convokedAt.toISOString() : null,
       ...(tournament.attendance ? { attendance: tournament.attendance } : {}),
+      games: tournament.games ?? [],
       createdAt: tournament.createdAt.toISOString(),
     };
   }

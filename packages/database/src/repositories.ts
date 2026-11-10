@@ -1,6 +1,7 @@
 import type {
   AgeGroup,
   AttendanceEntry,
+  CompetitionGame,
   DevelopmentTheme,
   DiagnosticScores,
   GameFormat,
@@ -583,6 +584,7 @@ export interface CompetitionUpdate {
   selectedPlayerIds?: PlayerSelection;
   convokedAt?: Date | null;
   attendance?: readonly AttendanceEntry[];
+  games?: readonly CompetitionGame[];
 }
 
 // Fiche simple comptée à part des matchs dans /statistiques -- voir TournamentInput côté domaine.
@@ -602,6 +604,8 @@ export interface PersistedTournament {
   selectedPlayerIds: PlayerSelection;
   convokedAt: Date | null;
   attendance?: readonly AttendanceEntry[];
+  // Rencontres saisies (équipe rencontrée, score, buteurs et passeurs).
+  games?: readonly CompetitionGame[];
   createdAt: Date;
 }
 
@@ -630,6 +634,7 @@ export interface PersistedPlateau {
   selectedPlayerIds: PlayerSelection;
   convokedAt: Date | null;
   attendance?: readonly AttendanceEntry[];
+  games?: readonly CompetitionGame[];
   createdAt: Date;
 }
 

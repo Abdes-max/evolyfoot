@@ -16,7 +16,7 @@ export interface SavedMatchResult {
 }
 
 // Pastilles − / + : plus sûres au pouce qu'un clavier numérique.
-function Stepper({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
+export function Stepper({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
   return (
     <View accessibilityLabel={`${label} : ${value}`} accessibilityRole="adjustable" style={styles.stepper}>
       <TouchableOpacity
@@ -41,6 +41,79 @@ function Stepper({ label, value, onChange }: { label: string; value: number; onC
         <Text style={styles.stepText}>+</Text>
       </TouchableOpacity>
     </View>
+  );
+}
+
+export type PlayerStatsMap = ReadonlyMap<string, { goals: number; assists: number }>;
+
+// Score (nous / adversaire) puis buts et passes décisives de chaque joueur : partagé entre le résultat d'un match
+// et chaque rencontre d'un tournoi ou d'un plateau.
+export function ScoreEditor({
+  players,
+  scoreFor,
+  scoreAgainst,
+  stats,
+  onScoreFor,
+  onScoreAgainst,
+  onGoals,
+  onAssists,
+}: {
+  players: readonly ResultPlayer[];
+  scoreFor: number;
+  scoreAgainst: number;
+  stats: PlayerStatsMap;
+  onScoreFor: (value: number) => void;
+  onScoreAgainst: (value: number) => void;
+  onGoals: (playerId: string, value: number) => void;
+  onAssists: (playerId: string, value: number) => void;
+}) {
+  const scorers = players.reduce((sum, player) => sum + (stats.get(player.id)?.goals ?? 0), 0);
+  return (
+    <>
+      <View style={styles.score}>
+        <View style={styles.scoreSide}>
+          <Text style={styles.scoreLabel}>Nous</Text>
+          <Stepper label="But pour nous" onChange={onScoreFor} value={scoreFor} />
+        </View>
+        <Text style={styles.dash}>–</Text>
+        <View style={styles.scoreSide}>
+          <Text style={styles.scoreLabel}>Adversaire</Text>
+          <Stepper label="But adverse" onChange={onScoreAgainst} value={scoreAgainst} />
+        </View>
+      </View>
+
+      {players.length > 0 ? (
+        <View style={styles.players}>
+          <View style={styles.playersHead}>
+            <Text style={[styles.headText, { flex: 1 }]}>Joueur</Text>
+            <Text style={[styles.headText, styles.col]}>Buts</Text>
+            <Text style={[styles.headText, styles.col]}>Passes</Text>
+          </View>
+          {players.map((player) => {
+            const stat = stats.get(player.id) ?? { goals: 0, assists: 0 };
+            return (
+              <View key={player.id} style={styles.playerRow}>
+                <Text numberOfLines={1} style={styles.playerName}>
+                  {player.name}
+                </Text>
+                <View style={styles.col}>
+                  <Stepper label={`But de ${player.name}`} onChange={(value) => onGoals(player.id, value)} value={stat.goals} />
+                </View>
+                <View style={styles.col}>
+                  <Stepper label={`Passe décisive de ${player.name}`} onChange={(value) => onAssists(player.id, value)} value={stat.assists} />
+                </View>
+              </View>
+            );
+          })}
+          <Text style={styles.hint}>
+            {scorers} buteur{scorers > 1 ? "s" : ""} déclaré{scorers > 1 ? "s" : ""} sur {scoreFor} but{scoreFor > 1 ? "s" : ""}. Un but contre son camp ou d’un
+            joueur hors feuille n’a pas besoin d’être attribué.
+          </Text>
+        </View>
+      ) : (
+        <Text style={styles.hint}>Compose l’équipe pour attribuer les buts et les passes.</Text>
+      )}
+    </>
   );
 }
 
@@ -87,7 +160,6 @@ export function MatchResultForm({
     const stat = stats.get(player.id);
     return stat && (stat.goals > 0 || stat.assists > 0) ? [{ playerId: player.id, playerName: player.name, goals: stat.goals, assists: stat.assists }] : [];
   });
-  const scorers = entries.reduce((sum, entry) => sum + entry.goals, 0);
 
   async function save() {
     const problem = validateMatchResult({ goalsFor: scoreFor, goalsAgainst: scoreAgainst, playerStats: entries });
@@ -115,49 +187,16 @@ export function MatchResultForm({
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Résultat</Text>
-      <View style={styles.score}>
-        <View style={styles.scoreSide}>
-          <Text style={styles.scoreLabel}>Nous</Text>
-          <Stepper label="But pour nous" onChange={setScoreFor} value={scoreFor} />
-        </View>
-        <Text style={styles.dash}>–</Text>
-        <View style={styles.scoreSide}>
-          <Text style={styles.scoreLabel}>Adversaire</Text>
-          <Stepper label="But adverse" onChange={setScoreAgainst} value={scoreAgainst} />
-        </View>
-      </View>
-
-      {players.length > 0 ? (
-        <View style={styles.players}>
-          <View style={styles.playersHead}>
-            <Text style={[styles.headText, { flex: 1 }]}>Joueur</Text>
-            <Text style={[styles.headText, styles.col]}>Buts</Text>
-            <Text style={[styles.headText, styles.col]}>Passes</Text>
-          </View>
-          {players.map((player) => {
-            const stat = stats.get(player.id) ?? { goals: 0, assists: 0 };
-            return (
-              <View key={player.id} style={styles.playerRow}>
-                <Text numberOfLines={1} style={styles.playerName}>
-                  {player.name}
-                </Text>
-                <View style={styles.col}>
-                  <Stepper label={`But de ${player.name}`} onChange={(value) => update(player.id, "goals", value)} value={stat.goals} />
-                </View>
-                <View style={styles.col}>
-                  <Stepper label={`Passe décisive de ${player.name}`} onChange={(value) => update(player.id, "assists", value)} value={stat.assists} />
-                </View>
-              </View>
-            );
-          })}
-          <Text style={styles.hint}>
-            {scorers} buteur{scorers > 1 ? "s" : ""} déclaré{scorers > 1 ? "s" : ""} sur {scoreFor} but{scoreFor > 1 ? "s" : ""}. Un but contre son camp ou d’un
-            joueur hors feuille n’a pas besoin d’être attribué.
-          </Text>
-        </View>
-      ) : (
-        <Text style={styles.hint}>Compose l’équipe pour attribuer les buts et les passes.</Text>
-      )}
+      <ScoreEditor
+        onAssists={(playerId, value) => update(playerId, "assists", value)}
+        onGoals={(playerId, value) => update(playerId, "goals", value)}
+        onScoreAgainst={setScoreAgainst}
+        onScoreFor={setScoreFor}
+        players={players}
+        scoreAgainst={scoreAgainst}
+        scoreFor={scoreFor}
+        stats={stats}
+      />
 
       {error ? (
         <Text accessibilityRole="alert" style={styles.error}>

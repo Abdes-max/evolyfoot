@@ -1,5 +1,5 @@
 import { EducatorNotFoundError, PlateauNotFoundError } from "@evolyfoot/database";
-import type { AttendanceEntry } from "@evolyfoot/domain";
+import type { AttendanceEntry, CompetitionGame } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface PlateauSummary {
@@ -14,6 +14,7 @@ export interface PlateauSummary {
   selectedPlayerIds: readonly string[] | null;
   convokedAt: string | null;
   attendance?: readonly AttendanceEntry[];
+  games?: readonly CompetitionGame[];
   createdAt: string;
 }
 
@@ -193,6 +194,7 @@ export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway;
       selectedPlayerIds: plateau.selectedPlayerIds,
       convokedAt: plateau.convokedAt ? plateau.convokedAt.toISOString() : null,
       ...(plateau.attendance ? { attendance: plateau.attendance } : {}),
+      games: plateau.games ?? [],
       createdAt: plateau.createdAt.toISOString(),
     };
   }

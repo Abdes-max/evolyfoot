@@ -590,6 +590,8 @@ model TournamentRecord {
   selectedPlayerIds Json?     @map("selected_player_ids")
   convokedAt        DateTime? @map("convoked_at")
   attendance        Json?
+  // Rencontres du tournoi (équipe rencontrée, score, buteurs et passeurs) : voir competition-games.ts côté domaine.
+  games             Json?
   createdAt         DateTime  @default(now()) @map("created_at")
 
   @@index([educatorId])
@@ -612,6 +614,8 @@ model PlateauRecord {
   selectedPlayerIds Json?     @map("selected_player_ids")
   convokedAt        DateTime? @map("convoked_at")
   attendance        Json?
+  // Rencontres du plateau : même forme que TournamentRecord.games.
+  games             Json?
   createdAt         DateTime  @default(now()) @map("created_at")
 
   @@index([educatorId])

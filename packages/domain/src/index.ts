@@ -264,3 +264,12 @@ export {
   pushText,
 } from "./notification-preferences";
 export type { NotificationCategory, NotificationPreferences } from "./notification-preferences";
+export {
+  competitionGamesMax,
+  competitionOpponentMaxLength,
+  competitionRecord,
+  competitionRecordLabel,
+  parseCompetitionGames,
+  validateCompetitionGames,
+} from "./competition-games";
+export type { CompetitionGame, CompetitionRecord } from "./competition-games";

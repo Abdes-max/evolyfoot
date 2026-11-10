@@ -1,4 +1,4 @@
-import type { AttendanceEntry } from "@evolyfoot/domain";
+import type { AttendanceEntry, CompetitionGame } from "@evolyfoot/domain";
 
 // Tournois et plateaux : même API REST côté web (competitions-panel.tsx), seules les clés de la
 // réponse JSON changent.
@@ -16,6 +16,8 @@ export interface Competition {
   selectedPlayerIds?: string[] | null;
   convokedAt?: string | null;
   attendance?: AttendanceEntry[];
+  // Rencontres saisies : équipe rencontrée, score, buteurs et passeurs.
+  games?: CompetitionGame[];
 }
 
 export const competitionKinds: Record<CompetitionKind, { endpoint: string; listKey: string; itemKey: string; title: string; singular: string }> = {

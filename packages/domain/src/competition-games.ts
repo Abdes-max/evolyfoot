@@ -1,0 +1,100 @@
+import { validateMatchResult, type MatchPlayerStat } from "./match-result";
+
+// Une rencontre d'un tournoi ou d'un plateau : l'équipe adverse, le score et les buteurs / passeurs. Un
+// tournoi en compte plusieurs, saisies au fil de la journée.
+export interface CompetitionGame {
+  readonly id: string;
+  readonly opponent: string;
+  readonly goalsFor: number;
+  readonly goalsAgainst: number;
+  readonly playerStats: ReadonlyArray<MatchPlayerStat>;
+}
+
+export const competitionGamesMax = 40;
+export const competitionOpponentMaxLength = 60;
+
+// Premier problème des rencontres saisies, `null` si elles sont valides.
+export function validateCompetitionGames(games: readonly CompetitionGame[]): string | null {
+  if (games.length > competitionGamesMax) {
+    return `Un tournoi ne peut pas compter plus de ${competitionGamesMax} rencontres.`;
+  }
+  if (new Set(games.map((game) => game.id)).size !== games.length) {
+    return "Une rencontre apparaît deux fois.";
+  }
+  for (const [index, game] of games.entries()) {
+    if (!game.opponent.trim()) {
+      return `Indique l'équipe rencontrée (rencontre ${index + 1}).`;
+    }
+    if (game.opponent.trim().length > competitionOpponentMaxLength) {
+      return `Le nom de l'équipe rencontrée est trop long (rencontre ${index + 1}).`;
+    }
+    const problem = validateMatchResult(game);
+    if (problem) {
+      return `Rencontre ${index + 1} contre ${game.opponent.trim()} : ${problem}`;
+    }
+  }
+  return null;
+}
+
+// Rencontres lues depuis le stockage ou une requête : les entrées mal formées sont ignorées plutôt que de tout
+// faire échouer.
+export function parseCompetitionGames(value: unknown): CompetitionGame[] {
+  if (!Array.isArray(value)) return [];
+  const games: CompetitionGame[] = [];
+  for (const entry of value) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const raw = entry as Record<string, unknown>;
+    if (typeof raw.id !== "string" || typeof raw.opponent !== "string" || typeof raw.goalsFor !== "number" || typeof raw.goalsAgainst !== "number") continue;
+    const stats = Array.isArray(raw.playerStats) ? raw.playerStats : [];
+    games.push({
+      id: raw.id,
+      opponent: raw.opponent,
+      goalsFor: raw.goalsFor,
+      goalsAgainst: raw.goalsAgainst,
+      playerStats: stats.flatMap((stat) => {
+        const item = stat as Record<string, unknown> | null;
+        return item &&
+          typeof item.playerId === "string" &&
+          typeof item.playerName === "string" &&
+          typeof item.goals === "number" &&
+          typeof item.assists === "number"
+          ? [{ playerId: item.playerId, playerName: item.playerName, goals: item.goals, assists: item.assists }]
+          : [];
+      }),
+    });
+  }
+  return games;
+}
+
+export interface CompetitionRecord {
+  readonly played: number;
+  readonly wins: number;
+  readonly draws: number;
+  readonly losses: number;
+  readonly goalsFor: number;
+  readonly goalsAgainst: number;
+}
+
+export function competitionRecord(games: readonly CompetitionGame[]): CompetitionRecord {
+  const record = { played: games.length, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 };
+  for (const game of games) {
+    record.goalsFor += game.goalsFor;
+    record.goalsAgainst += game.goalsAgainst;
+    if (game.goalsFor > game.goalsAgainst) record.wins += 1;
+    else if (game.goalsFor < game.goalsAgainst) record.losses += 1;
+    else record.draws += 1;
+  }
+  return record;
+}
+
+// « 2 victoires, 1 nul, 1 défaite » ; vide sans rencontre.
+export function competitionRecordLabel(games: readonly CompetitionGame[]): string {
+  if (games.length === 0) return "";
+  const { wins, draws, losses } = competitionRecord(games);
+  const parts = [
+    wins > 0 ? `${wins} victoire${wins > 1 ? "s" : ""}` : "",
+    draws > 0 ? `${draws} nul${draws > 1 ? "s" : ""}` : "",
+    losses > 0 ? `${losses} défaite${losses > 1 ? "s" : ""}` : "",
+  ].filter(Boolean);
+  return parts.join(", ");
+}

@@ -3,6 +3,7 @@ import {
   addSubstitute,
   assignPlayerToSlot,
   canFinalizeMatchPlan,
+  validateMatchPlan,
   clearSlot,
   concernedPlayers,
   formationSlots,
@@ -324,6 +325,8 @@ export default function MatchDetailScreen() {
   const slots = formationSlots(gameFormat, match.formationId);
   const readOnly = match.status === "played";
   const canFinalize = canFinalizeMatchPlan(toMatchPlan(match));
+  // Ce qui manque pour pouvoir marquer le match comme joué (composition complète, capitaine).
+  const missing = Object.values(validateMatchPlan(toMatchPlan(match)));
   // Joueurs de la feuille de match, titulaires puis remplaçants : ceux à qui attribuer buts et passes.
   const resultPlayers = [
     ...match.lineup.map((assignment) => ({ id: assignment.playerId, name: assignment.playerName })),
@@ -478,6 +481,17 @@ export default function MatchDetailScreen() {
 
         <MatchAnalysis formationId={match.formationId} gameFormat={gameFormat} matchId={match.id} opponentFormationId={match.opponentFormationId ?? null} />
 
+        {!readOnly && (
+          <View style={styles.resultInfo}>
+            <Text style={styles.resultInfoTitle}>Score, buteurs et passeurs</Text>
+            <Text style={styles.resultInfoText}>
+              {canFinalize
+                ? "Marque le match comme joué : le formulaire du score s’affiche aussitôt en haut de la fiche."
+                : `Le score se saisit une fois le match marqué comme joué. Il manque : ${missing.join(" ").replace(/\.\s*/g, ". ").trim()}`}
+            </Text>
+          </View>
+        )}
+
         {!readOnly ? (
           <TouchableOpacity
             accessibilityRole="button"
@@ -580,6 +594,17 @@ const styles = StyleSheet.create({
 
   sectionHint: { fontSize: 11, color: colors.muted, marginBottom: 8 },
   fieldError: { color: colors.danger, fontSize: 11, marginTop: 14 },
+  resultInfo: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    gap: 4,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+  },
+  resultInfoTitle: { color: colors.ink, fontSize: 14, fontWeight: "800" },
+  resultInfoText: { color: colors.muted, fontSize: 12.5, lineHeight: 18 },
   finalizeButton: { minHeight: 48, marginTop: 20, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
   finalizeButtonDisabled: { opacity: 0.45 },
   finalizeButtonText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
