@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { NotificationBell } from "./notification-bell";
 import { useEffect, useState } from "react";
+import { TeamCrest } from "./team-crest";
 import { addTeam, listTeams, switchTeam, teamChoiceLabel, type TeamChoice } from "./team-switch";
 
 interface Educator {
@@ -16,6 +17,7 @@ interface TeamProfile {
   name: string;
   ageGroup: string;
   gameFormat: number;
+  logo?: string | null;
 }
 
 const newTeamValue = "nouvelle-equipe";
@@ -148,6 +150,9 @@ export function SidebarIdentity() {
         <span className="eyebrow">SAISON 2026–27</span>
         {team ? (
           <>
+            <span className="season-card-crest">
+              <TeamCrest logo={team.logo} name={team.name} size={44} />
+            </span>
             <strong>
               {team.name} · {team.ageGroup}
             </strong>

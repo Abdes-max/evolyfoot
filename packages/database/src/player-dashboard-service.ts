@@ -102,7 +102,7 @@ export interface PlayerDashboard {
   season: PlayerSeasonTotals;
   // Matchs joués, puis rencontres de tournois et plateaux où il a marqué ou fait une passe.
   games: PlayerCompetitionGame[];
-  team: { name: string; ageGroup: string; trainingDays: readonly TrainingDay[] } | null;
+  team: { name: string; ageGroup: string; trainingDays: readonly TrainingDay[]; logo: string | null } | null;
   evaluations: PlayerDashboardEvaluation[];
   trainingAttendance: AttendanceSummary;
   matchAttendance: AttendanceSummary;
@@ -231,7 +231,9 @@ export class PlayerDashboardService {
       // Buts et passes des rencontres de tournois et de plateaux inclus.
       season: playerSeasonTotals(allMatches, playerId, [...allPlateaux, ...allTournaments]),
       games: [...playerMatchGames(allMatches, playerId), ...playerCompetitionGames([...allPlateaux, ...allTournaments], playerId)],
-      team: team ? { name: team.profile.name, ageGroup: team.profile.ageGroup, trainingDays: team.profile.trainingDays } : null,
+      team: team
+        ? { name: team.profile.name, ageGroup: team.profile.ageGroup, trainingDays: team.profile.trainingDays, logo: team.profile.logo ?? null }
+        : null,
       evaluations: evaluations.map((evaluation) => ({
         id: evaluation.id,
         scores: evaluation.scores,

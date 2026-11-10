@@ -62,7 +62,7 @@ export interface Dashboard {
   // Matchs, tournois et plateaux : adversaire, score, buts et passes du joueur.
   games?: PlayerCompetitionGame[];
   // Jours d'entraînement de l'équipe (Lundi, Mardi…), pour le calendrier de la semaine.
-  team: { name: string; ageGroup: string; trainingDays?: string[] } | null;
+  team: { name: string; ageGroup: string; trainingDays?: string[]; logo?: string | null } | null;
   evaluations: Evaluation[];
   trainingAttendance: { rate: number; total: number };
   matchAttendance: { rate: number; total: number };

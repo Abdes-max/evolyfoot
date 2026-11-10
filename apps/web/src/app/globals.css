@@ -128,6 +128,32 @@ nav {
   background: var(--accent);
 }
 
+.team-crest {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.team-crest img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.season-card-crest {
+  margin-bottom: 8px;
+}
+
+.topbar-crest {
+  flex: 0 0 auto;
+}
+
 .season-card {
   margin-top: auto;
   padding: 16px;
@@ -1858,4 +1884,24 @@ button.week-calendar-badge:focus-visible {
 
 .session-header .onboarding-brand {
   margin-bottom: 22px;
+}
+
+.player-space-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roster-logo-actions {
+  display: flex;
+  gap: 12px;
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.roster-logo-actions .inline-cta {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
 }

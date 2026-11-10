@@ -1,6 +1,6 @@
 // Redimensionne l'image choisie et la renvoie en data URL JPEG compacte -- le stockage se fait tel
 // quel en base (pas de service d'objets), inutile d'y mettre l'original.
-export function resizeImageToDataUrl(file: File, maxSide: number): Promise<string> {
+export function resizeImageToDataUrl(file: File, maxSide: number, format: "image/jpeg" | "image/png" = "image/jpeg"): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("lecture impossible"));
@@ -18,7 +18,7 @@ export function resizeImageToDataUrl(file: File, maxSide: number): Promise<strin
           return;
         }
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
+        resolve(format === "image/png" ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.82));
       };
       image.src = String(reader.result);
     };

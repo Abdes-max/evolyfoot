@@ -731,6 +731,14 @@ export class PrismaTeamRepository implements TeamRepository {
     }
   }
 
+  async updateLogo(educatorId: string, logo: string | null): Promise<PersistedTeamProfile> {
+    try {
+      return toPersistedTeamProfile(await this.prisma.team.update({ where: { educatorId }, data: { logo } }));
+    } catch (error) {
+      return translateTeamWriteError(error);
+    }
+  }
+
   async findForEducator(educatorId: string): Promise<PersistedTeamProfile | null> {
     const team = await this.prisma.team.findUnique({ where: { educatorId } });
     return team === null ? null : toPersistedTeamProfile(team);

@@ -1,6 +1,6 @@
 import type { TeamProfile } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
-import { EducatorNotFoundError, TeamNotFoundError } from "./errors";
+import { EducatorNotFoundError, TeamNotFoundError, ValidationError } from "./errors";
 import type { EducatorRecord, EducatorRepository, PersistedTeamProfile, TeamRepository } from "./repositories";
 import { TeamProfileService } from "./team-profile-service";
 
@@ -79,6 +79,14 @@ class InMemoryTeamRepository implements TeamRepository {
     return saved;
   }
 
+  async updateLogo(educatorId: string, logo: string | null): Promise<PersistedTeamProfile> {
+    const existing = this.teamsByEducatorId.get(educatorId);
+    if (!existing) throw new TeamNotFoundError();
+    const updated = { ...existing, profile: { ...existing.profile, logo } };
+    this.teamsByEducatorId.set(educatorId, updated);
+    return updated;
+  }
+
   async findForEducator(educatorId: string): Promise<PersistedTeamProfile | null> {
     this.readEducatorIds.push(educatorId);
     return this.teamsByEducatorId.get(educatorId) ?? null;
@@ -126,5 +134,16 @@ describe("TeamProfileService", () => {
     const service = new TeamProfileService(new InMemoryEducatorRepository(["educator-1"]), new InMemoryTeamRepository());
 
     await expect(service.get("educator-1")).rejects.toBeInstanceOf(TeamNotFoundError);
+  });
+
+  it("choisit puis retire le logo sans toucher au reste du profil, et refuse une image invalide", async () => {
+    const service = new TeamProfileService(new InMemoryEducatorRepository(["educator-1"]), new InMemoryTeamRepository());
+    await service.save("educator-1", validProfile);
+
+    const withLogo = await service.saveLogo("educator-1", "data:image/png;base64,iVBORw0KGgo=");
+    expect(withLogo.profile).toMatchObject({ name: "FC Horizon", logo: "data:image/png;base64,iVBORw0KGgo=" });
+    expect((await service.saveLogo("educator-1", null)).profile.logo).toBeNull();
+    await expect(service.saveLogo("educator-1", "https://exemple.test/logo.png")).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.saveLogo("inconnu", null)).rejects.toBeInstanceOf(TeamNotFoundError);
   });
 });

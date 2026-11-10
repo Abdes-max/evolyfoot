@@ -1,10 +1,11 @@
-import { EducatorNotFoundError } from "@evolyfoot/database";
+import { EducatorNotFoundError, TeamNotFoundError, ValidationError } from "@evolyfoot/database";
 import type { TeamProfile } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface TeamGateway {
   get(educatorId: string): Promise<TeamProfile | null>;
   save(educatorId: string, profile: TeamProfile): Promise<TeamProfile>;
+  saveLogo(educatorId: string, logo: string | null): Promise<TeamProfile>;
 }
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
@@ -84,6 +85,34 @@ export function createSaveTeamHandler(
   };
 }
 
+// PUT `{ logo: "data:image/…" | null }` : choisit ou retire le logo de l'équipe.
+export function createSaveTeamLogoHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  team: Pick<TeamGateway, "saveLogo">,
+  log: (error: unknown) => void,
+): (request: Request) => Promise<Response> {
+  return async (request) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const body = await readJsonBody(request);
+    const logo = body?.logo;
+    if (typeof logo !== "string" && logo !== null) {
+      return Response.json({ error: "Logo manquant." }, { status: 400 });
+    }
+    try {
+      return Response.json({ profile: await team.saveLogo(educator.id, logo) });
+    } catch (error) {
+      if (error instanceof ValidationError) return Response.json({ error: error.message }, { status: 400 });
+      if (error instanceof TeamNotFoundError) return Response.json({ error: error.message }, { status: 404 });
+      if (error instanceof EducatorNotFoundError) return Response.json({ error: error.message }, { status: 401 });
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  };
+}
+
 export async function createTeamGateway(): Promise<{ gateway: TeamGateway; disconnect: () => Promise<void> }> {
   const { createDatabaseClient, TeamProfileService, PrismaEducatorRepository, PrismaTeamRepository, TeamNotFoundError } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
@@ -104,6 +133,10 @@ export async function createTeamGateway(): Promise<{ gateway: TeamGateway; disco
       },
       async save(educatorId, profile) {
         const team = await service.save(educatorId, profile);
+        return team.profile;
+      },
+      async saveLogo(educatorId, logo) {
+        const team = await service.saveLogo(educatorId, logo);
         return team.profile;
       },
     },

@@ -21,6 +21,9 @@ export interface TeamProfile {
   playerCount: number;
   sessionsPerWeek: number;
   trainingDays: TrainingDay[];
+  // Logo de l'équipe (data URL d'une image réduite) ; absent tant que le coach n'en a pas choisi. Il ne se modifie
+  // que par saveLogo : l'enregistrement du profil ne le touche jamais.
+  logo?: string | null;
 }
 export type TeamProfileErrors = Partial<Record<keyof TeamProfile, string>>;
 export function validateTeamProfile(profile: TeamProfile): TeamProfileErrors {
@@ -37,4 +40,13 @@ export function validateTeamProfile(profile: TeamProfile): TeamProfileErrors {
 export function createTeamProfile(profile: TeamProfile): TeamProfile {
   if (Object.keys(validateTeamProfile(profile)).length) throw new Error("Le profil d’équipe est incomplet.");
   return { ...profile, name: profile.name.trim(), trainingDays: sortTrainingDays(profile.trainingDays) };
+}
+
+export const teamLogoMaxLength = 400_000;
+
+// Problème du logo proposé, `null` s'il est valide : une petite image en data URL (PNG, JPEG ou WebP).
+export function validateTeamLogo(logo: string): string | null {
+  if (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(logo)) return "Le logo doit être une image PNG, JPEG ou WebP.";
+  if (logo.length > teamLogoMaxLength) return "Le logo est trop lourd : choisis une image plus petite.";
+  return null;
 }
