@@ -426,7 +426,7 @@ export default function SessionScreen() {
           accessibilityRole="button"
           hitSlop={8}
           onPress={async () => {
-            const result = await sharePdf(sessionHtml(session, meetingLabel(meetingAt)), session.title);
+            const result = await sharePdf(sessionHtml(session, meetingLabel(meetingAt), team?.logo), session.title);
             if (!result.ok) {
               Alert.alert(result.error);
             }

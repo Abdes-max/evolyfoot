@@ -216,8 +216,19 @@ main > :nth-child(3) {
   font-weight: 800;
 }
 
+.print-team-logo {
+  display: none;
+}
+
 /* Export PDF : le navigateur imprime la séance en clair, sans la navigation ni les commandes. */
 @media print {
+  .print-team-logo {
+    display: block;
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    margin: 0 0 8px;
+  }
   :root {
     --paper: #fff;
     --surface: #fff;
