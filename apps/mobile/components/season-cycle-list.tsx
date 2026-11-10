@@ -1,5 +1,14 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { seasonSlotColor, seasonSlotDateLabel, themeColors, type SavedTrainingSession, type SeasonCycle, type TrainingDay } from "@evolyfoot/domain";
+import {
+  isPastSeasonSlot,
+  seasonSlotColor,
+  seasonSlotDateLabel,
+  themeColors,
+  type SavedTrainingSession,
+  type SeasonCycle,
+  type SessionScope,
+  type TrainingDay,
+} from "@evolyfoot/domain";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { openSeasonSlot } from "../lib/season-cycle";
@@ -15,6 +24,7 @@ export function SeasonCycleList({
   slotLabels,
   startDate,
   trainingDays,
+  scope,
 }: {
   cycles: readonly SeasonCycle[];
   currentCycle: SeasonCycle;
@@ -23,9 +33,25 @@ export function SeasonCycleList({
   slotLabels: readonly string[];
   startDate: string | null;
   trainingDays: readonly TrainingDay[];
+  scope: SessionScope;
 }) {
+  const [now] = useState(() => Date.now());
   const [index, setIndex] = useState(currentCycle.number - 1);
   const cycle = cycles[Math.min(cycles.length - 1, Math.max(0, index))] ?? currentCycle;
+  // Créneaux du filtre (à venir ou passés) ; une semaine sans créneau correspondant n'est pas affichée, la plus récente d'abord pour les passées.
+  const inScope = (weekNumber: number, position: number) =>
+    isPastSeasonSlot({
+      meetingAt: prepared.find((session) => session.weekNumber === weekNumber && session.slot === position)?.meetingAt,
+      startDate,
+      week: weekNumber,
+      slot: position,
+      trainingDays,
+      currentWeek: currentSeasonWeek,
+      now,
+    }) ===
+    (scope === "past");
+  const weeks = cycle.weeks.filter((week) => week.slots.some((_, position) => inScope(week.seasonWeek, position)));
+  if (scope === "past") weeks.reverse();
 
   return (
     <View>
@@ -51,7 +77,10 @@ export function SeasonCycleList({
         </TouchableOpacity>
       </View>
 
-      {cycle.weeks.map((week) => (
+      {weeks.length === 0 ? (
+        <Text style={styles.empty}>{scope === "past" ? "Aucune séance passée dans ce cycle." : "Aucune séance à venir dans ce cycle."}</Text>
+      ) : null}
+      {weeks.map((week) => (
         <View
           key={week.seasonWeek}
           style={[styles.week, { borderLeftColor: themeColors[week.theme] }, week.seasonWeek === currentSeasonWeek && styles.weekCurrent]}
@@ -62,6 +91,7 @@ export function SeasonCycleList({
           </Text>
           <Text style={styles.weekTheme}>{week.intention}</Text>
           {week.slots.map((slot, position) => {
+            if (!inScope(week.seasonWeek, position)) return null;
             const done = prepared.find((session) => session.weekNumber === week.seasonWeek && session.slot === position);
             const color = seasonSlotColor(slot);
             return (
@@ -99,6 +129,7 @@ const styles = StyleSheet.create({
   nav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
   navArrow: { color: colors.ink, fontSize: 28, fontWeight: "800", paddingHorizontal: spacing.sm },
   disabled: { opacity: 0.3 },
+  empty: { color: colors.muted, fontSize: 13, textAlign: "center", marginVertical: spacing.lg },
   navTitle: { alignItems: "center" },
   navCycle: { color: colors.ink, fontSize: 15, fontWeight: "900" },
   navTheme: { fontSize: 12, fontWeight: "800", marginTop: 2 },

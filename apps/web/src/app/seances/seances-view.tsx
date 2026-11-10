@@ -4,13 +4,16 @@ import {
   buildDevelopmentPlan,
   buildPrioritizedSeason,
   guidedSeasonCycle,
+  isPastSeasonSlot,
   nextSeasonSlot,
   seasonCycles,
   seasonWeekAt,
+  sessionScopeLabels,
   summarizeDiagnostic,
   themeColors,
   type DevelopmentTheme,
   type DiagnosticScores,
+  type SessionScope,
   type TrainingDay,
 } from "@evolyfoot/domain";
 import Link from "next/link";
@@ -28,6 +31,7 @@ interface SavedSession {
   weekNumber: number;
   slot: number;
   blocks: ReadonlyArray<{ durationMinutes: number }>;
+  meetingAt?: string | null;
   convokedAt?: string | null;
   attendance?: ReadonlyArray<{ playerId: string; present: boolean }>;
 }
@@ -60,6 +64,8 @@ export function SeancesView() {
   const [seasonSessions, setSeasonSessions] = useState<readonly SavedSession[]>([]);
   const [cycleOffset, setCycleOffset] = useState(0);
   const [now] = useState(() => new Date());
+  // Filtre de l'onglet : séances à venir ou passées.
+  const [scope, setScope] = useState<SessionScope>("upcoming");
 
   useEffect(() => {
     let cancelled = false;
@@ -178,6 +184,14 @@ export function SeancesView() {
           </p>
         )}
 
+        <div aria-label="Séances à venir ou passées" className="bibliotheque-filters" role="group">
+          {(["upcoming", "past"] as const).map((value) => (
+            <button aria-pressed={scope === value} className={scope === value ? "active" : ""} key={value} onClick={() => setScope(value)} type="button">
+              {sessionScopeLabels[value]}
+            </button>
+          ))}
+        </div>
+
         {shownCycle && program && (
           <>
             <nav aria-label="Cycles de la saison" className="seances-cycle-nav">
@@ -195,7 +209,9 @@ export function SeancesView() {
             <SeasonCycleWeeks
               currentSeasonWeek={currentSeasonWeek}
               cycle={shownCycle}
+              now={now.getTime()}
               prepared={seasonSessions}
+              scope={scope}
               slotLabels={slotLabels}
               startDate={program.startDate}
               trainingDays={trainingDays as readonly TrainingDay[]}
@@ -204,59 +220,85 @@ export function SeancesView() {
         )}
 
         {!program &&
-          plan.weeks.map((week) => {
-            const weekNumber = week.week;
-            return (
-              <article
-                className={weekNumber === activeWeek ? "seances-week active" : "seances-week"}
-                key={weekNumber}
-                style={{ borderLeft: `4px solid ${themeColors[week.theme]}` }}
-              >
-                <header className="seances-week-head">
-                  <div>
-                    <span className="seances-week-number">S{weekNumber}</span>
+          plan.weeks
+            .filter((week) =>
+              slotLabels.some(
+                (_, slot) =>
+                  isPastSeasonSlot({
+                    meetingAt: sessionAt(week.week, slot)?.meetingAt,
+                    startDate: null,
+                    week: week.week,
+                    slot,
+                    trainingDays: [],
+                    currentWeek: activeWeek,
+                    now: now.getTime(),
+                  }) ===
+                  (scope === "past"),
+              ),
+            )
+            .map((week) => {
+              const weekNumber = week.week;
+              return (
+                <article
+                  className={weekNumber === activeWeek ? "seances-week active" : "seances-week"}
+                  key={weekNumber}
+                  style={{ borderLeft: `4px solid ${themeColors[week.theme]}` }}
+                >
+                  <header className="seances-week-head">
                     <div>
-                      <h2>{week.intention}</h2>
-                      <p>
-                        {cycleWeekDateRangeLabel(weekNumber, activeWeek)} · {week.phase} · {week.theme}
-                      </p>
+                      <span className="seances-week-number">S{weekNumber}</span>
+                      <div>
+                        <h2>{week.intention}</h2>
+                        <p>
+                          {cycleWeekDateRangeLabel(weekNumber, activeWeek)} · {week.phase} · {week.theme}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  {weekNumber === activeWeek && <span className="seances-week-tag">Semaine en cours</span>}
-                </header>
-                <ul className="seances-slot-list">
-                  {slotLabels.map((label, slot) => {
-                    const saved = sessionAt(weekNumber, slot);
-                    return (
-                      <li className="seances-slot" key={slot}>
-                        <span className="seances-slot-label">{label}</span>
-                        {saved ? (
-                          <Link
-                            className="seances-slot-card generated"
-                            href={`/session/${saved.id}`}
-                            style={{ borderLeft: `4px solid ${themeColors[saved.theme as DevelopmentTheme] ?? "var(--line)"}` }}
-                          >
-                            <strong>{saved.title}</strong>
-                            <span>
-                              {sessionDuration(saved)} min · {saved.theme}
-                            </span>
-                            <span className={saved.convokedAt ? "seances-slot-responses" : "seances-slot-responses scheduled"}>{responsesLabel(saved)}</span>
-                            <span className="seances-slot-cta">Ouvrir la séance →</span>
-                          </Link>
-                        ) : (
-                          <Link className="seances-slot-card pending" href={`/session?week=${weekNumber}&slot=${slot}`}>
-                            <strong>Séance non générée</strong>
-                            <span>À partir du plan de la semaine {weekNumber}</span>
-                            <span className="seances-slot-cta">Générer cette séance →</span>
-                          </Link>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </article>
-            );
-          })}
+                    {weekNumber === activeWeek && <span className="seances-week-tag">Semaine en cours</span>}
+                  </header>
+                  <ul className="seances-slot-list">
+                    {slotLabels.map((label, slot) => {
+                      const saved = sessionAt(weekNumber, slot);
+                      const past = isPastSeasonSlot({
+                        meetingAt: saved?.meetingAt,
+                        startDate: null,
+                        week: weekNumber,
+                        slot,
+                        trainingDays: [],
+                        currentWeek: activeWeek,
+                        now: now.getTime(),
+                      });
+                      if (past !== (scope === "past")) return null;
+                      return (
+                        <li className="seances-slot" key={slot}>
+                          <span className="seances-slot-label">{label}</span>
+                          {saved ? (
+                            <Link
+                              className="seances-slot-card generated"
+                              href={`/session/${saved.id}`}
+                              style={{ borderLeft: `4px solid ${themeColors[saved.theme as DevelopmentTheme] ?? "var(--line)"}` }}
+                            >
+                              <strong>{saved.title}</strong>
+                              <span>
+                                {sessionDuration(saved)} min · {saved.theme}
+                              </span>
+                              <span className={saved.convokedAt ? "seances-slot-responses" : "seances-slot-responses scheduled"}>{responsesLabel(saved)}</span>
+                              <span className="seances-slot-cta">Ouvrir la séance →</span>
+                            </Link>
+                          ) : (
+                            <Link className="seances-slot-card pending" href={`/session?week=${weekNumber}&slot=${slot}`}>
+                              <strong>Séance non générée</strong>
+                              <span>À partir du plan de la semaine {weekNumber}</span>
+                              <span className="seances-slot-cta">Générer cette séance →</span>
+                            </Link>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </article>
+              );
+            })}
 
         <p className="seances-foot">
           {program ? "Cycle de " : ""}
