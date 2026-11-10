@@ -32,12 +32,14 @@ interface SavedSession {
   slot: number;
   blocks: ReadonlyArray<{ durationMinutes: number }>;
   meetingAt?: string | null;
+  cancelledAt?: string | null;
   convokedAt?: string | null;
   attendance?: ReadonlyArray<{ playerId: string; present: boolean }>;
 }
 
 // « 8 présents · 2 absents » sur la carte d'une séance convoquée, « Programmée » avant l'envoi.
 function responsesLabel(session: SavedSession): string {
+  if (session.cancelledAt) return "Annulée";
   if (!session.convokedAt) return "Programmée";
   const present = (session.attendance ?? []).filter((entry) => entry.present).length;
   const absent = (session.attendance ?? []).length - present;

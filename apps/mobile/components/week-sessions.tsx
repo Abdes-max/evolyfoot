@@ -14,6 +14,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { CancelEventPanel } from "./cancel-event-panel";
 
 interface WeekSession {
   id: string;
@@ -26,6 +27,9 @@ interface WeekSession {
   slot: number;
   convokedAt?: string | null;
   attendance?: AttendanceEntry[];
+  // Annulée par le coach (ISO) et la raison communiquée aux joueurs.
+  cancelledAt?: string | null;
+  cancellationNote?: string | null;
 }
 
 function dayLabel(date: Date): string {
@@ -39,6 +43,7 @@ function timeLabel(iso: string): string {
 
 // Où en est la convocation : envoyée (avec les réponses), ou quand elle partira.
 function convocationLine(session: WeekSession, settings: TrainingConvocationSettings | null): string {
+  if (session.cancelledAt) return `Séance annulée${session.cancellationNote ? ` : ${session.cancellationNote}` : ""}`;
   if (session.convokedAt) {
     return `Convocation envoyée le ${new Date(session.convokedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}`;
   }
@@ -120,7 +125,9 @@ export function WeekSessions({ scope }: { scope: SessionScope }) {
                     {session.location}
                   </Text>
                 ) : null}
-                <Text style={[styles.convocation, session.convokedAt ? styles.sent : styles.pending]}>{convocationLine(session, settings)}</Text>
+                <Text style={[styles.convocation, session.cancelledAt ? styles.cancelled : session.convokedAt ? styles.sent : styles.pending]}>
+                  {convocationLine(session, settings)}
+                </Text>
                 {session.convokedAt ? (
                   <View style={styles.counts}>
                     <Text style={[styles.count, { color: "#3ddc84" }]}>{responses.present.length} présents</Text>
@@ -128,6 +135,13 @@ export function WeekSessions({ scope }: { scope: SessionScope }) {
                     <Text style={[styles.count, { color: "#ffb073" }]}>{responses.pending.length} sans réponse</Text>
                   </View>
                 ) : null}
+                <CancelEventPanel
+                  cancellationNote={session.cancellationNote}
+                  cancelledAt={session.cancelledAt}
+                  noun="la séance"
+                  onChange={(state) => setSessions((current) => current.map((item) => (item.id === session.id ? { ...item, ...state } : item)))}
+                  url={`/api/sessions/${encodeURIComponent(session.id)}/cancel`}
+                />
               </TouchableOpacity>
             );
           })}
@@ -149,6 +163,7 @@ const styles = StyleSheet.create({
   convocation: { fontSize: 12, fontWeight: "800", marginTop: 4 },
   sent: { color: colors.lime },
   pending: { color: colors.muted },
+  cancelled: { color: colors.danger },
   counts: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, marginTop: 2 },
   count: { fontSize: 12, fontWeight: "800" },
 });
