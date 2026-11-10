@@ -1,5 +1,14 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { buildDevelopmentPlan, summarizeDiagnostic, themeColors, type DiagnosticScores, type SavedTrainingSession } from "@evolyfoot/domain";
+import {
+  buildDevelopmentPlan,
+  isPastSession,
+  sessionScopeLabels,
+  summarizeDiagnostic,
+  themeColors,
+  type DiagnosticScores,
+  type SavedTrainingSession,
+  type SessionScope,
+} from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -17,6 +26,9 @@ export default function SeancesScreen() {
   const [sessions, setSessions] = useState<readonly SavedTrainingSession[]>([]);
   // Vue par semaine (séances datées, convocations) ou par cycle (créneaux à préparer).
   const [view, setView] = useState<"week" | "cycle">("week");
+  // Filtre de l'onglet : séances à venir ou passées.
+  const [scope, setScope] = useState<SessionScope>("upcoming");
+  const [now] = useState(() => Date.now());
   const plan = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores));
   const slotLabels: readonly string[] = team?.trainingDays.length ? team.trainingDays : ["Séance 1"];
   // Avec une saison guidée, la vue « Par cycle » suit les cycles de 4 semaines de la saison.
@@ -60,7 +72,20 @@ export default function SeancesScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        {view === "week" ? <WeekSessions /> : null}
+        <View accessibilityRole="tablist" style={styles.filters}>
+          {(["upcoming", "past"] as const).map((value) => (
+            <TouchableOpacity
+              accessibilityRole="tab"
+              accessibilityState={{ selected: scope === value }}
+              key={value}
+              onPress={() => setScope(value)}
+              style={[styles.filter, scope === value && styles.filterActive]}
+            >
+              <Text style={[styles.filterText, scope === value && styles.filterTextActive]}>{sessionScopeLabels[value]}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {view === "week" ? <WeekSessions scope={scope} /> : null}
         {view === "cycle" && season.currentCycle ? (
           <SeasonCycleList
             currentCycle={season.currentCycle}
@@ -68,46 +93,55 @@ export default function SeancesScreen() {
             cycles={season.cycles}
             prepared={season.prepared}
             slotLabels={slotLabels}
+            scope={scope}
             startDate={season.program?.startDate ?? null}
             trainingDays={team?.trainingDays ?? []}
           />
         ) : null}
         {view === "cycle" &&
           !season.program &&
-          plan.weeks.map((week) => (
-            <View key={week.week} style={[styles.week, { borderLeftWidth: 4, borderLeftColor: themeColors[week.theme] }]}>
-              <Text style={styles.weekTitle}>
-                Semaine {week.week} · {week.phase}
-              </Text>
-              <Text style={styles.weekTheme}>{week.theme}</Text>
-              {slotLabels.map((label, slot) => {
-                const saved = sessions.find((session) => session.weekNumber === week.week && session.slot === slot);
-                return (
-                  // Un vrai bouton par créneau : icône, jour, statut et action. router.push plutôt
-                  // qu’un <Link asChild> (dont le style en tableau fait planter le rendu web).
-                  <TouchableOpacity
-                    accessibilityHint={saved ? "Ouvre la séance préparée" : "Génère la séance à partir du plan"}
-                    accessibilityLabel={`${label}, semaine ${week.week} : ${saved ? "séance prête" : "à générer"}`}
-                    accessibilityRole="button"
-                    key={slot}
-                    onPress={() => router.push(`/session?week=${week.week}&slot=${slot}`)}
-                    style={[styles.slot, saved ? styles.slotSaved : styles.slotFree]}
-                  >
-                    <View style={[styles.slotIcon, saved && styles.slotIconSaved]}>
-                      <CalendarIcon color={saved ? colors.primaryInk : colors.primary} size={18} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.slotLabel}>{label}</Text>
-                      <Text style={styles.slotStatus}>{saved ? (saved.title ?? "Séance prête") : "À générer"}</Text>
-                    </View>
-                    <View style={[styles.slotButton, saved ? styles.slotButtonSaved : styles.slotButtonFree]}>
-                      <Text style={[styles.slotButtonText, !saved && styles.slotButtonTextFree]}>{saved ? "Ouvrir" : "Générer"}</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ))}
+          plan.weeks
+            .filter((week) =>
+              slotLabels.some(
+                (_, slot) =>
+                  isPastSession(sessions.find((session) => session.weekNumber === week.week && session.slot === slot)?.meetingAt, now) === (scope === "past"),
+              ),
+            )
+            .map((week) => (
+              <View key={week.week} style={[styles.week, { borderLeftWidth: 4, borderLeftColor: themeColors[week.theme] }]}>
+                <Text style={styles.weekTitle}>
+                  Semaine {week.week} · {week.phase}
+                </Text>
+                <Text style={styles.weekTheme}>{week.theme}</Text>
+                {slotLabels.map((label, slot) => {
+                  const saved = sessions.find((session) => session.weekNumber === week.week && session.slot === slot);
+                  if (isPastSession(saved?.meetingAt, now) !== (scope === "past")) return null;
+                  return (
+                    // Un vrai bouton par créneau : icône, jour, statut et action. router.push plutôt
+                    // qu’un <Link asChild> (dont le style en tableau fait planter le rendu web).
+                    <TouchableOpacity
+                      accessibilityHint={saved ? "Ouvre la séance préparée" : "Génère la séance à partir du plan"}
+                      accessibilityLabel={`${label}, semaine ${week.week} : ${saved ? "séance prête" : "à générer"}`}
+                      accessibilityRole="button"
+                      key={slot}
+                      onPress={() => router.push(`/session?week=${week.week}&slot=${slot}`)}
+                      style={[styles.slot, saved ? styles.slotSaved : styles.slotFree]}
+                    >
+                      <View style={[styles.slotIcon, saved && styles.slotIconSaved]}>
+                        <CalendarIcon color={saved ? colors.primaryInk : colors.primary} size={18} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.slotLabel}>{label}</Text>
+                        <Text style={styles.slotStatus}>{saved ? (saved.title ?? "Séance prête") : "À générer"}</Text>
+                      </View>
+                      <View style={[styles.slotButton, saved ? styles.slotButtonSaved : styles.slotButtonFree]}>
+                        <Text style={[styles.slotButtonText, !saved && styles.slotButtonTextFree]}>{saved ? "Ouvrir" : "Générer"}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -132,6 +166,11 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: colors.primary },
   tabText: { color: colors.muted, fontSize: 13, fontWeight: "800" },
   tabTextActive: { color: colors.primaryInk },
+  filters: { flexDirection: "row", gap: 8, marginBottom: spacing.md },
+  filter: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+  filterActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  filterText: { color: colors.muted, fontSize: 13, fontWeight: "800" },
+  filterTextActive: { color: colors.primaryInk },
   week: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12 },
   weekTitle: { fontSize: 14, fontWeight: "800", color: colors.ink },
   weekTheme: { fontSize: 11, color: colors.muted, marginTop: 4, marginBottom: 10 },

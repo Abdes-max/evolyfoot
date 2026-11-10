@@ -1,6 +1,6 @@
 "use client";
 
-import { seasonSlotColor, seasonSlotDateLabel, type SeasonCycle, type TrainingDay } from "@evolyfoot/domain";
+import { isPastSeasonSlot, seasonSlotColor, seasonSlotDateLabel, type SeasonCycle, type SessionScope, type TrainingDay } from "@evolyfoot/domain";
 import Link from "next/link";
 import { slotLabel } from "../saison/guided-season";
 
@@ -10,6 +10,7 @@ interface PreparedSession {
   weekNumber: number;
   slot: number;
   blocks: ReadonlyArray<{ durationMinutes: number }>;
+  meetingAt?: string | null;
   convokedAt?: string | null;
   attendance?: ReadonlyArray<{ present: boolean }>;
 }
@@ -39,6 +40,8 @@ export function SeasonCycleWeeks({
   slotLabels,
   trainingDays,
   prepared,
+  scope,
+  now,
 }: {
   cycle: SeasonCycle;
   currentSeasonWeek: number;
@@ -46,10 +49,29 @@ export function SeasonCycleWeeks({
   slotLabels: readonly string[];
   trainingDays: readonly TrainingDay[];
   prepared: readonly PreparedSession[];
+  scope: SessionScope;
+  now: number;
 }) {
+  // Créneaux du filtre (à venir ou passés) ; une semaine sans créneau correspondant n'est pas affichée, les passées en premier la plus récente.
+  const inScope = (weekNumber: number, index: number) =>
+    isPastSeasonSlot({
+      meetingAt: prepared.find((session) => session.weekNumber === weekNumber && session.slot === index)?.meetingAt,
+      startDate,
+      week: weekNumber,
+      slot: index,
+      trainingDays,
+      currentWeek: currentSeasonWeek,
+      now,
+    }) ===
+    (scope === "past");
+  const weeks = cycle.weeks.filter((week) => week.slots.some((_, index) => inScope(week.seasonWeek, index)));
+  if (scope === "past") weeks.reverse();
+  if (weeks.length === 0) {
+    return <p className="seances-hint">{scope === "past" ? "Aucune séance passée dans ce cycle." : "Aucune séance à venir dans ce cycle."}</p>;
+  }
   return (
     <>
-      {cycle.weeks.map((week) => (
+      {weeks.map((week) => (
         <article
           className={week.seasonWeek === currentSeasonWeek ? "seances-week active" : "seances-week"}
           key={week.seasonWeek}
@@ -69,6 +91,7 @@ export function SeasonCycleWeeks({
           </header>
           <ul className="seances-slot-list">
             {week.slots.map((slot, index) => {
+              if (!inScope(week.seasonWeek, index)) return null;
               const saved = prepared.find((session) => session.weekNumber === week.seasonWeek && session.slot === index);
               const color = seasonSlotColor(slot);
               return (

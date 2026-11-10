@@ -173,6 +173,8 @@ export {
 export type { AttendanceDefault, ResponsePlayer, TrainingConvocationSettings, TrainingResponses } from "./training-convocation";
 export { concernedPlayers, isConcerned, parsePlayerSelection } from "./concerned-players";
 export { isPastMatch, matchesInScope, matchScopeLabels } from "./match-scope";
+export { isPastSeasonSlot, isPastSession, sessionScopeLabels, sessionsInScope } from "./session-scope";
+export type { SessionScope } from "./session-scope";
 export type { MatchScope } from "./match-scope";
 export {
   createMatchClock,
