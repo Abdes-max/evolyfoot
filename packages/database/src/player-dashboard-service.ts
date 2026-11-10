@@ -207,8 +207,13 @@ export class PlayerDashboardService {
       };
     };
 
-    const trainingEntries: AttendanceEntry[] = sessions.flatMap((session) => (session.attendance ?? []).filter((entry) => entry.playerId === playerId));
-    const matchEntries: AttendanceEntry[] = matches.flatMap((match) => (match.attendance ?? []).filter((entry) => entry.playerId === playerId));
+    // Un événement annulé n'a pas eu lieu : il ne compte pas dans les taux de présence.
+    const trainingEntries: AttendanceEntry[] = sessions
+      .filter((session) => !session.cancelledAt)
+      .flatMap((session) => (session.attendance ?? []).filter((entry) => entry.playerId === playerId));
+    const matchEntries: AttendanceEntry[] = matches
+      .filter((match) => !match.cancelledAt)
+      .flatMap((match) => (match.attendance ?? []).filter((entry) => entry.playerId === playerId));
 
     const toDashboardMatch = (match: (typeof matches)[number]): PlayerDashboardMatch => {
       const myEntry = match.attendance?.find((entry) => entry.playerId === playerId);

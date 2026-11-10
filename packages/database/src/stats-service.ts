@@ -24,13 +24,18 @@ export class StatsService {
     private readonly plateauRepository: PlateauRepository,
   ) {}
 
+  // Les événements annulés ne comptent ni dans les totaux ni dans les taux de présence : ils n'ont pas eu lieu.
   async get(educatorId: string): Promise<TeamStats> {
-    const [sessions, matches, tournaments, plateaux] = await Promise.all([
+    const [allSessions, allMatches, allTournaments, allPlateaux] = await Promise.all([
       this.trainingSessionRepository.listByEducator(educatorId),
       this.matchRepository.listByEducator(educatorId),
       this.tournamentRepository.listByEducator(educatorId),
       this.plateauRepository.listByEducator(educatorId),
     ]);
+    const sessions = allSessions.filter((session) => !session.cancelledAt);
+    const matches = allMatches.filter((match) => !match.cancelledAt);
+    const tournaments = allTournaments.filter((tournament) => !tournament.cancelledAt);
+    const plateaux = allPlateaux.filter((plateau) => !plateau.cancelledAt);
 
     const trainingAttendanceEntries: AttendanceEntry[] = sessions.flatMap((session) => [...(session.attendance ?? [])]);
     const matchAttendanceEntries: AttendanceEntry[] = matches.flatMap((match) => [...(match.attendance ?? [])]);
