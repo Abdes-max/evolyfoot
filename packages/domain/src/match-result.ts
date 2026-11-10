@@ -70,7 +70,11 @@ export function playerSeasonTotals(
     if (match.status !== "played") {
       continue;
     }
-    const selected = match.lineup.some((entry) => entry.playerId === playerId) || match.substitutePlayerIds.includes(playerId);
+    // Dans la feuille de match, ou noté présent quand aucune composition n'a été préparée.
+    const selected =
+      match.lineup.some((entry) => entry.playerId === playerId) ||
+      match.substitutePlayerIds.includes(playerId) ||
+      (match.attendance?.some((entry) => entry.playerId === playerId && entry.present) ?? false);
     const absent = match.attendance?.some((entry) => entry.playerId === playerId && !entry.present) ?? false;
     if (selected && !absent) {
       played += 1;

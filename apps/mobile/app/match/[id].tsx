@@ -326,16 +326,19 @@ export default function MatchDetailScreen() {
   const slots = formationSlots(gameFormat, match.formationId);
   const readOnly = match.status === "played";
   const canFinalize = canFinalizeMatchPlan(toMatchPlan(match));
-  // Ce qui manque pour pouvoir marquer le match comme joué (composition complète, capitaine).
+  // Ce qui manque pour pouvoir marquer le match comme joué (adversaire, date).
   const missing = Object.values(validateMatchPlan(toMatchPlan(match)));
   // Joueurs de la feuille de match, titulaires puis remplaçants : ceux à qui attribuer buts et passes.
-  const resultPlayers = [
+  const sheetPlayers = [
     ...match.lineup.map((assignment) => ({ id: assignment.playerId, name: assignment.playerName })),
     ...match.substitutePlayerIds.flatMap((playerId) => {
       const player = roster.find((candidate) => candidate.id === playerId);
       return player ? [{ id: player.id, name: player.name }] : [];
     }),
   ].filter((player, index, all) => all.findIndex((other) => other.id === player.id) === index);
+  // Sans composition préparée, buts et passes s'attribuent parmi les joueurs concernés.
+  const resultPlayers =
+    sheetPlayers.length > 0 ? sheetPlayers : concernedPlayers(roster, match.selectedPlayerIds ?? null).map((player) => ({ id: player.id, name: player.name }));
 
   return (
     <SafeAreaView style={styles.safe}>

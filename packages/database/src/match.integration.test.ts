@@ -108,11 +108,16 @@ describe("PostgreSQL match persistence", () => {
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
-  it("refuse de marquer un match joué tant que la composition est incomplète", async () => {
-    const educator = await createEducator("incomplete");
+  it("marque un match joué sans composition, puis enregistre son résultat", async () => {
+    const educator = await createEducator("no-lineup");
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
 
-    await expect(service.markPlayed(educator.id, match.id)).rejects.toBeInstanceOf(ValidationError);
+    const played = await service.markPlayed(educator.id, match.id);
+
+    expect(played.status).toBe("played");
+    expect(played.lineup).toEqual([]);
+    const withResult = await service.saveResult(educator.id, match.id, { goalsFor: 2, goalsAgainst: 1, playerStats: [] });
+    expect(withResult).toMatchObject({ goalsFor: 2, goalsAgainst: 1 });
   });
 
   it("marque un match joué une fois la composition complète, avec ou sans capitaine", async () => {
