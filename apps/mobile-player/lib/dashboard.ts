@@ -1,4 +1,4 @@
-import type { AttendanceStatus, PlayerEvaluationScores, PlayerSeasonTotals } from "@evolyfoot/domain";
+import type { AttendanceStatus, PlayerCompetitionGame, PlayerEvaluationScores, PlayerSeasonTotals } from "@evolyfoot/domain";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { apiFetch } from "./api";
@@ -59,6 +59,8 @@ export interface Dashboard {
     preferredFoot: string | null;
   };
   season: PlayerSeasonTotals;
+  // Matchs, tournois et plateaux : adversaire, score, buts et passes du joueur.
+  games?: PlayerCompetitionGame[];
   // Jours d'entraînement de l'équipe (Lundi, Mardi…), pour le calendrier de la semaine.
   team: { name: string; ageGroup: string; trainingDays?: string[] } | null;
   evaluations: Evaluation[];
