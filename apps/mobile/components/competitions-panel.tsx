@@ -6,6 +6,7 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-nativ
 import { useAuth } from "../lib/auth-context";
 import { competitionDateLabel, competitionKinds, isPastCompetition, sortCompetitions, type Competition, type CompetitionKind } from "../lib/competitions";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "./concerned-players-picker";
+import { ConvocationSummary } from "./convocation-summary";
 import { DateTimeField } from "./date-time-field";
 import { PlaceInput } from "./place-input";
 
@@ -152,6 +153,9 @@ export function CompetitionsPanel({ kind, scope }: { kind: CompetitionKind; scop
                 {item.location ? ` · ${item.location}` : ""}
                 {item.result ? ` · ${item.result}` : ""}
               </Text>
+              {!past || item.convokedAt ? (
+                <ConvocationSummary attendance={item.attendance} convokedAt={item.convokedAt} roster={roster} selectedPlayerIds={item.selectedPlayerIds} />
+              ) : null}
               <Text style={styles.cardLink}>Voir le détail →</Text>
             </TouchableOpacity>
           );

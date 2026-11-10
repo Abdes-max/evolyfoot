@@ -1,4 +1,4 @@
-import { concernedPlayers, createAttendanceEntry } from "@evolyfoot/domain";
+import { concernedPlayers, createAttendanceEntry, playersWithoutResponse } from "@evolyfoot/domain";
 import { EducatorNotFoundError, MatchNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
 import { matchMeetingTime } from "./match-time";
 import type {
@@ -19,6 +19,13 @@ export interface ConvocationRecipient {
   email: string;
   name: string;
 }
+
+// `onlyPending` : relance seulement les joueurs concernés qui n'ont pas encore répondu.
+export interface ConvocationOptions {
+  onlyPending?: boolean;
+}
+
+export const everyoneAnsweredMessage = "Tous les joueurs concernés ont déjà répondu.";
 
 export interface ConvocationResult {
   sentCount: number;
@@ -105,7 +112,7 @@ export class ConvocationService {
     private readonly now: () => Date = () => new Date(),
   ) {}
 
-  async sendForMatch(educatorId: string, matchId: string): Promise<ConvocationResult> {
+  async sendForMatch(educatorId: string, matchId: string, options: ConvocationOptions = {}): Promise<ConvocationResult> {
     const [educator, match] = await Promise.all([this.educatorRepository.findById(educatorId), this.matchRepository.findById(matchId, educatorId)]);
     if (!educator) {
       throw new EducatorNotFoundError();
@@ -113,11 +120,15 @@ export class ConvocationService {
     if (!match) {
       throw new MatchNotFoundError();
     }
-    const convoked = concernedPlayers(await this.playerRepository.listByEducator(educatorId), match.selectedPlayerIds);
-    if (convoked.length === 0) {
+    const everyone = concernedPlayers(await this.playerRepository.listByEducator(educatorId), match.selectedPlayerIds);
+    if (everyone.length === 0) {
       throw new ValidationError("Coche les joueurs concernés avant d’envoyer la convocation.");
     }
-    const text = matchConvocationText(match);
+    const convoked = options.onlyPending ? playersWithoutResponse(everyone, match.attendance) : everyone;
+    if (convoked.length === 0) {
+      throw new ValidationError(everyoneAnsweredMessage);
+    }
+    const text = options.onlyPending ? `Rappel — ${matchConvocationText(match)}` : matchConvocationText(match);
     await Promise.all(
       convoked.map((player) => this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text })),
     );
