@@ -23,7 +23,7 @@ import {
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { TacticalDiagramView } from "../components/tactical-diagram";
 import { TacticalPlayer } from "../components/tactical-player";
 import { DateTimeField } from "../components/date-time-field";
@@ -89,6 +89,13 @@ export default function SessionScreen() {
   const [attendance, setAttendance] = useState<readonly AttendanceEntry[] | undefined>(undefined);
   const [convoking, setConvoking] = useState(false);
   const [convocationStatus, setConvocationStatus] = useState("");
+  // Annulation : date et raison une fois annulé, message facultatif saisi avant d'annuler.
+  const [cancelledAt, setCancelledAt] = useState<string | null>(null);
+  const [cancellationNote, setCancellationNote] = useState<string | null>(null);
+  const [cancelNote, setCancelNote] = useState("");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelStatus, setCancelStatus] = useState("");
   // Joueurs des entraînements (réglage des convocations) : présence et réponses ne portent que sur eux.
   const [trainingPlayerIds, setTrainingPlayerIds] = useState<PlayerSelection>(null);
   const trainingRoster = concernedPlayers(roster, trainingPlayerIds);
@@ -139,8 +146,15 @@ export default function SessionScreen() {
         setSession(restored);
         setAlreadySaved(true);
         setSavedId(saved.id);
-        const savedState = saved as typeof saved & { convokedAt?: string | null; attendance?: readonly AttendanceEntry[] };
+        const savedState = saved as typeof saved & {
+          convokedAt?: string | null;
+          attendance?: readonly AttendanceEntry[];
+          cancelledAt?: string | null;
+          cancellationNote?: string | null;
+        };
         setConvokedAt(savedState.convokedAt ?? null);
+        setCancelledAt(savedState.cancelledAt ?? null);
+        setCancellationNote(savedState.cancellationNote ?? null);
         setAttendance(savedState.attendance);
         setLocation(saved.location ?? "");
         setSavedLocation(saved.location ?? "");
@@ -230,6 +244,45 @@ export default function SessionScreen() {
     }
     setSavedLocation(next);
     return null;
+  }
+
+  // Annule l'entraînement : les joueurs concernés reçoivent un message (avec la raison, si elle est donnée).
+  async function cancelTraining() {
+    if (!savedId) return;
+    setCancelling(true);
+    setCancelStatus("");
+    const response = await apiRequest(`/api/sessions/${encodeURIComponent(savedId)}/cancel`, { method: "POST", body: JSON.stringify({ note: cancelNote }) });
+    const body = await response?.json().catch(() => null);
+    setCancelling(false);
+    if (!response?.ok) {
+      setCancelStatus(typeof body?.error === "string" ? body.error : "L’annulation a échoué, réessaie.");
+      return;
+    }
+    setCancelledAt(new Date().toISOString());
+    setCancellationNote(cancelNote.trim() || null);
+    setCancelOpen(false);
+    setCancelStatus(
+      body.sentCount > 0
+        ? `Entraînement annulé : ${body.sentCount} joueur${body.sentCount > 1 ? "s" : ""} prévenu${body.sentCount > 1 ? "s" : ""}.`
+        : "Entraînement annulé. Aucun message envoyé : la convocation n’était pas partie.",
+    );
+  }
+
+  // Rétablit l'entraînement, sans nouveau message.
+  async function restoreTraining() {
+    if (!savedId) return;
+    setCancelling(true);
+    setCancelStatus("");
+    const response = await apiRequest(`/api/sessions/${encodeURIComponent(savedId)}/cancel`, { method: "DELETE" });
+    setCancelling(false);
+    if (!response?.ok) {
+      setCancelStatus("Le rétablissement a échoué, réessaie.");
+      return;
+    }
+    setCancelledAt(null);
+    setCancellationNote(null);
+    setCancelNote("");
+    setCancelStatus("Entraînement rétabli. Renvoie la convocation pour en informer les joueurs.");
   }
 
   async function sendConvocation() {
@@ -468,6 +521,53 @@ export default function SessionScreen() {
                 {convocationStatus}
               </Text>
             ) : null}
+            <View style={styles.cancelBox}>
+              {cancelledAt ? (
+                <>
+                  <Text accessibilityLiveRegion="polite" style={styles.cancelState}>
+                    {`Entraînement annulé${cancellationNote ? ` : ${cancellationNote}` : ""}.`}
+                  </Text>
+                  <TouchableOpacity accessibilityRole="button" disabled={cancelling} onPress={() => void restoreTraining()} style={styles.cancelButton}>
+                    <Text style={styles.cancelButtonText}>{cancelling ? "…" : "Rétablir l’entraînement"}</Text>
+                  </TouchableOpacity>
+                </>
+              ) : cancelOpen ? (
+                <>
+                  <Text style={styles.summaryLabel}>MESSAGE AUX JOUEURS (FACULTATIF)</Text>
+                  <TextInput
+                    accessibilityLabel="Message aux joueurs"
+                    maxLength={300}
+                    multiline
+                    onChangeText={setCancelNote}
+                    placeholder="Ex. Terrain impraticable, on se retrouve jeudi."
+                    placeholderTextColor={colors.muted}
+                    style={styles.cancelInput}
+                    value={cancelNote}
+                  />
+                  <Text style={styles.detailText}>Les joueurs concernés reçoivent un message d’annulation.</Text>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    disabled={cancelling}
+                    onPress={() => void cancelTraining()}
+                    style={[styles.cancelButton, styles.cancelConfirm]}
+                  >
+                    <Text style={styles.cancelConfirmText}>{cancelling ? "Annulation…" : "Confirmer l’annulation"}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity accessibilityRole="button" disabled={cancelling} onPress={() => setCancelOpen(false)} style={styles.cancelButton}>
+                    <Text style={styles.cancelButtonText}>Garder l’entraînement</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity accessibilityRole="button" onPress={() => setCancelOpen(true)} style={styles.cancelButton}>
+                  <Text style={styles.cancelButtonText}>Annuler l’entraînement</Text>
+                </TouchableOpacity>
+              )}
+              {cancelStatus ? (
+                <Text accessibilityLiveRegion="polite" style={styles.status}>
+                  {cancelStatus}
+                </Text>
+              ) : null}
+            </View>
           </View>
         )}
         {validationStatus && (
@@ -559,6 +659,30 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   validateDisabled: { opacity: 0.45 },
+  cancelBox: { gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.line },
+  cancelState: { color: colors.danger, fontSize: 13, fontWeight: "800" },
+  cancelButton: {
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  cancelButtonText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
+  cancelConfirm: { borderColor: colors.danger, backgroundColor: colors.danger },
+  cancelConfirmText: { color: "#fff", fontSize: 12, fontWeight: "900" },
+  cancelInput: {
+    minHeight: 70,
+    textAlignVertical: "top",
+    padding: 12,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.paper,
+    color: colors.ink,
+  },
   validateText: { fontSize: 12, fontWeight: "800", color: colors.primaryInk },
   status: { minHeight: 18, fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 12, textAlign: "center" },
   observationLink: {

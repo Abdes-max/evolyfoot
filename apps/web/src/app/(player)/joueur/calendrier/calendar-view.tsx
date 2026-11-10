@@ -16,7 +16,20 @@ const venueLabel = { home: "Domicile", away: "Extérieur" } as const;
 // Réponse à une convocation, résumée en un badge de couleur : orange tant que rien n'est
 // renseigné, vert pour "Présent", rouge pour toute autre réponse (Absent, mais aussi Malade/
 // Blessé/Raison personnelle/En retard) -- avec le motif précis affiché en dessous, comme demandé.
-function ResponseBadge({ status, scheduled = false, byDefault = false }: { status: AttendanceStatus | null; scheduled?: boolean; byDefault?: boolean }) {
+function ResponseBadge({
+  status,
+  scheduled = false,
+  byDefault = false,
+  cancelled = false,
+}: {
+  status: AttendanceStatus | null;
+  scheduled?: boolean;
+  byDefault?: boolean;
+  cancelled?: boolean;
+}) {
+  if (cancelled) {
+    return <span className="response-badge response-badge--absent">Annulé</span>;
+  }
   if (scheduled) {
     return <span className="response-badge response-badge--scheduled">Programmée</span>;
   }
@@ -54,6 +67,8 @@ type CalendarItem =
       myStatus: AttendanceStatus | null;
       scheduled: boolean;
       byDefault: boolean;
+      cancelled: boolean;
+      cancellationNote: string | null;
     }
   | {
       kind: "match";
@@ -130,6 +145,8 @@ export function PlayerCalendarView() {
           myStatus: session.myStatus,
           scheduled: session.convoked === false,
           byDefault: session.myStatusByDefault === true,
+          cancelled: session.cancelled === true,
+          cancellationNote: session.cancellationNote ?? null,
         })),
         // Ne pas être convoqué à un match à venir n'est pas une "convocation" -- ces matchs n'ont
         // rien à faire dans cette liste (voir demande utilisateur).
@@ -226,9 +243,11 @@ export function PlayerCalendarView() {
                                 </span>
                                 <ResponseBadge
                                   byDefault={item.kind === "seance" && item.byDefault}
+                                  cancelled={item.kind === "seance" && item.cancelled}
                                   scheduled={item.kind === "seance" && item.scheduled}
                                   status={item.myStatus}
                                 />
+                                {item.kind === "seance" && item.cancelled && item.cancellationNote ? <span>{item.cancellationNote}</span> : null}
                               </Link>
                               {item.location && (
                                 <div className="player-space-convocation-place">

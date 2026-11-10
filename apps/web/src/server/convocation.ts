@@ -26,6 +26,8 @@ export interface ConvocationOutcome {
 export interface ConvocationGateway {
   sendForMatch(educatorId: string, matchId: string, options?: ConvocationOptions): Promise<ConvocationOutcome>;
   sendForTrainingSession(educatorId: string, sessionId: string): Promise<ConvocationOutcome>;
+  cancelTrainingSession(educatorId: string, sessionId: string, note?: string | null): Promise<ConvocationOutcome>;
+  restoreTrainingSession(educatorId: string, sessionId: string): Promise<void>;
   sendForCompetition(educatorId: string, kind: CompetitionKind, competitionId: string, options?: ConvocationOptions): Promise<ConvocationOutcome>;
 }
 
@@ -126,6 +128,49 @@ export function createSendTrainingSessionConvocationHandler(
   };
 }
 
+// POST `{ note?: string }` : annule l'entraînement et prévient les joueurs concernés (message, e-mail en rappel).
+export function createCancelTrainingSessionHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  convocation: Pick<ConvocationGateway, "cancelTrainingSession">,
+  log: (error: unknown) => void,
+  mailer?: ConvocationMailer,
+): (request: Request, sessionId: string) => Promise<Response> {
+  return async (request, sessionId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    const body: unknown = await request.json().catch(() => null);
+    const note = typeof body === "object" && body !== null && typeof (body as { note?: unknown }).note === "string" ? (body as { note: string }).note : null;
+    try {
+      const outcome = await convocation.cancelTrainingSession(educator.id, sessionId, note);
+      return Response.json({ sentCount: outcome.sentCount, emailCount: await notifyByEmail(outcome, educator.displayName, request, mailer) });
+    } catch (error) {
+      return errorResponse(error, log);
+    }
+  };
+}
+
+// DELETE : rétablit l'entraînement, sans nouveau message.
+export function createRestoreTrainingSessionHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  convocation: Pick<ConvocationGateway, "restoreTrainingSession">,
+  log: (error: unknown) => void,
+): (request: Request, sessionId: string) => Promise<Response> {
+  return async (request, sessionId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    try {
+      await convocation.restoreTrainingSession(educator.id, sessionId);
+      return Response.json({ restored: true });
+    } catch (error) {
+      return errorResponse(error, log);
+    }
+  };
+}
+
 export function createSendCompetitionConvocationHandler(
   kind: CompetitionKind,
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
@@ -187,6 +232,8 @@ export async function createConvocationGateway(): Promise<{ gateway: Convocation
     gateway: {
       sendForMatch: (educatorId, matchId, options) => service.sendForMatch(educatorId, matchId, options),
       sendForTrainingSession: (educatorId, sessionId) => service.sendForTrainingSession(educatorId, sessionId),
+      cancelTrainingSession: (educatorId, sessionId, note) => service.cancelTrainingSession(educatorId, sessionId, note),
+      restoreTrainingSession: (educatorId, sessionId) => service.restoreTrainingSession(educatorId, sessionId),
       sendForCompetition: (educatorId, kind, competitionId, options) => competitions.send(educatorId, kind, competitionId, options),
     },
     disconnect: database.disconnect,

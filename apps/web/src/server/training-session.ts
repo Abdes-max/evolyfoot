@@ -43,6 +43,9 @@ export interface PersistedTrainingSession extends Omit<TrainingSessionInput, "me
   cycleNumber: number;
   // Convocation envoyée (ISO) ; `null` : séance seulement « programmée » côté joueurs.
   convokedAt: string | null;
+  // Annulé par le coach (ISO) et la raison communiquée aux joueurs ; `null` s'il est maintenu.
+  cancelledAt: string | null;
+  cancellationNote: string | null;
   createdAt: string;
 }
 
@@ -337,6 +340,8 @@ export async function createTrainingSessionGateway(): Promise<{
     cycleNumber: session.cycleNumber,
     ...(session.attendance ? { attendance: session.attendance } : {}),
     convokedAt: session.convokedAt ? session.convokedAt.toISOString() : null,
+    cancelledAt: session.cancelledAt ? session.cancelledAt.toISOString() : null,
+    cancellationNote: session.cancellationNote ?? null,
     createdAt: session.createdAt.toISOString(),
   });
 

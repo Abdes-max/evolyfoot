@@ -65,6 +65,9 @@ export class PlayerRsvpService {
     if (!session || !isConcerned(settings?.playerIds, playerId)) {
       throw new EducatorNotFoundError();
     }
+    if (session.cancelledAt) {
+      throw new ValidationError("Cet entraînement est annulé.");
+    }
     if (session.convokedAt === null) {
       throw new ValidationError("La convocation de cette séance n’est pas encore envoyée.");
     }

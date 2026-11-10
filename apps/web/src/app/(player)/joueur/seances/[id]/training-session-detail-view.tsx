@@ -89,7 +89,11 @@ export function TrainingSessionDetailView({ sessionId }: { sessionId: string }) 
 
             <div className="player-match-detail-rsvp">
               <p>Ta réponse</p>
-              {session.convoked === false ? (
+              {session.cancelled ? (
+                <p className="player-space-tag" role="status">
+                  Entraînement annulé{session.cancellationNote ? ` : ${session.cancellationNote}` : ""}.
+                </p>
+              ) : session.convoked === false ? (
                 <p className="player-space-tag">Séance programmée : tu pourras répondre quand ton éducateur aura envoyé la convocation.</p>
               ) : (
                 <>

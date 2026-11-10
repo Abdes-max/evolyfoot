@@ -151,6 +151,40 @@ describe("ConvocationService", () => {
     );
   });
 
+  it("annule un entraînement convoqué : message avec la raison aux joueurs, puis le rétablit", async () => {
+    const coach = await createCoach("cancel");
+    const p1 = await playerRepository.create(coach.id, "Kylian");
+    const session = await trainingSessionService.save(coach.id, sessionInput);
+    await trainingSessionRepository.update(session.id, coach.id, { meetingAt: new Date("2026-09-16T18:00:00.000Z"), location: "Stade" });
+    await convocationService.sendForTrainingSession(coach.id, session.id);
+
+    const result = await convocationService.cancelTrainingSession(coach.id, session.id, "  Terrain impraticable.  ");
+
+    expect(result).toMatchObject({ sentCount: 1, subject: "Annulation : entraînement" });
+    const messages = await messageRepository.listByPlayer(coach.id, p1.id);
+    expect(messages.map((message) => message.text)).toContainEqual(
+      expect.stringMatching(/^Annulation : l'entraînement du .* est annulé\. Terrain impraticable\.$/),
+    );
+    const cancelled = await trainingSessionRepository.findById(session.id, coach.id);
+    expect(cancelled?.cancelledAt).toBeInstanceOf(Date);
+    expect(cancelled?.cancellationNote).toBe("Terrain impraticable.");
+    await expect(convocationService.cancelTrainingSession(coach.id, session.id)).rejects.toBeInstanceOf(ValidationError);
+
+    await convocationService.restoreTrainingSession(coach.id, session.id);
+    expect((await trainingSessionRepository.findById(session.id, coach.id))?.cancelledAt).toBeNull();
+  });
+
+  it("annule sans message un entraînement dont la convocation n'est pas partie", async () => {
+    const coach = await createCoach("cancel-silent");
+    const p1 = await playerRepository.create(coach.id, "Kylian");
+    const session = await trainingSessionService.save(coach.id, sessionInput);
+
+    const result = await convocationService.cancelTrainingSession(coach.id, session.id);
+
+    expect(result.sentCount).toBe(0);
+    expect(await messageRepository.listByPlayer(coach.id, p1.id)).toHaveLength(0);
+    expect((await trainingSessionRepository.findById(session.id, coach.id))?.cancelledAt).toBeInstanceOf(Date);
+  });
   it("rejette la convocation d'une séance sans effectif", async () => {
     const coach = await createCoach("no-roster");
     const session = await trainingSessionService.save(coach.id, sessionInput);

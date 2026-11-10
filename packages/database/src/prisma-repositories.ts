@@ -854,6 +854,8 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
       description?: string | null;
       attendance?: readonly AttendanceEntry[];
       convokedAt?: Date;
+      cancelledAt?: Date | null;
+      cancellationNote?: string | null;
     },
   ): Promise<PersistedTrainingSession> {
     const { count } = await this.prisma.trainingSessionRecord.updateMany({
@@ -864,6 +866,8 @@ export class PrismaTrainingSessionRepository implements TrainingSessionRepositor
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
         ...(input.convokedAt !== undefined ? { convokedAt: input.convokedAt } : {}),
+        ...(input.cancelledAt !== undefined ? { cancelledAt: input.cancelledAt } : {}),
+        ...(input.cancellationNote !== undefined ? { cancellationNote: input.cancellationNote } : {}),
       },
     });
     if (count === 0) {

@@ -74,6 +74,9 @@ export interface PlayerDashboardTrainingSession {
   myStatusByDefault: boolean;
   // Convocation envoyée : avant, la séance est seulement « programmée », sans réponse possible.
   convoked: boolean;
+  // Entraînement annulé par le coach, et la raison donnée.
+  cancelled: boolean;
+  cancellationNote: string | null;
 }
 
 // Plateau ou tournoi -- fusionnés sous "compétition", seule distinction utile pour le joueur.
@@ -263,6 +266,8 @@ export class PlayerDashboardService {
           // Présence posée par défaut à la convocation, pas encore confirmée par le joueur.
           myStatusByDefault: myEntry?.byDefault === true,
           convoked: session.convokedAt !== null,
+          cancelled: Boolean(session.cancelledAt),
+          cancellationNote: session.cancellationNote ?? null,
         };
       }),
       competitions: [

@@ -35,6 +35,9 @@ export interface TrainingSession {
   myStatusByDefault?: boolean;
   // Convocation envoyée : avant, la séance est seulement « programmée », sans réponse possible.
   convoked?: boolean;
+  // Entraînement annulé par le coach, et la raison donnée.
+  cancelled?: boolean;
+  cancellationNote?: string | null;
 }
 
 // Tournoi ou plateau : réponse possible une fois la convocation envoyée, comme une séance.
@@ -86,6 +89,9 @@ export interface AgendaEvent {
   // convoquée est seulement « programmée ».
   canRespond: boolean;
   byDefault: boolean;
+  // Entraînement annulé : plus de réponse possible, la raison est affichée.
+  cancelled?: boolean;
+  cancellationNote?: string | null;
 }
 
 // Matchs et séances à venir, du plus proche au plus lointain. Un événement sans date réelle ferme
@@ -115,8 +121,10 @@ export function buildAgenda(dashboard: Dashboard, now: number, scope: "upcoming"
       location: session.location,
       date: session.date,
       myStatus: session.myStatus,
-      canRespond: session.convoked !== false,
+      canRespond: session.convoked !== false && !session.cancelled,
       byDefault: session.myStatusByDefault === true,
+      cancelled: session.cancelled === true,
+      cancellationNote: session.cancellationNote ?? null,
     })),
     ...(dashboard.competitions ?? []).map((competition) => ({
       key: `competition-${competition.id}`,

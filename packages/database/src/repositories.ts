@@ -329,6 +329,9 @@ export interface PersistedTrainingSession {
   attendance?: readonly AttendanceEntry[];
   // Convocation envoyée ; `null` (ou absent) : séance seulement « programmée », sans réponse possible.
   convokedAt?: Date | null;
+  // Annulé par le coach : date, et raison communiquée aux joueurs.
+  cancelledAt?: Date | null;
+  cancellationNote?: string | null;
   createdAt: Date;
 }
 
@@ -373,6 +376,8 @@ export interface TrainingSessionRepository {
       description?: string | null;
       attendance?: readonly AttendanceEntry[];
       convokedAt?: Date;
+      cancelledAt?: Date | null;
+      cancellationNote?: string | null;
     },
   ): Promise<PersistedTrainingSession>;
 }

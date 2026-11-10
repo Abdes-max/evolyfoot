@@ -32,6 +32,8 @@ const persisted: PersistedTrainingSession = {
   description: null,
   cycleNumber: 1,
   convokedAt: null,
+  cancelledAt: null,
+  cancellationNote: null,
   createdAt: "2026-08-29T12:00:00.000Z",
 };
 
@@ -164,6 +166,8 @@ describe("createSaveTrainingSessionHandler", () => {
           description: null,
           cycleNumber: 1,
           convokedAt: null,
+          cancelledAt: null,
+          cancellationNote: null,
           createdAt: "2026-08-29T12:00:00.000Z",
         }),
       },

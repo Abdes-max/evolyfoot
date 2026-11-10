@@ -1,6 +1,8 @@
 import { EducatorNotFoundError, MatchNotFoundError, TournamentNotFoundError, TrainingSessionNotFoundError, ValidationError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
 import {
+  createCancelTrainingSessionHandler,
+  createRestoreTrainingSessionHandler,
   createSendCompetitionConvocationHandler,
   createSendMatchConvocationHandler,
   createSendTrainingSessionConvocationHandler,
@@ -201,5 +203,73 @@ describe("relance des joueurs sans réponse", () => {
     await tournament(withBody({ onlyPending: true }), "tournament-1");
 
     expect(options).toEqual([{ onlyPending: true }, {}, {}, { onlyPending: true }]);
+  });
+});
+
+describe("annulation d'un entraînement", () => {
+  const cancelRequest = (body: unknown) =>
+    new Request("https://evolyfoot.test/api/sessions/session-1/cancel", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+  it("exige une session", async () => {
+    const handler = createCancelTrainingSessionHandler(
+      anonymous,
+      { cancelTrainingSession: async () => Promise.reject(new Error("non appelé")) },
+      () => undefined,
+    );
+    expect((await handler(cancelRequest({}), "session-1")).status).toBe(401);
+  });
+
+  it("transmet la raison, prévient par e-mail et renvoie le nombre de joueurs prévenus", async () => {
+    const received: unknown[] = [];
+    const sent: unknown[] = [];
+    const handler = createCancelTrainingSessionHandler(
+      authenticated,
+      {
+        cancelTrainingSession: async (educatorId, sessionId, note) => {
+          received.push([educatorId, sessionId, note]);
+          return { sentCount: 2, subject: "Annulation : entraînement", text: "Annulation : …", recipients: [{ email: "parent@example.test", name: "Parent" }] };
+        },
+      },
+      () => undefined,
+      { send: async (input) => void sent.push(input), calendarUrl: () => "https://evolyfoot.test/joueur/calendrier" },
+    );
+
+    const response = await handler(cancelRequest({ note: "Terrain impraticable." }), "session-1");
+
+    expect(await response.json()).toEqual({ sentCount: 2, emailCount: 1 });
+    expect(received).toEqual([["educator-1", "session-1", "Terrain impraticable."]]);
+    expect(sent).toHaveLength(1);
+  });
+
+  it("accepte une annulation sans corps et traduit les erreurs", async () => {
+    const received: unknown[] = [];
+    const ok = createCancelTrainingSessionHandler(
+      authenticated,
+      { cancelTrainingSession: async (_educatorId, _sessionId, note) => (received.push(note), { sentCount: 0, subject: "", text: "", recipients: [] }) },
+      () => undefined,
+    );
+    expect((await ok(new Request("https://evolyfoot.test/x", { method: "POST" }), "session-1")).status).toBe(200);
+    expect(received).toEqual([null]);
+
+    const failing = (error: unknown) =>
+      createCancelTrainingSessionHandler(authenticated, { cancelTrainingSession: async () => Promise.reject(error) }, () => undefined);
+    expect((await failing(new ValidationError("Cet entraînement est déjà annulé."))(cancelRequest({}), "session-1")).status).toBe(400);
+    expect((await failing(new TrainingSessionNotFoundError())(cancelRequest({}), "session-1")).status).toBe(404);
+  });
+
+  it("rétablit l'entraînement sans message", async () => {
+    const received: unknown[] = [];
+    const handler = createRestoreTrainingSessionHandler(
+      authenticated,
+      { restoreTrainingSession: async (...args) => void received.push(args) },
+      () => undefined,
+    );
+    const response = await handler(new Request("https://evolyfoot.test/x", { method: "DELETE" }), "session-1");
+    expect(await response.json()).toEqual({ restored: true });
+    expect(received).toEqual([["educator-1", "session-1"]]);
   });
 });
