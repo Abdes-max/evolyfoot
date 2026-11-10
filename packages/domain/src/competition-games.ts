@@ -98,3 +98,38 @@ export function competitionRecordLabel(games: readonly CompetitionGame[]): strin
   ].filter(Boolean);
   return parts.join(", ");
 }
+
+// Une rencontre de tournoi ou de plateau vue depuis un joueur : son tournoi, l'adversaire, le score et ce qu'il a fait.
+export interface PlayerCompetitionGame {
+  readonly competitionName: string;
+  readonly dateLabel: string;
+  readonly opponent: string;
+  readonly goalsFor: number;
+  readonly goalsAgainst: number;
+  readonly goals: number;
+  readonly assists: number;
+}
+
+// Rencontres où le joueur a marqué ou fait une passe décisive, dans l'ordre des tournois et plateaux fournis.
+export function playerCompetitionGames(
+  competitions: ReadonlyArray<{ readonly name: string; readonly dateLabel: string; readonly games?: readonly CompetitionGame[] }>,
+  playerId: string,
+): PlayerCompetitionGame[] {
+  return competitions.flatMap((competition) =>
+    (competition.games ?? []).flatMap((game) => {
+      const stat = game.playerStats.find((entry) => entry.playerId === playerId);
+      if (!stat || (stat.goals === 0 && stat.assists === 0)) return [];
+      return [
+        {
+          competitionName: competition.name,
+          dateLabel: competition.dateLabel,
+          opponent: game.opponent,
+          goalsFor: game.goalsFor,
+          goalsAgainst: game.goalsAgainst,
+          goals: stat.goals,
+          assists: stat.assists,
+        },
+      ];
+    }),
+  );
+}

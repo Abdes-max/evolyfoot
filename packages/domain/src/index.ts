@@ -269,7 +269,8 @@ export {
   competitionOpponentMaxLength,
   competitionRecord,
   competitionRecordLabel,
+  playerCompetitionGames,
   parseCompetitionGames,
   validateCompetitionGames,
 } from "./competition-games";
-export type { CompetitionGame, CompetitionRecord } from "./competition-games";
+export type { CompetitionGame, CompetitionRecord, PlayerCompetitionGame } from "./competition-games";
