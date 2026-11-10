@@ -227,7 +227,9 @@ export default function MatchListScreen() {
             >
               <View style={styles.cardTop}>
                 <View style={[styles.statusBadge, match.status === "played" && styles.statusBadgePlayed]}>
-                  <Text style={[styles.statusText, match.status === "played" && styles.statusTextPlayed]}>{statusLabel[match.status]}</Text>
+                  <Text style={[styles.statusText, match.status === "played" && styles.statusTextPlayed]}>
+                    {match.cancelledAt ? "Annulé" : statusLabel[match.status]}
+                  </Text>
                 </View>
                 <Text style={styles.cardFormat}>Foot à {match.gameFormat}</Text>
               </View>

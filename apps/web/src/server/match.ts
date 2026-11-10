@@ -30,6 +30,9 @@ export interface MatchSummary {
   selectedPlayerIds: readonly string[] | null;
   // Dernier envoi de la convocation (ISO), null tant qu'elle n'est pas partie.
   convokedAt: string | null;
+  // Annulé par le coach (ISO) et la raison communiquée aux joueurs ; `null` s'il est maintenu.
+  cancelledAt: string | null;
+  cancellationNote: string | null;
   opponentFormationId: string | null;
   goalsFor: number | null;
   goalsAgainst: number | null;
@@ -432,6 +435,8 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       ...(match.attendance ? { attendance: match.attendance } : {}),
       selectedPlayerIds: match.selectedPlayerIds,
       convokedAt: match.convokedAt ? match.convokedAt.toISOString() : null,
+      cancelledAt: match.cancelledAt ? match.cancelledAt.toISOString() : null,
+      cancellationNote: match.cancellationNote ?? null,
       opponentFormationId: match.opponentFormationId,
       goalsFor: match.goalsFor,
       goalsAgainst: match.goalsAgainst,

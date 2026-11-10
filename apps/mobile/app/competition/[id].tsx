@@ -6,6 +6,7 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "../../components/concerned-players-picker";
 import { PlaceInput } from "../../components/place-input";
+import { CancelEventPanel } from "../../components/cancel-event-panel";
 import { CollapsibleSection } from "../../components/collapsible-section";
 import { CompetitionGames } from "../../components/competition-games";
 import { ConvocationActions } from "../../components/convocation-actions";
@@ -156,7 +157,9 @@ export default function CompetitionDetailScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-        <Text style={styles.step}>{`${singular.toUpperCase()} ${item.finishedAt ? "TERMINÉ" : isPastCompetition(item) ? "PASSÉ" : "À VENIR"}`}</Text>
+        <Text
+          style={styles.step}
+        >{`${singular.toUpperCase()} ${item.cancelledAt ? "ANNULÉ" : item.finishedAt ? "TERMINÉ" : isPastCompetition(item) ? "PASSÉ" : "À VENIR"}`}</Text>
         <Text style={styles.title}>{item.name}</Text>
         <Text style={styles.body}>{item.dateLabel}</Text>
 
@@ -205,6 +208,13 @@ export default function CompetitionDetailScreen() {
             roster={roster}
             scheduledText={`Les joueurs concernés voient ce ${singular} sans pouvoir répondre tant que la convocation n’est pas envoyée.`}
             selectedPlayerIds={item.selectedPlayerIds}
+          />
+          <CancelEventPanel
+            cancellationNote={item.cancellationNote}
+            cancelledAt={item.cancelledAt}
+            noun={`ce ${singular}`}
+            onChange={(state) => setItem((current) => (current ? { ...current, ...state } : current))}
+            url={`${endpoint}/${id}/cancel`}
           />
         </View>
 

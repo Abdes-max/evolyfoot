@@ -103,7 +103,13 @@ export function MatchDetailView({ matchId }: { matchId: string }) {
 
             <div className="player-match-detail-rsvp">
               <p>Ta réponse</p>
-              <RsvpControl disabled={responding} onRespond={respond} status={match.myStatus} />
+              {match.cancelled ? (
+                <p className="player-space-tag" role="status">
+                  Match annulé{match.cancellationNote ? ` : ${match.cancellationNote}` : ""}.
+                </p>
+              ) : (
+                <RsvpControl disabled={responding} onRespond={respond} status={match.myStatus} />
+              )}
             </div>
           </section>
         )}

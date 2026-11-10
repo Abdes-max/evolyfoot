@@ -45,6 +45,9 @@ export interface PlayerDashboardMatch {
   description: string | null;
   venue: "home" | "away";
   convoked: boolean;
+  // Match annulé par le coach, et la raison donnée.
+  cancelled: boolean;
+  cancellationNote: string | null;
   // Réponse déjà enregistrée par le joueur/tuteur à sa convocation (voir PlayerRsvpService),
   // `null` s'il n'a pas encore répondu.
   myStatus: AttendanceStatus | null;
@@ -90,6 +93,9 @@ export interface PlayerDashboardCompetition {
   location: string | null;
   description: string | null;
   convoked: boolean;
+  // Annulé par le coach, et la raison donnée.
+  cancelled: boolean;
+  cancellationNote: string | null;
   myStatus: AttendanceStatus | null;
 }
 
@@ -195,6 +201,8 @@ export class PlayerDashboardService {
         location: competition.location,
         description: competition.description,
         convoked: competition.convokedAt !== null,
+        cancelled: Boolean(competition.cancelledAt),
+        cancellationNote: competition.cancellationNote ?? null,
         myStatus: myEntry ? attendanceStatusOf(myEntry) : null,
       };
     };
@@ -215,6 +223,8 @@ export class PlayerDashboardService {
         description: match.description,
         venue: match.venue,
         convoked: true,
+        cancelled: Boolean(match.cancelledAt),
+        cancellationNote: match.cancellationNote ?? null,
         myStatus: myEntry ? attendanceStatusOf(myEntry) : null,
       };
     };

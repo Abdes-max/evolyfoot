@@ -20,6 +20,9 @@ export interface Competition {
   games?: CompetitionGame[];
   // Date où le coach l'a marqué terminé, `null` ou absent tant qu'il est en cours.
   finishedAt?: string | null;
+  // Annulé par le coach (ISO) et la raison communiquée aux joueurs.
+  cancelledAt?: string | null;
+  cancellationNote?: string | null;
 }
 
 export const competitionKinds: Record<CompetitionKind, { endpoint: string; listKey: string; itemKey: string; title: string; singular: string }> = {

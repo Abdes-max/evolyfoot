@@ -1,6 +1,12 @@
 import { concernedPlayers, createAttendanceEntry, isConcerned, playersWithoutResponse } from "@evolyfoot/domain";
 import type { AttendanceStatus } from "@evolyfoot/domain";
-import { convocationRecipients, everyoneAnsweredMessage, type ConvocationOptions, type ConvocationResult } from "./convocation-service";
+import {
+  cancellationNoteMaxLength,
+  convocationRecipients,
+  everyoneAnsweredMessage,
+  type ConvocationOptions,
+  type ConvocationResult,
+} from "./convocation-service";
 import { EducatorNotFoundError, PlateauNotFoundError, TournamentNotFoundError, ValidationError } from "./errors";
 import type {
   CompetitionUpdate,
@@ -59,6 +65,44 @@ export class CompetitionConvocationService {
     };
   }
 
+  // Annule le tournoi ou le plateau et prévient les joueurs concernés par message (avec la raison, si elle est donnée).
+  // Sans convocation envoyée, les joueurs ne savent pas qu'il existe : il est annulé sans message.
+  async cancel(educatorId: string, kind: CompetitionKind, competitionId: string, note?: string | null): Promise<ConvocationResult> {
+    const [educator, competition] = await Promise.all([this.educatorRepository.findById(educatorId), this.find(kind, competitionId, educatorId)]);
+    if (!educator) {
+      throw new EducatorNotFoundError();
+    }
+    if (competition.cancelledAt) {
+      throw new ValidationError(`Ce ${kindLabels[kind]} est déjà annulé.`);
+    }
+    const reason = note?.trim() ? note.trim() : null;
+    if (reason && reason.length > cancellationNoteMaxLength) {
+      throw new ValidationError(`La raison est trop longue (${cancellationNoteMaxLength} caractères au plus).`);
+    }
+    const where = competition.location ? ` — ${competition.location}` : "";
+    const text = `Annulation : le ${kindLabels[kind]} « ${competition.name} » (${competition.dateLabel}${where}) est annulé.${reason ? ` ${reason}` : ""}`;
+    const roster = competition.convokedAt ? concernedPlayers(await this.playerRepository.listByEducator(educatorId), competition.selectedPlayerIds) : [];
+    await Promise.all(
+      roster.map((player) => this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text })),
+    );
+    await this.update(kind, competitionId, educatorId, { cancelledAt: this.now(), cancellationNote: reason });
+    return {
+      sentCount: roster.length,
+      subject: `Annulation : ${kindLabels[kind]} « ${competition.name} »`,
+      text,
+      recipients: await convocationRecipients(this.educatorRepository, roster),
+    };
+  }
+
+  // Rétablit un tournoi ou un plateau annulé, sans nouveau message.
+  async restore(educatorId: string, kind: CompetitionKind, competitionId: string): Promise<void> {
+    if (!(await this.educatorRepository.findById(educatorId))) {
+      throw new EducatorNotFoundError();
+    }
+    await this.find(kind, competitionId, educatorId);
+    await this.update(kind, competitionId, educatorId, { cancelledAt: null, cancellationNote: null });
+  }
+
   // Réponse d'un compte joueur, lue et écrite via l'éducateur propriétaire du joueur (même principe
   // que PlayerRsvpService). Un joueur non concerné ne voit pas l'événement : introuvable pour lui.
   async respond(playerAccountId: string, kind: CompetitionKind, competitionId: string, status: AttendanceStatus, comment?: string | null): Promise<void> {
@@ -74,6 +118,9 @@ export class CompetitionConvocationService {
     const competition = await this.find(kind, competitionId, owned.educatorId).catch(() => null);
     if (!competition || !isConcerned(competition.selectedPlayerIds, playerId)) {
       throw new EducatorNotFoundError();
+    }
+    if (competition.cancelledAt) {
+      throw new ValidationError(`Ce ${kindLabels[kind]} est annulé.`);
     }
     if (competition.convokedAt === null) {
       throw new ValidationError(`La convocation de ce ${kindLabels[kind]} n’est pas encore envoyée.`);

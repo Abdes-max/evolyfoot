@@ -17,6 +17,9 @@ export interface PlateauSummary {
   games?: readonly CompetitionGame[];
   // ISO de la date où il a été marqué terminé, `null` s'il est en cours.
   finishedAt: string | null;
+  // Annulé par le coach (ISO) et la raison communiquée aux joueurs ; `null` s'il est maintenu.
+  cancelledAt: string | null;
+  cancellationNote: string | null;
   createdAt: string;
 }
 
@@ -212,6 +215,8 @@ export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway;
       ...(plateau.attendance ? { attendance: plateau.attendance } : {}),
       games: plateau.games ?? [],
       finishedAt: plateau.finishedAt ? plateau.finishedAt.toISOString() : null,
+      cancelledAt: plateau.cancelledAt ? plateau.cancelledAt.toISOString() : null,
+      cancellationNote: plateau.cancellationNote ?? null,
       createdAt: plateau.createdAt.toISOString(),
     };
   }

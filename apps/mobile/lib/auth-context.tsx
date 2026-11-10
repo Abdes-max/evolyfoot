@@ -50,6 +50,9 @@ export interface MobileMatch {
   selectedPlayerIds?: readonly string[] | null;
   // Dernier envoi de la convocation (ISO), null tant qu'elle n'est pas partie.
   convokedAt?: string | null;
+  // Annulé par le coach (ISO) et la raison communiquée aux joueurs.
+  cancelledAt?: string | null;
+  cancellationNote?: string | null;
   // Réponses des joueurs (présent, absent, motif).
   attendance?: AttendanceEntry[];
   // Résultat saisi après le match : `null` tant qu'il n'est pas renseigné.

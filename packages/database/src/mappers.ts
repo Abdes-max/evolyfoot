@@ -443,6 +443,8 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     playerStats: (record.playerStats as unknown as readonly MatchPlayerStat[] | null) ?? [],
     selectedPlayerIds: toPlayerSelection(record.selectedPlayerIds),
     convokedAt: record.convokedAt,
+    cancelledAt: record.cancelledAt,
+    cancellationNote: record.cancellationNote,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   });
@@ -463,6 +465,8 @@ export function toPersistedTournament(record: PrismaTournamentRecord): Persisted
     attendance: toAttendanceEntries(record.attendance),
     games: parseCompetitionGames(record.games),
     finishedAt: record.finishedAt,
+    cancelledAt: record.cancelledAt,
+    cancellationNote: record.cancellationNote,
     createdAt: record.createdAt,
   });
 }
@@ -482,6 +486,8 @@ export function toPersistedPlateau(record: PrismaPlateauRecord): PersistedPlatea
     attendance: toAttendanceEntries(record.attendance),
     games: parseCompetitionGames(record.games),
     finishedAt: record.finishedAt,
+    cancelledAt: record.cancelledAt,
+    cancellationNote: record.cancellationNote,
     createdAt: record.createdAt,
   });
 }

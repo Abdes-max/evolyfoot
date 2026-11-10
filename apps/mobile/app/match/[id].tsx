@@ -18,6 +18,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CollapsibleSection } from "../../components/collapsible-section";
 import { ConcernedPlayersPicker } from "../../components/concerned-players-picker";
+import { CancelEventPanel } from "../../components/cancel-event-panel";
 import { ConvocationActions } from "../../components/convocation-actions";
 import { MatchAnalysis } from "../../components/match-analysis";
 import { MatchClockPanel } from "../../components/match-clock";
@@ -393,6 +394,15 @@ export default function MatchDetailScreen() {
             scheduledText="Les joueurs concernés voient le match sans pouvoir répondre tant que la convocation n’est pas envoyée."
             selectedPlayerIds={match.selectedPlayerIds}
           />
+          {!readOnly ? (
+            <CancelEventPanel
+              cancellationNote={match.cancellationNote}
+              cancelledAt={match.cancelledAt}
+              noun="le match"
+              onChange={(state) => setMatch((current) => (current ? { ...current, ...state } : current))}
+              url={`/api/matches/${encodeURIComponent(match.id)}/cancel`}
+            />
+          ) : null}
         </View>
 
         {readOnly ? (

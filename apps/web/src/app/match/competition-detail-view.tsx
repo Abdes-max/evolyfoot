@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { concernedPlayers, convocationFeedback, type AttendanceEntry, type PlayerSelection } from "@evolyfoot/domain";
 import { parseDateInputValue } from "../date-format";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "../concerned-players-picker";
+import { CancelEventPanel } from "../cancel-event-panel";
 import { TrainingResponses } from "../training-responses";
 
 interface Competition {
@@ -23,6 +24,9 @@ interface Competition {
   attendance?: AttendanceEntry[];
   // Date où il a été marqué terminé, `null` tant qu'il est en cours.
   finishedAt?: string | null;
+  // Annulé par le coach (ISO) et la raison communiquée aux joueurs.
+  cancelledAt?: string | null;
+  cancellationNote?: string | null;
 }
 
 interface CompetitionDetailViewProps {
@@ -239,7 +243,13 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
       <header className="page-header match-header">
         <div>
           <span className="eyebrow light">
-            {item.finishedAt ? `${singular.toUpperCase()} TERMINÉ` : isPast ? `${singular.toUpperCase()} PASSÉ` : `${singular.toUpperCase()} À VENIR`}
+            {item.cancelledAt
+              ? `${singular.toUpperCase()} ANNULÉ`
+              : item.finishedAt
+                ? `${singular.toUpperCase()} TERMINÉ`
+                : isPast
+                  ? `${singular.toUpperCase()} PASSÉ`
+                  : `${singular.toUpperCase()} À VENIR`}
           </span>
           <h1 title={item.name}>{item.name}</h1>
           <p title={item.dateLabel}>{item.dateLabel}</p>
@@ -293,6 +303,14 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
               {convocationStatus && <p className="match-convocation-feedback">{convocationStatus}</p>}
             </div>
           )}
+
+          <CancelEventPanel
+            cancellationNote={item.cancellationNote}
+            cancelledAt={item.cancelledAt}
+            noun={`ce ${singular}`}
+            onChange={(state) => setItem((current) => (current ? { ...current, ...state } : current))}
+            url={`${endpoint}/${competitionId}/cancel`}
+          />
 
           {saveError && (
             <p className="field-error" role="alert">

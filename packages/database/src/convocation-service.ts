@@ -194,6 +194,51 @@ export class ConvocationService {
     };
   }
 
+  // Annule le match et prévient les joueurs concernés par message (avec la raison, si elle est donnée). Un match joué ne
+  // s'annule pas ; sans convocation envoyée, il est annulé sans message.
+  async cancelMatch(educatorId: string, matchId: string, note?: string | null): Promise<ConvocationResult> {
+    const [educator, match] = await Promise.all([this.educatorRepository.findById(educatorId), this.matchRepository.findById(matchId, educatorId)]);
+    if (!educator) {
+      throw new EducatorNotFoundError();
+    }
+    if (!match) {
+      throw new MatchNotFoundError();
+    }
+    if (match.cancelledAt) {
+      throw new ValidationError("Ce match est déjà annulé.");
+    }
+    if (match.status === "played") {
+      throw new ValidationError("Un match déjà joué ne peut pas être annulé.");
+    }
+    const reason = note?.trim() ? note.trim() : null;
+    if (reason && reason.length > cancellationNoteMaxLength) {
+      throw new ValidationError(`La raison est trop longue (${cancellationNoteMaxLength} caractères au plus).`);
+    }
+    const time = matchMeetingTime(match.date, match.meetingOffsetMinutes, match.meetingTime);
+    const when = time ? `${match.dateLabel} · ${time}` : match.dateLabel;
+    const where = match.location ? ` — ${match.location}` : "";
+    const text = `Annulation : le match contre ${match.opponent} (${when}${where}) est annulé.${reason ? ` ${reason}` : ""}`;
+    const roster = match.convokedAt ? concernedPlayers(await this.playerRepository.listByEducator(educatorId), match.selectedPlayerIds) : [];
+    await Promise.all(
+      roster.map((player) => this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text })),
+    );
+    await this.matchRepository.update(matchId, educatorId, { cancelledAt: this.now(), cancellationNote: reason });
+    return {
+      sentCount: roster.length,
+      subject: `Annulation : match contre ${match.opponent}`,
+      text,
+      recipients: await convocationRecipients(this.educatorRepository, roster),
+    };
+  }
+
+  // Rétablit un match annulé, sans nouveau message.
+  async restoreMatch(educatorId: string, matchId: string): Promise<void> {
+    if (!(await this.educatorRepository.findById(educatorId))) {
+      throw new EducatorNotFoundError();
+    }
+    await this.matchRepository.update(matchId, educatorId, { cancelledAt: null, cancellationNote: null });
+  }
+
   // Annule l'entraînement et prévient les joueurs concernés par message (avec la raison, si elle est donnée). Sans
   // convocation envoyée, les joueurs ne savent pas qu'il existe : il est annulé sans message.
   async cancelTrainingSession(educatorId: string, sessionId: string, note?: string | null): Promise<ConvocationResult> {
