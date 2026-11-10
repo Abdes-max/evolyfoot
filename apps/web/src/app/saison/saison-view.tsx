@@ -12,6 +12,7 @@ import {
   type SeasonEventInput,
   type SeasonEventType,
   type TrainingDay,
+  type AgeGroup,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -110,25 +111,26 @@ export function SaisonView() {
           return;
         }
         const program: { priorities: DevelopmentTheme[]; startDate: string } | null = programBody?.program ?? null;
-        const profile: { sessionsPerWeek?: number; trainingDays?: TrainingDay[] } | null = teamBody?.profile ?? null;
+        const profile: { sessionsPerWeek?: number; trainingDays?: TrainingDay[]; ageGroup?: AgeGroup } | null = teamBody?.profile ?? null;
         // Séances de la saison guidée pas encore préparées : placées à leur date proposée.
         const planned: CalendarEvent[] = program
-          ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek: profile?.sessionsPerWeek ?? 2 }).flatMap((week) =>
-              week.slots.flatMap((slot, index) =>
-                sessions.some((session) => session.cycleNumber === guidedSeasonCycle && session.weekNumber === week.week && session.slot === index)
-                  ? []
-                  : [
-                      {
-                        id: `prevue-${week.week}-${index}`,
-                        type: "session" as const,
-                        title: slotLabel(slot),
-                        date: seasonSlotDate(new Date(`${program.startDate}T00:00:00`), week.week, index, profile?.trainingDays ?? []).toISOString(),
-                        href: `/saison/seance/${slot.sessionNumber}?semaine=${week.week}&creneau=${index}`,
-                        planned: true,
-                        color: seasonSlotColor(slot),
-                      },
-                    ],
-              ),
+          ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek: profile?.sessionsPerWeek ?? 2, ageGroup: profile?.ageGroup }).flatMap(
+              (week) =>
+                week.slots.flatMap((slot, index) =>
+                  sessions.some((session) => session.cycleNumber === guidedSeasonCycle && session.weekNumber === week.week && session.slot === index)
+                    ? []
+                    : [
+                        {
+                          id: `prevue-${week.week}-${index}`,
+                          type: "session" as const,
+                          title: slotLabel(slot),
+                          date: seasonSlotDate(new Date(`${program.startDate}T00:00:00`), week.week, index, profile?.trainingDays ?? []).toISOString(),
+                          href: `/saison/seance/${slot.sessionNumber}?semaine=${week.week}&creneau=${index}`,
+                          planned: true,
+                          color: seasonSlotColor(slot),
+                        },
+                      ],
+                ),
             )
           : [];
         setEvents([

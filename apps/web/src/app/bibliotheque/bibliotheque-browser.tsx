@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  activityCategoryLabels,
   developmentThemes,
   type DevelopmentTheme,
   diagramTargets,
@@ -9,7 +10,7 @@ import {
   type TrainingBlockKind,
 } from "@evolyfoot/domain";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TacticalDiagramView } from "../tactical-diagram";
 
 const kindLabels: Record<TrainingBlockKind, string> = {
@@ -28,6 +29,18 @@ const kindFilters: ReadonlyArray<{ value: TrainingBlockKind | "all"; label: stri
 
 const themeFilters: ReadonlyArray<DevelopmentTheme | "all"> = ["all", ...developmentThemes];
 
+// Filtre de catégorie : « U10-U11 » garde aussi les exercices communs aux quatre catégories, « U12-U13 » de même.
+type CategoryFilter = "all" | "U10-U11" | "U12-U13";
+const categoryFilters: ReadonlyArray<{ value: CategoryFilter; label: string }> = [
+  { value: "all", label: "Toutes catégories" },
+  { value: "U10-U11", label: "U10-U11" },
+  { value: "U12-U13", label: "U12-U13" },
+];
+
+function inCategory(activity: TrainingActivity, filter: CategoryFilter): boolean {
+  return filter === "all" || !activity.category || activity.category === "U10-U13" || activity.category === filter;
+}
+
 function matchesQuery(activity: TrainingActivity, query: string) {
   const haystack = `${activity.title} ${activity.objective}`.toLowerCase();
   return haystack.includes(query.toLowerCase());
@@ -37,14 +50,33 @@ export function BibliothequeBrowser() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<TrainingBlockKind | "all">("all");
   const [theme, setTheme] = useState<DevelopmentTheme | "all">("all");
+  const [category, setCategory] = useState<CategoryFilter>("all");
+
+  // Par défaut, la catégorie de l'équipe (modifiable) ; sans équipe, tout le catalogue.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/team")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        const age = body?.profile?.ageGroup;
+        if (!cancelled && age) setCategory(age === "U12" || age === "U13" ? "U12-U13" : "U10-U11");
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const activities = useMemo(
     () =>
       trainingActivityCatalogue.filter(
         (activity) =>
-          (kind === "all" || activity.kind === kind) && (theme === "all" || activity.compatibleThemes.includes(theme)) && matchesQuery(activity, query),
+          (kind === "all" || activity.kind === kind) &&
+          (theme === "all" || activity.compatibleThemes.includes(theme)) &&
+          inCategory(activity, category) &&
+          matchesQuery(activity, query),
       ),
-    [kind, query, theme],
+    [category, kind, query, theme],
   );
 
   return (
@@ -58,6 +90,19 @@ export function BibliothequeBrowser() {
           </svg>
           <input onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher une situation…" type="search" value={query} />
         </label>
+        <div className="bibliotheque-filters" role="group" aria-label="Filtrer par catégorie">
+          {categoryFilters.map((filter) => (
+            <button
+              aria-pressed={category === filter.value}
+              className={category === filter.value ? "active" : ""}
+              key={filter.value}
+              onClick={() => setCategory(filter.value)}
+              type="button"
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
         <div className="bibliotheque-filters" role="group" aria-label="Filtrer par type de bloc">
           {kindFilters.map((filter) => (
             <button
@@ -94,6 +139,7 @@ export function BibliothequeBrowser() {
                   <span>{kindLabels[activity.kind]}</span>
                   <span>{activity.fieldSize}</span>
                 </div>
+                {activity.category ? <span className="activity-category-tag">{activityCategoryLabels[activity.category]}</span> : null}
                 <h3>{activity.title}</h3>
                 <p>{activity.objective}</p>
               </div>

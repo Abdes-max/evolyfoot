@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Image, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { TacticalPlayer } from "../../components/tactical-player";
 import { useAuth } from "../../lib/auth-context";
+import { activityCategoryLabels } from "@evolyfoot/domain";
 import { kindLabels } from "../../lib/exercise-labels";
 
 function Block({ title, text, items }: { title: string; text?: string; items?: readonly string[] }) {
@@ -57,6 +58,7 @@ export default function ExerciseScreen() {
           <>
             <Text style={styles.step}>{kindLabels[exercise.kind].toUpperCase()}</Text>
             <Text style={styles.title}>{exercise.title}</Text>
+            {activity?.category ? <Text style={styles.categoryTag}>{`Catégorie : ${activityCategoryLabels[activity.category]}`}</Text> : null}
             {activity ? (
               <View style={styles.facts}>
                 {[
@@ -106,6 +108,18 @@ const styles = StyleSheet.create({
   factValue: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 4 },
   photo: { width: "100%", height: 220, borderRadius: radii.md, backgroundColor: colors.surface, marginBottom: 12 },
   card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 10 },
+  categoryTag: {
+    alignSelf: "flex-start",
+    marginBottom: 8,
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: "800",
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+  },
   cardTitle: { fontSize: 13, fontWeight: "800", color: colors.ink, marginBottom: 6 },
   text: { fontSize: 12, lineHeight: 18, color: colors.ink },
 });

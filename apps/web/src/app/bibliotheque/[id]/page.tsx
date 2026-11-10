@@ -1,4 +1,4 @@
-import { findTrainingActivity, trainingActivityCatalogue, type TrainingBlockKind } from "@evolyfoot/domain";
+import { activityCategoryLabels, findTrainingActivity, trainingActivityCatalogue, type TrainingBlockKind } from "@evolyfoot/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExerciseSheet } from "../../exercise-sheet";
@@ -48,6 +48,7 @@ export default async function ExercisePage({ params }: ExercisePageProps) {
         <div className="exercise-heading">
           <span className="session-exercise-kind">{kindLabels[activity.kind]}</span>
           <h1 className="session-exercise-title">{activity.title}</h1>
+          {activity.category ? <span className="activity-category-tag">Catégorie : {activityCategoryLabels[activity.category]}</span> : null}
         </div>
         <ExerciseSheet activity={activity} />
 

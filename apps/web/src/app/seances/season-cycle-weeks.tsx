@@ -1,6 +1,14 @@
 "use client";
 
-import { isPastSeasonSlot, seasonSlotColor, seasonSlotDateLabel, type SeasonCycle, type SessionScope, type TrainingDay } from "@evolyfoot/domain";
+import {
+  isPastSeasonSlot,
+  programSessionLabelNumber,
+  seasonSlotColor,
+  seasonSlotDateLabel,
+  type SeasonCycle,
+  type SessionScope,
+  type TrainingDay,
+} from "@evolyfoot/domain";
 import Link from "next/link";
 import { slotLabel } from "../saison/guided-season";
 
@@ -121,7 +129,7 @@ export function SeasonCycleWeeks({
                     >
                       <strong style={{ color }}>{slotLabel(slot)}</strong>
                       <span>
-                        Séance {slot.sessionNumber} du programme{slot.major ? " · prioritaire" : ""}
+                        Séance {programSessionLabelNumber(slot.sessionNumber)} du programme{slot.major ? " · prioritaire" : ""}
                       </span>
                       <span className="seances-slot-cta">Préparer cette séance →</span>
                     </Link>

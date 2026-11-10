@@ -157,7 +157,7 @@ export default function SaisonScreen() {
   const planned = useMemo((): CalendarEvent[] => {
     if (!program || !season) return [];
     const start = new Date(`${program.startDate}T00:00:00`);
-    return buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek: team?.sessionsPerWeek ?? 2 }).flatMap((week) =>
+    return buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek: team?.sessionsPerWeek ?? 2, ageGroup: team?.ageGroup }).flatMap((week) =>
       week.slots.flatMap((slot, index) =>
         season.preparedSlots.some((prepared) => prepared.weekNumber === week.week && prepared.slot === index)
           ? []

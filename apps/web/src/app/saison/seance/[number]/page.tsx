@@ -1,4 +1,15 @@
-import { findProgramSession, findProgramSituation, programSessions, programSource, programSubThemes, situationMinutes } from "@evolyfoot/domain";
+import {
+  findProgramSession,
+  findProgramSituation,
+  programBandLabels,
+  programBandOfSession,
+  programSessionLabelNumber,
+  programSessions,
+  programSessionsU12,
+  programSource,
+  programSubThemes,
+  situationMinutes,
+} from "@evolyfoot/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SidebarNav } from "../../../sidebar-nav";
@@ -12,7 +23,7 @@ interface ProgramSessionPageProps {
 }
 
 export function generateStaticParams() {
-  return programSessions.map((session) => ({ number: String(session.number) }));
+  return [...programSessions, ...programSessionsU12].map((session) => ({ number: String(session.number) }));
 }
 
 const evaluationFocus = {
@@ -51,7 +62,8 @@ export default async function ProgramSessionPage({ params, searchParams }: Progr
         <header className="page-header seances-header">
           <div>
             <span className="eyebrow light">
-              Séance type {session.number} · {session.type === "theme" ? programSubThemes[session.subTheme].theme : "Saison"}
+              Séance type {programSessionLabelNumber(session.number)} · {programBandLabels[programBandOfSession(session.number)]} ·{" "}
+              {session.type === "theme" ? programSubThemes[session.subTheme].theme : "Saison"}
             </span>
             <h1>{title}</h1>
             <p>{session.type === "evaluation" ? "75 minutes · 16 joueurs" : `${situations.length} situations · environ ${minutes} minutes · 16 joueurs`}</p>

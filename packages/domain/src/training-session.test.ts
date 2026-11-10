@@ -23,11 +23,11 @@ const developmentWeek: DevelopmentWeek = {
 
 describe("training session generation", () => {
   it("génère quatre blocs totalisant 75 minutes", () => {
-    const session = generateTrainingSession(developmentWeek, "U12", 14);
+    const session = generateTrainingSession(developmentWeek, "U11", 14);
 
     expect(session.blocks.map((block) => block.activity.kind)).toEqual(["welcome", "activation", "main", "game"]);
     expect(getSessionDuration(session)).toBe(75);
-    expect(generateTrainingSession(developmentWeek, "U12", 14)).toEqual(session);
+    expect(generateTrainingSession(developmentWeek, "U11", 14)).toEqual(session);
   });
 
   it.each([
@@ -37,7 +37,7 @@ describe("training session generation", () => {
     ["Récupérer rapidement", "recuperer"],
   ] as const)("propose des activités spécifiques au thème %s", (theme, idFragment) => {
     const themedWeek = { ...developmentWeek, theme };
-    const themedSession = generateTrainingSession(themedWeek, "U12", 14);
+    const themedSession = generateTrainingSession(themedWeek, "U11", 14);
 
     expect(themedSession.blocks).toHaveLength(4);
     expect(themedSession.blocks.every((block) => block.activity.id.includes(idFragment))).toBe(true);
@@ -45,8 +45,8 @@ describe("training session generation", () => {
   });
 
   it("crée des identifiants de blocs stables et rend une copie indépendante du catalogue", () => {
-    const first = generateTrainingSession(developmentWeek, "U12", 14);
-    const second = generateTrainingSession(developmentWeek, "U12", 14);
+    const first = generateTrainingSession(developmentWeek, "U11", 14);
+    const second = generateTrainingSession(developmentWeek, "U11", 14);
 
     expect(first.blocks.map((block) => block.id)).toEqual(second.blocks.map((block) => block.id));
     expect(new Set(first.blocks.map((block) => block.id)).size).toBe(4);
@@ -63,20 +63,20 @@ describe("variété et explication des séances générées", () => {
   const titles = (generated: ReturnType<typeof generateTrainingSession>) => generated.blocks.map((block) => block.activity.title);
 
   it("varie le déroulé entre deux créneaux d'une même semaine", () => {
-    expect(titles(generateTrainingSession(conserverWeek, "U12", 14, 0))).not.toEqual(titles(generateTrainingSession(conserverWeek, "U12", 14, 1)));
+    expect(titles(generateTrainingSession(conserverWeek, "U11", 14, 0))).not.toEqual(titles(generateTrainingSession(conserverWeek, "U11", 14, 1)));
   });
 
   it("propose une autre séance sur le même créneau avec un identifiant distinct", () => {
-    const first = generateTrainingSession(conserverWeek, "U12", 14, 0);
-    const other = generateTrainingSession(conserverWeek, "U12", 14, 0, 1);
+    const first = generateTrainingSession(conserverWeek, "U11", 14, 0);
+    const other = generateTrainingSession(conserverWeek, "U11", 14, 0, 1);
 
     expect(titles(other)).not.toEqual(titles(first));
     expect(other.id).not.toBe(first.id);
-    expect(generateTrainingSession(conserverWeek, "U12", 14, 0, 1)).toEqual(other);
+    expect(generateTrainingSession(conserverWeek, "U11", 14, 0, 1)).toEqual(other);
   });
 
   it("explique la séance et chaque bloc", () => {
-    const generated = generateTrainingSession(conserverWeek, "U12", 15, 0);
+    const generated = generateTrainingSession(conserverWeek, "U11", 15, 0);
     const explanation = explainTrainingSession(generated, conserverWeek);
 
     expect(explanation.summary).toContain("Découvrir");
@@ -86,7 +86,7 @@ describe("variété et explication des séances générées", () => {
   });
 });
 
-const session = generateTrainingSession(developmentWeek, "U12", 14);
+const session = generateTrainingSession(developmentWeek, "U11", 14);
 
 describe("training session editing", () => {
   it("édite une séance sans muter la proposition", () => {
@@ -133,9 +133,9 @@ describe("training session editing", () => {
 
 describe("bibliothèque d'exercices", () => {
   it("expose les activités maison et celles de la programmation, chacune avec un schéma tactique et un contenu de coaching complet", () => {
-    expect(trainingActivityCatalogue).toHaveLength(161);
-    expect(new Set(trainingActivityCatalogue.map((activity) => activity.id)).size).toBe(161);
-    expect(new Set(trainingActivityCatalogue.map((activity) => activity.title)).size).toBe(161);
+    expect(trainingActivityCatalogue).toHaveLength(216);
+    expect(new Set(trainingActivityCatalogue.map((activity) => activity.id)).size).toBe(216);
+    expect(new Set(trainingActivityCatalogue.map((activity) => activity.title)).size).toBe(216);
 
     for (const activity of trainingActivityCatalogue) {
       expect(activity.rules.length).toBeGreaterThan(0);

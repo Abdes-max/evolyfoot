@@ -13,6 +13,7 @@ import {
   trainingCycleWeekCount,
   type DevelopmentTheme,
   type DiagnosticScores,
+  type AgeGroup,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -40,6 +41,7 @@ export function PlanView() {
   // Saison guidée : le cycle affiché est alors celui de la saison (voir seasonCycles).
   const [program, setProgram] = useState<{ priorities: DevelopmentTheme[]; startDate: string } | null>(null);
   const [sessionsPerWeek, setSessionsPerWeek] = useState(2);
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | undefined>(undefined);
   const [preparedSeasonSlots, setPreparedSeasonSlots] = useState<{ weekNumber: number; slot: number }[]>([]);
   const [now] = useState(() => new Date());
   const router = useRouter();
@@ -79,6 +81,7 @@ export function PlanView() {
         setCycleNumber(sessionsBody.cycleNumber ?? 1);
         setProgram(programBody.program ?? null);
         setSessionsPerWeek(teamBody.profile?.sessionsPerWeek ?? 2);
+        setAgeGroup(teamBody.profile?.ageGroup);
         setPreparedSeasonSlots(
           ((seasonSessionsBody.sessions ?? []) as Array<{ cycleNumber?: number; weekNumber: number; slot: number }>).filter(
             (session) => session.cycleNumber === guidedSeasonCycle,
@@ -94,7 +97,10 @@ export function PlanView() {
     };
   }, []);
 
-  const seasonWeeks = useMemo(() => (program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek }) : []), [program, sessionsPerWeek]);
+  const seasonWeeks = useMemo(
+    () => (program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek, ageGroup }) : []),
+    [program, sessionsPerWeek, ageGroup],
+  );
   const seasonWeek = program ? seasonWeekAt(new Date(`${program.startDate}T00:00:00`), now) : 0;
   const seasonCycle = program ? seasonCycleAt(seasonCycles(seasonWeeks), seasonWeek) : null;
   const plan = seasonCycle ? seasonCycleAsPlan(seasonCycle) : buildDevelopmentPlan(summarizeDiagnostic(scores));

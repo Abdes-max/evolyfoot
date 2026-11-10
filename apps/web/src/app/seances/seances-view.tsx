@@ -15,6 +15,7 @@ import {
   type DiagnosticScores,
   type SessionScope,
   type TrainingDay,
+  type AgeGroup,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { ConvocationSettings } from "../convocation-settings";
@@ -63,6 +64,7 @@ export function SeancesView() {
   // Saison guidée : la page montre alors ses cycles de 4 semaines (voir seasonCycles).
   const [program, setProgram] = useState<{ priorities: DevelopmentTheme[]; startDate: string } | null>(null);
   const [sessionsPerWeek, setSessionsPerWeek] = useState(2);
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | undefined>(undefined);
   const [seasonSessions, setSeasonSessions] = useState<readonly SavedSession[]>([]);
   const [cycleOffset, setCycleOffset] = useState(0);
   const [now] = useState(() => new Date());
@@ -108,6 +110,7 @@ export function SeancesView() {
         setSessions(sessionsBody.sessions ?? []);
         setProgram(programBody.program ?? null);
         setSessionsPerWeek(teamBody.profile?.sessionsPerWeek ?? 2);
+        setAgeGroup(teamBody.profile?.ageGroup);
         setSeasonSessions(((seasonSessionsBody.sessions ?? []) as SavedSession[]).filter((session) => session.cycleNumber === guidedSeasonCycle));
       } catch {
         // Reste sur un plan de démonstration et une liste vide.
@@ -128,7 +131,10 @@ export function SeancesView() {
   // Premier créneau libre du cycle ; le premier créneau de la semaine en cours si tout est généré.
   const nextSlot = firstFreeCycleSlot(sessions, slotLabels.length) ?? { weekNumber: activeWeek, slot: 0 };
 
-  const seasonWeeks = useMemo(() => (program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek }) : []), [program, sessionsPerWeek]);
+  const seasonWeeks = useMemo(
+    () => (program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek, ageGroup }) : []),
+    [program, sessionsPerWeek, ageGroup],
+  );
   const cycles = useMemo(() => seasonCycles(seasonWeeks), [seasonWeeks]);
   const currentSeasonWeek = program ? seasonWeekAt(new Date(`${program.startDate}T00:00:00`), now) : 0;
   const currentCycleIndex = Math.max(

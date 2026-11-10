@@ -56,7 +56,7 @@ export function useSeasonCycle(): SeasonCycleState {
 
   const sessionsPerWeek = team?.sessionsPerWeek ?? 2;
   return useMemo(() => {
-    const seasonWeeks = program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek }) : [];
+    const seasonWeeks = program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek, ageGroup: team?.ageGroup }) : [];
     const cycles = seasonCycles(seasonWeeks);
     const currentSeasonWeek = program ? seasonWeekAt(new Date(`${program.startDate}T00:00:00`), now) : 0;
     return {
@@ -69,7 +69,7 @@ export function useSeasonCycle(): SeasonCycleState {
       prepared,
       nextGuided: program ? nextSeasonSlot(seasonWeeks, prepared, currentSeasonWeek) : null,
     };
-  }, [program, loaded, prepared, sessionsPerWeek, now]);
+  }, [program, loaded, prepared, sessionsPerWeek, team?.ageGroup, now]);
 }
 
 // Ouvre une séance de la saison : préparée (mode terrain) ou à préparer (sa fiche du programme).

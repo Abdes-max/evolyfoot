@@ -2,7 +2,11 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import {
   findProgramSession,
   findProgramSituation,
+  activityCategoryLabels,
   findTrainingActivity,
+  isActivityForBand,
+  programBandOfSession,
+  programSessionLabelNumber,
   programSource,
   programSubThemes,
   scheduleForSlot,
@@ -148,7 +152,7 @@ export default function ProgramSessionScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <Text style={styles.step}>SÉANCE TYPE {session.number}</Text>
+        <Text style={styles.step}>SÉANCE TYPE {programSessionLabelNumber(session.number)}</Text>
         <Text style={styles.title}>{title}</Text>
 
         {changedCount > 0 ? (
@@ -204,7 +208,10 @@ export default function ProgramSessionScreen() {
           chosen.map((id, index) => {
             const activity = findTrainingActivity(id)!;
             const situation = id === programIds[index] ? findProgramSituation(id) : undefined;
-            const alternatives = trainingActivityCatalogue.filter((candidate) => candidate.kind === activity.kind && candidate.id !== activity.id);
+            const alternatives = trainingActivityCatalogue.filter(
+              (candidate) =>
+                candidate.kind === activity.kind && candidate.id !== activity.id && isActivityForBand(candidate.id, programBandOfSession(session.number)),
+            );
             return (
               <View key={`${programIds[index]}-${index}`} style={styles.card}>
                 <Text style={styles.label}>
@@ -214,6 +221,7 @@ export default function ProgramSessionScreen() {
                     : activity.fieldSize.toUpperCase()}
                 </Text>
                 <Text style={styles.cardTitle}>{activity.title}</Text>
+                {activity.category ? <Text style={styles.categoryTag}>{activityCategoryLabels[activity.category]}</Text> : null}
                 <TacticalPlayer exercise={activity} label={`Schéma tactique animé : ${activity.title}`} seed={activity.id} />
                 <Text style={styles.body}>{activity.instruction}</Text>
                 {activity.rules.map((rule) => (
@@ -236,7 +244,9 @@ export default function ProgramSessionScreen() {
                   <ScrollView nestedScrollEnabled style={styles.picker}>
                     {alternatives.map((candidate) => (
                       <TouchableOpacity accessibilityRole="button" key={candidate.id} onPress={() => choose(index, candidate.id)} style={styles.pickerRow}>
-                        <Text style={styles.body}>{candidate.title}</Text>
+                        <Text style={styles.body}>
+                          {candidate.category ? `${candidate.title} (${activityCategoryLabels[candidate.category]})` : candidate.title}
+                        </Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -272,6 +282,17 @@ const styles = StyleSheet.create({
   primary: { minHeight: 52, marginTop: 10, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
   primaryText: { fontSize: 15, fontWeight: "800", color: colors.primaryInk },
   disabled: { opacity: 0.5 },
+  categoryTag: {
+    alignSelf: "flex-start",
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: "800",
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radii.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
   picker: { maxHeight: 260, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm, backgroundColor: colors.paper },
   pickerRow: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
 });

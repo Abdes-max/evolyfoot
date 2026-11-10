@@ -90,7 +90,7 @@ export default function HomeScreen() {
   // Avec une saison guidée, le cycle affiché est celui de la saison (4 semaines de ses séances) ;
   // sans saison, le cycle court construit depuis le diagnostic (même logique que le web).
   const seasonPlanWeeks = season
-    ? buildPrioritizedSeason({ priorities: season.priorities as DevelopmentTheme[], sessionsPerWeek: team?.sessionsPerWeek ?? 2 })
+    ? buildPrioritizedSeason({ priorities: season.priorities as DevelopmentTheme[], sessionsPerWeek: team?.sessionsPerWeek ?? 2, ageGroup: team?.ageGroup })
     : [];
   const currentSeasonWeek = season ? seasonWeekAt(new Date(`${season.startDate}T00:00:00`), new Date(now)) : 0;
   const seasonCycle = season ? seasonCycleAt(seasonCycles(seasonPlanWeeks), currentSeasonWeek) : null;
