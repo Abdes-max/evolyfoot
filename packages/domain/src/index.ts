@@ -167,6 +167,7 @@ export {
   convocationSendDate,
   isAttendanceDefault,
   isValidLeadDays,
+  playersWithoutResponse,
   summarizeTrainingResponses,
 } from "./training-convocation";
 export type { AttendanceDefault, ResponsePlayer, TrainingConvocationSettings, TrainingResponses } from "./training-convocation";

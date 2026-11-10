@@ -1,13 +1,15 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, useLocalSearchParams } from "expo-router";
-import { concernedPlayers, convocationFeedback, type PlayerSelection } from "@evolyfoot/domain";
+import type { PlayerSelection } from "@evolyfoot/domain";
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "../../components/concerned-players-picker";
 import { PlaceInput } from "../../components/place-input";
-import { TrainingResponses } from "../../components/training-responses";
+import { CollapsibleSection } from "../../components/collapsible-section";
+import { ConvocationActions } from "../../components/convocation-actions";
 import { useAuth } from "../../lib/auth-context";
+import { selectionSummary } from "../../lib/selection-summary";
 import { competitionKinds, isCompetitionKind, isPastCompetition, type Competition } from "../../lib/competitions";
 import { birthDateFromIso, birthDateToIso } from "../../lib/player-photo";
 
@@ -34,8 +36,6 @@ export default function CompetitionDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
   const [selection, setSelection] = useState<PlayerSelection>(null);
-  const [convoking, setConvoking] = useState(false);
-  const [convocationStatus, setConvocationStatus] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -91,24 +91,13 @@ export default function CompetitionDetailScreen() {
     setFeedback("Détails enregistrés.");
   }
 
-  // Convocation aux joueurs concernés (messagerie + e-mail) ; ouvre les réponses côté joueur.
-  async function convoke() {
-    setConvoking(true);
-    setConvocationStatus("");
-    const response = await apiRequest(`${endpoint}/${id}/convoke`, { method: "POST" });
-    if (!response?.ok) {
-      setConvoking(false);
-      setConvocationStatus(await readError(response));
-      return;
-    }
-    const body = await response.json().catch(() => null);
-    setConvocationStatus(convocationFeedback(body?.sentCount ?? 0, body?.emailCount ?? 0));
+  // Relit la fiche après l'envoi d'une convocation : date d'envoi et réponses.
+  async function refresh() {
     const refreshed = await apiRequest(`${endpoint}/${id}`);
     const refreshedItem: Competition | undefined = refreshed?.ok ? (await refreshed.json().catch(() => null))?.[itemKey] : undefined;
     if (refreshedItem) {
       setItem(refreshedItem);
     }
-    setConvoking(false);
   }
 
   function confirmRemove() {
@@ -168,12 +157,14 @@ export default function CompetitionDetailScreen() {
           <Text style={styles.label}>Bilan</Text>
           <TextInput accessibilityLabel="Bilan" onChangeText={setResult} placeholder="Ex. 2 victoires, 1 nul" style={styles.input} value={result} />
           <View style={styles.picker}>
-            <ConcernedPlayersPicker
-              hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et peuvent répondre.`}
-              onChange={setSelection}
-              roster={roster}
-              value={selection}
-            />
+            <CollapsibleSection summary={selectionSummary(selection, roster.length)} title="Joueurs concernés">
+              <ConcernedPlayersPicker
+                hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et peuvent répondre.`}
+                onChange={setSelection}
+                roster={roster}
+                value={selection}
+              />
+            </CollapsibleSection>
           </View>
           {saveError ? <Text style={styles.fieldError}>{saveError}</Text> : null}
           {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
@@ -184,18 +175,16 @@ export default function CompetitionDetailScreen() {
 
         <View style={styles.form}>
           <Text style={styles.formTitle}>Convocation</Text>
-          <TrainingResponses
+          <ConvocationActions
             attendance={item.attendance}
+            canSend={!isPastCompetition(item)}
+            convokeUrl={`${endpoint}/${id}/convoke`}
             convokedAt={item.convokedAt ?? null}
-            roster={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
+            onSent={refresh}
+            roster={roster}
             scheduledText={`Les joueurs concernés voient ce ${singular} sans pouvoir répondre tant que la convocation n’est pas envoyée.`}
+            selectedPlayerIds={item.selectedPlayerIds}
           />
-          {!isPastCompetition(item) && (
-            <TouchableOpacity accessibilityRole="button" disabled={convoking} onPress={convoke} style={styles.submitButton}>
-              <Text style={styles.submitButtonText}>{convoking ? "Envoi…" : item.convokedAt ? "Renvoyer la convocation" : "Envoyer la convocation"}</Text>
-            </TouchableOpacity>
-          )}
-          {convocationStatus ? <Text style={styles.feedback}>{convocationStatus}</Text> : null}
         </View>
 
         <TouchableOpacity accessibilityRole="button" onPress={confirmRemove} style={styles.removeButton}>

@@ -1,5 +1,5 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { concernedPlayers, gameFormats, listFormations, matchesInScope, matchScopeLabels, summarizeTrainingResponses } from "@evolyfoot/domain";
+import { gameFormats, listFormations, matchesInScope, matchScopeLabels } from "@evolyfoot/domain";
 import type { GameFormat, MatchScope, MatchStatus, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
@@ -7,6 +7,7 @@ import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CalendarImport } from "../components/calendar-import";
 import { CompetitionsPanel } from "../components/competitions-panel";
+import { ConvocationSummary } from "../components/convocation-summary";
 import { ConcernedPlayersPicker } from "../components/concerned-players-picker";
 import { CalendarIcon, LineupIcon, PinIcon } from "../components/icons";
 import { DateTimeField } from "../components/date-time-field";
@@ -15,27 +16,6 @@ import { useAuth, type MobileMatch } from "../lib/auth-context";
 
 const statusLabel: Record<MatchStatus, string> = { scheduled: "À venir", played: "Joué" };
 const venueLabel: Record<MatchVenue, string> = { home: "Domicile", away: "Extérieur" };
-
-// Convocation d'un match à venir : envoyée ou non, puis présents, absents et sans réponse parmi les
-// joueurs concernés (même résumé que les séances).
-function MatchConvocation({ match, roster }: { match: MobileMatch; roster: readonly { id: string; name: string }[] }) {
-  if (!match.convokedAt) {
-    return <Text style={styles.convocationPending}>Convocation pas encore envoyée</Text>;
-  }
-  const responses = summarizeTrainingResponses(concernedPlayers(roster, match.selectedPlayerIds ?? null), match.attendance);
-  return (
-    <View style={styles.convocation}>
-      <Text style={styles.convocationSent}>
-        Convocation envoyée le {new Date(match.convokedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-      </Text>
-      <View style={styles.counts}>
-        <Text style={[styles.count, { color: "#3ddc84" }]}>{responses.present.length} présents</Text>
-        <Text style={[styles.count, { color: "#ff6b6b" }]}>{responses.absent.length} absents</Text>
-        <Text style={[styles.count, { color: "#ffb073" }]}>{responses.pending.length} sans réponse</Text>
-      </View>
-    </View>
-  );
-}
 
 // Score d'un match joué, en vert pour une victoire, en rouge pour une défaite ; sinon rappel de le saisir.
 function MatchScore({ match }: { match: MobileMatch }) {
@@ -271,7 +251,9 @@ export default function MatchListScreen() {
                 </Text>
               </View>
               {match.status === "played" ? <MatchScore match={match} /> : null}
-              {match.status === "scheduled" ? <MatchConvocation match={match} roster={roster} /> : null}
+              {match.status === "scheduled" ? (
+                <ConvocationSummary attendance={match.attendance} convokedAt={match.convokedAt} roster={roster} selectedPlayerIds={match.selectedPlayerIds} />
+              ) : null}
               <Text style={styles.cardLink}>{match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}</Text>
             </TouchableOpacity>
           ))
@@ -359,11 +341,6 @@ const styles = StyleSheet.create({
   filterTextActive: { color: colors.primaryInk },
   score: { fontSize: 15, fontWeight: "900", marginTop: 8 },
   scoreMissing: { color: colors.primary, fontSize: 12, fontWeight: "800", marginTop: 8 },
-  convocation: { marginTop: 8, gap: 2 },
-  convocationSent: { color: colors.lime, fontSize: 12, fontWeight: "800" },
-  convocationPending: { color: colors.muted, fontSize: 12, fontWeight: "800", marginTop: 8 },
-  counts: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  count: { fontSize: 12, fontWeight: "800" },
   cardBody: { color: colors.muted, fontSize: 11.5, marginTop: 2 },
   cardLineup: { color: colors.ink, fontSize: 11.5, fontWeight: "700", marginTop: 4 },
   cardLink: { color: colors.primary, fontSize: 11.5, fontWeight: "800", marginTop: 8 },

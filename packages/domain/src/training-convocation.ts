@@ -60,6 +60,12 @@ export interface TrainingResponses {
   readonly pending: readonly ResponsePlayer[];
 }
 
+// Joueurs qui n'ont pas encore répondu à une convocation (pour la relancer à eux seuls).
+export function playersWithoutResponse<T extends { readonly id: string }>(players: readonly T[], attendance: readonly AttendanceEntry[] | undefined): T[] {
+  const answered = new Set((attendance ?? []).map((entry) => entry.playerId));
+  return players.filter((player) => !answered.has(player.id));
+}
+
 // Présents, absents et sans réponse d'une séance convoquée, pour l'effectif actuel (un joueur
 // retiré depuis n'apparaît plus).
 export function summarizeTrainingResponses(roster: readonly ResponsePlayer[], attendance: readonly AttendanceEntry[] | undefined): TrainingResponses {

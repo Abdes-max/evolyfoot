@@ -173,3 +173,33 @@ describe("createSendCompetitionConvocationHandler", () => {
     expect((await createSendCompetitionConvocationHandler("plateau", anonymous, gateway, () => undefined)(request(), "p1")).status).toBe(401);
   });
 });
+
+describe("relance des joueurs sans réponse", () => {
+  function withBody(body: unknown): Request {
+    return new Request("https://evolyfoot.test/api/matches/match-1/convoke", { method: "POST", body: typeof body === "string" ? body : JSON.stringify(body) });
+  }
+
+  it("transmet onlyPending à la convocation d'un match et d'un tournoi, sans corps ou avec un corps invalide : tous", async () => {
+    const options: unknown[] = [];
+    const outcome = { sentCount: 1, subject: "s", text: "t", recipients: [] };
+    const gateway: Pick<ConvocationGateway, "sendForMatch" | "sendForCompetition"> = {
+      sendForMatch: async (_educatorId, _matchId, received) => {
+        options.push(received);
+        return outcome;
+      },
+      sendForCompetition: async (_educatorId, _kind, _id, received) => {
+        options.push(received);
+        return outcome;
+      },
+    };
+    const match = createSendMatchConvocationHandler(authenticated, gateway, () => undefined);
+    const tournament = createSendCompetitionConvocationHandler("tournament", authenticated, gateway, () => undefined);
+
+    await match(withBody({ onlyPending: true }), "match-1");
+    await match(request(), "match-1");
+    await match(withBody("pas du json"), "match-1");
+    await tournament(withBody({ onlyPending: true }), "tournament-1");
+
+    expect(options).toEqual([{ onlyPending: true }, {}, {}, { onlyPending: true }]);
+  });
+});

@@ -12,6 +12,10 @@ import type { MailInput } from "./mailer";
 import { renderConvocationEmail, sendMail } from "./mailer";
 import { resolveOrigin } from "./request-origin";
 
+export interface ConvocationOptions {
+  onlyPending?: boolean;
+}
+
 export interface ConvocationOutcome {
   sentCount: number;
   subject: string;
@@ -20,9 +24,9 @@ export interface ConvocationOutcome {
 }
 
 export interface ConvocationGateway {
-  sendForMatch(educatorId: string, matchId: string): Promise<ConvocationOutcome>;
+  sendForMatch(educatorId: string, matchId: string, options?: ConvocationOptions): Promise<ConvocationOutcome>;
   sendForTrainingSession(educatorId: string, sessionId: string): Promise<ConvocationOutcome>;
-  sendForCompetition(educatorId: string, kind: CompetitionKind, competitionId: string): Promise<ConvocationOutcome>;
+  sendForCompetition(educatorId: string, kind: CompetitionKind, competitionId: string, options?: ConvocationOptions): Promise<ConvocationOutcome>;
 }
 
 export interface ConvocationMailer {
@@ -70,6 +74,16 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
 }
 
+// Corps facultatif `{ onlyPending: true }` : relance seulement les joueurs sans réponse.
+async function readOptions(request: Request): Promise<ConvocationOptions> {
+  try {
+    const body: unknown = await request.json();
+    return typeof body === "object" && body !== null && (body as { onlyPending?: unknown }).onlyPending === true ? { onlyPending: true } : {};
+  } catch {
+    return {};
+  }
+}
+
 // Envoie la convocation (via la messagerie, voir ConvocationService côté base) pour un match, une
 // séance, un tournoi ou un plateau, aux joueurs concernés.
 export function createSendMatchConvocationHandler(
@@ -84,7 +98,7 @@ export function createSendMatchConvocationHandler(
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
     try {
-      const outcome = await convocation.sendForMatch(educator.id, matchId);
+      const outcome = await convocation.sendForMatch(educator.id, matchId, await readOptions(request));
       return Response.json({ sentCount: outcome.sentCount, emailCount: await notifyByEmail(outcome, educator.displayName, request, mailer) });
     } catch (error) {
       return errorResponse(error, log);
@@ -125,7 +139,7 @@ export function createSendCompetitionConvocationHandler(
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
     try {
-      const outcome = await convocation.sendForCompetition(educator.id, kind, competitionId);
+      const outcome = await convocation.sendForCompetition(educator.id, kind, competitionId, await readOptions(request));
       return Response.json({ sentCount: outcome.sentCount, emailCount: await notifyByEmail(outcome, educator.displayName, request, mailer) });
     } catch (error) {
       return errorResponse(error, log);
@@ -171,9 +185,9 @@ export async function createConvocationGateway(): Promise<{ gateway: Convocation
 
   return {
     gateway: {
-      sendForMatch: (educatorId, matchId) => service.sendForMatch(educatorId, matchId),
+      sendForMatch: (educatorId, matchId, options) => service.sendForMatch(educatorId, matchId, options),
       sendForTrainingSession: (educatorId, sessionId) => service.sendForTrainingSession(educatorId, sessionId),
-      sendForCompetition: (educatorId, kind, competitionId) => competitions.send(educatorId, kind, competitionId),
+      sendForCompetition: (educatorId, kind, competitionId, options) => competitions.send(educatorId, kind, competitionId, options),
     },
     disconnect: database.disconnect,
   };

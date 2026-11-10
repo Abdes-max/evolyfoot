@@ -1,6 +1,6 @@
-import { concernedPlayers, createAttendanceEntry, isConcerned } from "@evolyfoot/domain";
+import { concernedPlayers, createAttendanceEntry, isConcerned, playersWithoutResponse } from "@evolyfoot/domain";
 import type { AttendanceStatus } from "@evolyfoot/domain";
-import { convocationRecipients, type ConvocationResult } from "./convocation-service";
+import { convocationRecipients, everyoneAnsweredMessage, type ConvocationOptions, type ConvocationResult } from "./convocation-service";
 import { EducatorNotFoundError, PlateauNotFoundError, TournamentNotFoundError, ValidationError } from "./errors";
 import type {
   CompetitionUpdate,
@@ -30,18 +30,23 @@ export class CompetitionConvocationService {
     private readonly now: () => Date = () => new Date(),
   ) {}
 
-  async send(educatorId: string, kind: CompetitionKind, competitionId: string): Promise<ConvocationResult> {
+  async send(educatorId: string, kind: CompetitionKind, competitionId: string, options: ConvocationOptions = {}): Promise<ConvocationResult> {
     const [educator, competition] = await Promise.all([this.educatorRepository.findById(educatorId), this.find(kind, competitionId, educatorId)]);
     if (!educator) {
       throw new EducatorNotFoundError();
     }
-    const convoked = concernedPlayers(await this.playerRepository.listByEducator(educatorId), competition.selectedPlayerIds);
-    if (convoked.length === 0) {
+    const everyone = concernedPlayers(await this.playerRepository.listByEducator(educatorId), competition.selectedPlayerIds);
+    if (everyone.length === 0) {
       throw new ValidationError("Coche les joueurs concernés avant d’envoyer la convocation.");
+    }
+    const convoked = options.onlyPending ? playersWithoutResponse(everyone, competition.attendance) : everyone;
+    if (convoked.length === 0) {
+      throw new ValidationError(everyoneAnsweredMessage);
     }
     const when = competition.dateLabel;
     const where = competition.location ? ` — ${competition.location}` : "";
-    const text = `Convocation : ${kindLabels[kind]} « ${competition.name} », ${when}${where}. Merci de répondre présent ou absent dans l'appli.`;
+    const reminder = options.onlyPending ? "Rappel — " : "";
+    const text = `${reminder}Convocation : ${kindLabels[kind]} « ${competition.name} », ${when}${where}. Merci de répondre présent ou absent dans l'appli.`;
     await Promise.all(
       convoked.map((player) => this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text })),
     );

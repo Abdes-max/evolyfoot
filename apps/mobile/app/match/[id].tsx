@@ -15,13 +15,16 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CollapsibleSection } from "../../components/collapsible-section";
 import { ConcernedPlayersPicker } from "../../components/concerned-players-picker";
+import { ConvocationActions } from "../../components/convocation-actions";
 import { MatchAnalysis } from "../../components/match-analysis";
 import { MatchClockPanel } from "../../components/match-clock";
 import { MatchResultForm } from "../../components/match-result-form";
 import { PlayerPicker } from "../../components/player-picker";
 import { PlaceInput } from "../../components/place-input";
 import { useAuth, type MobileMatch } from "../../lib/auth-context";
+import { selectionSummary } from "../../lib/selection-summary";
 
 const venueLabel: Record<MatchVenue, string> = { home: "Domicile", away: "Extérieur" };
 
@@ -192,6 +195,12 @@ export default function MatchDetailScreen() {
     })();
   }, [id, getMatch]);
 
+  // Relit le match après l'envoi d'une convocation : date d'envoi et réponses.
+  async function refreshMatch() {
+    const result = await getMatch(id);
+    if (result.ok) setMatch((current) => (current ? { ...current, convokedAt: result.match.convokedAt, attendance: result.match.attendance } : result.match));
+  }
+
   // Même route que la fiche match du web (lieu seul : les autres détails restent inchangés).
   async function saveLocation() {
     setLocationFeedback("");
@@ -350,15 +359,17 @@ export default function MatchDetailScreen() {
 
         {!readOnly && (
           <View style={styles.concerned}>
-            <ConcernedPlayersPicker
-              hint="Seuls les joueurs cochés voient le match, reçoivent la convocation et entrent dans la composition."
-              onChange={(value) => {
-                setSelection(value);
-                setSelectionFeedback("");
-              }}
-              roster={roster}
-              value={selection}
-            />
+            <CollapsibleSection summary={selectionSummary(selection, roster.length)} title="Joueurs concernés">
+              <ConcernedPlayersPicker
+                hint="Seuls les joueurs cochés voient le match, reçoivent la convocation et entrent dans la composition."
+                onChange={(value) => {
+                  setSelection(value);
+                  setSelectionFeedback("");
+                }}
+                roster={roster}
+                value={selection}
+              />
+            </CollapsibleSection>
             {JSON.stringify(selection) !== JSON.stringify(match.selectedPlayerIds ?? null) && (
               <TouchableOpacity accessibilityRole="button" disabled={selection?.length === 0} onPress={saveSelection} style={styles.locationSave}>
                 <Text style={styles.locationSaveText}>Enregistrer les joueurs concernés</Text>
@@ -367,6 +378,19 @@ export default function MatchDetailScreen() {
             {selectionFeedback ? <Text style={styles.body}>{selectionFeedback}</Text> : null}
           </View>
         )}
+
+        <View style={styles.concerned}>
+          <ConvocationActions
+            attendance={match.attendance}
+            canSend={!readOnly}
+            convokeUrl={`/api/matches/${encodeURIComponent(match.id)}/convoke`}
+            convokedAt={match.convokedAt ?? null}
+            onSent={refreshMatch}
+            roster={roster}
+            scheduledText="Les joueurs concernés voient le match sans pouvoir répondre tant que la convocation n’est pas envoyée."
+            selectedPlayerIds={match.selectedPlayerIds}
+          />
+        </View>
 
         {readOnly ? (
           <MatchResultForm

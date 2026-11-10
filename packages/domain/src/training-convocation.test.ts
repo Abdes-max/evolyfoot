@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createAttendanceEntry } from "./attendance";
-import { convocationDue, convocationSendDate, isValidLeadDays, summarizeTrainingResponses } from "./training-convocation";
+import { convocationDue, convocationSendDate, isValidLeadDays, playersWithoutResponse, summarizeTrainingResponses } from "./training-convocation";
 
 const meeting = new Date("2026-11-12T18:00:00Z");
 
@@ -43,5 +43,14 @@ describe("summarizeTrainingResponses", () => {
     expect(responses.present.map((entry) => entry.playerId)).toEqual(["a"]);
     expect(responses.absent.map((entry) => entry.comment)).toEqual(["Grippe"]);
     expect(responses.pending).toEqual([{ id: "c", name: "Chris" }]);
+  });
+});
+
+describe("playersWithoutResponse", () => {
+  it("garde les joueurs sans réponse, quelle qu'elle soit", () => {
+    const players = [{ id: "a" }, { id: "b" }, { id: "c" }];
+    const attendance = [createAttendanceEntry("a", "A", "present"), createAttendanceEntry("c", "C", "absent", "blessé")];
+    expect(playersWithoutResponse(players, attendance)).toEqual([{ id: "b" }]);
+    expect(playersWithoutResponse(players, undefined)).toEqual(players);
   });
 });
