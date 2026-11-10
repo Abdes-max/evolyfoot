@@ -93,7 +93,7 @@ interface SharedExercise extends PersonalExercise {
 }
 
 export default function BibliothequeScreen() {
-  const { apiRequest, listPersonalExercises, team } = useAuth();
+  const { apiRequest, listPersonalExercises } = useAuth();
   const [personal, setPersonal] = useState<readonly PersonalExercise[]>([]);
   const [shared, setShared] = useState<readonly SharedExercise[]>([]);
   const [copied, setCopied] = useState<readonly string[]>([]);
@@ -101,10 +101,8 @@ export default function BibliothequeScreen() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<TrainingBlockKind | "all">("all");
   const [theme, setTheme] = useState<DevelopmentTheme | "all">("all");
-  // Par défaut, la catégorie de l'équipe (modifiable) ; sans équipe, tout le catalogue.
-  const [chosenCategory, setChosenCategory] = useState<CategoryFilter | null>(null);
-  const teamCategory: CategoryFilter = team?.ageGroup === "U12" || team?.ageGroup === "U13" ? "U12-U13" : team?.ageGroup ? "U10-U11" : "all";
-  const category = chosenCategory ?? teamCategory;
+  // Tout le catalogue par défaut ; le filtre garde une catégorie (et les exercices communs).
+  const [category, setCategory] = useState<CategoryFilter>("all");
 
   useFocusEffect(
     useCallback(() => {
@@ -176,7 +174,7 @@ export default function BibliothequeScreen() {
           style={styles.search}
           value={query}
         />
-        <Chips active={category} label={(value) => (value === "all" ? "Toutes catégories" : value)} onChange={setChosenCategory} values={categoryFilters} />
+        <Chips active={category} label={(value) => (value === "all" ? "Toutes catégories" : value)} onChange={setCategory} values={categoryFilters} />
         <Chips active={kind} label={(value) => (value === "all" ? "Toutes" : kindLabels[value])} onChange={setKind} values={kindFilters} />
         <Chips active={theme} label={(value) => (value === "all" ? "Tous les thèmes" : value)} onChange={setTheme} values={themeFilters} />
 
