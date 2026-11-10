@@ -89,6 +89,38 @@ describe("ConvocationService", () => {
     expect(outsiderMessages).toHaveLength(0);
   });
 
+  it("annule un match convoqué : message avec la raison aux joueurs concernés, puis le rétablit ; refuse un match joué", async () => {
+    const coach = await createCoach("match-cancel");
+    const p1 = await playerRepository.create(coach.id, "Kylian");
+    const outsider = await playerRepository.create(coach.id, "Pas concerné");
+    const match = await matchRepository.create(coach.id, {
+      opponent: "US Vallée",
+      dateLabel: "Samedi 19 septembre",
+      venue: "home",
+      gameFormat: 8,
+      formationId: "3-3-1",
+      selectedPlayerIds: [p1.id],
+    });
+    await convocationService.sendForMatch(coach.id, match.id);
+
+    const result = await convocationService.cancelMatch(coach.id, match.id, " Terrain gelé. ");
+
+    expect(result).toMatchObject({ sentCount: 1, subject: "Annulation : match contre US Vallée" });
+    const texts = (await messageRepository.listByPlayer(coach.id, p1.id)).map((message) => message.text);
+    expect(texts).toContainEqual(expect.stringMatching(/^Annulation : le match contre US Vallée \(.*\) est annulé\. Terrain gelé\.$/));
+    expect(await messageRepository.listByPlayer(coach.id, outsider.id)).toHaveLength(0);
+    const cancelled = await matchRepository.findById(match.id, coach.id);
+    expect(cancelled).toMatchObject({ cancellationNote: "Terrain gelé." });
+    expect(cancelled?.cancelledAt).toBeInstanceOf(Date);
+    await expect(convocationService.cancelMatch(coach.id, match.id)).rejects.toBeInstanceOf(ValidationError);
+
+    await convocationService.restoreMatch(coach.id, match.id);
+    expect((await matchRepository.findById(match.id, coach.id))?.cancelledAt).toBeNull();
+
+    await matchRepository.update(match.id, coach.id, { status: "played" });
+    await expect(convocationService.cancelMatch(coach.id, match.id)).rejects.toThrow("déjà joué");
+  });
+
   it("rejette la convocation d'un match sans joueur concerné", async () => {
     const coach = await createCoach("empty-lineup");
     const match = await matchRepository.create(coach.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8, formationId: "3-3-1" });

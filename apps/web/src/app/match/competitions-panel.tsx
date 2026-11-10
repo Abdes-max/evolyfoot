@@ -15,6 +15,7 @@ interface Competition {
   location?: string | null;
   result: string | null;
   finishedAt?: string | null;
+  cancelledAt?: string | null;
 }
 
 interface CompetitionsPanelProps {
@@ -147,7 +148,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
                 <Link aria-label={`${item.name} — Voir le détail`} className="match-card card-link" href={`${detailBasePath}/${item.id}`}>
                   <div className="match-card-top">
                     <span className={isPast ? "match-status match-status-played" : "match-status match-status-scheduled"}>
-                      {item.finishedAt ? "Terminé" : isPast ? "Passé" : "À venir"}
+                      {item.cancelledAt ? "Annulé" : item.finishedAt ? "Terminé" : isPast ? "Passé" : "À venir"}
                     </span>
                   </div>
                   <h2 aria-hidden="true">{item.name}</h2>

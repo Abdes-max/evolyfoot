@@ -80,6 +80,8 @@ type CalendarItem =
       location: string | null;
       venue: "home" | "away";
       myStatus: AttendanceStatus | null;
+      cancelled: boolean;
+      cancellationNote: string | null;
     }
   | {
       kind: "competition";
@@ -91,6 +93,8 @@ type CalendarItem =
       location: string | null;
       convoked: boolean;
       myStatus: AttendanceStatus | null;
+      cancelled: boolean;
+      cancellationNote: string | null;
     };
 
 // Réponse à la convocation d'un tournoi ou d'un plateau, directement sur la carte (pas de page de
@@ -115,6 +119,14 @@ function CompetitionResponse({ item }: { item: Extract<CalendarItem, { kind: "co
     }
   }
 
+  if (item.cancelled) {
+    return (
+      <>
+        <ResponseBadge cancelled status={null} />
+        {item.cancellationNote ? <span>{item.cancellationNote}</span> : null}
+      </>
+    );
+  }
   if (!item.convoked) {
     return <ResponseBadge scheduled status={null} />;
   }
@@ -162,6 +174,8 @@ export function PlayerCalendarView() {
             location: match.location,
             venue: match.venue,
             myStatus: match.myStatus,
+            cancelled: match.cancelled === true,
+            cancellationNote: match.cancellationNote ?? null,
           })),
         ...dashboard.competitions.map((competition): CalendarItem => ({
           kind: "competition",
@@ -173,6 +187,8 @@ export function PlayerCalendarView() {
           location: competition.location ?? null,
           convoked: competition.convoked === true,
           myStatus: competition.myStatus ?? null,
+          cancelled: competition.cancelled === true,
+          cancellationNote: competition.cancellationNote ?? null,
         })),
       ]
     : [];
@@ -243,11 +259,11 @@ export function PlayerCalendarView() {
                                 </span>
                                 <ResponseBadge
                                   byDefault={item.kind === "seance" && item.byDefault}
-                                  cancelled={item.kind === "seance" && item.cancelled}
+                                  cancelled={item.cancelled}
                                   scheduled={item.kind === "seance" && item.scheduled}
                                   status={item.myStatus}
                                 />
-                                {item.kind === "seance" && item.cancelled && item.cancellationNote ? <span>{item.cancellationNote}</span> : null}
+                                {item.cancelled && item.cancellationNote ? <span>{item.cancellationNote}</span> : null}
                               </Link>
                               {item.location && (
                                 <div className="player-space-convocation-place">

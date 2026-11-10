@@ -28,6 +28,7 @@ import type {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { CancelEventPanel } from "../../cancel-event-panel";
 import { parseDatetimeInputValue, toDatetimeInputValue } from "../../date-format";
 import { initials, MatchPitch } from "../match-pitch";
 import { PlayerPicker } from "../player-picker";
@@ -60,6 +61,9 @@ interface MatchRecord {
   goalsFor?: number | null;
   goalsAgainst?: number | null;
   playerStats?: MatchPlayerStat[];
+  // Annulé par le coach (ISO) et la raison communiquée aux joueurs.
+  cancelledAt?: string | null;
+  cancellationNote?: string | null;
 }
 
 interface RosterPlayer {
@@ -626,6 +630,16 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               </button>
               {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
             </div>
+          )}
+
+          {!readOnly && (
+            <CancelEventPanel
+              cancellationNote={match.cancellationNote}
+              cancelledAt={match.cancelledAt}
+              noun="le match"
+              onChange={(state) => setMatch((current) => (current ? { ...current, ...state } : current))}
+              url={`/api/matches/${matchId}/cancel`}
+            />
           )}
 
           {!readOnly && concernedRoster.length > 0 && (

@@ -1069,6 +1069,8 @@ export class PrismaMatchRepository implements MatchRepository {
       description?: string | null;
       selectedPlayerIds?: PlayerSelection;
       convokedAt?: Date | null;
+      cancelledAt?: Date | null;
+      cancellationNote?: string | null;
     },
   ): Promise<PersistedMatch> {
     const { count } = await this.prisma.matchRecord.updateMany({
@@ -1095,6 +1097,8 @@ export class PrismaMatchRepository implements MatchRepository {
         ...(input.playerStats !== undefined ? { playerStats: input.playerStats as unknown as Prisma.InputJsonValue } : {}),
         ...(input.selectedPlayerIds !== undefined ? { selectedPlayerIds: toSelectionJson(input.selectedPlayerIds) } : {}),
         ...(input.convokedAt !== undefined ? { convokedAt: input.convokedAt } : {}),
+        ...(input.cancelledAt !== undefined ? { cancelledAt: input.cancelledAt } : {}),
+        ...(input.cancellationNote !== undefined ? { cancellationNote: input.cancellationNote } : {}),
       },
     });
     if (count === 0) {
@@ -1160,6 +1164,8 @@ export class PrismaTournamentRepository implements TournamentRepository {
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
         ...(input.games !== undefined ? { games: input.games as unknown as Prisma.InputJsonValue } : {}),
         ...(input.finishedAt !== undefined ? { finishedAt: input.finishedAt } : {}),
+        ...(input.cancelledAt !== undefined ? { cancelledAt: input.cancelledAt } : {}),
+        ...(input.cancellationNote !== undefined ? { cancellationNote: input.cancellationNote } : {}),
       },
     });
     if (count === 0) {
@@ -1219,6 +1225,8 @@ export class PrismaPlateauRepository implements PlateauRepository {
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
         ...(input.games !== undefined ? { games: input.games as unknown as Prisma.InputJsonValue } : {}),
         ...(input.finishedAt !== undefined ? { finishedAt: input.finishedAt } : {}),
+        ...(input.cancelledAt !== undefined ? { cancelledAt: input.cancelledAt } : {}),
+        ...(input.cancellationNote !== undefined ? { cancellationNote: input.cancellationNote } : {}),
       },
     });
     if (count === 0) {

@@ -520,6 +520,9 @@ export interface PersistedMatch {
   selectedPlayerIds: PlayerSelection;
   // Dernier envoi de la convocation, `null` tant qu'elle n'est pas partie.
   convokedAt: Date | null;
+  // Annulé par le coach : date, et raison communiquée aux joueurs.
+  cancelledAt: Date | null;
+  cancellationNote: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -568,6 +571,8 @@ export interface MatchRepository {
       description?: string | null;
       selectedPlayerIds?: PlayerSelection;
       convokedAt?: Date | null;
+      cancelledAt?: Date | null;
+      cancellationNote?: string | null;
     },
   ): Promise<PersistedMatch>;
   remove(id: string, educatorId: string): Promise<void>;
@@ -593,6 +598,8 @@ export interface CompetitionUpdate {
   attendance?: readonly AttendanceEntry[];
   games?: readonly CompetitionGame[];
   finishedAt?: Date | null;
+  cancelledAt?: Date | null;
+  cancellationNote?: string | null;
 }
 
 // Fiche simple comptée à part des matchs dans /statistiques -- voir TournamentInput côté domaine.
@@ -616,6 +623,9 @@ export interface PersistedTournament {
   games?: readonly CompetitionGame[];
   // Date à laquelle le coach l'a marqué comme terminé ; `null` tant qu'il est en cours.
   finishedAt: Date | null;
+  // Annulé par le coach : date, et raison communiquée aux joueurs.
+  cancelledAt: Date | null;
+  cancellationNote: string | null;
   createdAt: Date;
 }
 
@@ -647,6 +657,9 @@ export interface PersistedPlateau {
   games?: readonly CompetitionGame[];
   // Date à laquelle le coach l'a marqué comme terminé ; `null` tant qu'il est en cours.
   finishedAt: Date | null;
+  // Annulé par le coach : date, et raison communiquée aux joueurs.
+  cancelledAt: Date | null;
+  cancellationNote: string | null;
   createdAt: Date;
 }
 

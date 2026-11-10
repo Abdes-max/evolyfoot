@@ -21,6 +21,9 @@ export interface DashboardMatch {
   description: string | null;
   venue: "home" | "away";
   convoked: boolean;
+  // Annulé par le coach, et la raison donnée.
+  cancelled?: boolean;
+  cancellationNote?: string | null;
   myStatus: AttendanceStatus | null;
 }
 
@@ -53,6 +56,9 @@ export interface Competition {
   location?: string | null;
   // Convocation envoyée : avant, l'événement est seulement « programmé », sans réponse possible.
   convoked?: boolean;
+  // Annulé par le coach, et la raison donnée.
+  cancelled?: boolean;
+  cancellationNote?: string | null;
   myStatus?: AttendanceStatus | null;
 }
 

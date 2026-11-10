@@ -20,6 +20,9 @@ export interface TournamentSummary {
   games?: readonly CompetitionGame[];
   // ISO de la date où il a été marqué terminé, `null` s'il est en cours.
   finishedAt: string | null;
+  // Annulé par le coach (ISO) et la raison communiquée aux joueurs ; `null` s'il est maintenu.
+  cancelledAt: string | null;
+  cancellationNote: string | null;
   createdAt: string;
 }
 
@@ -217,6 +220,8 @@ export async function createTournamentGateway(): Promise<{ gateway: TournamentGa
       ...(tournament.attendance ? { attendance: tournament.attendance } : {}),
       games: tournament.games ?? [],
       finishedAt: tournament.finishedAt ? tournament.finishedAt.toISOString() : null,
+      cancelledAt: tournament.cancelledAt ? tournament.cancelledAt.toISOString() : null,
+      cancellationNote: tournament.cancellationNote ?? null,
       createdAt: tournament.createdAt.toISOString(),
     };
   }

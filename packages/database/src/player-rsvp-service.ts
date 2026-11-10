@@ -34,6 +34,9 @@ export class PlayerRsvpService {
     if (!match || !isConcerned(match.selectedPlayerIds, playerId)) {
       throw new EducatorNotFoundError();
     }
+    if (match.cancelledAt) {
+      throw new ValidationError("Ce match est annulé.");
+    }
     if (match.status !== "scheduled") {
       throw new ValidationError("Ce match a déjà eu lieu, la convocation n’est plus modifiable.");
     }

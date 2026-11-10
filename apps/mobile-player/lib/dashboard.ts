@@ -20,6 +20,9 @@ export interface UpcomingMatch {
   meetingTime: string | null;
   location: string | null;
   convoked: boolean;
+  // Match annulé par le coach, et la raison donnée.
+  cancelled?: boolean;
+  cancellationNote?: string | null;
   myStatus: AttendanceStatus | null;
 }
 
@@ -49,6 +52,9 @@ export interface Competition {
   date: string | null;
   location?: string | null;
   convoked?: boolean;
+  // Annulé par le coach, et la raison donnée.
+  cancelled?: boolean;
+  cancellationNote?: string | null;
   myStatus?: AttendanceStatus | null;
 }
 
@@ -108,8 +114,10 @@ export function buildAgenda(dashboard: Dashboard, now: number, scope: "upcoming"
       location: match.location,
       date: match.date,
       myStatus: match.myStatus,
-      canRespond: match.convoked,
+      canRespond: match.convoked && !match.cancelled,
       byDefault: false,
+      cancelled: match.cancelled === true,
+      cancellationNote: match.cancellationNote ?? null,
     })),
     ...dashboard.trainingSessions.map((session) => ({
       key: `training-${session.id}`,
@@ -136,8 +144,10 @@ export function buildAgenda(dashboard: Dashboard, now: number, scope: "upcoming"
       location: competition.location ?? null,
       date: competition.date,
       myStatus: competition.myStatus ?? null,
-      canRespond: competition.convoked === true,
+      canRespond: competition.convoked === true && !competition.cancelled,
       byDefault: false,
+      cancelled: competition.cancelled === true,
+      cancellationNote: competition.cancellationNote ?? null,
     })),
   ];
   if (scope === "past") {

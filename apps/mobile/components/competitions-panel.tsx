@@ -146,7 +146,9 @@ export function CompetitionsPanel({ kind, scope }: { kind: CompetitionKind; scop
               style={styles.card}
             >
               <View style={[styles.statusBadge, past && styles.statusBadgePast]}>
-                <Text style={[styles.statusText, past && styles.statusTextPast]}>{item.finishedAt ? "Terminé" : past ? "Passé" : "À venir"}</Text>
+                <Text style={[styles.statusText, past && styles.statusTextPast]}>
+                  {item.cancelledAt ? "Annulé" : item.finishedAt ? "Terminé" : past ? "Passé" : "À venir"}
+                </Text>
               </View>
               <Text style={styles.cardTitle}>{item.name}</Text>
               <View style={styles.metaRow}>

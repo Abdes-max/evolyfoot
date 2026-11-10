@@ -23,6 +23,8 @@ interface MatchSummary {
   lineup: ReadonlyArray<unknown>;
   goalsFor?: number | null;
   goalsAgainst?: number | null;
+  // Annulé par le coach (ISO).
+  cancelledAt?: string | null;
 }
 
 interface TeamSummary {
@@ -269,7 +271,7 @@ export function MatchListView() {
                     href={`/match/${match.id}`}
                   >
                     <div className="match-card-top">
-                      <span className={`match-status match-status-${match.status}`}>{statusLabel[match.status]}</span>
+                      <span className={`match-status match-status-${match.status}`}>{match.cancelledAt ? "Annulé" : statusLabel[match.status]}</span>
                       <span className="match-card-format">Foot à {match.gameFormat}</span>
                     </div>
                     <h2 aria-hidden="true">{match.opponent}</h2>

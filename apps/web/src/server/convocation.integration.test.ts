@@ -1,7 +1,11 @@
 import { EducatorNotFoundError, MatchNotFoundError, TournamentNotFoundError, TrainingSessionNotFoundError, ValidationError } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
 import {
+  createCancelCompetitionHandler,
+  createCancelMatchHandler,
   createCancelTrainingSessionHandler,
+  createRestoreCompetitionHandler,
+  createRestoreMatchHandler,
   createRestoreTrainingSessionHandler,
   createSendCompetitionConvocationHandler,
   createSendMatchConvocationHandler,
@@ -271,5 +275,50 @@ describe("annulation d'un entraînement", () => {
     const response = await handler(new Request("https://evolyfoot.test/x", { method: "DELETE" }), "session-1");
     expect(await response.json()).toEqual({ restored: true });
     expect(received).toEqual([["educator-1", "session-1"]]);
+  });
+});
+
+describe("annulation d'un match, d'un tournoi et d'un plateau", () => {
+  const post = (body?: unknown) =>
+    new Request("https://evolyfoot.test/x/cancel", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+  const outcome = { sentCount: 3, subject: "Annulation", text: "Annulation : …", recipients: [] };
+
+  it("annule un match : session exigée, raison transmise, joueurs prévenus", async () => {
+    const received: unknown[] = [];
+    const gateway = { cancelMatch: async (...args: unknown[]) => (received.push(args), outcome) };
+    expect((await createCancelMatchHandler(anonymous, gateway, () => undefined)(post({}), "match-1")).status).toBe(401);
+    const response = await createCancelMatchHandler(authenticated, gateway, () => undefined)(post({ note: "Terrain gelé." }), "match-1");
+    expect(await response.json()).toEqual({ sentCount: 3, emailCount: 0 });
+    expect(received).toEqual([["educator-1", "match-1", "Terrain gelé."]]);
+    const failing = createCancelMatchHandler(authenticated, { cancelMatch: async () => Promise.reject(new MatchNotFoundError()) }, () => undefined);
+    expect((await failing(post(), "match-1")).status).toBe(404);
+  });
+
+  it("annule un tournoi ou un plateau selon le type de la route, et les rétablit", async () => {
+    const received: unknown[] = [];
+    const gateway = { cancelCompetition: async (...args: unknown[]) => (received.push(args), outcome) };
+    await createCancelCompetitionHandler("plateau", authenticated, gateway, () => undefined)(post({ note: "Pluie." }), "p-1");
+    await createCancelCompetitionHandler("tournament", authenticated, gateway, () => undefined)(post(), "t-1");
+    expect(received).toEqual([
+      ["educator-1", "plateau", "p-1", "Pluie."],
+      ["educator-1", "tournament", "t-1", null],
+    ]);
+
+    const restored: unknown[] = [];
+    const restoreGateway = {
+      restoreMatch: async (...args: unknown[]) => void restored.push(["match", ...args]),
+      restoreCompetition: async (...args: unknown[]) => void restored.push(["competition", ...args]),
+    };
+    const del = new Request("https://evolyfoot.test/x/cancel", { method: "DELETE" });
+    expect((await createRestoreMatchHandler(authenticated, restoreGateway, () => undefined)(del, "match-1")).status).toBe(200);
+    expect((await createRestoreCompetitionHandler("tournament", authenticated, restoreGateway, () => undefined)(del, "t-1")).status).toBe(200);
+    expect(restored).toEqual([
+      ["match", "educator-1", "match-1"],
+      ["competition", "educator-1", "tournament", "t-1"],
+    ]);
   });
 });
