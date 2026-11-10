@@ -186,7 +186,6 @@ export function MatchResultForm({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Résultat</Text>
       <ScoreEditor
         onAssists={(playerId, value) => update(playerId, "assists", value)}
         onGoals={(playerId, value) => update(playerId, "goals", value)}

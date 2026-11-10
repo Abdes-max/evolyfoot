@@ -18,6 +18,8 @@ export interface TournamentSummary {
   attendance?: readonly AttendanceEntry[];
   // Rencontres saisies (équipe rencontrée, score, buteurs et passeurs).
   games?: readonly CompetitionGame[];
+  // ISO de la date où il a été marqué terminé, `null` s'il est en cours.
+  finishedAt: string | null;
   createdAt: string;
 }
 
@@ -31,7 +33,14 @@ export interface TournamentGateway {
   updateDetails(
     educatorId: string,
     tournamentId: string,
-    input: { date?: string | null; location?: string | null; description?: string | null; result?: string | null; selectedPlayerIds?: unknown },
+    input: {
+      date?: string | null;
+      location?: string | null;
+      description?: string | null;
+      result?: string | null;
+      selectedPlayerIds?: unknown;
+      finished?: boolean;
+    },
   ): Promise<TournamentSummary>;
   remove(educatorId: string, tournamentId: string): Promise<void>;
 }
@@ -156,6 +165,7 @@ export function createUpdateTournamentDetailsHandler(
           description,
           result,
           selectedPlayerIds: body?.selectedPlayerIds,
+          finished: typeof body?.finished === "boolean" ? body.finished : undefined,
         }),
       });
     } catch (error) {
@@ -206,6 +216,7 @@ export async function createTournamentGateway(): Promise<{ gateway: TournamentGa
       convokedAt: tournament.convokedAt ? tournament.convokedAt.toISOString() : null,
       ...(tournament.attendance ? { attendance: tournament.attendance } : {}),
       games: tournament.games ?? [],
+      finishedAt: tournament.finishedAt ? tournament.finishedAt.toISOString() : null,
       createdAt: tournament.createdAt.toISOString(),
     };
   }

@@ -111,4 +111,18 @@ describe("PostgreSQL tournament persistence", () => {
       TournamentNotFoundError,
     );
   });
+
+  it("marque un tournoi terminé, garde la date de fin, puis le rouvre", async () => {
+    const educator = await createEducator("finished");
+    const tournament = await service.create(educator.id, { name: "Tournoi", dateLabel: "12 avril 2026" });
+    expect(tournament.finishedAt).toBeNull();
+
+    const finished = await service.updateDetails(educator.id, tournament.id, { finished: true });
+    expect(finished.finishedAt).toBeInstanceOf(Date);
+    const again = await service.updateDetails(educator.id, tournament.id, { finished: true });
+    expect(again.finishedAt).toEqual(finished.finishedAt);
+
+    const reopened = await service.updateDetails(educator.id, tournament.id, { finished: false });
+    expect(reopened.finishedAt).toBeNull();
+  });
 });

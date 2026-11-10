@@ -212,7 +212,7 @@ export class MatchService {
 
   // Composition et capitaine modifiables librement tant que le match n'est pas marqué joué --
   // ne rejoue que la cohérence structurelle (postes valides, pas de doublon), pas l'exigence
-  // "composition complète + capitaine désigné" de `markPlayed` ci-dessous : une préparation en
+  // "composition complète" de `markPlayed` ci-dessous : une préparation en
   // cours a le droit d'être incomplète.
   async updateLineup(
     educatorId: string,

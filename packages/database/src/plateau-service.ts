@@ -56,7 +56,14 @@ export class PlateauService {
   async updateDetails(
     educatorId: string,
     plateauId: string,
-    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null; selectedPlayerIds?: unknown },
+    input: {
+      date?: Date | null;
+      location?: string | null;
+      description?: string | null;
+      result?: string | null;
+      selectedPlayerIds?: unknown;
+      finished?: boolean;
+    },
   ): Promise<PersistedPlateau> {
     const existing = await this.plateauRepository.findById(plateauId, educatorId);
     if (!existing) {
@@ -69,6 +76,7 @@ export class PlateauService {
       ...(input.description !== undefined ? { description: normalizeOptionalText(input.description) } : {}),
       ...(input.result !== undefined ? { result: normalizeOptionalText(input.result) } : {}),
       ...(selectedPlayerIds !== undefined ? { selectedPlayerIds } : {}),
+      ...(input.finished !== undefined ? { finishedAt: input.finished ? (existing.finishedAt ?? new Date()) : null } : {}),
     });
   }
 

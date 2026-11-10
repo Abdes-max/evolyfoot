@@ -460,6 +460,7 @@ export function toPersistedTournament(record: PrismaTournamentRecord): Persisted
     convokedAt: record.convokedAt,
     attendance: toAttendanceEntries(record.attendance),
     games: parseCompetitionGames(record.games),
+    finishedAt: record.finishedAt,
     createdAt: record.createdAt,
   });
 }
@@ -478,6 +479,7 @@ export function toPersistedPlateau(record: PrismaPlateauRecord): PersistedPlatea
     convokedAt: record.convokedAt,
     attendance: toAttendanceEntries(record.attendance),
     games: parseCompetitionGames(record.games),
+    finishedAt: record.finishedAt,
     createdAt: record.createdAt,
   });
 }

@@ -9,7 +9,7 @@ import { CalendarImport } from "../components/calendar-import";
 import { CompetitionsPanel } from "../components/competitions-panel";
 import { ConvocationSummary } from "../components/convocation-summary";
 import { ConcernedPlayersPicker } from "../components/concerned-players-picker";
-import { CalendarIcon, LineupIcon, PinIcon } from "../components/icons";
+import { CalendarIcon, PinIcon } from "../components/icons";
 import { DateTimeField } from "../components/date-time-field";
 import { PlaceInput } from "../components/place-input";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
@@ -244,14 +244,8 @@ export default function MatchListScreen() {
                   <Text style={styles.cardBody}>{match.location}</Text>
                 </View>
               ) : null}
-              <View style={styles.metaRow}>
-                <LineupIcon color={colors.primary} size={16} />
-                <Text style={styles.cardLineup}>
-                  {match.lineup.length}/{match.gameFormat} postes pourvus
-                </Text>
-              </View>
               {match.status === "played" ? <MatchScore match={match} /> : null}
-              {match.status === "scheduled" ? (
+              {match.status === "scheduled" || match.convokedAt ? (
                 <ConvocationSummary attendance={match.attendance} convokedAt={match.convokedAt} roster={roster} selectedPlayerIds={match.selectedPlayerIds} />
               ) : null}
               <Text style={styles.cardLink}>{match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}</Text>
@@ -342,6 +336,5 @@ const styles = StyleSheet.create({
   score: { fontSize: 15, fontWeight: "900", marginTop: 8 },
   scoreMissing: { color: colors.primary, fontSize: 12, fontWeight: "800", marginTop: 8 },
   cardBody: { color: colors.muted, fontSize: 11.5, marginTop: 2 },
-  cardLineup: { color: colors.ink, fontSize: 11.5, fontWeight: "700", marginTop: 4 },
   cardLink: { color: colors.primary, fontSize: 11.5, fontWeight: "800", marginTop: 8 },
 });

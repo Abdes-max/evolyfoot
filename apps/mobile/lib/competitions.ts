@@ -18,6 +18,8 @@ export interface Competition {
   attendance?: AttendanceEntry[];
   // Rencontres saisies : équipe rencontrée, score, buteurs et passeurs.
   games?: CompetitionGame[];
+  // Date où le coach l'a marqué terminé, `null` ou absent tant qu'il est en cours.
+  finishedAt?: string | null;
 }
 
 export const competitionKinds: Record<CompetitionKind, { endpoint: string; listKey: string; itemKey: string; title: string; singular: string }> = {
@@ -37,7 +39,11 @@ export function competitionDateLabel(iso: string): string {
     .replace(/^\p{L}/u, (letter) => letter.toUpperCase());
 }
 
-export function isPastCompetition(competition: Pick<Competition, "date">, now = new Date()): boolean {
+// Passé : marqué terminé par le coach, ou date dépassée.
+export function isPastCompetition(competition: Pick<Competition, "date" | "finishedAt">, now = new Date()): boolean {
+  if (competition.finishedAt) {
+    return true;
+  }
   return competition.date ? new Date(competition.date).getTime() < now.getTime() : false;
 }
 

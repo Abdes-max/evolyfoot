@@ -1,6 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, useLocalSearchParams } from "expo-router";
-import { concernedPlayers, type PlayerSelection } from "@evolyfoot/domain";
+import { competitionRecordLabel, concernedPlayers, type PlayerSelection } from "@evolyfoot/domain";
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -92,6 +92,26 @@ export default function CompetitionDetailScreen() {
     setFeedback("Détails enregistrés.");
   }
 
+  // Marque la fiche comme terminée, ou la rouvre : un tournoi terminé passe dans « Passés » même avant sa date.
+  async function toggleFinished() {
+    if (!item) {
+      return;
+    }
+    setSaving(true);
+    setSaveError("");
+    setFeedback("");
+    const response = await apiRequest(`${endpoint}/${id}/details`, { method: "PATCH", body: JSON.stringify({ finished: !item.finishedAt }) });
+    setSaving(false);
+    if (!response?.ok) {
+      setSaveError(await readError(response));
+      return;
+    }
+    const updated: Competition | undefined = (await response.json().catch(() => null))?.[itemKey];
+    if (updated) {
+      setItem(updated);
+    }
+  }
+
   // Relit la fiche après l'envoi d'une convocation : date d'envoi et réponses.
   async function refresh() {
     const refreshed = await apiRequest(`${endpoint}/${id}`);
@@ -136,7 +156,7 @@ export default function CompetitionDetailScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-        <Text style={styles.step}>{`${singular.toUpperCase()} ${isPastCompetition(item) ? "PASSÉ" : "À VENIR"}`}</Text>
+        <Text style={styles.step}>{`${singular.toUpperCase()} ${item.finishedAt ? "TERMINÉ" : isPastCompetition(item) ? "PASSÉ" : "À VENIR"}`}</Text>
         <Text style={styles.title}>{item.name}</Text>
         <Text style={styles.body}>{item.dateLabel}</Text>
 
@@ -188,8 +208,7 @@ export default function CompetitionDetailScreen() {
           />
         </View>
 
-        <View style={styles.form}>
-          <Text style={styles.formTitle}>Rencontres et scores</Text>
+        <CollapsibleSection summary={competitionRecordLabel(item.games ?? []) || "Aucune rencontre saisie"} title="Rencontres et scores">
           <Text style={styles.gamesHint}>Une ligne par rencontre jouée : équipe rencontrée, score, buteurs et passeurs décisifs.</Text>
           <View style={{ marginTop: spacing.md }}>
             <CompetitionGames
@@ -200,7 +219,16 @@ export default function CompetitionDetailScreen() {
               players={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
             />
           </View>
-        </View>
+        </CollapsibleSection>
+
+        <TouchableOpacity
+          accessibilityRole="button"
+          disabled={saving}
+          onPress={() => void toggleFinished()}
+          style={[styles.finishButton, saving && { opacity: 0.5 }]}
+        >
+          <Text style={styles.finishButtonText}>{item.finishedAt ? `Rouvrir ce ${singular}` : `Marquer ce ${singular} comme terminé`}</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity accessibilityRole="button" onPress={confirmRemove} style={styles.removeButton}>
           <Text style={styles.removeButtonText}>{`Retirer ce ${singular}`}</Text>
@@ -223,6 +251,15 @@ const styles = StyleSheet.create({
   input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
   multiline: { minHeight: 80, textAlignVertical: "top" },
   picker: { marginTop: 14 },
+  finishButton: {
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    backgroundColor: colors.primary,
+    marginTop: spacing.md,
+  },
+  finishButtonText: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
   gamesHint: { color: colors.muted, fontSize: 12.5, marginTop: 6 },
   fieldError: { color: colors.danger, fontSize: 10, marginTop: 10 },
   feedback: { color: colors.primary, fontSize: 11, fontWeight: "700", marginTop: 10 },

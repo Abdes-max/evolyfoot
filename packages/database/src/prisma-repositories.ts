@@ -1147,6 +1147,7 @@ export class PrismaTournamentRepository implements TournamentRepository {
         ...(input.convokedAt !== undefined ? { convokedAt: input.convokedAt } : {}),
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
         ...(input.games !== undefined ? { games: input.games as unknown as Prisma.InputJsonValue } : {}),
+        ...(input.finishedAt !== undefined ? { finishedAt: input.finishedAt } : {}),
       },
     });
     if (count === 0) {
@@ -1205,6 +1206,7 @@ export class PrismaPlateauRepository implements PlateauRepository {
         ...(input.convokedAt !== undefined ? { convokedAt: input.convokedAt } : {}),
         ...(input.attendance !== undefined ? { attendance: input.attendance as unknown as Prisma.InputJsonValue } : {}),
         ...(input.games !== undefined ? { games: input.games as unknown as Prisma.InputJsonValue } : {}),
+        ...(input.finishedAt !== undefined ? { finishedAt: input.finishedAt } : {}),
       },
     });
     if (count === 0) {
