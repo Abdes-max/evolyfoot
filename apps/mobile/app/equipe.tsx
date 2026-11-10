@@ -111,7 +111,7 @@ export default function EquipeScreen() {
               <View style={{ flexDirection: "row", gap: 16, marginTop: 6 }}>
                 <TouchableOpacity accessibilityRole="button" disabled={logoBusy} hitSlop={6} onPress={() => void changeLogo()}>
                   <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }}>
-                    {logoBusy ? "Envoi…" : team.logo ? "Changer le logo" : "Ajouter un logo"}
+                    {logoBusy ? "Envoi…" : team.logo ? "Changer le logo" : "Choisir un logo"}
                   </Text>
                 </TouchableOpacity>
                 {team.logo ? (

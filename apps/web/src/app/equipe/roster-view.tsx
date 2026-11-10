@@ -241,7 +241,7 @@ export function RosterView() {
                   {team ? (
                     <p className="roster-logo-actions">
                       <label className="inline-cta">
-                        {logoBusy ? "Envoi…" : team.logo ? "Changer le logo" : "Ajouter un logo"}
+                        {logoBusy ? "Envoi…" : team.logo ? "Changer le logo" : "Choisir un logo"}
                         <input accept="image/*" className="visually-hidden" disabled={logoBusy} onChange={chooseLogo} type="file" />
                       </label>
                       {team.logo ? (
