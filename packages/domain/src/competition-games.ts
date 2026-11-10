@@ -153,7 +153,10 @@ export function playerMatchGames(
 ): PlayerCompetitionGame[] {
   return matches.flatMap((match) => {
     if (match.status !== "played") return [];
-    const selected = match.lineup.some((entry) => entry.playerId === playerId) || match.substitutePlayerIds.includes(playerId);
+    const selected =
+      match.lineup.some((entry) => entry.playerId === playerId) ||
+      match.substitutePlayerIds.includes(playerId) ||
+      (match.attendance?.some((entry) => entry.playerId === playerId && entry.present) ?? false);
     const absent = match.attendance?.some((entry) => entry.playerId === playerId && !entry.present) ?? false;
     if (!selected || absent) return [];
     const stat = match.playerStats?.find((entry) => entry.playerId === playerId);

@@ -464,6 +464,14 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   const concernedRoster = teamRoster(match);
   const selectionChanged = JSON.stringify(selection) !== JSON.stringify(match.selectedPlayerIds ?? null);
   const canFinalize = canFinalizeMatchPlan(toPlan(match));
+  // Joueurs de la feuille de match, titulaires puis remplaçants : ceux à qui attribuer buts et passes (à défaut, les joueurs concernés).
+  const sheetPlayers = [
+    ...match.lineup.map((assignment) => ({ id: assignment.playerId, name: assignment.playerName })),
+    ...match.substitutePlayerIds.flatMap((playerId) => {
+      const player = roster.find((candidate) => candidate.id === playerId);
+      return player ? [{ id: player.id, name: player.name }] : [];
+    }),
+  ];
   // Autant de pastilles que le maximum autorisé pour ce format de jeu (voir maxSubstitutes),
   // vides tant qu'aucun remplaçant n'y est affecté -- même langage visuel que le terrain (pastille
   // vide/pleine), voir setBenchSlot ci-dessus. S'il y a déjà plus de remplaçants enregistrés que ce
@@ -689,13 +697,11 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               goalsFor={match.goalsFor ?? null}
               matchId={matchId}
               playerStats={match.playerStats ?? []}
-              players={[
-                ...match.lineup.map((assignment) => ({ id: assignment.playerId, name: assignment.playerName })),
-                ...match.substitutePlayerIds.flatMap((playerId) => {
-                  const player = roster.find((candidate) => candidate.id === playerId);
-                  return player ? [{ id: player.id, name: player.name }] : [];
-                }),
-              ]}
+              players={
+                sheetPlayers.length > 0
+                  ? sheetPlayers
+                  : concernedPlayers(roster, match.selectedPlayerIds ?? null).map((player) => ({ id: player.id, name: player.name }))
+              }
             />
           )}
           {readOnly && (

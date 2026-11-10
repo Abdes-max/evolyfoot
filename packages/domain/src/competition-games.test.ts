@@ -99,3 +99,25 @@ describe("playerMatchGames", () => {
     expect(playerMatchGames(matches, "sam")).toHaveLength(3);
   });
 });
+
+describe("match joué sans composition", () => {
+  it("compte les joueurs notés présents, ni les absents ni les autres", () => {
+    const match = {
+      status: "played",
+      opponent: "FC Nord",
+      dateLabel: "samedi",
+      lineup: [],
+      substitutePlayerIds: [],
+      attendance: [
+        { playerId: "lina", playerName: "Lina", present: true, status: "present" },
+        { playerId: "sam", playerName: "Sam", present: false, status: "absent" },
+      ],
+      playerStats: [lina],
+    } as never;
+    expect(playerMatchGames([match], "lina")).toHaveLength(1);
+    expect(playerMatchGames([match], "sam")).toHaveLength(0);
+    expect(playerMatchGames([match], "autre")).toHaveLength(0);
+    expect(playerSeasonTotals([match], "lina").matches).toBe(1);
+    expect(playerSeasonTotals([match], "sam").matches).toBe(0);
+  });
+});

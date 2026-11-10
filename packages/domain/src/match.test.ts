@@ -164,10 +164,17 @@ describe("changeFormation", () => {
 });
 
 describe("isLineupComplete / validateMatchPlan / canFinalizeMatchPlan", () => {
-  it("est incomplète tant que tous les postes ne sont pas pourvus", () => {
+  it("est incomplète tant que tous les postes ne sont pas pourvus, sans empêcher de marquer le match joué", () => {
     const plan = assignPlayerToSlot(createMatchPlan("US Vallée", "Samedi", "home", 4), "goalkeeper-1", { id: "p1", name: "Lina" });
     expect(isLineupComplete(plan)).toBe(false);
-    expect(validateMatchPlan(plan).lineup).toBeDefined();
+    expect(validateMatchPlan(plan)).toEqual({});
+    expect(canFinalizeMatchPlan(plan)).toBe(true);
+    expect(canFinalizeMatchPlan(createMatchPlan("US Vallée", "Samedi", "home", 4))).toBe(true);
+  });
+
+  it("exige toujours l'adversaire et la date", () => {
+    const plan = createMatchPlan("  ", " ", "home", 4);
+    expect(Object.keys(validateMatchPlan(plan)).sort()).toEqual(["dateLabel", "opponent"]);
     expect(canFinalizeMatchPlan(plan)).toBe(false);
   });
 

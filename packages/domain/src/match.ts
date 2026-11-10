@@ -310,7 +310,6 @@ export function isLineupComplete(plan: MatchPlan): boolean {
 export interface MatchPlanErrors {
   opponent?: string;
   dateLabel?: string;
-  lineup?: string;
 }
 
 export function validateMatchPlan(plan: MatchPlan): MatchPlanErrors {
@@ -321,9 +320,7 @@ export function validateMatchPlan(plan: MatchPlan): MatchPlanErrors {
   if (!plan.dateLabel.trim()) {
     errors.dateLabel = "Indique une date.";
   }
-  if (!isLineupComplete(plan)) {
-    errors.lineup = "Complète la composition avant de valider.";
-  }
+  // La composition n'est pas exigée : on peut marquer un match joué (et saisir son résultat) sans l'avoir préparée.
   return errors;
 }
 
