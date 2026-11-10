@@ -92,6 +92,10 @@ class InMemoryTeams implements TeamRepository {
     throw new Error("non utilisé");
   }
 
+  async updateLogo(): Promise<PersistedTeamProfile> {
+    throw new Error("non utilisé");
+  }
+
   async findForEducator(educatorId: string): Promise<PersistedTeamProfile | null> {
     const name = this.names.get(educatorId);
     return name

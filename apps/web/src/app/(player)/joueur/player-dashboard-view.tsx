@@ -13,6 +13,7 @@ import { colorForEvaluation } from "../../evaluation-colors";
 import { EvaluationSeasonsTable } from "../../evaluation-seasons-table";
 import { AccountPrivacy } from "../../account-privacy";
 import { PlayerCard } from "../../player-card";
+import { TeamCrest } from "../../team-crest";
 import { PlayerSpaceHeader } from "../player-space-header";
 import { usePlayerDashboard } from "./use-player-dashboard";
 import { WaitingApproval } from "../waiting-approval";
@@ -82,8 +83,8 @@ export function PlayerSpaceView() {
               <div>
                 <h1>{dashboard.player.name}</h1>
                 {dashboard.team && (
-                  <p>
-                    {dashboard.team.name} · {dashboard.team.ageGroup}
+                  <p className="player-space-team">
+                    <TeamCrest logo={dashboard.team.logo} name={dashboard.team.name} size={24} /> {dashboard.team.name} · {dashboard.team.ageGroup}
                   </p>
                 )}
               </div>

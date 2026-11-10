@@ -2,8 +2,10 @@
 
 import { playerPositionCodes, playerPositions } from "@evolyfoot/domain";
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { resizeImageToDataUrl } from "../image-resize";
 import { SidebarNav } from "../sidebar-nav";
+import { TeamCrest } from "../team-crest";
 import { NextMatchLineup } from "./next-match-lineup";
 
 interface RosterPlayer {
@@ -42,6 +44,7 @@ interface TeamSummary {
   ageGroup: string;
   gameFormat: number;
   playerCount: number;
+  logo?: string | null;
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
@@ -50,8 +53,40 @@ async function readErrorMessage(response: Response): Promise<string> {
 }
 
 export function RosterView() {
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [logoError, setLogoError] = useState("");
   const [authenticated, setAuthenticated] = useState<boolean | undefined>(undefined);
   const [team, setTeam] = useState<TeamSummary | null>(null);
+
+  // Choisit (data URL) ou retire (null) le logo de l'équipe.
+  async function saveLogo(logo: string | null) {
+    setLogoBusy(true);
+    setLogoError("");
+    try {
+      const response = await fetch("/api/team/logo", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ logo }) });
+      if (!response.ok) {
+        setLogoError(await readErrorMessage(response));
+        return;
+      }
+      const body = await response.json();
+      setTeam((current) => (current ? { ...current, logo: body.profile?.logo ?? null } : current));
+    } catch {
+      setLogoError("Une erreur est survenue.");
+    } finally {
+      setLogoBusy(false);
+    }
+  }
+
+  async function chooseLogo(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      await saveLogo(await resizeImageToDataUrl(file, 256, "image/png"));
+    } catch {
+      setLogoError("Cette image n'a pas pu être lue.");
+    }
+  }
   const [players, setPlayers] = useState<RosterPlayer[]>([]);
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
@@ -200,11 +235,27 @@ export function RosterView() {
           <section className="roster-content roster-layout">
             <aside className="roster-side">
               <div className="roster-team-card">
-                <span aria-hidden="true" className="roster-crest">
-                  {initials(team?.name ?? "Équipe")}
-                </span>
+                <TeamCrest logo={team?.logo} name={team?.name ?? "Équipe"} size={58} />
                 <div>
                   <h2>{team?.name ?? "Mon équipe"}</h2>
+                  {team ? (
+                    <p className="roster-logo-actions">
+                      <label className="inline-cta">
+                        {logoBusy ? "Envoi…" : team.logo ? "Changer le logo" : "Ajouter un logo"}
+                        <input accept="image/*" className="visually-hidden" disabled={logoBusy} onChange={chooseLogo} type="file" />
+                      </label>
+                      {team.logo ? (
+                        <button className="inline-cta" disabled={logoBusy} onClick={() => void saveLogo(null)} type="button">
+                          Retirer
+                        </button>
+                      ) : null}
+                    </p>
+                  ) : null}
+                  {logoError ? (
+                    <p className="field-error" role="alert">
+                      {logoError}
+                    </p>
+                  ) : null}
                   {team ? (
                     <p className="roster-team-summary">
                       {team.ageGroup} · Foot à {team.gameFormat} · {players.length} joueur{players.length > 1 ? "s" : ""} au total

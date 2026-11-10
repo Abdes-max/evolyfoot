@@ -1,11 +1,12 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { PhotoChoice } from "../components/photo-choice";
 import { EventCard } from "../components/event-card";
 import { GamesList } from "../components/games-list";
 import { PlayerCard } from "../components/player-card";
+import { TeamCrest } from "../components/team-crest";
 import { Screen } from "../components/screen";
 import { WaitingApproval } from "../components/waiting-approval";
 import { useAuth } from "../lib/auth-context";
@@ -84,9 +85,12 @@ export default function MyCardScreen() {
       {dashboard ? (
         <>
           {dashboard.team ? (
-            <Text style={styles.team}>
-              {dashboard.team.name} · {dashboard.team.ageGroup}
-            </Text>
+            <View style={styles.teamRow}>
+              <TeamCrest logo={dashboard.team.logo} name={dashboard.team.name} size={28} />
+              <Text style={styles.team}>
+                {dashboard.team.name} · {dashboard.team.ageGroup}
+              </Text>
+            </View>
           ) : null}
           <PlayerCard
             jerseyNumber={dashboard.player.jerseyNumber}
@@ -138,6 +142,7 @@ const styles = StyleSheet.create({
   logout: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
   logoutText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
   note: { color: colors.muted, fontSize: 14, lineHeight: 20 },
-  team: { color: colors.lime, fontSize: 13, fontWeight: "800", textAlign: "center", marginBottom: spacing.sm },
+  teamRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: spacing.sm },
+  team: { color: colors.lime, fontSize: 13, fontWeight: "800", textAlign: "center" },
   section: { color: colors.ink, fontSize: 22, fontWeight: "900", textTransform: "uppercase", marginTop: spacing.lg, marginBottom: spacing.sm },
 });

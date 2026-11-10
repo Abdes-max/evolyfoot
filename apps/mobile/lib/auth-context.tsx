@@ -124,6 +124,8 @@ export interface AuthContextValue {
   logout(): Promise<void>;
   deleteAccount(password: string): Promise<AuthResult>;
   saveTeam(profile: TeamProfile): Promise<AuthResult>;
+  // Choisit (data URL) ou retire (null) le logo de l'équipe.
+  saveTeamLogo(logo: string | null): Promise<AuthResult>;
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
   saveTrainingSession(session: TrainingSession, slotInput: SessionSlotInput): Promise<SaveSessionResult>;
   listSessions(): Promise<readonly SavedTrainingSession[]>;
@@ -326,6 +328,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sessionToken,
         body: JSON.stringify(profile),
       });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      setTeam(body.profile);
+      return { ok: true };
+    },
+    [sessionToken],
+  );
+
+  const saveTeamLogo = useCallback(
+    async (logo: string | null): Promise<AuthResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour modifier le logo." };
+      }
+      const response = await apiFetch("/api/team/logo", { method: "PUT", sessionToken, body: JSON.stringify({ logo }) });
       if (!response.ok) {
         return { ok: false, error: await readErrorMessage(response) };
       }
@@ -690,6 +708,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       deleteAccount,
       saveTeam,
+      saveTeamLogo,
       saveDiagnostic,
       saveTrainingSession,
       listSessions,
@@ -725,6 +744,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       deleteAccount,
       saveTeam,
+      saveTeamLogo,
       saveDiagnostic,
       saveTrainingSession,
       listSessions,

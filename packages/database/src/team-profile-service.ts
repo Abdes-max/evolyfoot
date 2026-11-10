@@ -1,6 +1,6 @@
-import { createTeamProfile } from "@evolyfoot/domain";
+import { createTeamProfile, validateTeamLogo } from "@evolyfoot/domain";
 import type { TeamProfile } from "@evolyfoot/domain";
-import { EducatorNotFoundError, TeamNotFoundError } from "./errors";
+import { EducatorNotFoundError, TeamNotFoundError, ValidationError } from "./errors";
 import type { EducatorRepository, PersistedTeamProfile, TeamRepository } from "./repositories";
 
 export class TeamProfileService {
@@ -15,6 +15,17 @@ export class TeamProfileService {
       throw new EducatorNotFoundError();
     }
     return this.teamRepository.upsertForEducator(educatorId, validatedProfile);
+  }
+
+  // Choisit le logo de l'équipe (data URL) ou le retire (`null`).
+  async saveLogo(educatorId: string, logo: string | null): Promise<PersistedTeamProfile> {
+    if (logo !== null) {
+      const problem = validateTeamLogo(logo);
+      if (problem) {
+        throw new ValidationError(problem);
+      }
+    }
+    return this.teamRepository.updateLogo(educatorId, logo);
   }
 
   async get(educatorId: string): Promise<PersistedTeamProfile> {

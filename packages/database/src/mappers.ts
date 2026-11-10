@@ -512,6 +512,7 @@ export function toPersistedTeamProfile(team: Team): PersistedTeamProfile {
     // Vendredi, Mardi" pour une équipe créée avant ce tri), alors que la page Séances et le
     // calendrier hebdomadaire en dépendent pour numéroter les créneaux correctement.
     trainingDays: sortTrainingDays(team.trainingDays.map(fromPrismaTrainingDay)),
+    logo: team.logo,
   });
 
   return Object.freeze({

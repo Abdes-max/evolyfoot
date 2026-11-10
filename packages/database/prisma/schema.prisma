@@ -332,6 +332,8 @@ model Team {
   attendanceDefault   AttendanceDefault? @map("attendance_default")
   // Joueurs des entraînements : tableau d'ids, null = tout l'effectif.
   trainingPlayerIds   Json?              @map("training_player_ids")
+  // Logo de l'équipe : data URL d'une image réduite (comme Player.photo).
+  logo                String?
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
 

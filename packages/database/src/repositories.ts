@@ -235,6 +235,8 @@ export interface EducatorProfileRepository {
 export interface TeamRepository {
   upsertForEducator(educatorId: string, profile: TeamProfile): Promise<PersistedTeamProfile>;
   findForEducator(educatorId: string): Promise<PersistedTeamProfile | null>;
+  // Logo seul : l'enregistrement du profil ne le modifie jamais. `null` le retire.
+  updateLogo(educatorId: string, logo: string | null): Promise<PersistedTeamProfile>;
 }
 
 export interface PersistedDiagnostic {

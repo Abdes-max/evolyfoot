@@ -21,6 +21,7 @@ import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { CardGlow } from "../components/card-glow";
 import { CalendarIcon, ClockIcon, PinIcon } from "../components/icons";
+import { TeamCrest } from "../components/team-crest";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
 import { useUnread } from "../lib/push";
 
@@ -156,10 +157,13 @@ export default function HomeScreen() {
       </View>
       <ScrollView contentContainerStyle={styles.page}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.eyebrow}>{today}</Text>
-            <Text style={styles.title}>Bonjour {firstName},</Text>
-            <Text style={styles.subtitle}>{team ? `${team.name} · ${team.ageGroup}` : "Pas encore d’équipe"}</Text>
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12 }}>
+            {team ? <TeamCrest logo={team.logo} name={team.name} size={48} /> : null}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.eyebrow}>{today}</Text>
+              <Text style={styles.title}>Bonjour {firstName},</Text>
+              <Text style={styles.subtitle}>{team ? `${team.name} · ${team.ageGroup}` : "Pas encore d’équipe"}</Text>
+            </View>
           </View>
           <TouchableOpacity accessibilityLabel="Mon compte" onPress={confirmLogout} style={styles.avatar}>
             <Text style={styles.avatarText}>{educator ? initials(educator.displayName) : "?"}</Text>

@@ -3,7 +3,9 @@ import { playerPositionCodes, playerPositions } from "@evolyfoot/domain";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { TeamCrest } from "../components/team-crest";
 import { useAuth } from "../lib/auth-context";
+import { pickTeamLogo } from "../lib/team-logo";
 
 // Même regroupement que la page Équipe du web : par poste, dans l’ordre du terrain, puis par numéro.
 const positionGroups = [...playerPositions.map((position) => ({ key: position as string, label: position as string })), { key: "", label: "Sans poste" }];
@@ -21,7 +23,25 @@ function initials(name: string): string {
 }
 
 export default function EquipeScreen() {
-  const { team, roster, addPlayer, renamePlayer, removePlayer } = useAuth();
+  const { team, roster, addPlayer, renamePlayer, removePlayer, saveTeamLogo } = useAuth();
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [logoError, setLogoError] = useState("");
+
+  // Choisit un logo dans la galerie, ou retire l'actuel (`remove`).
+  async function changeLogo(remove = false) {
+    setLogoBusy(true);
+    setLogoError("");
+    try {
+      const logo = remove ? null : await pickTeamLogo();
+      if (!remove && logo === null) return;
+      const result = await saveTeamLogo(logo);
+      if (!result.ok) setLogoError(result.error);
+    } catch {
+      setLogoError("Cette image n’a pas pu être lue.");
+    } finally {
+      setLogoBusy(false);
+    }
+  }
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
   const [addError, setAddError] = useState("");
@@ -82,14 +102,25 @@ export default function EquipeScreen() {
         <Text style={styles.title}>Ton équipe.</Text>
         {team && (
           <View style={styles.teamCard}>
-            <View style={styles.crest}>
-              <Text style={styles.crestText}>{initials(team.name)}</Text>
-            </View>
+            <TeamCrest logo={team.logo} name={team.name} size={52} />
             <View style={{ flex: 1 }}>
               <Text style={styles.teamName}>{team.name}</Text>
               <Text style={styles.teamSummary}>
                 {team.ageGroup} · Foot à {team.gameFormat} · {roster.length} joueur{roster.length > 1 ? "s" : ""}
               </Text>
+              <View style={{ flexDirection: "row", gap: 16, marginTop: 6 }}>
+                <TouchableOpacity accessibilityRole="button" disabled={logoBusy} hitSlop={6} onPress={() => void changeLogo()}>
+                  <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }}>
+                    {logoBusy ? "Envoi…" : team.logo ? "Changer le logo" : "Ajouter un logo"}
+                  </Text>
+                </TouchableOpacity>
+                {team.logo ? (
+                  <TouchableOpacity accessibilityRole="button" disabled={logoBusy} hitSlop={6} onPress={() => void changeLogo(true)}>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Retirer</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              {logoError ? <Text style={{ color: colors.danger, fontSize: 12, marginTop: 4 }}>{logoError}</Text> : null}
             </View>
           </View>
         )}

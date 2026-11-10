@@ -33,3 +33,14 @@ describe("team profile", () => {
     ]);
   });
 });
+
+import { validateTeamLogo, teamLogoMaxLength } from "./team";
+
+describe("validateTeamLogo", () => {
+  it("accepte une image en data URL et refuse le reste ou le trop lourd", () => {
+    expect(validateTeamLogo("data:image/png;base64,iVBORw0KGgo=")).toBeNull();
+    expect(validateTeamLogo("data:image/svg+xml;base64,PHN2Zz4=")).toMatch(/PNG, JPEG ou WebP/);
+    expect(validateTeamLogo("https://exemple.test/logo.png")).toMatch(/PNG, JPEG ou WebP/);
+    expect(validateTeamLogo("data:image/png;base64," + "A".repeat(teamLogoMaxLength))).toMatch(/trop lourd/);
+  });
+});

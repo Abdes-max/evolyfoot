@@ -63,7 +63,7 @@ export interface Dashboard {
     preferredFoot: string | null;
   };
   season: PlayerSeasonTotals;
-  team: { name: string; ageGroup: string; trainingDays: string[] } | null;
+  team: { name: string; ageGroup: string; trainingDays: string[]; logo?: string | null } | null;
   evaluations: Evaluation[];
   trainingAttendance: { present: number; absent: number; total: number; rate: number };
   matchAttendance: { present: number; absent: number; total: number; rate: number };

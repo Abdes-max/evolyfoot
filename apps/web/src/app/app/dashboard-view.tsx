@@ -25,6 +25,7 @@ import {
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { TeamCrest } from "../team-crest";
 import { TodayDate } from "../today-date";
 import { WeeklyCalendar } from "../weekly-calendar";
 
@@ -51,6 +52,7 @@ interface DashboardData {
   displayName: string;
   hasTeam: boolean;
   teamName: string | null;
+  teamLogo: string | null;
   sessionsPerWeek: number;
   matches: readonly UpcomingMatch[];
   seasonProgram: SeasonProgram | null;
@@ -117,6 +119,7 @@ export function DashboardView() {
           displayName: sessionBody.educator.displayName,
           hasTeam: Boolean(teamBody.profile),
           teamName: teamBody.profile?.name ?? null,
+          teamLogo: teamBody.profile?.logo ?? null,
           sessionsPerWeek: teamBody.profile?.sessionsPerWeek ?? 2,
           matches: matchesBody.matches ?? [],
           seasonProgram: seasonBody.program ?? null,
@@ -208,6 +211,11 @@ export function DashboardView() {
           <h1>{firstName ? `Bonjour ${firstName},` : "Bonjour,"}</h1>
           <p>Voici l&apos;essentiel pour faire progresser ton équipe cette semaine.</p>
         </div>
+        {data?.teamName ? (
+          <span className="topbar-crest">
+            <TeamCrest logo={data.teamLogo} name={data.teamName} size={56} />
+          </span>
+        ) : null}
       </header>
 
       {data && (
