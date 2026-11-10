@@ -73,6 +73,16 @@ function trainingSessionConvocationText(session: PersistedTrainingSession): stri
   return `Convocation : entraînement, ${when}${where}. Merci de répondre présent ou absent dans l'appli.`;
 }
 
+export const cancellationNoteMaxLength = 300;
+
+// « Annulation : l'entraînement du mardi 10 novembre · 18:00 — Stade est annulé. » suivi de la raison, si le coach en donne une.
+function trainingSessionCancellationText(session: PersistedTrainingSession, note: string | null): string {
+  const time = trainingSessionMeetingTime(session);
+  const when = time ? `${trainingSessionDateLabel(session)} · ${time}` : trainingSessionDateLabel(session);
+  const where = session.location ? ` — ${session.location}` : "";
+  return `Annulation : l'entraînement du ${when}${where} est annulé.${note ? ` ${note}` : ""}`;
+}
+
 // Adresses e-mail à prévenir pour ces joueurs : celles des comptes qui les suivent et celle de la
 // fiche joueur, sans doublon.
 export async function convocationRecipients(
@@ -182,5 +192,49 @@ export class ConvocationService {
       text,
       recipients: await convocationRecipients(this.educatorRepository, roster),
     };
+  }
+
+  // Annule l'entraînement et prévient les joueurs concernés par message (avec la raison, si elle est donnée). Sans
+  // convocation envoyée, les joueurs ne savent pas qu'il existe : il est annulé sans message.
+  async cancelTrainingSession(educatorId: string, sessionId: string, note?: string | null): Promise<ConvocationResult> {
+    const [educator, session, fullRoster, settings] = await Promise.all([
+      this.educatorRepository.findById(educatorId),
+      this.trainingSessionRepository.findById(sessionId, educatorId),
+      this.playerRepository.listByEducator(educatorId),
+      this.convocationRepository?.findSettings(educatorId),
+    ]);
+    if (!educator) {
+      throw new EducatorNotFoundError();
+    }
+    if (!session) {
+      throw new TrainingSessionNotFoundError();
+    }
+    if (session.cancelledAt) {
+      throw new ValidationError("Cet entraînement est déjà annulé.");
+    }
+    const reason = note?.trim() ? note.trim() : null;
+    if (reason && reason.length > cancellationNoteMaxLength) {
+      throw new ValidationError(`La raison est trop longue (${cancellationNoteMaxLength} caractères au plus).`);
+    }
+    const text = trainingSessionCancellationText(session, reason);
+    const roster = session.convokedAt ? concernedPlayers(fullRoster, settings?.playerIds) : [];
+    await Promise.all(
+      roster.map((player) => this.messageRepository.create({ educatorId, playerId: player.id, authorRole: "coach", authorName: educator.displayName, text })),
+    );
+    await this.trainingSessionRepository.update(sessionId, educatorId, { cancelledAt: this.now(), cancellationNote: reason });
+    return {
+      sentCount: roster.length,
+      subject: "Annulation : entraînement",
+      text,
+      recipients: await convocationRecipients(this.educatorRepository, roster),
+    };
+  }
+
+  // Rétablit un entraînement annulé, sans nouveau message : le coach peut renvoyer la convocation s'il le souhaite.
+  async restoreTrainingSession(educatorId: string, sessionId: string): Promise<void> {
+    if (!(await this.educatorRepository.findById(educatorId))) {
+      throw new EducatorNotFoundError();
+    }
+    await this.trainingSessionRepository.update(sessionId, educatorId, { cancelledAt: null, cancellationNote: null });
   }
 }

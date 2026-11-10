@@ -260,6 +260,9 @@ model TrainingSessionRecord {
   // Convocation envoyée (à la main ou automatiquement) : avant, la séance est seulement
   // « programmée » côté joueur, sans réponse possible.
   convokedAt         DateTime?        @map("convoked_at")
+  // Entraînement annulé par le coach (les joueurs concernés en sont prévenus par message) et, facultatif, la raison.
+  cancelledAt        DateTime?        @map("cancelled_at")
+  cancellationNote   String?          @map("cancellation_note")
   location           String?
   description        String?
   // Présence à cette séance (id + nom de joueur dupliqués, voir AttendanceEntry côté domaine et

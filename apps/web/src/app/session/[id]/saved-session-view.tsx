@@ -51,6 +51,13 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
   const [convokedAt, setConvokedAt] = useState<string | null>(null);
   const [attendance, setAttendance] = useState<readonly AttendanceEntry[] | undefined>(undefined);
   const [convocationSettings, setConvocationSettings] = useState<TrainingConvocationSettings | null>(null);
+  // Annulation : date et raison une fois annulé, message facultatif saisi avant d'annuler.
+  const [cancelledAt, setCancelledAt] = useState<string | null>(null);
+  const [cancellationNote, setCancellationNote] = useState<string | null>(null);
+  const [cancelNote, setCancelNote] = useState("");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelFeedback, setCancelFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,8 +103,15 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
           return;
         }
         setRoster(rosterBody.players ?? []);
-        const recordState = record as SavedTrainingSession & { convokedAt?: string | null; attendance?: readonly AttendanceEntry[] };
+        const recordState = record as SavedTrainingSession & {
+          convokedAt?: string | null;
+          attendance?: readonly AttendanceEntry[];
+          cancelledAt?: string | null;
+          cancellationNote?: string | null;
+        };
         setConvokedAt(recordState.convokedAt ?? null);
+        setCancelledAt(recordState.cancelledAt ?? null);
+        setCancellationNote(recordState.cancellationNote ?? null);
         setAttendance(recordState.attendance);
         void fetch("/api/team/convocations")
           .then((response) => (response.ok ? response.json() : null))
@@ -209,6 +223,57 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
     }
   }
 
+  // Annule l'entraînement : les joueurs concernés reçoivent un message (avec la raison, si elle est donnée).
+  async function cancelSession() {
+    setCancelling(true);
+    setCancelFeedback(null);
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}/cancel`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ note: cancelNote }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setCancelFeedback(typeof body.error === "string" ? body.error : "Une erreur est survenue.");
+        return;
+      }
+      setCancelledAt(new Date().toISOString());
+      setCancellationNote(cancelNote.trim() || null);
+      setCancelOpen(false);
+      setCancelFeedback(
+        body.sentCount > 0
+          ? `Entraînement annulé : ${body.sentCount} joueur${body.sentCount > 1 ? "s" : ""} prévenu${body.sentCount > 1 ? "s" : ""}.`
+          : "Entraînement annulé. Aucun message envoyé : la convocation n’était pas partie.",
+      );
+    } catch {
+      setCancelFeedback("Une erreur est survenue.");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
+  // Rétablit l'entraînement, sans nouveau message.
+  async function restoreSession() {
+    setCancelling(true);
+    setCancelFeedback(null);
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}/cancel`, { method: "DELETE" });
+      if (!response.ok) {
+        setCancelFeedback("Une erreur est survenue.");
+        return;
+      }
+      setCancelledAt(null);
+      setCancellationNote(null);
+      setCancelNote("");
+      setCancelFeedback("Entraînement rétabli. Renvoie la convocation pour en informer les joueurs.");
+    } catch {
+      setCancelFeedback("Une erreur est survenue.");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   return (
     <main className="session-shell">
       <header className="session-header">
@@ -317,6 +382,45 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
                 Envoyée à tout l’effectif -- une séance n’a pas de composition retenue.
               </p>
               {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
+            </div>
+
+            <div className="session-cancel">
+              {cancelledAt ? (
+                <>
+                  <p className="session-cancel-state" role="status">
+                    Entraînement annulé{cancellationNote ? ` : ${cancellationNote}` : ""}.
+                  </p>
+                  <button disabled={cancelling} onClick={restoreSession} type="button">
+                    {cancelling ? "…" : "Rétablir l’entraînement"}
+                  </button>
+                </>
+              ) : cancelOpen ? (
+                <>
+                  <label>
+                    <span>Message aux joueurs (facultatif)</span>
+                    <textarea
+                      maxLength={300}
+                      onChange={(event) => setCancelNote(event.target.value)}
+                      placeholder="Ex. Terrain impraticable, on se retrouve jeudi."
+                      value={cancelNote}
+                    />
+                  </label>
+                  <p className="match-slot-hint">Les joueurs concernés reçoivent un message d’annulation (et un e-mail s’ils ont une adresse).</p>
+                  <div>
+                    <button className="session-cancel-confirm" disabled={cancelling} onClick={cancelSession} type="button">
+                      {cancelling ? "Annulation…" : "Confirmer l’annulation"}
+                    </button>
+                    <button disabled={cancelling} onClick={() => setCancelOpen(false)} type="button">
+                      Garder l’entraînement
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button className="session-cancel-open" onClick={() => setCancelOpen(true)} type="button">
+                  Annuler l’entraînement
+                </button>
+              )}
+              {cancelFeedback && <p className="match-convocation-feedback">{cancelFeedback}</p>}
             </div>
           </section>
         </>

@@ -1918,3 +1918,30 @@ button.week-calendar-badge:focus-visible {
   font-size: 12px;
   font-weight: 700;
 }
+
+/* Annulation d'un entraînement. */
+.session-cancel {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.session-cancel label {
+  display: grid;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.session-cancel > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.session-cancel-state {
+  margin: 0;
+  font-weight: 800;
+  color: #ff6b6b;
+}

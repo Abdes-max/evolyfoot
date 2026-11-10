@@ -21,7 +21,9 @@ export function EventCard({ event, children }: { event: AgendaEvent; children?: 
         <View style={{ flex: 1 }}>
           {/* Le titre d'un entraînement est déjà « Entraînement » : pas de surtitre en double. */}
           {event.kind === "training" ? null : <Text style={styles.kind}>{kindLabels[event.kind]}</Text>}
-          <Text style={styles.title}>{event.title}</Text>
+          {event.cancelled ? <Text style={styles.cancelled}>ANNULÉ</Text> : null}
+          <Text style={[styles.title, event.cancelled && styles.titleCancelled]}>{event.title}</Text>
+          {event.cancelled && event.cancellationNote ? <Text style={styles.cancelNote}>{event.cancellationNote}</Text> : null}
           <Text style={styles.meta}>{[event.dateLabel, event.time].filter(Boolean).join(" · ")}</Text>
           {event.location ? (
             <TouchableOpacity accessibilityRole="link" onPress={() => void openInMaps(event.location!)} style={styles.place}>
@@ -51,6 +53,9 @@ const styles = StyleSheet.create({
   dateDay: { color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 32 },
   kind: { color: colors.lime, fontSize: 11, fontWeight: "900" },
   title: { color: colors.ink, fontSize: 17, fontWeight: "800", marginTop: 3 },
+  titleCancelled: { textDecorationLine: "line-through", color: colors.muted },
+  cancelled: { color: colors.danger, fontSize: 11, fontWeight: "900" },
+  cancelNote: { color: colors.ink, fontSize: 13, lineHeight: 18, marginTop: 3 },
   meta: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 3 },
   place: { minHeight: 44, marginTop: spacing.sm, padding: spacing.sm, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primaryDark },
   placeText: { color: colors.ink, fontSize: 13, fontWeight: "700" },

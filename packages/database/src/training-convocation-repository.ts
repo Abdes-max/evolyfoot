@@ -59,7 +59,7 @@ export class PrismaTrainingConvocationRepository implements TrainingConvocationR
 
   async listAwaiting(now: Date): Promise<AwaitingConvocation[]> {
     const records = await this.prisma.trainingSessionRecord.findMany({
-      where: { convokedAt: null, meetingAt: { gt: now }, educator: { team: { convocationLeadDays: { not: null } } } },
+      where: { convokedAt: null, cancelledAt: null, meetingAt: { gt: now }, educator: { team: { convocationLeadDays: { not: null } } } },
       select: { id: true, educatorId: true, meetingAt: true, educator: { select: { team: { select: { convocationLeadDays: true } } } } },
     });
     return records.flatMap((record) => {

@@ -39,6 +39,9 @@ export interface DashboardTrainingSession {
   myStatusByDefault?: boolean;
   // Convocation envoyée : avant, la séance est seulement « programmée », sans réponse possible.
   convoked?: boolean;
+  // Entraînement annulé par le coach, et la raison donnée.
+  cancelled?: boolean;
+  cancellationNote?: string | null;
 }
 
 export interface Competition {
