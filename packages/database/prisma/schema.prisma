@@ -592,6 +592,8 @@ model TournamentRecord {
   attendance        Json?
   // Rencontres du tournoi (équipe rencontrée, score, buteurs et passeurs) : voir competition-games.ts côté domaine.
   games             Json?
+  // Renseigné quand le coach marque le tournoi comme terminé ; null tant qu'il est en cours.
+  finishedAt        DateTime? @map("finished_at")
   createdAt         DateTime  @default(now()) @map("created_at")
 
   @@index([educatorId])
@@ -616,6 +618,7 @@ model PlateauRecord {
   attendance        Json?
   // Rencontres du plateau : même forme que TournamentRecord.games.
   games             Json?
+  finishedAt        DateTime? @map("finished_at")
   createdAt         DateTime  @default(now()) @map("created_at")
 
   @@index([educatorId])

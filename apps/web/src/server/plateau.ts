@@ -15,6 +15,8 @@ export interface PlateauSummary {
   convokedAt: string | null;
   attendance?: readonly AttendanceEntry[];
   games?: readonly CompetitionGame[];
+  // ISO de la date où il a été marqué terminé, `null` s'il est en cours.
+  finishedAt: string | null;
   createdAt: string;
 }
 
@@ -28,7 +30,14 @@ export interface PlateauGateway {
   updateDetails(
     educatorId: string,
     plateauId: string,
-    input: { date?: string | null; location?: string | null; description?: string | null; result?: string | null; selectedPlayerIds?: unknown },
+    input: {
+      date?: string | null;
+      location?: string | null;
+      description?: string | null;
+      result?: string | null;
+      selectedPlayerIds?: unknown;
+      finished?: boolean;
+    },
   ): Promise<PlateauSummary>;
   remove(educatorId: string, plateauId: string): Promise<void>;
 }
@@ -145,7 +154,14 @@ export function createUpdatePlateauDetailsHandler(
     const result = body?.result === undefined ? undefined : isNullableString(body.result) ? body.result : null;
     try {
       return Response.json({
-        plateau: await plateaux.updateDetails(educator.id, plateauId, { date, location, description, result, selectedPlayerIds: body?.selectedPlayerIds }),
+        plateau: await plateaux.updateDetails(educator.id, plateauId, {
+          date,
+          location,
+          description,
+          result,
+          selectedPlayerIds: body?.selectedPlayerIds,
+          finished: typeof body?.finished === "boolean" ? body.finished : undefined,
+        }),
       });
     } catch (error) {
       return errorResponse(error, log);
@@ -195,6 +211,7 @@ export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway;
       convokedAt: plateau.convokedAt ? plateau.convokedAt.toISOString() : null,
       ...(plateau.attendance ? { attendance: plateau.attendance } : {}),
       games: plateau.games ?? [],
+      finishedAt: plateau.finishedAt ? plateau.finishedAt.toISOString() : null,
       createdAt: plateau.createdAt.toISOString(),
     };
   }

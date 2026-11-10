@@ -59,7 +59,14 @@ export class TournamentService {
   async updateDetails(
     educatorId: string,
     tournamentId: string,
-    input: { date?: Date | null; location?: string | null; description?: string | null; result?: string | null; selectedPlayerIds?: unknown },
+    input: {
+      date?: Date | null;
+      location?: string | null;
+      description?: string | null;
+      result?: string | null;
+      selectedPlayerIds?: unknown;
+      finished?: boolean;
+    },
   ): Promise<PersistedTournament> {
     const existing = await this.tournamentRepository.findById(tournamentId, educatorId);
     if (!existing) {
@@ -72,6 +79,7 @@ export class TournamentService {
       ...(input.description !== undefined ? { description: normalizeOptionalText(input.description) } : {}),
       ...(input.result !== undefined ? { result: normalizeOptionalText(input.result) } : {}),
       ...(selectedPlayerIds !== undefined ? { selectedPlayerIds } : {}),
+      ...(input.finished !== undefined ? { finishedAt: input.finished ? (existing.finishedAt ?? new Date()) : null } : {}),
     });
   }
 

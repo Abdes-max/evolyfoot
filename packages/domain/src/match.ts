@@ -311,7 +311,6 @@ export interface MatchPlanErrors {
   opponent?: string;
   dateLabel?: string;
   lineup?: string;
-  captain?: string;
 }
 
 export function validateMatchPlan(plan: MatchPlan): MatchPlanErrors {
@@ -324,9 +323,6 @@ export function validateMatchPlan(plan: MatchPlan): MatchPlanErrors {
   }
   if (!isLineupComplete(plan)) {
     errors.lineup = "Complète la composition avant de valider.";
-  }
-  if (!plan.captainPlayerId || !plan.lineup.some((assignment) => assignment.playerId === plan.captainPlayerId)) {
-    errors.captain = "Désigne un capitaine parmi les titulaires.";
   }
   return errors;
 }

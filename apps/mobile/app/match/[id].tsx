@@ -396,15 +396,20 @@ export default function MatchDetailScreen() {
         </View>
 
         {readOnly ? (
-          <MatchResultForm
-            goalsAgainst={match.goalsAgainst ?? null}
-            goalsFor={match.goalsFor ?? null}
-            key={match.id}
-            matchId={match.id}
-            onSaved={(result) => setMatch((current) => (current ? { ...current, ...result } : current))}
-            playerStats={match.playerStats ?? []}
-            players={resultPlayers}
-          />
+          <CollapsibleSection
+            summary={match.goalsFor != null && match.goalsAgainst != null ? `${match.goalsFor} - ${match.goalsAgainst}` : "Pas encore saisi"}
+            title="Résultat du match"
+          >
+            <MatchResultForm
+              goalsAgainst={match.goalsAgainst ?? null}
+              goalsFor={match.goalsFor ?? null}
+              key={match.id}
+              matchId={match.id}
+              onSaved={(result) => setMatch((current) => (current ? { ...current, ...result } : current))}
+              playerStats={match.playerStats ?? []}
+              players={resultPlayers}
+            />
+          </CollapsibleSection>
         ) : (
           <MatchClockPanel matchId={match.id} />
         )}

@@ -171,15 +171,15 @@ describe("isLineupComplete / validateMatchPlan / canFinalizeMatchPlan", () => {
     expect(canFinalizeMatchPlan(plan)).toBe(false);
   });
 
-  it("exige un capitaine parmi les titulaires même une fois la composition complète", () => {
+  it("n'exige pas de capitaine une fois la composition complète", () => {
     let plan = createMatchPlan("US Vallée", "Samedi", "home", 4);
     const slots = formationSlots(4, plan.formationId);
     slots.forEach((slot, index) => {
       plan = assignPlayerToSlot(plan, slot.id, { id: `p${index}`, name: `Joueur ${index}` });
     });
     expect(isLineupComplete(plan)).toBe(true);
-    expect(validateMatchPlan(plan).captain).toBeDefined();
-    expect(canFinalizeMatchPlan(plan)).toBe(false);
+    expect(plan.captainPlayerId).toBeNull();
+    expect(canFinalizeMatchPlan(plan)).toBe(true);
 
     plan = setCaptain(plan, "p0");
     expect(canFinalizeMatchPlan(plan)).toBe(true);

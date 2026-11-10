@@ -115,7 +115,7 @@ describe("PostgreSQL match persistence", () => {
     await expect(service.markPlayed(educator.id, match.id)).rejects.toBeInstanceOf(ValidationError);
   });
 
-  it("marque un match joué une fois la composition complète et le capitaine désigné", async () => {
+  it("marque un match joué une fois la composition complète, avec ou sans capitaine", async () => {
     const educator = await createEducator("played");
     const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 4 });
     const slots = formationSlots(4, match.formationId);

@@ -585,6 +585,7 @@ export interface CompetitionUpdate {
   convokedAt?: Date | null;
   attendance?: readonly AttendanceEntry[];
   games?: readonly CompetitionGame[];
+  finishedAt?: Date | null;
 }
 
 // Fiche simple comptée à part des matchs dans /statistiques -- voir TournamentInput côté domaine.
@@ -606,6 +607,8 @@ export interface PersistedTournament {
   attendance?: readonly AttendanceEntry[];
   // Rencontres saisies (équipe rencontrée, score, buteurs et passeurs).
   games?: readonly CompetitionGame[];
+  // Date à laquelle le coach l'a marqué comme terminé ; `null` tant qu'il est en cours.
+  finishedAt: Date | null;
   createdAt: Date;
 }
 
@@ -635,6 +638,8 @@ export interface PersistedPlateau {
   convokedAt: Date | null;
   attendance?: readonly AttendanceEntry[];
   games?: readonly CompetitionGame[];
+  // Date à laquelle le coach l'a marqué comme terminé ; `null` tant qu'il est en cours.
+  finishedAt: Date | null;
   createdAt: Date;
 }
 

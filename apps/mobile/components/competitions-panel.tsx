@@ -7,6 +7,7 @@ import { useAuth } from "../lib/auth-context";
 import { competitionDateLabel, competitionKinds, isPastCompetition, sortCompetitions, type Competition, type CompetitionKind } from "../lib/competitions";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "./concerned-players-picker";
 import { ConvocationSummary } from "./convocation-summary";
+import { CalendarIcon, PinIcon } from "./icons";
 import { DateTimeField } from "./date-time-field";
 import { PlaceInput } from "./place-input";
 
@@ -145,14 +146,20 @@ export function CompetitionsPanel({ kind, scope }: { kind: CompetitionKind; scop
               style={styles.card}
             >
               <View style={[styles.statusBadge, past && styles.statusBadgePast]}>
-                <Text style={[styles.statusText, past && styles.statusTextPast]}>{past ? "Passé" : "À venir"}</Text>
+                <Text style={[styles.statusText, past && styles.statusTextPast]}>{item.finishedAt ? "Terminé" : past ? "Passé" : "À venir"}</Text>
               </View>
               <Text style={styles.cardTitle}>{item.name}</Text>
-              <Text style={styles.cardBody}>
-                {item.dateLabel}
-                {item.location ? ` · ${item.location}` : ""}
-                {item.result ? ` · ${item.result}` : ""}
-              </Text>
+              <View style={styles.metaRow}>
+                <CalendarIcon color={colors.primary} size={16} />
+                <Text style={styles.cardBody}>{item.dateLabel}</Text>
+              </View>
+              {item.location ? (
+                <View style={styles.metaRow}>
+                  <PinIcon color={colors.primary} size={16} />
+                  <Text style={styles.cardBody}>{item.location}</Text>
+                </View>
+              ) : null}
+              {item.result ? <Text style={styles.cardBody}>{item.result}</Text> : null}
               {!past || item.convokedAt ? (
                 <ConvocationSummary attendance={item.attendance} convokedAt={item.convokedAt} roster={roster} selectedPlayerIds={item.selectedPlayerIds} />
               ) : null}
@@ -209,6 +216,7 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 9, fontWeight: "800", color: colors.primary, textTransform: "uppercase" },
   statusTextPast: { color: "#34d399" },
   cardTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginTop: 6 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
   cardBody: { color: colors.muted, fontSize: 11.5, marginTop: 2 },
   cardLink: { color: colors.primary, fontSize: 11.5, fontWeight: "800", marginTop: 8 },
 });
