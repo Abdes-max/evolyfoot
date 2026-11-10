@@ -56,6 +56,8 @@ export interface SeasonSessionInput {
   meetingAt: string;
   location: string;
   preparationSeconds?: number;
+  // Exercices choisis à la place de ceux du programme (un par situation).
+  activityIds?: string[];
 }
 
 export interface TrainingSessionGateway {
@@ -177,7 +179,8 @@ function isSeasonSessionInputShaped(value: Record<string, unknown> | null): valu
     typeof value.meetingAt === "string" &&
     !Number.isNaN(new Date(value.meetingAt).getTime()) &&
     typeof value.location === "string" &&
-    (value.preparationSeconds === undefined || typeof value.preparationSeconds === "number")
+    (value.preparationSeconds === undefined || typeof value.preparationSeconds === "number") &&
+    (value.activityIds === undefined || (Array.isArray(value.activityIds) && value.activityIds.every((id) => typeof id === "string")))
   );
 }
 

@@ -1,14 +1,15 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import {
-  buildSituationDiagram,
   findProgramSession,
   findProgramSituation,
+  findTrainingActivity,
   programSource,
   programSubThemes,
   scheduleForSlot,
   seasonSlotDate,
   situationKindLabels,
   sortTrainingDays,
+  trainingActivityCatalogue,
   type TrainingSlotSchedule,
 } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
@@ -16,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { DateTimeField } from "../../../components/date-time-field";
 import { PlaceInput } from "../../../components/place-input";
-import { TacticalDiagramView } from "../../../components/tactical-diagram";
+import { TacticalPlayer } from "../../../components/tactical-player";
 import { useAuth } from "../../../lib/auth-context";
 
 // Durée écoulée depuis l’ouverture de l’écran (indicateur MVP), rien si elle n’a pas démarré.
@@ -42,6 +43,9 @@ export default function ProgramSessionScreen() {
   const [recurring, setRecurring] = useState<TrainingSlotSchedule | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  // Exercices de la séance (ceux du programme, ou ceux que le coach a choisis à leur place) et situation dont on choisit un autre.
+  const [chosen, setChosen] = useState<string[]>(() => (session && session.type !== "evaluation" ? [...session.situations] : []));
+  const [pickerIndex, setPickerIndex] = useState<number | null>(null);
   // Début de la préparation (ouverture de l'écran), pour l'indicateur « première séance en moins de 10 minutes ».
   const preparationStart = useRef<number | null>(null);
   useEffect(() => {
@@ -98,7 +102,13 @@ export default function ProgramSessionScreen() {
       : session.type === "recreational"
         ? "Séance récréative"
         : programSubThemes[session.subTheme].label;
-  const situations = session.type === "evaluation" ? [] : session.situations.map((id) => findProgramSituation(id)!);
+  const programIds = session.type === "evaluation" ? [] : session.situations;
+  const changedCount = chosen.filter((id, index) => id !== programIds[index]).length;
+
+  function choose(index: number, id: string) {
+    setChosen((current) => current.map((value, position) => (position === index ? id : value)));
+    setPickerIndex(null);
+  }
 
   async function prepare() {
     setError("");
@@ -122,6 +132,7 @@ export default function ProgramSessionScreen() {
         playerCount: team.playerCount,
         meetingAt: meetingAt.toISOString(),
         location,
+        ...(changedCount > 0 ? { activityIds: chosen } : {}),
         ...preparationSeconds(preparationStart.current),
       }),
     });
@@ -139,6 +150,12 @@ export default function ProgramSessionScreen() {
       <ScrollView contentContainerStyle={styles.page}>
         <Text style={styles.step}>SÉANCE TYPE {session.number}</Text>
         <Text style={styles.title}>{title}</Text>
+
+        {changedCount > 0 ? (
+          <Text style={styles.muted}>
+            {changedCount} exercice{changedCount > 1 ? "s" : ""} changé{changedCount > 1 ? "s" : ""} : la séance préparée reprendra ce choix.
+          </Text>
+        ) : null}
 
         {preparable && meetingAt && (
           <View style={styles.card}>
@@ -184,23 +201,49 @@ export default function ProgramSessionScreen() {
             ))}
           </View>
         ) : (
-          situations.map((situation, index) => (
-            <View key={`${situation.id}-${index}`} style={styles.card}>
-              <Text style={styles.label}>
-                {index + 1}. {situationKindLabels[situation.kind].toUpperCase()} · {situation.sequences.count} × {situation.sequences.minutes} MIN ·{" "}
-                {situation.fieldSize}
-              </Text>
-              <Text style={styles.cardTitle}>{situation.title}</Text>
-              <TacticalDiagramView diagram={buildSituationDiagram(situation.layout)} label={situation.organization} />
-              <Text style={styles.body}>{situation.instruction}</Text>
-              {situation.rules.map((rule) => (
-                <Text key={rule} style={styles.muted}>
-                  • {rule}
+          chosen.map((id, index) => {
+            const activity = findTrainingActivity(id)!;
+            const situation = id === programIds[index] ? findProgramSituation(id) : undefined;
+            const alternatives = trainingActivityCatalogue.filter((candidate) => candidate.kind === activity.kind && candidate.id !== activity.id);
+            return (
+              <View key={`${programIds[index]}-${index}`} style={styles.card}>
+                <Text style={styles.label}>
+                  {index + 1}.{" "}
+                  {situation
+                    ? `${situationKindLabels[situation.kind].toUpperCase()} · ${situation.sequences.count} × ${situation.sequences.minutes} MIN · ${situation.fieldSize}`
+                    : activity.fieldSize.toUpperCase()}
                 </Text>
-              ))}
-              {situation.variation ? <Text style={styles.muted}>Variante : {situation.variation}</Text> : null}
-            </View>
-          ))
+                <Text style={styles.cardTitle}>{activity.title}</Text>
+                <TacticalPlayer exercise={activity} label={`Schéma tactique animé : ${activity.title}`} seed={activity.id} />
+                <Text style={styles.body}>{activity.instruction}</Text>
+                {activity.rules.map((rule) => (
+                  <Text key={rule} style={styles.muted}>
+                    • {rule}
+                  </Text>
+                ))}
+                {situation?.variation ? <Text style={styles.muted}>Variante : {situation.variation}</Text> : null}
+                <View style={styles.actions}>
+                  <TouchableOpacity accessibilityRole="button" onPress={() => setPickerIndex(pickerIndex === index ? null : index)} style={styles.action}>
+                    <Text style={styles.actionText}>{pickerIndex === index ? "Fermer la liste" : "Changer l’exercice"}</Text>
+                  </TouchableOpacity>
+                  {id !== programIds[index] ? (
+                    <TouchableOpacity accessibilityRole="button" onPress={() => choose(index, programIds[index]!)} style={styles.action}>
+                      <Text style={styles.actionText}>Remettre celui du programme</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                {pickerIndex === index ? (
+                  <ScrollView nestedScrollEnabled style={styles.picker}>
+                    {alternatives.map((candidate) => (
+                      <TouchableOpacity accessibilityRole="button" key={candidate.id} onPress={() => choose(index, candidate.id)} style={styles.pickerRow}>
+                        <Text style={styles.body}>{candidate.title}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                ) : null}
+              </View>
+            );
+          })
         )}
         <Text style={styles.muted}>{programSource}.</Text>
       </ScrollView>
@@ -229,4 +272,6 @@ const styles = StyleSheet.create({
   primary: { minHeight: 52, marginTop: 10, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
   primaryText: { fontSize: 15, fontWeight: "800", color: colors.primaryInk },
   disabled: { opacity: 0.5 },
+  picker: { maxHeight: 260, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm, backgroundColor: colors.paper },
+  pickerRow: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
 });

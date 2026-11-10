@@ -31,7 +31,7 @@ export interface AnimationStep {
   readonly activeIds: readonly string[];
 }
 
-export type ExerciseScenario = "possession" | "passAndMove" | "dribbling" | "progression" | "finishing" | "pressing";
+export type ExerciseScenario = "possession" | "passAndMove" | "dribbling" | "progression" | "finishing" | "pressing" | "gammes" | "juggling";
 
 export type AnimatedExercise = Pick<
   TrainingActivity,
@@ -54,6 +54,9 @@ const pressingWords =
 const finishingWords = /\btir|frapp|\bfini|reprise|centre vers|et centre|\bbuts?\b|mini-but/;
 const dribblingWords = /condui|balle au pied|slalom|dribbl|rapporte/;
 const progressionWords = /avance|avanç|vers l’avant|devant|progress|dépasse\b|profondeur|en-but|franchi|\blignes?\b|\battaque\b|remonte|cible/;
+// Gammes et éducatifs d'échauffement : on se déplace sans ballon, en aller-retour (talons-fesses, pas chassés…).
+const gammesWords = /talons?[- ]fesses?|pas chass|\bgammes?\b|\bfentes?\b|montées? de genou|éducatifs?|skipping|foulées|trottin|footing/;
+const jugglingWords = /jongl/;
 const soloApproachWords = /condui|balle au pied|\bseul\b/;
 
 function lower(...texts: readonly (string | undefined)[]): string {
@@ -73,6 +76,15 @@ export function exerciseScenario(exercise: AnimatedExercise): ExerciseScenario {
   const all = lower(exercise.title, exercise.organization, exercise.instruction, ...rules);
   const head = lower(exercise.organization, exercise.instruction);
   const hasOpponents = exercise.diagram.tokens.some((token) => token.role === "defender");
+  // Une gamme ou un jonglage ne se rejoue pas comme une passe : l'animation montre ce que fait le joueur. Le jonglage
+  // se lit dans l'intitulé (un « défi jonglage » annexe ne change pas un 4 contre 4).
+  if (jugglingWords.test(lower(exercise.title)) && !/défi|passes/.test(lower(exercise.title))) {
+    return "juggling";
+  }
+  const warmUp = exercise.kind === "welcome" || exercise.kind === "activation";
+  if (gammesWords.test(lower(exercise.title)) || (warmUp && gammesWords.test(lower(exercise.organization, exercise.instruction)))) {
+    return "gammes";
+  }
   // Le pressing se lit dans l'intitulé et la consigne : une règle annexe (« le défenseur qui
   // récupère… ») ne fait pas d'un exercice d'attaque un exercice de récupération.
   if (hasOpponents && pressingWords.test(lower(exercise.title, exercise.organization, exercise.instruction))) {
@@ -114,6 +126,8 @@ const stepTopics: Record<ExerciseScenario, readonly (RegExp | null)[]> = {
     /passe|touche|seconde|condui/,
     /tir|frapp|\bbut|cadr|fini|point/,
   ],
+  gammes: [null, null, null, null, null, null],
+  juggling: [null, null, null, null, null, null],
   pressing: [
     null,
     /press|ferme|coupe|proche/,
@@ -635,7 +649,38 @@ function pressingStep(context: StepContext): void {
   group.defenderCarrierId = null;
 }
 
+// Gammes : tout le groupe va et vient sur la longueur de la zone, sans ballon, en zigzaguant d'un côté puis de l'autre.
+function gammesStep(context: StepContext): void {
+  const { group, home, index } = context;
+  const out = index % 2 === 0;
+  const travel = Math.min(group.zone.width, group.zone.height) * 0.55;
+  const side = { x: -group.forward.y, y: group.forward.x };
+  const wiggle = index % 4 === 0 ? 8 : -8;
+  for (const token of [...group.attackers, ...group.defenders]) {
+    const start = home[token.id]!;
+    place(context, token.id, out ? shift(shift(start, group.forward, travel), side, wiggle) : start);
+    context.active.push(token.id);
+  }
+}
+
+// Jonglage : chacun reste sur place avec son partenaire le plus proche, le ballon fait des allers-retours entre eux.
+function jugglingStep(context: StepContext): void {
+  const { group, home, index, random } = context;
+  const free = [...group.attackers];
+  while (free.length > 1) {
+    const first = free.shift()!;
+    free.sort((a, b) => distance(home[first.id]!, home[a.id]!) - distance(home[first.id]!, home[b.id]!));
+    const second = free.shift()!;
+    place(context, first.id, jitter(home[first.id]!, random, 3));
+    place(context, second.id, jitter(home[second.id]!, random, 3));
+    if (index % 2 === 0) pass(context, first.id, second.id);
+    else pass(context, second.id, first.id);
+  }
+}
+
 const scenarioSteps: Record<ExerciseScenario, (context: StepContext) => void> = {
+  gammes: gammesStep,
+  juggling: jugglingStep,
   possession: possessionStep,
   passAndMove: passAndMoveStep,
   dribbling: dribblingStep,

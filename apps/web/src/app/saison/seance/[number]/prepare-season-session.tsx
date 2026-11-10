@@ -10,6 +10,8 @@ interface PrepareSeasonSessionProps {
   sessionNumber: number;
   week: number;
   slot: number;
+  // Exercices choisis à la place de ceux du programme (un par situation), `undefined` : ceux du programme.
+  activityIds?: readonly string[];
 }
 
 function pad(value: number): string {
@@ -28,7 +30,7 @@ function toTimeInput(date: Date): string {
 // « Préparer cette séance » : date du jour d'entraînement de la semaine, heure et lieu de son créneau
 // récurrent. Avec un créneau défini, ils se règlent sur le créneau uniquement (bloc « Mes créneaux »
 // de la saison) ; sans créneau, les champs restent à remplir.
-export function PrepareSeasonSession({ sessionNumber, week, slot }: PrepareSeasonSessionProps) {
+export function PrepareSeasonSession({ sessionNumber, week, slot, activityIds }: PrepareSeasonSessionProps) {
   const router = useRouter();
   const [team, setTeam] = useState<{ ageGroup: AgeGroup; playerCount: number } | null>(null);
   const [date, setDate] = useState("");
@@ -106,6 +108,7 @@ export function PrepareSeasonSession({ sessionNumber, week, slot }: PrepareSeaso
         playerCount: team.playerCount,
         meetingAt: new Date(`${date}T${time}`).toISOString(),
         location,
+        ...(activityIds ? { activityIds } : {}),
         ...(preparationStart.current !== null ? { preparationSeconds: Math.round((Date.now() - preparationStart.current) / 1000) } : {}),
       }),
     }).catch(() => null);

@@ -1,18 +1,9 @@
-import {
-  buildSituationDiagram,
-  findProgramSession,
-  findProgramSituation,
-  programSessions,
-  programSource,
-  programSubThemes,
-  situationKindLabels,
-  situationMinutes,
-} from "@evolyfoot/domain";
+import { findProgramSession, findProgramSituation, programSessions, programSource, programSubThemes, situationMinutes } from "@evolyfoot/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SidebarNav } from "../../../sidebar-nav";
-import { TacticalDiagramView } from "../../../tactical-diagram";
 import { PrepareSeasonSession } from "./prepare-season-session";
+import { SeasonSessionWorkshop } from "./season-session-workshop";
 
 interface ProgramSessionPageProps {
   params: Promise<{ number: string }>;
@@ -71,7 +62,7 @@ export default async function ProgramSessionPage({ params, searchParams }: Progr
           <Link className="page-back-button" href="/saison">
             <span aria-hidden="true">←</span> Retour à ma saison
           </Link>
-          {preparable && <PrepareSeasonSession sessionNumber={session.number} slot={slot} week={week} />}
+          {preparable && session.type === "evaluation" && <PrepareSeasonSession sessionNumber={session.number} slot={slot} week={week} />}
 
           {session.type === "evaluation" ? (
             <article className="program-situation">
@@ -88,39 +79,7 @@ export default async function ProgramSessionPage({ params, searchParams }: Progr
               </ul>
             </article>
           ) : (
-            <ol className="program-session-situations">
-              {situations.map((situation, index) => (
-                <li className="program-situation" key={`${situation.id}-${index}`}>
-                  <span className="program-situation-meta">
-                    {index + 1}. {situationKindLabels[situation.kind]} · {situation.sequences.count} × {situation.sequences.minutes} min · {situation.fieldSize}
-                  </span>
-                  <h2>{situation.title}</h2>
-                  <TacticalDiagramView caption={situation.organization} diagram={buildSituationDiagram(situation.layout)} />
-                  <p>
-                    <strong>But :</strong> {situation.instruction}
-                  </p>
-                  <ul>
-                    {situation.rules.map((rule) => (
-                      <li key={rule}>{rule}</li>
-                    ))}
-                  </ul>
-                  <p>
-                    <strong>À observer :</strong> {situation.observable}
-                  </p>
-                  {situation.rotation && (
-                    <p>
-                      <strong>Rotations :</strong> {situation.rotation}
-                    </p>
-                  )}
-                  {situation.variation && (
-                    <p>
-                      <strong>Variante :</strong> {situation.variation}
-                    </p>
-                  )}
-                  <Link href={`/bibliotheque/${situation.id}`}>Voir l’animation et les points clés</Link>
-                </li>
-              ))}
-            </ol>
+            <SeasonSessionWorkshop preparable={preparable ? { week, slot } : null} sessionNumber={session.number} situationIds={session.situations} />
           )}
           <p className="seances-hint">{programSource}.</p>
         </section>
