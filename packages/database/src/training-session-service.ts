@@ -179,6 +179,8 @@ export class TrainingSessionService {
       meetingAt: Date;
       location: string;
       preparationSeconds?: number;
+      // Exercices choisis par le coach à la place de ceux du programme, un par situation (même ordre, mêmes durées).
+      activityIds?: readonly string[];
     },
   ): Promise<PersistedTrainingSession> {
     const plan = programSessionPlan(input.sessionNumber);
@@ -201,6 +203,16 @@ export class TrainingSessionService {
     if (!location) {
       throw new ValidationError("Indique le lieu de la séance.");
     }
+    if (input.activityIds !== undefined) {
+      if (input.activityIds.length !== plan.blocks.length) {
+        throw new ValidationError("Les exercices choisis ne correspondent pas aux situations de la séance.");
+      }
+      if (input.activityIds.some((id) => typeof id !== "string" || !findTrainingActivity(id))) {
+        throw new ValidationError("Un exercice choisi est inconnu.");
+      }
+    }
+    const chosenIds = input.activityIds;
+    const blocks = plan.blocks.map((block, index) => ({ ...block, activityId: chosenIds?.[index] ?? block.activityId }));
     if (!(await this.educatorRepository.existsById(educatorId))) {
       throw new EducatorNotFoundError();
     }
@@ -210,7 +222,7 @@ export class TrainingSessionService {
       playerCount: input.playerCount,
       theme: plan.theme,
       intention: plan.intention,
-      blocks: plan.blocks.map((block, index) => ({ id: `saison-${input.seasonWeek}-${input.slot}-${index + 1}`, ...block })),
+      blocks: blocks.map((block, index) => ({ id: `saison-${input.seasonWeek}-${input.slot}-${index + 1}`, ...block })),
       cycleNumber: guidedSeasonCycle,
       weekNumber: input.seasonWeek,
       slot: input.slot,

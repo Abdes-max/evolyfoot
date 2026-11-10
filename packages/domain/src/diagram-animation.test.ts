@@ -28,7 +28,8 @@ describe("animation d'un exercice", () => {
       expect(steps).toHaveLength(diagramAnimationStepCount);
       const fieldPlayers = activity.diagram.tokens.filter((token) => token.role !== "goalkeeper");
       for (const step of steps) {
-        expect(step.balls.length, activity.id).toBeGreaterThan(0);
+        // Les gammes se font sans ballon.
+        if (exerciseScenario(activity) !== "gammes") expect(step.balls.length, activity.id).toBeGreaterThan(0);
         for (const token of fieldPlayers) {
           const point = step.to[token.id]!;
           const inside = activity.diagram.zones.some(
@@ -189,5 +190,32 @@ describe("animation d'un exercice", () => {
 
     expect(steps.every((step) => step.caption.length > 0)).toBe(true);
     expect(steps.every((step) => step.balls.length > 0)).toBe(true);
+  });
+});
+
+describe("échauffements sans passe", () => {
+  const warmup = (title: string, instruction = "Chacun fait l'exercice.", kind: "activation" | "main" = "activation") => ({
+    ...exercise("Rondo mobile 4 contre 1"),
+    title,
+    kind,
+    instruction,
+    organization: "Deux lignes de joueurs.",
+  });
+
+  it("reconnaît les gammes et le jonglage, sans confondre un défi jonglage annexe", () => {
+    expect(exerciseScenario(warmup("Talons-fesses et pas chassés"))).toBe("gammes");
+    expect(exerciseScenario(warmup("Échauffement ballon", "Talons-fesses, fentes puis sauts."))).toBe("gammes");
+    expect(exerciseScenario(warmup("Jongle et passe"))).toBe("juggling");
+    expect(exerciseScenario(warmup("Cinq passes et défi jonglage", "Qui perd le ballon fait un défi de jonglage.", "main"))).not.toBe("juggling");
+    expect(exerciseScenario(warmup("Match", "Talons-fesses entre les points.", "main"))).not.toBe("gammes");
+  });
+
+  it("anime des gammes sans ballon et un jonglage entre partenaires", () => {
+    const gammes = buildDiagramAnimation(warmup("Talons-fesses"), "g");
+    expect(gammes).toHaveLength(diagramAnimationStepCount);
+    expect(gammes.every((step) => step.balls.length === 0)).toBe(true);
+    const juggling = buildDiagramAnimation(warmup("Jongle à deux"), "j");
+    expect(juggling.some((step) => step.balls.length > 0)).toBe(true);
+    expect(juggling.every((step) => step.balls.every((ball) => ball.kind === "pass"))).toBe(true);
   });
 });

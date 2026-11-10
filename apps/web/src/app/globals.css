@@ -1905,3 +1905,16 @@ button.week-calendar-badge:focus-visible {
   cursor: pointer;
   padding: 0;
 }
+
+.program-situation-change {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.program-situation-change label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}

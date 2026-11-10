@@ -270,6 +270,22 @@ describe("TrainingSessionService.prepareFromSeason", () => {
     expect(session.blocks.reduce((sum, block) => sum + block.durationMinutes, 0)).toBe(75);
   });
 
+  it("remplace les situations par les exercices choisis, en gardant l'ordre et les durées", async () => {
+    const repository = new InMemoryTrainingSessionRepository();
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), repository);
+    const reference = await service.prepareFromSeason("educator-1", input);
+    const ids = reference.blocks.map((block) => block.activityId);
+    const chosen = [...ids];
+    chosen[0] = "welcome-conserver";
+
+    const session = await service.prepareFromSeason("educator-1", { ...input, activityIds: chosen });
+
+    expect(session.blocks.map((block) => block.activityId)).toEqual(chosen);
+    expect(session.blocks.map((block) => block.durationMinutes)).toEqual(reference.blocks.map((block) => block.durationMinutes));
+    await expect(service.prepareFromSeason("educator-1", { ...input, activityIds: ids.slice(1) })).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.prepareFromSeason("educator-1", { ...input, activityIds: ids.map(() => "inconnu") })).rejects.toThrow("exercice choisi est inconnu");
+  });
+
   it("exige un lieu, une date et une semaine de saison valides", async () => {
     const repository = new InMemoryTrainingSessionRepository();
     const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), repository);
