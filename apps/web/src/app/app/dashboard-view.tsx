@@ -22,6 +22,7 @@ import {
   type MatchLineupAssignment,
   type ObservationReport,
   type SavedTrainingSession,
+  type AgeGroup,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -54,6 +55,7 @@ interface DashboardData {
   teamName: string | null;
   teamLogo: string | null;
   sessionsPerWeek: number;
+  ageGroup?: AgeGroup;
   matches: readonly UpcomingMatch[];
   seasonProgram: SeasonProgram | null;
   seasonPreparedCount: number;
@@ -121,6 +123,7 @@ export function DashboardView() {
           teamName: teamBody.profile?.name ?? null,
           teamLogo: teamBody.profile?.logo ?? null,
           sessionsPerWeek: teamBody.profile?.sessionsPerWeek ?? 2,
+          ageGroup: teamBody.profile?.ageGroup,
           matches: matchesBody.matches ?? [],
           seasonProgram: seasonBody.program ?? null,
           seasonPreparedCount: ((seasonSessionsBody.sessions ?? []) as Array<{ cycleNumber: number }>).filter(
@@ -149,7 +152,11 @@ export function DashboardView() {
   // sans saison, le cycle court construit depuis le diagnostic.
   const seasonProgram = data?.seasonProgram ?? null;
   const seasonPlanWeeks = seasonProgram
-    ? buildPrioritizedSeason({ priorities: seasonProgram.priorities as DevelopmentTheme[], sessionsPerWeek: data?.sessionsPerWeek ?? 2 })
+    ? buildPrioritizedSeason({
+        priorities: seasonProgram.priorities as DevelopmentTheme[],
+        sessionsPerWeek: data?.sessionsPerWeek ?? 2,
+        ageGroup: data?.ageGroup,
+      })
     : [];
   const currentSeasonWeek = seasonProgram ? seasonWeekAt(new Date(`${seasonProgram.startDate}T00:00:00`), new Date(now)) : 0;
   const seasonCycle = seasonProgram ? seasonCycleAt(seasonCycles(seasonPlanWeeks), currentSeasonWeek) : null;

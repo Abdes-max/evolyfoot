@@ -1,6 +1,7 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import {
   isPastSeasonSlot,
+  programSessionLabelNumber,
   seasonSlotColor,
   seasonSlotDateLabel,
   themeColors,
@@ -111,7 +112,9 @@ export function SeasonCycleList({
                     {slotLabel(slot)}
                     {slot.major ? " · prioritaire" : ""}
                   </Text>
-                  <Text style={styles.slotStatus}>{done ? (done.title ?? "Séance prête") : `Séance ${slot.sessionNumber} du programme, à préparer`}</Text>
+                  <Text style={styles.slotStatus}>
+                    {done ? (done.title ?? "Séance prête") : `Séance ${programSessionLabelNumber(slot.sessionNumber)} du programme, à préparer`}
+                  </Text>
                 </View>
                 <View style={[styles.slotButton, done ? { backgroundColor: color } : { borderColor: color, borderWidth: 1 }]}>
                   <Text style={[styles.slotButtonText, { color: done ? colors.primaryInk : color }]}>{done ? "Ouvrir" : "Préparer"}</Text>

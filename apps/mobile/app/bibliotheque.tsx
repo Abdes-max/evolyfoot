@@ -1,5 +1,14 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { developmentThemes, trainingActivityCatalogue, type DevelopmentTheme, type PersonalExercise, type TrainingBlockKind } from "@evolyfoot/domain";
+import {
+  activityCategoryLabels,
+  developmentThemes,
+  trainingActivityCatalogue,
+  type ActivityCategory,
+  type DevelopmentTheme,
+  type PersonalExercise,
+  type TrainingActivity,
+  type TrainingBlockKind,
+} from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -8,6 +17,14 @@ import { kindLabels } from "../lib/exercise-labels";
 
 const kindFilters: readonly (TrainingBlockKind | "all")[] = ["all", "welcome", "activation", "main", "game"];
 const themeFilters: readonly (DevelopmentTheme | "all")[] = ["all", ...developmentThemes];
+
+// « U10-U11 » garde aussi les exercices communs aux quatre catégories, « U12-U13 » de même.
+type CategoryFilter = "all" | "U10-U11" | "U12-U13";
+const categoryFilters: readonly CategoryFilter[] = ["all", "U10-U11", "U12-U13"];
+
+function inCategory(activity: Pick<TrainingActivity, "category">, filter: CategoryFilter): boolean {
+  return filter === "all" || !activity.category || activity.category === "U10-U13" || activity.category === filter;
+}
 
 function matches(item: { title: string; objective: string }, query: string): boolean {
   return `${item.title} ${item.objective}`.toLowerCase().includes(query.trim().toLowerCase());
@@ -41,12 +58,27 @@ function Chips<Value extends string>({
   );
 }
 
-function Card({ id, kind, meta, title, objective }: { id: string; kind: TrainingBlockKind; meta: string; title: string; objective: string }) {
+function Card({
+  id,
+  kind,
+  meta,
+  title,
+  objective,
+  category,
+}: {
+  id: string;
+  kind: TrainingBlockKind;
+  meta: string;
+  title: string;
+  objective: string;
+  category?: ActivityCategory;
+}) {
   return (
     <TouchableOpacity accessibilityRole="button" onPress={() => router.push(`/bibliotheque/${id}`)} style={styles.card}>
       <Text style={styles.meta}>
         {kindLabels[kind].toUpperCase()} · {meta}
       </Text>
+      {category ? <Text style={styles.categoryTag}>{activityCategoryLabels[category]}</Text> : null}
       <Text style={styles.cardTitle}>{title}</Text>
       <Text numberOfLines={2} style={styles.muted}>
         {objective}
@@ -61,7 +93,7 @@ interface SharedExercise extends PersonalExercise {
 }
 
 export default function BibliothequeScreen() {
-  const { apiRequest, listPersonalExercises } = useAuth();
+  const { apiRequest, listPersonalExercises, team } = useAuth();
   const [personal, setPersonal] = useState<readonly PersonalExercise[]>([]);
   const [shared, setShared] = useState<readonly SharedExercise[]>([]);
   const [copied, setCopied] = useState<readonly string[]>([]);
@@ -69,6 +101,10 @@ export default function BibliothequeScreen() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<TrainingBlockKind | "all">("all");
   const [theme, setTheme] = useState<DevelopmentTheme | "all">("all");
+  // Par défaut, la catégorie de l'équipe (modifiable) ; sans équipe, tout le catalogue.
+  const [chosenCategory, setChosenCategory] = useState<CategoryFilter | null>(null);
+  const teamCategory: CategoryFilter = team?.ageGroup === "U12" || team?.ageGroup === "U13" ? "U12-U13" : team?.ageGroup ? "U10-U11" : "all";
+  const category = chosenCategory ?? teamCategory;
 
   useFocusEffect(
     useCallback(() => {
@@ -112,9 +148,13 @@ export default function BibliothequeScreen() {
   const activities = useMemo(
     () =>
       trainingActivityCatalogue.filter(
-        (activity) => (kind === "all" || activity.kind === kind) && (theme === "all" || activity.compatibleThemes.includes(theme)) && matches(activity, query),
+        (activity) =>
+          (kind === "all" || activity.kind === kind) &&
+          (theme === "all" || activity.compatibleThemes.includes(theme)) &&
+          inCategory(activity, category) &&
+          matches(activity, query),
       ),
-    [kind, query, theme],
+    [category, kind, query, theme],
   );
   const mine = personal.filter(
     (exercise) => (kind === "all" || exercise.kind === kind) && (theme === "all" || exercise.theme === theme) && matches(exercise, query),
@@ -136,6 +176,7 @@ export default function BibliothequeScreen() {
           style={styles.search}
           value={query}
         />
+        <Chips active={category} label={(value) => (value === "all" ? "Toutes catégories" : value)} onChange={setChosenCategory} values={categoryFilters} />
         <Chips active={kind} label={(value) => (value === "all" ? "Toutes" : kindLabels[value])} onChange={setKind} values={kindFilters} />
         <Chips active={theme} label={(value) => (value === "all" ? "Tous les thèmes" : value)} onChange={setTheme} values={themeFilters} />
 
@@ -175,7 +216,15 @@ export default function BibliothequeScreen() {
         {(mine.length > 0 || fromClub.length > 0) && <Text style={styles.section}>Le catalogue EvolyFoot</Text>}
         {activities.length === 0 && mine.length === 0 && <Text style={styles.muted}>Aucune situation ne correspond à ta recherche.</Text>}
         {activities.map((activity) => (
-          <Card id={activity.id} key={activity.id} kind={activity.kind} meta={activity.fieldSize} objective={activity.objective} title={activity.title} />
+          <Card
+            category={activity.category}
+            id={activity.id}
+            key={activity.id}
+            kind={activity.kind}
+            meta={activity.fieldSize}
+            objective={activity.objective}
+            title={activity.title}
+          />
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -195,6 +244,18 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 11, fontWeight: "700", color: colors.ink },
   section: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 14, marginBottom: 8 },
   card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginTop: 8 },
+  categoryTag: {
+    alignSelf: "flex-start",
+    marginTop: 5,
+    color: colors.primary,
+    fontSize: 10,
+    fontWeight: "800",
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 1,
+  },
   meta: { fontSize: 9, fontWeight: "800", color: colors.primary, letterSpacing: 0.6 },
   cardTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginTop: 5 },
   muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4 },

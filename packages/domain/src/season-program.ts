@@ -1,8 +1,10 @@
-import type { DevelopmentTheme } from "./index";
+import type { AgeGroup, DevelopmentTheme } from "./index";
 import { sortTrainingDays, type TrainingDay } from "./team";
 import { developmentThemes } from "./themes";
 import { programSessions, type ProgramSessionDefinition } from "./program-sessions";
-import { programSituations } from "./program-situations";
+import { programSessionsU12 } from "./program-sessions-u12";
+import { findProgramSituation } from "./program-situations";
+import { sharedProgramSituationIds } from "./program-situations-u12";
 import type { ActivityDetails, DiagramToken, DiagramZone, TacticalDiagram, TrainingActivity, TrainingBlockKind } from "./training-session";
 
 // Programmation de saison en sous-thèmes de jeu, inspirée de la programmation CFI U10-U11 (FFF) :
@@ -225,6 +227,54 @@ export interface SeasonOptions {
   readonly priorities: readonly DevelopmentTheme[];
   readonly sessionsPerWeek: number;
   readonly weeks?: number;
+  // Catégorie de l'équipe : choisit la programmation (U10-U11 par défaut, U12-U13 pour les U12 et U13).
+  readonly ageGroup?: AgeGroup;
+}
+
+// Deux programmations : U10-U11 (séances 1 à 72) et U12-U13 (séances 101 à 172, affichées 1 à 72).
+export type ProgramBand = "u10u11" | "u12u13";
+
+const u12Offset = 100;
+
+export function programBandOf(ageGroup: AgeGroup | null | undefined): ProgramBand {
+  return ageGroup === "U12" || ageGroup === "U13" ? "u12u13" : "u10u11";
+}
+
+export const programBandLabels: Readonly<Record<ProgramBand, string>> = { u10u11: "U10-U11", u12u13: "U12-U13" };
+
+function sessionsOfBand(band: ProgramBand): readonly ProgramSessionDefinition[] {
+  return band === "u12u13" ? programSessionsU12 : programSessions;
+}
+
+// Numéro de la séance tel que le coach le lit (1 à 72), quelle que soit la programmation.
+export function programSessionLabelNumber(number: number): number {
+  return number > u12Offset ? number - u12Offset : number;
+}
+
+// Programmation d'une séance de la saison (par son numéro).
+export function programBandOfSession(number: number): ProgramBand {
+  return number > u12Offset ? "u12u13" : "u10u11";
+}
+
+// Un exercice est proposé à une catégorie : ceux des U12-U13 (`cfi-u12-…`) aux U12 et U13, tout le reste du catalogue
+// aux U10 et U11, et les situations communes aux deux.
+export function isActivityForBand(activityId: string, band: ProgramBand): boolean {
+  const category = activityCategoryOf(activityId);
+  return category === "U10-U13" || (band === "u12u13" ? category === "U12-U13" : category === "U10-U11");
+}
+
+// Étiquette de catégorie d'un exercice : propre aux U10-U11, propre aux U12-U13, ou commun aux quatre catégories.
+export type ActivityCategory = "U10-U11" | "U12-U13" | "U10-U13";
+
+export const activityCategoryLabels: Readonly<Record<ActivityCategory, string>> = {
+  "U10-U11": "U10-U11",
+  "U12-U13": "U12-U13",
+  "U10-U13": "U10-U11-U12-U13",
+};
+
+export function activityCategoryOf(activityId: string): ActivityCategory {
+  if (sharedProgramSituationIds.includes(activityId)) return "U10-U13";
+  return activityId.startsWith("cfi-u12-") ? "U12-U13" : "U10-U11";
 }
 
 export const seasonWeekCount = 36;
@@ -235,21 +285,26 @@ const minorMinimum = 2;
 const blockSize = 3;
 
 export function findProgramSession(number: number): ProgramSessionDefinition | undefined {
-  return programSessions.find((session) => session.number === number);
+  return sessionsOfBand(programBandOfSession(number)).find((session) => session.number === number);
 }
 
-function sessionsOf(subTheme: ProgramSubTheme): number[] {
-  return programSessions.filter((session) => session.type === "theme" && session.subTheme === subTheme).map((session) => session.number);
+function sessionsOf(subTheme: ProgramSubTheme, band: ProgramBand): number[] {
+  return sessionsOfBand(band)
+    .filter((session) => session.type === "theme" && session.subTheme === subTheme)
+    .map((session) => session.number);
 }
 
 // Semaine et ordre des séances fixes : évaluations en début, milieu et fin, récréatives régulières.
-function fixedSlots(weeks: number, perWeek: number): Map<number, number[]> {
+function fixedSlots(weeks: number, perWeek: number, band: ProgramBand): Map<number, number[]> {
+  const offset = band === "u12u13" ? u12Offset : 0;
   const fixed = new Map<number, number[]>();
   const add = (week: number, number: number) => fixed.set(week, [...(fixed.get(week) ?? []), number]);
   const middle = Math.ceil(weeks / 2) + 1;
   const evaluationWeeks = perWeek >= 2 ? [1, 1, middle, middle, weeks, weeks] : [1, 2, middle, middle + 1, weeks - 1, weeks];
-  [1, 2, 37, 38, 70, 71].forEach((number, index) => add(evaluationWeeks[index]!, number));
-  const recreational = programSessions.filter((session) => session.type === "recreational").map((session) => session.number);
+  [1, 2, 37, 38, 70, 71].forEach((number, index) => add(evaluationWeeks[index]!, number + offset));
+  const recreational = sessionsOfBand(band)
+    .filter((session) => session.type === "recreational")
+    .map((session) => session.number);
   const recreationalWeeks = perWeek >= 2 ? [9, 15, 21, 27, 32, weeks - 1] : [12, 24, 30];
   recreationalWeeks.forEach((week, index) => {
     if (week <= weeks && recreational[index] !== undefined && (fixed.get(week)?.length ?? 0) < perWeek) add(week, recreational[index]!);
@@ -307,7 +362,8 @@ export function buildPrioritizedSeason(options: SeasonOptions): SeasonWeek[] {
   const weeks = options.weeks ?? seasonWeekCount;
   const perWeek = Math.min(4, Math.max(1, Math.round(options.sessionsPerWeek)));
   const priorities = [...new Set(options.priorities)].slice(0, maxSeasonPriorities);
-  const fixed = fixedSlots(weeks, perWeek);
+  const band = programBandOf(options.ageGroup);
+  const fixed = fixedSlots(weeks, perWeek, band);
   const fixedCount = [...fixed.values()].reduce((sum, list) => sum + list.length, 0);
   const order = orderBlocks(quotas(weeks * perWeek - fixedCount, priorities));
   const cursor = new Map<ProgramSubTheme, number>();
@@ -319,7 +375,7 @@ export function buildPrioritizedSeason(options: SeasonOptions): SeasonWeek[] {
     while (numbers.length < perWeek && next < order.length) {
       const subTheme = order[next]!;
       next += 1;
-      const catalogue = sessionsOf(subTheme);
+      const catalogue = sessionsOf(subTheme, band);
       const position = cursor.get(subTheme) ?? 0;
       cursor.set(subTheme, position + 1);
       numbers.push(catalogue[position % catalogue.length]!);
@@ -408,28 +464,28 @@ export function programSessionPlan(number: number): ProgramSessionPlan | null {
   if (session.type === "evaluation") {
     const attack = session.focus === "attack";
     return {
-      title: `Séance ${number} · Évaluation collective (${attack ? "attaque" : "défense"})`,
+      title: `Séance ${programSessionLabelNumber(number)} · Évaluation collective (${attack ? "attaque" : "défense"})`,
       theme: attack ? "Finir les actions" : "Protéger son but",
       intention: "Trois matchs dans les mêmes conditions pour mesurer la progression de l’équipe.",
       blocks: evaluationBlocks,
     };
   }
   const blocks = session.situations.map((id) => {
-    const situation = programSituations.find((candidate) => candidate.id === id)!;
+    const situation = findProgramSituation(id)!;
     return { activityId: id, durationMinutes: situationMinutes(situation) };
   });
   const missing = 75 - blocks.reduce((sum, block) => sum + block.durationMinutes, 0);
   if (missing > 0) blocks[blocks.length - 1] = { ...blocks[blocks.length - 1]!, durationMinutes: blocks[blocks.length - 1]!.durationMinutes + missing };
   if (session.type === "recreational") {
     return {
-      title: `Séance ${number} · Séance récréative`,
+      title: `Séance ${programSessionLabelNumber(number)} · Séance récréative`,
       theme: "Conserver le ballon",
       intention: "Jouer, s’amuser et attaquer-défendre en continu.",
       blocks,
     };
   }
   const info = programSubThemes[session.subTheme];
-  return { title: `Séance ${number} · ${info.label}`, theme: info.theme, intention: info.label, blocks };
+  return { title: `Séance ${programSessionLabelNumber(number)} · ${info.label}`, theme: info.theme, intention: info.label, blocks };
 }
 
 const weekdayOffsets: Readonly<Record<TrainingDay, number>> = { Lundi: 0, Mardi: 1, Mercredi: 2, Jeudi: 3, Vendredi: 4 };

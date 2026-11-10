@@ -2,7 +2,8 @@ import { playStyleNote } from "./coach-style";
 import type { DevelopmentWeek } from "./development-plan";
 import type { AgeGroup, DevelopmentTheme } from "./index";
 import { programSituations } from "./program-situations";
-import { situationToActivity } from "./season-program";
+import { programSituationsU12 } from "./program-situations-u12";
+import { activityCategoryOf, isActivityForBand, programBandOf, situationToActivity, type ActivityCategory, type ProgramBand } from "./season-program";
 import { extraActivitySets } from "./training-activities-extra";
 
 export type TrainingBlockKind = "welcome" | "activation" | "main" | "game";
@@ -55,6 +56,8 @@ export interface TrainingActivity {
   diagram: TacticalDiagram;
   // Photo d'un schéma papier, pour un exercice personnel.
   photo?: string;
+  // Catégorie de l'exercice : U10-U11, U12-U13 ou commun aux quatre. Absente pour un exercice personnel (utilisable partout).
+  category?: ActivityCategory;
 }
 export interface TrainingBlock {
   id: string;
@@ -490,7 +493,11 @@ function buildCatalogue(): TrainingActivity[] {
     ];
   });
 }
-const catalogue = [...buildCatalogue(), ...programSituations.map(situationToActivity)];
+const catalogue: TrainingActivity[] = [
+  ...buildCatalogue(),
+  ...programSituations.map(situationToActivity),
+  ...programSituationsU12.map(situationToActivity),
+].map((activity) => ({ ...activity, category: activityCategoryOf(activity.id) }));
 export const trainingActivityCatalogue: readonly TrainingActivity[] = catalogue;
 export function findTrainingActivity(id: string): TrainingActivity | undefined {
   return catalogue.find((activity) => activity.id === id);
@@ -515,10 +522,11 @@ const cloneActivity = (activity: TrainingActivity): TrainingActivity => ({
 // affichaient donc le même « Séance N » -- facultatif pour ne pas casser les appelants qui
 // n'ont pas cette notion (app mobile, génération de démonstration).
 // Les situations de la programmation (`cfi-…`) ne remplacent pas le catalogue d’un thème qui a le
-// sien ; un thème sans accueil dédié démarre sur un échauffement.
-function pickActivity(kind: TrainingBlockKind, theme: DevelopmentTheme, rotation: number): TrainingActivity | undefined {
-  const forTheme = catalogue.filter((candidate) => candidate.compatibleThemes.includes(theme));
-  const own = forTheme.filter((candidate) => !candidate.id.startsWith("cfi-"));
+// sien ; un thème sans accueil dédié démarre sur un échauffement. Les équipes U12-U13 puisent dans les exercices
+// de leur catégorie (`cfi-u12-…`), les autres dans le catalogue U10-U11.
+function pickActivity(kind: TrainingBlockKind, theme: DevelopmentTheme, rotation: number, band: ProgramBand = "u10u11"): TrainingActivity | undefined {
+  const forTheme = catalogue.filter((candidate) => candidate.compatibleThemes.includes(theme) && isActivityForBand(candidate.id, band));
+  const own = band === "u12u13" ? [] : forTheme.filter((candidate) => !candidate.id.startsWith("cfi-"));
   const pool = own.length > 0 ? own : forTheme;
   const candidates = pool.filter((candidate) => candidate.kind === kind);
   const list = candidates.length > 0 ? candidates : pool.filter((candidate) => candidate.kind === "activation");
@@ -542,7 +550,7 @@ export function generateTrainingSession(
   const title = slot === undefined ? `Séance ${week.week} · ${week.phase}` : `Séance ${slot + 1} · ${week.phase}`;
   const kinds: TrainingBlockKind[] = ["welcome", "activation", "main", "game"];
   const blocks = kinds.map((kind, index) => {
-    const activity = pickActivity(kind, week.theme, rotation);
+    const activity = pickActivity(kind, week.theme, rotation, programBandOf(ageGroup));
     if (!activity) throw new Error(`Aucune activité compatible pour le bloc ${kind} et le thème ${week.theme}.`);
     return { id: `${id}-block-${kind}`, activity: cloneActivity(activity), durationMinutes: blockDurations[index] };
   });
@@ -611,7 +619,12 @@ export function moveSessionBlock(session: TrainingSession, from: number, to: num
 
 function replacementCandidates(session: TrainingSession, index: number): TrainingActivity[] {
   const block = session.blocks[index];
-  return block ? catalogue.filter((activity) => activity.kind === block.activity.kind && activity.compatibleThemes.includes(session.theme)) : [];
+  const band = programBandOf(session.ageGroup);
+  return block
+    ? catalogue.filter(
+        (activity) => activity.kind === block.activity.kind && activity.compatibleThemes.includes(session.theme) && isActivityForBand(activity.id, band),
+      )
+    : [];
 }
 export function canReplaceSessionActivity(session: TrainingSession, index: number): boolean {
   const block = session.blocks[index];

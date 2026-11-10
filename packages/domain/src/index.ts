@@ -17,7 +17,7 @@ export interface WeeklyFocus {
 
 export const demoTeam = {
   name: "FC Horizon",
-  ageGroup: "U12" as AgeGroup,
+  ageGroup: "U11" as AgeGroup,
   gameFormat: 8 as GameFormat,
   playerCount: 14,
 };
@@ -220,10 +220,17 @@ export {
   buildPrioritizedSeason,
   buildSituationDiagram,
   findProgramSession,
+  activityCategoryLabels,
+  activityCategoryOf,
   guidedSeasonCycle,
+  isActivityForBand,
   majorShare,
   maxSeasonPriorities,
+  programBandLabels,
+  programBandOf,
+  programBandOfSession,
   programPrinciples,
+  programSessionLabelNumber,
   programSessionPlan,
   programSource,
   programSubThemeIds,
@@ -242,9 +249,12 @@ export {
   suggestSeasonPriorities,
   validateSeasonPriorities,
 } from "./season-program";
+export type { ActivityCategory, ProgramBand } from "./season-program";
 export type { ProgramSessionDefinition } from "./program-sessions";
 export { programSessions } from "./program-sessions";
+export { programSessionsU12 } from "./program-sessions-u12";
 export { findProgramSituation, programSituations } from "./program-situations";
+export { programSituationsU12, sharedProgramSituationIds } from "./program-situations-u12";
 export type { FieldState, FieldStep } from "./field-timer";
 export {
   clock as fieldClock,

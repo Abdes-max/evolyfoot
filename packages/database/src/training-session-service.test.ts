@@ -286,6 +286,20 @@ describe("TrainingSessionService.prepareFromSeason", () => {
     await expect(service.prepareFromSeason("educator-1", { ...input, activityIds: ids.map(() => "inconnu") })).rejects.toThrow("exercice choisi est inconnu");
   });
 
+  it("prépare une séance U12-U13 pour une équipe U12 et refuse une séance d'une autre catégorie", async () => {
+    const repository = new InMemoryTrainingSessionRepository();
+    const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), repository);
+
+    const session = await service.prepareFromSeason("educator-1", { ...input, ageGroup: "U12", sessionNumber: 103 });
+
+    expect(session.title).toBe("Séance 3 · Jouer dans les intervalles et entre les lignes");
+    expect(session.blocks.every((block) => block.activityId.startsWith("cfi-u12-"))).toBe(true);
+    await expect(service.prepareFromSeason("educator-1", { ...input, ageGroup: "U12", sessionNumber: 3 })).rejects.toThrow("ne correspond pas à la catégorie");
+    await expect(service.prepareFromSeason("educator-1", { ...input, ageGroup: "U11", sessionNumber: 103 })).rejects.toThrow(
+      "ne correspond pas à la catégorie",
+    );
+  });
+
   it("exige un lieu, une date et une semaine de saison valides", async () => {
     const repository = new InMemoryTrainingSessionRepository();
     const service = new TrainingSessionService(new InMemoryEducatorRepository(["educator-1"]), repository);

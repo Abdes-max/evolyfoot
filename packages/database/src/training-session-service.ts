@@ -6,6 +6,8 @@ import {
   guidedSeasonCycle,
   isPersonalActivityId,
   personalExerciseToActivity,
+  programBandOf,
+  programBandOfSession,
   programSessionPlan,
   seasonWeekCount,
 } from "@evolyfoot/domain";
@@ -195,6 +197,9 @@ export class TrainingSessionService {
     }
     if (!ageGroups.includes(input.ageGroup)) {
       throw new ValidationError("Choisis une catégorie U10 à U13.");
+    }
+    if (programBandOfSession(input.sessionNumber) !== programBandOf(input.ageGroup)) {
+      throw new ValidationError("Cette séance type ne correspond pas à la catégorie de l’équipe.");
     }
     if (!(input.meetingAt instanceof Date) || Number.isNaN(input.meetingAt.getTime())) {
       throw new ValidationError("Indique la date et l’heure de la séance.");

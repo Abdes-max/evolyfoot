@@ -92,7 +92,7 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
   const suggested = useMemo(() => (diagnosticScores ? suggestSeasonPriorities(summarizeDiagnostic(diagnosticScores)) : []), [diagnosticScores]);
   const choice = selected ?? (program ? program.priorities : suggested);
   const weeks = useMemo(
-    () => (program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek: team?.sessionsPerWeek ?? 2 }) : []),
+    () => (program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek: team?.sessionsPerWeek ?? 2, ageGroup: team?.ageGroup }) : []),
     [program, team],
   );
   const counts = useMemo(() => seasonThemeCounts(weeks), [weeks]);

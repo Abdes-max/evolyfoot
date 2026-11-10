@@ -8,6 +8,7 @@ import {
   themeColors,
   type DevelopmentTheme,
   type TrainingDay,
+  type AgeGroup,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -61,6 +62,7 @@ export function WeeklyCalendar() {
   // Saison guidée : la semaine montre alors les séances prévues par la saison (voir seasonCycles).
   const [program, setProgram] = useState<{ priorities: DevelopmentTheme[]; startDate: string } | null>(null);
   const [sessionsPerWeek, setSessionsPerWeek] = useState(2);
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | undefined>(undefined);
   const [seasonSessions, setSeasonSessions] = useState<readonly SavedSession[]>([]);
   const [now] = useState(() => new Date());
 
@@ -95,6 +97,7 @@ export function WeeklyCalendar() {
         setSessions(sessionsBody.sessions ?? []);
         setProgram(programBody.program ?? null);
         setSessionsPerWeek(teamBody.profile?.sessionsPerWeek ?? 2);
+        setAgeGroup(teamBody.profile?.ageGroup);
         setSeasonSessions(((seasonSessionsBody.sessions ?? []) as SavedSession[]).filter((session) => session.cycleNumber === guidedSeasonCycle));
 
         // `dateLabel` est un texte libre saisi par l'éducateur ("Samedi 26 septembre · 14:00 ·
@@ -129,7 +132,7 @@ export function WeeklyCalendar() {
   // Avec une saison guidée, ce sont les séances de la semaine en cours de la saison.
   const seasonWeek = program ? seasonWeekAt(new Date(`${program.startDate}T00:00:00`), now) : 0;
   const seasonSlots = program
-    ? (buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek }).find((week) => week.week === seasonWeek)?.slots ?? [])
+    ? (buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek, ageGroup }).find((week) => week.week === seasonWeek)?.slots ?? [])
     : [];
   const trainingByDay = new Map<string, DayTraining>();
   let slot = 0;

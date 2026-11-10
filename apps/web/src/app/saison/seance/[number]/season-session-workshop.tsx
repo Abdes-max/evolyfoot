@@ -1,8 +1,11 @@
 "use client";
 
 import {
+  activityCategoryLabels,
   findProgramSituation,
   findTrainingActivity,
+  isActivityForBand,
+  programBandOfSession,
   situationKindLabels,
   situationMinutes,
   trainingActivityCatalogue,
@@ -24,8 +27,11 @@ interface SeasonSessionWorkshopProps {
 }
 
 // Exercices proposés à la place de celui d'une situation : les autres de même type (échauffement, jeu, match…).
-function alternativesTo(activity: TrainingActivity): TrainingActivity[] {
-  return trainingActivityCatalogue.filter((candidate) => candidate.kind === activity.kind && candidate.id !== activity.id);
+function alternativesTo(activity: TrainingActivity, sessionNumber: number): TrainingActivity[] {
+  const band = programBandOfSession(sessionNumber);
+  return trainingActivityCatalogue.filter(
+    (candidate) => candidate.kind === activity.kind && candidate.id !== activity.id && isActivityForBand(candidate.id, band),
+  );
 }
 
 // Situations d'une séance type de la saison, chacune avec son animation : le coach peut changer un ou plusieurs
@@ -53,7 +59,7 @@ export function SeasonSessionWorkshop({ sessionNumber, situationIds, preparable 
           const activity = findTrainingActivity(id)!;
           const original = findProgramSituation(situationIds[index]!);
           const situation = id === situationIds[index] ? original : undefined;
-          const alternatives = alternativesTo(activity);
+          const alternatives = alternativesTo(activity, sessionNumber);
           return (
             <li className="program-situation" key={`${situationIds[index]}-${index}`}>
               <span className="program-situation-meta">
@@ -64,6 +70,7 @@ export function SeasonSessionWorkshop({ sessionNumber, situationIds, preparable 
                 {original ? ` · ${situationMinutes(original)} min prévues` : ""}
               </span>
               <h2>{activity.title}</h2>
+              {activity.category ? <span className="activity-category-tag">{activityCategoryLabels[activity.category]}</span> : null}
               <ExerciseSheet activity={activity}>
                 <div className="program-situation-change">
                   <label>
@@ -77,6 +84,7 @@ export function SeasonSessionWorkshop({ sessionNumber, situationIds, preparable 
                       {alternatives.map((candidate) => (
                         <option key={candidate.id} value={candidate.id}>
                           {candidate.title}
+                          {candidate.category ? ` (${activityCategoryLabels[candidate.category]})` : ""}
                         </option>
                       ))}
                     </select>

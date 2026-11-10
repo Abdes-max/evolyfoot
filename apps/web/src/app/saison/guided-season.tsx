@@ -19,6 +19,7 @@ import {
   type SeasonSlot,
   type TrainingDay,
   type TrainingSlotSchedule,
+  type AgeGroup,
 } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -145,6 +146,7 @@ function PriorityPicker({
 export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNode }) {
   const [program, setProgram] = useState<Program | null | undefined>(undefined);
   const [sessionsPerWeek, setSessionsPerWeek] = useState(2);
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | undefined>(undefined);
   const [suggested, setSuggested] = useState<DevelopmentTheme[]>([]);
   const [editing, setEditing] = useState(false);
   const [prepared, setPrepared] = useState<PreparedSession[]>([]);
@@ -162,6 +164,7 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
       );
       if (cancelled) return;
       setSessionsPerWeek(teamBody?.profile?.sessionsPerWeek ?? 2);
+      setAgeGroup(teamBody?.profile?.ageGroup);
       setTrainingDays(teamBody?.profile?.trainingDays ?? []);
       const scores: DiagnosticScores | null = diagnosticBody?.scores ?? null;
       setSuggested(scores ? suggestSeasonPriorities(summarizeDiagnostic(scores)) : []);
@@ -173,7 +176,10 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
     };
   }, []);
 
-  const weeks = useMemo(() => (program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek }) : []), [program, sessionsPerWeek]);
+  const weeks = useMemo(
+    () => (program ? buildPrioritizedSeason({ priorities: program.priorities, sessionsPerWeek, ageGroup }) : []),
+    [program, sessionsPerWeek, ageGroup],
+  );
   const counts = useMemo(() => seasonThemeCounts(weeks), [weeks]);
   const currentWeek = program ? seasonWeekAt(new Date(`${program.startDate}T00:00:00`), now) : 1;
   // Semaine affichée en détail : la semaine en cours tant que le coach n'en choisit pas une autre.
