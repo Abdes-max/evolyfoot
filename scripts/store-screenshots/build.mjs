@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Captures App Store d'EvolyFoot Coach : l'appli mobile tourne dans le navigateur (Expo web), sur
+// Captures App Store d'EvolyFoot Coach et d'EvolyFoot Player : l'appli mobile tourne dans le navigateur (Expo web), sur
 // un compte de démonstration créé dans l'API locale, puis chaque capture est habillée en visuel
 // (fond de la marque, titre, cadre de téléphone ou de tablette) aux tailles exactes demandées par
 // App Store Connect. Pas de barre d'état simulée (guideline 2.3.10), pas de données inventées
@@ -8,17 +8,23 @@
 // Prérequis : l'API locale (`next dev -p 3100` avec sa base) et l'appli en web :
 //   cd apps/mobile && EXPO_PUBLIC_API_URL=http://localhost:3100 npx expo start --web --port 8081
 // Puis, depuis la racine : node scripts/store-screenshots/build.mjs
+// Player (appli sur le port 8082) : node scripts/store-screenshots/build.mjs player
+//   avec : cd apps/mobile-player && EXPO_PUBLIC_API_URL=http://localhost:3100 npx expo start --web --port 8082
+// Une seule taille : node scripts/store-screenshots/build.mjs <coach|player> <iphone63|iphone65|ipad>
 import { chromium } from "@playwright/test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createDemoCoach } from "./demo-coach.mjs";
+import { createDemoPlayer } from "./demo-player.mjs";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const APP = process.env.MOBILE_URL ?? "http://localhost:8081";
+const KIND = process.argv[2] === "player" ? "player" : "coach";
+const APP = process.env.MOBILE_URL ?? (KIND === "player" ? "http://localhost:8082" : "http://localhost:8081");
 const API = process.env.API_URL ?? "http://localhost:3100";
-const STORE = join(REPO_ROOT, "apps", "mobile", "store-assets", "app-store");
+const STORE = join(REPO_ROOT, "apps", KIND === "player" ? "mobile-player" : "mobile", "store-assets", "app-store");
+const BRAND = KIND === "player" ? "EvolyFoot Player" : "EvolyFoot Coach";
 const RAW = join(tmpdir(), "evolyfoot-store-raw");
 
 // Viewport de capture puis canevas final (px CSS × échelle = pixels livrés).
@@ -49,7 +55,7 @@ const DEVICES = {
   },
 };
 
-const SCREENS = [
+const COACH_SCREENS = [
   { name: "1-accueil", path: "/", title: "Ta semaine de coach, prête", subtitle: "Prochaine séance, match et ajustements" },
   { name: "2-saison", path: "/saison", title: "Une saison construite pour ton équipe", subtitle: "36 semaines guidées selon tes priorités" },
   {
@@ -62,6 +68,15 @@ const SCREENS = [
   { name: "4-bibliotheque", path: "/bibliotheque", title: "Une bibliothèque d’exercices", subtitle: "Filtrée par thème et par moment de séance" },
   { name: "5-diagnostic", path: "/diagnostic", title: "Pars de ce que voit le coach", subtitle: "Un diagnostic qui oriente tout le plan" },
 ];
+
+const PLAYER_SCREENS = [
+  { name: "1-carte", path: "/", title: "Ta carte de joueur", subtitle: "Ta note, tes matchs, tes buts et tes passes" },
+  { name: "2-calendrier", path: "/calendrier", title: "Ton calendrier d’équipe", subtitle: "Convocations, lieux et réponse en un geste" },
+  { name: "3-progression", path: "/progression", title: "Ta progression", subtitle: "Tes qualités, évaluation après évaluation" },
+  { name: "4-messages", path: "/messages", title: "Les messages du coach", subtitle: "Convocations et annonces au même endroit" },
+  { name: "5-notifications", path: "/reglages-notifications", title: "Notifications réglables", subtitle: "Écran verrouillé, déverrouillé, son" },
+];
+const SCREENS = KIND === "player" ? PLAYER_SCREENS : COACH_SCREENS;
 
 /** L'API locale n'a pas de CORS : ses appels passent par Playwright, côté Node. */
 async function routeApi(context) {
@@ -140,7 +155,7 @@ function composeHtml(screen, device, imageDataUrl) {
   }
   .frame img { display: block; width: 100%; border-radius: ${device.radius}px; }
 </style></head><body>
-  <div class="brand">EvolyFoot Coach</div>
+  <div class="brand">${BRAND}</div>
   <h1>${screen.title}</h1>
   <p>${screen.subtitle}</p>
   <div class="frame"><img src="${imageDataUrl}" alt=""></div>
@@ -167,10 +182,11 @@ async function compose(browser, device, rawFiles) {
 }
 
 mkdirSync(RAW, { recursive: true });
-const { token } = await createDemoCoach(API);
+const coach = await createDemoCoach(API);
+const { token } = KIND === "player" ? await createDemoPlayer(API, coach.token) : coach;
 const browser = await chromium.launch();
 try {
-  const only = process.argv[2];
+  const only = process.argv[3];
   for (const [name, device] of Object.entries(DEVICES)) {
     if (only && only !== name) continue;
     const raw = await captureRaw(browser, name, device, token);

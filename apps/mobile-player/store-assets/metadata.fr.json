@@ -1,0 +1,17 @@
+{
+  "locale": "fr-FR",
+  "primaryCategory": "SPORTS",
+  "app": {
+    "name": "EvolyFoot Player",
+    "subtitle": "Ta carte et tes convocations",
+    "privacyPolicyUrl": "https://evolyfoot.com/confidentialite"
+  },
+  "version": {
+    "promotionalText": "Retrouve ta carte de joueur, ton calendrier et les messages de ton éducateur, et réponds présent en un geste.",
+    "description": "EvolyFoot Player est l'application des joueurs de football (et de leurs parents) pour suivre leur équipe : convocations, calendrier, progression et messages de l'éducateur.\n\nMA CARTE DE JOUEUR\n• Ta carte avec ta photo, ton poste, tes qualités et ta note, mise à jour après chaque évaluation de ton éducateur.\n• Tes matchs, tes buts et tes passes décisives, y compris ceux des tournois et des plateaux.\n• Le logo de ton équipe.\n\nMON CALENDRIER\n• Les entraînements, matchs, tournois et plateaux à venir, avec l'heure, le lieu et l'itinéraire.\n• Réponds présent ou absent en un geste, et précise la raison si tu ne peux pas venir.\n• Un entraînement ou un match annulé apparaît tout de suite, avec le message de l'éducateur.\n• Le calendrier de la semaine en un coup d'œil.\n\nMA PROGRESSION\n• Suis l'évolution de tes qualités saison après saison et compare tes évaluations.\n\nLES MESSAGES DE MON ÉDUCATEUR\n• Convocations et messages de ton éducateur, avec des notifications que tu règles toi-même (écran verrouillé, déverrouillé, son).\n\nPour les parents : suis plusieurs enfants depuis un seul compte.\n\nUn compte joueur s'obtient avec l'invitation de ton éducateur EvolyFoot Coach.",
+    "keywords": "football,joueur,club,calendrier,convocation,entraînement,match,U10,U11,U12,U13,parents,équipe",
+    "supportUrl": "https://evolyfoot.com/contact",
+    "marketingUrl": "https://evolyfoot.com",
+    "whatsNew": "Annulations d'entraînement et de match avec le message de l'éducateur, matchs et tournois dans ta carte, logo d'équipe, notifications réglables et nombreuses améliorations."
+  }
+}

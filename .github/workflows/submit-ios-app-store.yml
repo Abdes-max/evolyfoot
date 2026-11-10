@@ -1,0 +1,108 @@
+name: Submit iOS build to App Store review
+
+# Envoi manuel d'EvolyFoot Coach et/ou EvolyFoot Player à la revue App Store : applique la fiche store
+# (apps/<app>/store-assets/metadata.fr.json) et les captures d'écran (apps/<app>/store-assets/app-store),
+# rattache le dernier build TestFlight déjà traité, puis soumet la version à Apple. Ne construit jamais de
+# nouveau build : lancer d'abord « Deploy iOS to TestFlight », tester, puis celui-ci.
+#
+# Même méthode qu'arena-pulse (submit-ios-app-store.yml), mêmes secrets App Store Connect que
+# deploy-ios.yml (clé API) : rien de nouveau à configurer.
+#
+# À faire une fois dans App Store Connect, pour chaque app (Apple n'a pas d'API pour ces points ou ils
+# contiennent des identifiants) :
+#   - App Privacy (données collectées) ;
+#   - classification par âge ;
+#   - informations pour la revue : contact et compte de démonstration (les deux apps demandent une
+#     connexion, Apple doit pouvoir se connecter) ;
+#   - contrat Apple Developer à jour et statut de commerçant (obligatoire UE).
+# Un premier passage avec « soumettre » décoché applique tout le reste pour vérification dans App Store
+# Connect avant l'envoi définitif.
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Application à envoyer
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - coach
+          - player
+      version_string:
+        description: Version marketing, par exemple « 1.0 ».
+        required: true
+        default: "1.0"
+      build_number:
+        description: Numéro du build TestFlight (CFBundleVersion) ; vide pour le dernier build traité.
+        required: false
+      release_notes:
+        description: Texte « Nouveautés » ; vide pour reprendre celui de metadata.fr.json.
+        required: false
+      release_type:
+        description: MANUAL garde la publication comme étape distincte après l'approbation d'Apple ; AFTER_APPROVAL publie dès l'approbation.
+        required: false
+        default: MANUAL
+        type: choice
+        options:
+          - MANUAL
+          - AFTER_APPROVAL
+      update_screenshots:
+        description: Remplacer les captures d'écran iPhone 6,5" et iPad 13" par celles du dépôt.
+        required: false
+        default: true
+        type: boolean
+      submit:
+        description: "Soumettre à la revue Apple. Décoché, la fiche, les captures et le build sont préparés sans envoi."
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  plan:
+    name: Applications concernées
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - id: matrix
+        env:
+          APP: ${{ inputs.app }}
+        run: |
+          coach='{"name":"coach","bundle":"com.evolyfoot.coach","dir":"apps/mobile"}'
+          player='{"name":"player","bundle":"com.evolyfoot.player","dir":"apps/mobile-player"}'
+          case "$APP" in
+            coach) include="[$coach]" ;;
+            player) include="[$player]" ;;
+            *) include="[$coach,$player]" ;;
+          esac
+          echo "matrix={\"include\":$include}" >> "$GITHUB_OUTPUT"
+
+  submit:
+    name: ${{ matrix.name }}
+    needs: plan
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Préparer et soumettre
+        env:
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          BUNDLE_ID: ${{ matrix.bundle }}
+          VERSION_STRING: ${{ inputs.version_string }}
+          BUILD_NUMBER: ${{ inputs.build_number }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+          RELEASE_TYPE: ${{ inputs.release_type }}
+          METADATA_FILE: ${{ matrix.dir }}/store-assets/metadata.fr.json
+          SCREENSHOTS_DIR: ${{ inputs.update_screenshots && format('{0}/store-assets/app-store', matrix.dir) || '' }}
+          SUBMIT: ${{ inputs.submit }}
+        run: node scripts/app-store/submit-ios-app-store.mjs
