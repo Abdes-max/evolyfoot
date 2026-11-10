@@ -17,6 +17,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useEffect, useMemo, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, Vibration, View } from "react-native";
+import { CancelEventPanel } from "../../components/cancel-event-panel";
 import { TacticalPlayer } from "../../components/tactical-player";
 import { useAuth } from "../../lib/auth-context";
 
@@ -28,6 +29,11 @@ export default function FieldModeScreen() {
   const steps = useMemo(() => (session ? fieldSteps(session) : []), [session]);
   const [state, setState] = useState<FieldState | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  // Annulation de la séance (depuis son enregistrement) : les joueurs concernés sont prévenus par message.
+  const [cancellation, setCancellation] = useState<{ cancelledAt: string | null; cancellationNote: string | null }>({
+    cancelledAt: null,
+    cancellationNote: null,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +44,7 @@ export default function FieldModeScreen() {
       const record: SavedTrainingSession | null = body?.session ?? null;
       const rehydrated = record ? rehydrateTrainingSession(record, personal) : null;
       setSession(rehydrated);
+      setCancellation({ cancelledAt: body?.session?.cancelledAt ?? null, cancellationNote: body?.session?.cancellationNote ?? null });
       if (rehydrated) setState(startField(fieldSteps(rehydrated)));
     })();
     return () => {
@@ -161,6 +168,14 @@ export default function FieldModeScreen() {
             ))}
           </View>
         )}
+
+        <CancelEventPanel
+          cancellationNote={cancellation.cancellationNote}
+          cancelledAt={cancellation.cancelledAt}
+          noun="cette séance"
+          onChange={setCancellation}
+          url={`/api/sessions/${encodeURIComponent(id)}/cancel`}
+        />
 
         <View style={styles.nav}>
           <TouchableOpacity
