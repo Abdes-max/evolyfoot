@@ -9,9 +9,11 @@ import {
   playerEvaluationMinScore,
   playerFeet,
   playerPositions,
+  playerCompetitionGames,
   playerSeasonTotals,
   seasonStartDate,
   type PlayerEvaluationScores,
+  type PlayerCompetitionGame,
   type PlayerSeasonTotals,
 } from "@evolyfoot/domain";
 import Link from "next/link";
@@ -105,6 +107,7 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
   const [player, setPlayer] = useState<Player | null>(null);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [season, setSeason] = useState<PlayerSeasonTotals>({ matches: 0, goals: 0, assists: 0 });
+  const [competitionGames, setCompetitionGames] = useState<PlayerCompetitionGame[]>([]);
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<DetailForm>(emptyDetailForm);
@@ -140,14 +143,18 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
           setStatus("unauthenticated");
           return;
         }
-        const [rosterResponse, evaluationsResponse, matchesResponse] = await Promise.all([
+        const [rosterResponse, evaluationsResponse, matchesResponse, tournamentsResponse, plateauxResponse] = await Promise.all([
           fetch("/api/roster"),
           fetch(`/api/player-evaluations?playerId=${encodeURIComponent(playerId)}`),
           fetch("/api/matches"),
+          fetch("/api/tournaments"),
+          fetch("/api/plateaux"),
         ]);
         const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
         const evaluationsBody = await evaluationsResponse.json().catch(() => ({ evaluations: [] }));
         const matchesBody = await matchesResponse.json().catch(() => ({ matches: [] }));
+        const tournamentsBody = await tournamentsResponse.json().catch(() => ({ tournaments: [] }));
+        const plateauxBody = await plateauxResponse.json().catch(() => ({ plateaux: [] }));
         if (cancelled) {
           return;
         }
@@ -157,7 +164,9 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
           return;
         }
         setPlayer(found);
-        setSeason(playerSeasonTotals(matchesBody.matches ?? [], playerId));
+        const competitions = [...(tournamentsBody.tournaments ?? []), ...(plateauxBody.plateaux ?? [])];
+        setSeason(playerSeasonTotals(matchesBody.matches ?? [], playerId, competitions));
+        setCompetitionGames(playerCompetitionGames(competitions, playerId));
         const loadedEvaluations: Evaluation[] = evaluationsResponse.ok ? (evaluationsBody.evaluations ?? []) : [];
         setEvaluations(loadedEvaluations);
         setComparedEvaluationIds(defaultComparedEvaluationIds(loadedEvaluations));
@@ -421,6 +430,26 @@ export function PlayerDetailView({ playerId }: { playerId: string }) {
               </div>
 
               <div className="player-identity-body">
+                {competitionGames.length > 0 && (
+                  <details className="player-games">
+                    <summary>
+                      Tournois et plateaux ({competitionGames.length} rencontre{competitionGames.length > 1 ? "s" : ""})
+                    </summary>
+                    <ul>
+                      {competitionGames.map((game, index) => (
+                        <li key={`${game.competitionName}-${index}`}>
+                          <strong>
+                            {game.competitionName} · {game.dateLabel}
+                          </strong>
+                          <span>
+                            contre {game.opponent} ({game.goalsFor}-{game.goalsAgainst}) : {game.goals} but{game.goals > 1 ? "s" : ""}, {game.assists} passe
+                            {game.assists > 1 ? "s" : ""} déc.
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
                 <div className="player-block-head">
                   <h2>Profil et coordonnées</h2>
                   {!editing && (

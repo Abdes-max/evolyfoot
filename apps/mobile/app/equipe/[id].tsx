@@ -5,13 +5,16 @@ import {
   playerEvaluationAspects,
   playerEvaluationMaxScore,
   playerEvaluationMinScore,
+  playerCompetitionGames,
   playerSeasonTotals,
+  type PlayerCompetitionGame,
   type PlayerEvaluationScores,
   type PlayerSeasonTotals,
 } from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CollapsibleSection } from "../../components/collapsible-section";
 import { EvaluationRadar } from "../../components/evaluation-radar";
 import { PlayerDetailsForm } from "../../components/player-details-form";
 import { PlayerTutors } from "../../components/player-tutors";
@@ -48,6 +51,7 @@ export default function PlayerScreen() {
   const [status, setStatus] = useState<"loading" | "ready" | "missing">("loading");
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [season, setSeason] = useState<PlayerSeasonTotals>({ matches: 0, goals: 0, assists: 0 });
+  const [competitionGames, setCompetitionGames] = useState<PlayerCompetitionGame[]>([]);
   const [scores, setScores] = useState<PlayerEvaluationScores | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -59,14 +63,18 @@ export default function PlayerScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [roster, evaluationList, matches] = await Promise.all([
+      const [roster, evaluationList, matches, tournaments, plateaux] = await Promise.all([
         apiRequest("/api/roster"),
         apiRequest(`/api/player-evaluations?playerId=${encodeURIComponent(id)}`),
         apiRequest("/api/matches"),
+        apiRequest("/api/tournaments"),
+        apiRequest("/api/plateaux"),
       ]);
       const rosterBody = roster?.ok ? await roster.json().catch(() => null) : null;
       const evaluationsBody = evaluationList?.ok ? await evaluationList.json().catch(() => null) : null;
       const matchesBody = matches?.ok ? await matches.json().catch(() => null) : null;
+      const tournamentsBody = tournaments?.ok ? await tournaments.json().catch(() => null) : null;
+      const plateauxBody = plateaux?.ok ? await plateaux.json().catch(() => null) : null;
       if (cancelled) {
         return;
       }
@@ -77,7 +85,9 @@ export default function PlayerScreen() {
       }
       setPlayer(found);
       setEvaluations(evaluationsBody?.evaluations ?? []);
-      setSeason(playerSeasonTotals(matchesBody?.matches ?? [], id));
+      const competitions = [...(tournamentsBody?.tournaments ?? []), ...(plateauxBody?.plateaux ?? [])];
+      setSeason(playerSeasonTotals(matchesBody?.matches ?? [], id, competitions));
+      setCompetitionGames(playerCompetitionGames(competitions, id));
       setStatus("ready");
     })();
     return () => {
@@ -244,6 +254,27 @@ export default function PlayerScreen() {
                 </View>
               ))}
             </View>
+
+            {competitionGames.length > 0 ? (
+              <View style={{ marginBottom: 12 }}>
+                <CollapsibleSection
+                  summary={`${competitionGames.length} rencontre${competitionGames.length > 1 ? "s" : ""} avec but ou passe`}
+                  title="Tournois et plateaux"
+                >
+                  {competitionGames.map((game, index) => (
+                    <View key={`${game.competitionName}-${index}`} style={styles.gameRow}>
+                      <Text style={styles.gameTitle}>
+                        {game.competitionName} · {game.dateLabel}
+                      </Text>
+                      <Text style={styles.gameDetail}>
+                        contre {game.opponent} ({game.goalsFor}-{game.goalsAgainst}) : {game.goals} but{game.goals > 1 ? "s" : ""}, {game.assists} passe
+                        {game.assists > 1 ? "s" : ""} déc.
+                      </Text>
+                    </View>
+                  ))}
+                </CollapsibleSection>
+              </View>
+            ) : null}
 
             <View style={styles.card}>
               <View style={styles.cardHeader}>
@@ -447,6 +478,9 @@ const styles = StyleSheet.create({
   muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 6 },
   error: { fontSize: 12, fontWeight: "700", color: colors.danger, marginTop: 6 },
   success: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 6 },
+  gameRow: { gap: 2, paddingTop: 8 },
+  gameTitle: { color: colors.ink, fontSize: 13, fontWeight: "800" },
+  gameDetail: { color: colors.muted, fontSize: 12.5 },
   totals: { flexDirection: "row", gap: 8, marginBottom: 12 },
   total: { flex: 1, alignItems: "center", padding: 12, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line },
   totalValue: { fontSize: 24, fontWeight: "800", color: colors.ink },

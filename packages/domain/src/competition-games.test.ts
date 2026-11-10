@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { competitionRecord, competitionRecordLabel, parseCompetitionGames, validateCompetitionGames, type CompetitionGame } from "./competition-games";
+import {
+  competitionRecord,
+  competitionRecordLabel,
+  playerCompetitionGames,
+  parseCompetitionGames,
+  validateCompetitionGames,
+  type CompetitionGame,
+} from "./competition-games";
 import { playerSeasonTotals } from "./match-result";
 
 const lina = { playerId: "lina", playerName: "Lina", goals: 2, assists: 0 };
@@ -46,5 +53,22 @@ describe("rencontres d'un tournoi", () => {
       { games: undefined },
     ]);
     expect(totals).toEqual({ matches: 0, goals: 3, assists: 1 });
+  });
+});
+
+describe("playerCompetitionGames", () => {
+  it("liste les rencontres où le joueur a marqué ou passé, avec le tournoi et le score", () => {
+    const competitions = [
+      {
+        name: "Tournoi de Noël",
+        dateLabel: "20 décembre 2026",
+        games: [game(), game({ id: "g2", playerStats: [{ ...lina, playerId: "sam", goals: 0, assists: 0 }] })],
+      },
+      { name: "Plateau", dateLabel: "10 janvier 2027" },
+    ];
+    expect(playerCompetitionGames(competitions, "lina")).toEqual([
+      { competitionName: "Tournoi de Noël", dateLabel: "20 décembre 2026", opponent: "US Vallée", goalsFor: 3, goalsAgainst: 1, goals: 2, assists: 0 },
+    ]);
+    expect(playerCompetitionGames(competitions, "sam")).toEqual([]);
   });
 });
