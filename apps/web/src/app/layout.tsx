@@ -22,6 +22,7 @@ import "./page-backgrounds.css";
 import "./exercise-sheet.css";
 import "./design-impact.css";
 import { AuthGate } from "./auth-gate";
+import { GoogleAnalytics } from "./google-analytics";
 import { InstallAppBanner } from "./install-app-banner";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <InstallAppBanner />
         <AuthGate>{children}</AuthGate>
+        <GoogleAnalytics />
       </body>
     </html>
   );

@@ -66,7 +66,7 @@ export default function ConfidentialitePage() {
         {
           title: "Cookies",
           paragraphs: [
-            "EvolyFoot utilise un cookie de session strictement nécessaire à la connexion, exempté de consentement. Aucun cookie publicitaire ou de mesure d’audience tiers n’est déposé à ce jour.",
+            "EvolyFoot utilise un cookie de session strictement nécessaire à la connexion, exempté de consentement. Google Analytics mesure l’audience du site (pages vues, appareil, provenance) pour nous aider à l’améliorer. Aucun cookie publicitaire n’est déposé.",
           ],
         },
       ]}
