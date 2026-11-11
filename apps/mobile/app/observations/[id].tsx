@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth, type ObservationDetail } from "../../lib/auth-context";
 import { eventTypeLabel, levelColor, levelLabel } from "../../lib/observation-labels";
+import { themedStyles } from "../../lib/themed-styles";
 
 function criterionLabel(criterion: string): string {
   return diagnosticCriteria.find((candidate) => candidate.id === criterion)?.label ?? criterion;
@@ -109,39 +110,41 @@ export default function ObservationDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48 },
-  back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 10 },
-  muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4 },
-  error: { fontSize: 12, fontWeight: "700", color: colors.danger },
-  link: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 10 },
-  summary: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginVertical: 16 },
-  summaryItem: {
-    flexBasis: "47%",
-    flexGrow: 1,
-    padding: 10,
-    backgroundColor: colors.surface,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  summaryLabel: { fontSize: 9, fontWeight: "800", color: colors.muted },
-  summaryValue: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 4 },
-  card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 10 },
-  cardTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginBottom: 6 },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 6,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
-  },
-  rowLabel: { flex: 1, fontSize: 12, color: colors.ink },
-  level: { fontSize: 11, fontWeight: "800" },
-  item: { fontSize: 12, lineHeight: 18, color: colors.ink },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48 },
+    back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 10 },
+    muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4 },
+    error: { fontSize: 12, fontWeight: "700", color: colors.danger },
+    link: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 10 },
+    summary: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginVertical: 16 },
+    summaryItem: {
+      flexBasis: "47%",
+      flexGrow: 1,
+      padding: 10,
+      backgroundColor: colors.surface,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.line,
+    },
+    summaryLabel: { fontSize: 9, fontWeight: "800", color: colors.muted },
+    summaryValue: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 4 },
+    card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 10 },
+    cardTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginBottom: 6 },
+    row: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 6,
+      borderTopWidth: 1,
+      borderTopColor: colors.line,
+    },
+    rowLabel: { flex: 1, fontSize: 12, color: colors.ink },
+    level: { fontSize: 11, fontWeight: "800" },
+    item: { fontSize: 12, lineHeight: 18, color: colors.ink },
+  }),
+);

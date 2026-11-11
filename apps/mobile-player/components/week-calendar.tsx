@@ -2,6 +2,7 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import type { Dashboard } from "../lib/dashboard";
+import { themedStyles } from "../lib/themed-styles";
 
 const weekDays: readonly { short: string; full: string }[] = [
   { short: "LUN.", full: "Lundi" },
@@ -104,35 +105,37 @@ export function WeekCalendar({ dashboard, now }: { dashboard: Dashboard; now: nu
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    gap: 11,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.primaryDark,
-    backgroundColor: colors.surface,
-  },
-  title: { color: colors.ink, fontSize: 12, fontWeight: "900", letterSpacing: 0.5, textTransform: "uppercase" },
-  grid: { flexDirection: "row", gap: 6 },
-  day: { flex: 1, alignItems: "center", gap: 7, minWidth: 0 },
-  dayLabel: { color: "#86e8ff", fontSize: 9, fontWeight: "800", letterSpacing: 0.4 },
-  dayLabelToday: { color: colors.primaryInk, backgroundColor: colors.primary, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1, overflow: "hidden" },
-  cell: {
-    width: "100%",
-    aspectRatio: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 2,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "transparent",
-    backgroundColor: colors.paper,
-  },
-  cellToday: { borderColor: colors.primary },
-  badge: { alignItems: "center", justifyContent: "center" },
-  legend: { gap: 5 },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 8 },
-  legendText: { color: colors.muted, fontSize: 10.5 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    card: {
+      gap: 11,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      backgroundColor: colors.surface,
+    },
+    title: { color: colors.ink, fontSize: 12, fontWeight: "900", letterSpacing: 0.5, textTransform: "uppercase" },
+    grid: { flexDirection: "row", gap: 6 },
+    day: { flex: 1, alignItems: "center", gap: 7, minWidth: 0 },
+    dayLabel: { color: "#86e8ff", fontSize: 9, fontWeight: "800", letterSpacing: 0.4 },
+    dayLabelToday: { color: colors.primaryInk, backgroundColor: colors.primary, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1, overflow: "hidden" },
+    cell: {
+      width: "100%",
+      aspectRatio: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 2,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: "transparent",
+      backgroundColor: colors.paper,
+    },
+    cellToday: { borderColor: colors.primary },
+    badge: { alignItems: "center", justifyContent: "center" },
+    legend: { gap: 5 },
+    legendItem: { flexDirection: "row", alignItems: "center", gap: 8 },
+    legendText: { color: colors.muted, fontSize: 10.5 },
+  }),
+);

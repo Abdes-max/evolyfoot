@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 const initialScores: DiagnosticScores = { availability: 2, scanning: 2, progression: 2, reactionAfterLoss: 2 };
 
@@ -80,30 +81,32 @@ export default function DiagnosticScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 50 },
-  step: { color: colors.primary, fontSize: 10, fontWeight: "800" },
-  title: { fontSize: 30, fontWeight: "800", color: colors.ink, marginTop: 10 },
-  body: { color: colors.muted, fontSize: 12, marginTop: 8, marginBottom: 20 },
-  card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 10 },
-  label: { fontSize: 12, fontWeight: "800", color: colors.ink },
-  description: { fontSize: 10, color: colors.muted, marginTop: 5 },
-  rating: { flexDirection: "row", gap: 8, marginTop: 14 },
-  score: { flex: 1, alignItems: "center", padding: 10, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm },
-  active: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
-  scoreText: { fontWeight: "800", color: colors.primary },
-  error: { color: colors.danger, fontSize: 11, marginTop: 6, marginBottom: 6 },
-  button: {
-    padding: 15,
-    minHeight: 44,
-    backgroundColor: colors.primary,
-    borderRadius: radii.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
-  },
-  buttonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
-  result: { padding: spacing.md, backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, marginTop: 14 },
-  priority: { fontSize: 11, color: colors.primary, fontWeight: "700", marginTop: 9 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 50 },
+    step: { color: colors.primary, fontSize: 10, fontWeight: "800" },
+    title: { fontSize: 30, fontWeight: "800", color: colors.ink, marginTop: 10 },
+    body: { color: colors.muted, fontSize: 12, marginTop: 8, marginBottom: 20 },
+    card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 10 },
+    label: { fontSize: 12, fontWeight: "800", color: colors.ink },
+    description: { fontSize: 10, color: colors.muted, marginTop: 5 },
+    rating: { flexDirection: "row", gap: 8, marginTop: 14 },
+    score: { flex: 1, alignItems: "center", padding: 10, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm },
+    active: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+    scoreText: { fontWeight: "800", color: colors.primary },
+    error: { color: colors.danger, fontSize: 11, marginTop: 6, marginBottom: 6 },
+    button: {
+      padding: 15,
+      minHeight: 44,
+      backgroundColor: colors.primary,
+      borderRadius: radii.sm,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 10,
+    },
+    buttonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
+    result: { padding: spacing.md, backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, marginTop: 14 },
+    priority: { fontSize: 11, color: colors.primary, fontWeight: "700", marginTop: 9 },
+  }),
+);

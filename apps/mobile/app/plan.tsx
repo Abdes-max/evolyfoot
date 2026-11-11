@@ -13,6 +13,7 @@ import { useCallback, useState } from "react";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { openSeasonSlot, useSeasonCycle } from "../lib/season-cycle";
+import { themedStyles } from "../lib/themed-styles";
 
 // Diagnostic de démonstration, utilisé tant que l'éducateur connecté n'a pas encore fait le
 // sien (mobile est entièrement protégé par connexion -- voir _layout.tsx -- donc jamais utilisé
@@ -95,36 +96,38 @@ export default function PlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 50 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary },
-  title: { fontSize: 30, fontWeight: "800", color: colors.ink, marginTop: 10 },
-  body: { fontSize: 12, lineHeight: 19, color: colors.muted, marginTop: 8, marginBottom: 24 },
-  card: {
-    flexDirection: "row",
-    gap: 12,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    marginBottom: 10,
-  },
-  number: { width: 42, height: 42, borderRadius: 12, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
-  numberText: { fontWeight: "800", color: colors.primary },
-  content: { flex: 1 },
-  phase: { fontSize: 8, fontWeight: "800", color: colors.primary },
-  intention: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 5 },
-  observable: { fontSize: 9, lineHeight: 14, color: colors.muted, marginTop: 6 },
-  sessionButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-    backgroundColor: colors.primary,
-    borderRadius: radii.sm,
-    marginTop: 14,
-    padding: 15,
-  },
-  sessionButtonText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 50 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary },
+    title: { fontSize: 30, fontWeight: "800", color: colors.ink, marginTop: 10 },
+    body: { fontSize: 12, lineHeight: 19, color: colors.muted, marginTop: 8, marginBottom: 24 },
+    card: {
+      flexDirection: "row",
+      gap: 12,
+      padding: spacing.md,
+      backgroundColor: colors.surface,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.line,
+      marginBottom: 10,
+    },
+    number: { width: 42, height: 42, borderRadius: 12, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
+    numberText: { fontWeight: "800", color: colors.primary },
+    content: { flex: 1 },
+    phase: { fontSize: 8, fontWeight: "800", color: colors.primary },
+    intention: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 5 },
+    observable: { fontSize: 9, lineHeight: 14, color: colors.muted, marginTop: 6 },
+    sessionButton: {
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 44,
+      backgroundColor: colors.primary,
+      borderRadius: radii.sm,
+      marginTop: 14,
+      padding: 15,
+    },
+    sessionButtonText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
+  }),
+);

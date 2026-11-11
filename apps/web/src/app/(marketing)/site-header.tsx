@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { ThemeToggle } from "../theme-toggle";
 
 const navLinks = [
   { href: "/educateurs", label: "Éducateurs" },
@@ -28,6 +29,7 @@ export function SiteHeader() {
       </nav>
 
       <div className="m-header-actions">
+        <ThemeToggle />
         <Link className="m-btn m-btn-ghost" href="/connexion">
           Ouvrir l’app
         </Link>

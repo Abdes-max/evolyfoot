@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { ScoreEditor, type ResultPlayer } from "./match-result-form";
+import { themedStyles } from "../lib/themed-styles";
 
 interface DraftGame {
   id: string;
@@ -168,20 +169,22 @@ export function CompetitionGames({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { gap: spacing.md },
-  record: { color: colors.lime, fontSize: 14, fontWeight: "900" },
-  hint: { color: colors.muted, fontSize: 12.5, lineHeight: 18 },
-  game: { gap: spacing.md, padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
-  gameHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  gameTitle: { color: colors.ink, fontSize: 15, fontWeight: "900" },
-  remove: { color: colors.danger, fontSize: 12, fontWeight: "800" },
-  input: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
-  add: { minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primary },
-  addText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
-  save: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
-  saveText: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
-  disabled: { opacity: 0.5 },
-  error: { color: colors.danger, fontSize: 13, fontWeight: "700" },
-  feedback: { color: colors.lime, fontSize: 13, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    wrap: { gap: spacing.md },
+    record: { color: colors.lime, fontSize: 14, fontWeight: "900" },
+    hint: { color: colors.muted, fontSize: 12.5, lineHeight: 18 },
+    game: { gap: spacing.md, padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
+    gameHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    gameTitle: { color: colors.ink, fontSize: 15, fontWeight: "900" },
+    remove: { color: colors.danger, fontSize: 12, fontWeight: "800" },
+    input: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
+    add: { minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primary },
+    addText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+    save: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    saveText: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
+    disabled: { opacity: 0.5 },
+    error: { color: colors.danger, fontSize: 13, fontWeight: "700" },
+    feedback: { color: colors.lime, fontSize: 13, fontWeight: "800" },
+  }),
+);

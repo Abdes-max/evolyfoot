@@ -2,6 +2,7 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 // Annuler un match, un tournoi ou un plateau : message facultatif aux joueurs concernés, puis « Rétablir » pour revenir
 // en arrière (sans nouveau message). `url` : `POST` annule, `DELETE` rétablit.
@@ -104,31 +105,33 @@ export function CancelEventPanel({
   );
 }
 
-const styles = StyleSheet.create({
-  box: { gap: 8, marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line },
-  state: { color: colors.danger, fontSize: 13, fontWeight: "800" },
-  label: { color: colors.primary, fontSize: 10, fontWeight: "800", letterSpacing: 0.6 },
-  hint: { color: colors.muted, fontSize: 12 },
-  input: {
-    minHeight: 70,
-    textAlignVertical: "top",
-    padding: 12,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.paper,
-    color: colors.ink,
-  },
-  button: {
-    minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 12,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  buttonText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
-  confirm: { borderColor: colors.danger, backgroundColor: colors.danger },
-  confirmText: { color: "#fff", fontSize: 12, fontWeight: "900" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    box: { gap: 8, marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line },
+    state: { color: colors.danger, fontSize: 13, fontWeight: "800" },
+    label: { color: colors.primary, fontSize: 10, fontWeight: "800", letterSpacing: 0.6 },
+    hint: { color: colors.muted, fontSize: 12 },
+    input: {
+      minHeight: 70,
+      textAlignVertical: "top",
+      padding: 12,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.paper,
+      color: colors.ink,
+    },
+    button: {
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 12,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.line,
+    },
+    buttonText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
+    confirm: { borderColor: colors.danger, backgroundColor: colors.danger },
+    confirmText: { color: "#fff", fontSize: 12, fontWeight: "900" },
+  }),
+);

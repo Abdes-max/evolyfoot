@@ -4,6 +4,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../lib/auth-context";
+import { themedStyles } from "../../lib/themed-styles";
 
 interface ThreadMessage {
   id: string;
@@ -138,37 +139,39 @@ export default function MessagesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  top: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line },
-  back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 24, fontWeight: "800", color: colors.ink, marginTop: 4 },
-  muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 6 },
-  error: { fontSize: 12, fontWeight: "700", color: colors.danger, marginBottom: 6 },
-  thread: { padding: spacing.lg, flexGrow: 1 },
-  bubble: { maxWidth: "85%", padding: 12, marginBottom: spacing.sm, borderRadius: radii.sm },
-  mine: { alignSelf: "flex-end", backgroundColor: colors.primary },
-  theirs: { alignSelf: "flex-start", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primaryDark },
-  author: { color: colors.lime, fontSize: 11, fontWeight: "800", marginBottom: 2 },
-  text: { color: colors.ink, fontSize: 14, lineHeight: 20 },
-  textMine: { color: colors.primaryInk, fontWeight: "600" },
-  time: { fontSize: 10, color: colors.muted, marginTop: 4 },
-  timeMine: { color: colors.primaryInk, opacity: 0.7 },
-  composer: { padding: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.paper },
-  input: {
-    minHeight: 56,
-    maxHeight: 140,
-    padding: 12,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    color: colors.ink,
-    fontSize: 15,
-    textAlignVertical: "top",
-  },
-  send: { minHeight: 46, marginTop: spacing.sm, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
-  disabled: { opacity: 0.5 },
-  sendText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    top: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line },
+    back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    title: { fontSize: 24, fontWeight: "800", color: colors.ink, marginTop: 4 },
+    muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 6 },
+    error: { fontSize: 12, fontWeight: "700", color: colors.danger, marginBottom: 6 },
+    thread: { padding: spacing.lg, flexGrow: 1 },
+    bubble: { maxWidth: "85%", padding: 12, marginBottom: spacing.sm, borderRadius: radii.sm },
+    mine: { alignSelf: "flex-end", backgroundColor: colors.primary },
+    theirs: { alignSelf: "flex-start", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primaryDark },
+    author: { color: colors.lime, fontSize: 11, fontWeight: "800", marginBottom: 2 },
+    text: { color: colors.ink, fontSize: 14, lineHeight: 20 },
+    textMine: { color: colors.primaryInk, fontWeight: "600" },
+    time: { fontSize: 10, color: colors.muted, marginTop: 4 },
+    timeMine: { color: colors.primaryInk, opacity: 0.7 },
+    composer: { padding: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.paper },
+    input: {
+      minHeight: 56,
+      maxHeight: 140,
+      padding: 12,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+      color: colors.ink,
+      fontSize: 15,
+      textAlignVertical: "top",
+    },
+    send: { minHeight: 46, marginTop: spacing.sm, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    disabled: { opacity: 0.5 },
+    sendText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },
+  }),
+);

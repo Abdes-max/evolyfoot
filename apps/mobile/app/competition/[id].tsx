@@ -14,6 +14,7 @@ import { useAuth } from "../../lib/auth-context";
 import { selectionSummary } from "../../lib/selection-summary";
 import { competitionKinds, isCompetitionKind, isPastCompetition, type Competition } from "../../lib/competitions";
 import { birthDateFromIso, birthDateToIso } from "../../lib/player-photo";
+import { themedStyles } from "../../lib/themed-styles";
 
 async function readError(response: Response | null): Promise<string> {
   const body = response ? await response.json().catch(() => ({})) : {};
@@ -248,41 +249,43 @@ export default function CompetitionDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 50 },
-  back: { color: colors.primary, fontSize: 12, fontWeight: "800", marginBottom: 16 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 10 },
-  body: { fontSize: 13, color: colors.muted, marginTop: 6 },
-  form: { marginTop: 20, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.surface },
-  formTitle: { fontSize: 16, fontWeight: "800", color: colors.ink },
-  label: { fontSize: 11, fontWeight: "800", color: colors.ink, marginTop: 14, marginBottom: 8 },
-  input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
-  multiline: { minHeight: 80, textAlignVertical: "top" },
-  picker: { marginTop: 14 },
-  finishButton: {
-    minHeight: 46,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.sm,
-    backgroundColor: colors.primary,
-    marginTop: spacing.md,
-  },
-  finishButtonText: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
-  gamesHint: { color: colors.muted, fontSize: 12.5, marginTop: 6 },
-  fieldError: { color: colors.danger, fontSize: 10, marginTop: 10 },
-  feedback: { color: colors.primary, fontSize: 11, fontWeight: "700", marginTop: 10 },
-  submitButton: { minHeight: 44, marginTop: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
-  submitButtonText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
-  removeButton: {
-    minHeight: 44,
-    marginTop: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: radii.sm,
-  },
-  removeButtonText: { color: colors.danger, fontSize: 12, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 50 },
+    back: { color: colors.primary, fontSize: 12, fontWeight: "800", marginBottom: 16 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 10 },
+    body: { fontSize: 13, color: colors.muted, marginTop: 6 },
+    form: { marginTop: 20, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.surface },
+    formTitle: { fontSize: 16, fontWeight: "800", color: colors.ink },
+    label: { fontSize: 11, fontWeight: "800", color: colors.ink, marginTop: 14, marginBottom: 8 },
+    input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
+    multiline: { minHeight: 80, textAlignVertical: "top" },
+    picker: { marginTop: 14 },
+    finishButton: {
+      minHeight: 46,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.sm,
+      backgroundColor: colors.primary,
+      marginTop: spacing.md,
+    },
+    finishButtonText: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
+    gamesHint: { color: colors.muted, fontSize: 12.5, marginTop: 6 },
+    fieldError: { color: colors.danger, fontSize: 10, marginTop: 10 },
+    feedback: { color: colors.primary, fontSize: 11, fontWeight: "700", marginTop: 10 },
+    submitButton: { minHeight: 44, marginTop: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
+    submitButtonText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
+    removeButton: {
+      minHeight: 44,
+      marginTop: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: radii.sm,
+    },
+    removeButtonText: { color: colors.danger, fontSize: 12, fontWeight: "800" },
+  }),
+);

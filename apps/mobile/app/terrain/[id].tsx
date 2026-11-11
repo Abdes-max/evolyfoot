@@ -20,6 +20,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, Vibration
 import { CancelEventPanel } from "../../components/cancel-event-panel";
 import { TacticalPlayer } from "../../components/tactical-player";
 import { useAuth } from "../../lib/auth-context";
+import { themedStyles } from "../../lib/themed-styles";
 
 // Mode terrain : une situation à la fois, gros minuteur par séquence et défi entre deux équipes.
 export default function FieldModeScreen() {
@@ -200,37 +201,47 @@ export default function FieldModeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48, gap: 14 },
-  head: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  back: { fontSize: 13, fontWeight: "800", color: colors.primary },
-  title: { fontSize: 26, fontWeight: "800", color: colors.ink },
-  body: { fontSize: 15, lineHeight: 21, color: colors.ink },
-  muted: { fontSize: 12, lineHeight: 17, color: colors.muted },
-  link: { fontSize: 13, fontWeight: "800", color: colors.primary },
-  timer: { alignItems: "center", padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
-  clock: { fontSize: 88, fontWeight: "800", color: colors.ink, fontVariant: ["tabular-nums"] },
-  clockEnded: { color: colors.primary },
-  primary: { minHeight: 64, alignItems: "center", justifyContent: "center", borderRadius: radii.md, backgroundColor: colors.primary },
-  primaryText: { fontSize: 18, fontWeight: "800", color: colors.primaryInk },
-  scores: { flexDirection: "row", gap: 12 },
-  scoreCard: { flex: 1, alignItems: "center", padding: 12, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
-  score: { fontSize: 40, fontWeight: "800", color: colors.ink },
-  scoreButtons: { flexDirection: "row", gap: 8, marginTop: 6 },
-  scoreButton: {
-    minWidth: 52,
-    minHeight: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  scoreButtonText: { fontSize: 22, fontWeight: "800", color: colors.ink },
-  details: { gap: 6 },
-  nav: { flexDirection: "row", gap: 12 },
-  navButton: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
-  actionText: { fontSize: 13, fontWeight: "800", color: colors.ink },
-  disabled: { opacity: 0.4 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48, gap: 14 },
+    head: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    back: { fontSize: 13, fontWeight: "800", color: colors.primary },
+    title: { fontSize: 26, fontWeight: "800", color: colors.ink },
+    body: { fontSize: 15, lineHeight: 21, color: colors.ink },
+    muted: { fontSize: 12, lineHeight: 17, color: colors.muted },
+    link: { fontSize: 13, fontWeight: "800", color: colors.primary },
+    timer: { alignItems: "center", padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+    clock: { fontSize: 88, fontWeight: "800", color: colors.ink, fontVariant: ["tabular-nums"] },
+    clockEnded: { color: colors.primary },
+    primary: { minHeight: 64, alignItems: "center", justifyContent: "center", borderRadius: radii.md, backgroundColor: colors.primary },
+    primaryText: { fontSize: 18, fontWeight: "800", color: colors.primaryInk },
+    scores: { flexDirection: "row", gap: 12 },
+    scoreCard: {
+      flex: 1,
+      alignItems: "center",
+      padding: 12,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+    },
+    score: { fontSize: 40, fontWeight: "800", color: colors.ink },
+    scoreButtons: { flexDirection: "row", gap: 8, marginTop: 6 },
+    scoreButton: {
+      minWidth: 52,
+      minHeight: 48,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.line,
+    },
+    scoreButtonText: { fontSize: 22, fontWeight: "800", color: colors.ink },
+    details: { gap: 6 },
+    nav: { flexDirection: "row", gap: 12 },
+    navButton: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
+    actionText: { fontSize: 13, fontWeight: "800", color: colors.ink },
+    disabled: { opacity: 0.4 },
+  }),
+);

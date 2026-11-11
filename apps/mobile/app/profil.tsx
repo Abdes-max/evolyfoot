@@ -4,6 +4,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState, type ReactNode } from "react";
 import { Alert, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 interface Profile {
   email: string;
@@ -573,32 +574,34 @@ export default function ProfilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48 },
-  back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 20 },
-  card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12 },
-  sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
-  cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink },
-  row: { paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.line },
-  label: { fontSize: 10, fontWeight: "800", color: colors.muted, marginBottom: 4 },
-  value: { fontSize: 13, fontWeight: "700", color: colors.ink },
-  muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4 },
-  link: { fontSize: 12, fontWeight: "800", color: colors.primary },
-  danger: { fontSize: 12, fontWeight: "800", color: colors.danger, marginTop: 6 },
-  success: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 6 },
-  field: { marginTop: 10 },
-  input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
-  chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: colors.line },
-  chipActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  chipText: { fontSize: 11, fontWeight: "700", color: colors.ink },
-  member: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.line },
-  memberText: { flex: 1 },
-  primary: { minHeight: 46, marginTop: 14, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
-  primaryText: { color: colors.primaryInk, fontSize: 13, fontWeight: "800" },
-  disabled: { opacity: 0.5 },
-  ghost: { minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 4 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48 },
+    back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 20 },
+    card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12 },
+    sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+    cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink },
+    row: { paddingVertical: 7, borderTopWidth: 1, borderTopColor: colors.line },
+    label: { fontSize: 10, fontWeight: "800", color: colors.muted, marginBottom: 4 },
+    value: { fontSize: 13, fontWeight: "700", color: colors.ink },
+    muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4 },
+    link: { fontSize: 12, fontWeight: "800", color: colors.primary },
+    danger: { fontSize: 12, fontWeight: "800", color: colors.danger, marginTop: 6 },
+    success: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 6 },
+    field: { marginTop: 10 },
+    input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
+    chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: colors.line },
+    chipActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+    chipText: { fontSize: 11, fontWeight: "700", color: colors.ink },
+    member: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.line },
+    memberText: { flex: 1 },
+    primary: { minHeight: 46, marginTop: 14, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    primaryText: { color: colors.primaryInk, fontSize: 13, fontWeight: "800" },
+    disabled: { opacity: 0.5 },
+    ghost: { minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  }),
+);

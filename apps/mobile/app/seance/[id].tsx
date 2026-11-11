@@ -7,6 +7,7 @@ import { CancelEventPanel } from "../../components/cancel-event-panel";
 import { TacticalPlayer } from "../../components/tactical-player";
 import { useAuth } from "../../lib/auth-context";
 import { kindLabels } from "../../lib/exercise-labels";
+import { themedStyles } from "../../lib/themed-styles";
 
 interface Detail {
   session: TrainingSession;
@@ -127,38 +128,40 @@ export default function SeanceDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48, gap: 6 },
-  statusRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  status: {
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 0.8,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  statusPrepared: { color: colors.primary, borderColor: colors.primary },
-  statusDone: { color: colors.lime, borderColor: colors.lime },
-  statusCancelled: { color: colors.danger, borderColor: colors.danger },
-  title: { fontSize: 24, fontWeight: "800", color: colors.ink, marginTop: 6 },
-  muted: { fontSize: 12, lineHeight: 17, color: colors.muted },
-  cancelled: { color: colors.danger, fontSize: 13, fontWeight: "800", marginTop: 4 },
-  primary: {
-    minHeight: 52,
-    marginVertical: spacing.md,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.sm,
-    backgroundColor: colors.primary,
-  },
-  primaryText: { fontSize: 15, fontWeight: "800", color: colors.primaryInk },
-  card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12, gap: 6 },
-  label: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 0.6 },
-  cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink },
-  body: { fontSize: 13, lineHeight: 19, color: colors.ink },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48, gap: 6 },
+    statusRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    status: {
+      fontSize: 10,
+      fontWeight: "900",
+      letterSpacing: 0.8,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      overflow: "hidden",
+    },
+    statusPrepared: { color: colors.primary, borderColor: colors.primary },
+    statusDone: { color: colors.lime, borderColor: colors.lime },
+    statusCancelled: { color: colors.danger, borderColor: colors.danger },
+    title: { fontSize: 24, fontWeight: "800", color: colors.ink, marginTop: 6 },
+    muted: { fontSize: 12, lineHeight: 17, color: colors.muted },
+    cancelled: { color: colors.danger, fontSize: 13, fontWeight: "800", marginTop: 4 },
+    primary: {
+      minHeight: 52,
+      marginVertical: spacing.md,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.sm,
+      backgroundColor: colors.primary,
+    },
+    primaryText: { fontSize: 15, fontWeight: "800", color: colors.primaryInk },
+    card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12, gap: 6 },
+    label: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 0.6 },
+    cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink },
+    body: { fontSize: 13, lineHeight: 19, color: colors.ink },
+  }),
+);

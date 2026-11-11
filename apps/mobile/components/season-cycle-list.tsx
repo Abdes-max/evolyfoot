@@ -14,6 +14,7 @@ import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { openSeasonSlot } from "../lib/season-cycle";
 import { slotLabel } from "./guided-season";
+import { themedStyles } from "../lib/themed-styles";
 
 // Vue « Par cycle » de l'onglet Séances avec une saison guidée : les 4 semaines d'un cycle de la
 // saison, chaque créneau aux couleurs du thème de sa séance (même écran que le web).
@@ -128,41 +129,43 @@ export function SeasonCycleList({
   );
 }
 
-const styles = StyleSheet.create({
-  nav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
-  navArrow: { color: colors.ink, fontSize: 28, fontWeight: "800", paddingHorizontal: spacing.sm },
-  disabled: { opacity: 0.3 },
-  empty: { color: colors.muted, fontSize: 13, textAlign: "center", marginVertical: spacing.lg },
-  navTitle: { alignItems: "center" },
-  navCycle: { color: colors.ink, fontSize: 15, fontWeight: "900" },
-  navTheme: { fontSize: 12, fontWeight: "800", marginTop: 2 },
-  week: {
-    padding: spacing.md,
-    marginBottom: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderLeftWidth: 4,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-  },
-  weekCurrent: { borderTopColor: colors.primary, borderRightColor: colors.primary, borderBottomColor: colors.primary },
-  weekTitle: { fontSize: 14, fontWeight: "800", color: colors.ink },
-  weekTheme: { fontSize: 11, color: colors.muted, marginTop: 4, marginBottom: 6 },
-  slot: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 12,
-    marginTop: 8,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderLeftWidth: 4,
-    borderColor: colors.line,
-    backgroundColor: colors.paper,
-  },
-  slotDay: { fontSize: 11, fontWeight: "800", color: colors.muted },
-  slotTitle: { fontSize: 14, fontWeight: "800", marginTop: 2 },
-  slotStatus: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  slotButton: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: radii.pill },
-  slotButtonText: { fontSize: 12, fontWeight: "900" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    nav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
+    navArrow: { color: colors.ink, fontSize: 28, fontWeight: "800", paddingHorizontal: spacing.sm },
+    disabled: { opacity: 0.3 },
+    empty: { color: colors.muted, fontSize: 13, textAlign: "center", marginVertical: spacing.lg },
+    navTitle: { alignItems: "center" },
+    navCycle: { color: colors.ink, fontSize: 15, fontWeight: "900" },
+    navTheme: { fontSize: 12, fontWeight: "800", marginTop: 2 },
+    week: {
+      padding: spacing.md,
+      marginBottom: 12,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderLeftWidth: 4,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+    },
+    weekCurrent: { borderTopColor: colors.primary, borderRightColor: colors.primary, borderBottomColor: colors.primary },
+    weekTitle: { fontSize: 14, fontWeight: "800", color: colors.ink },
+    weekTheme: { fontSize: 11, color: colors.muted, marginTop: 4, marginBottom: 6 },
+    slot: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      padding: 12,
+      marginTop: 8,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderLeftWidth: 4,
+      borderColor: colors.line,
+      backgroundColor: colors.paper,
+    },
+    slotDay: { fontSize: 11, fontWeight: "800", color: colors.muted },
+    slotTitle: { fontSize: 14, fontWeight: "800", marginTop: 2 },
+    slotStatus: { fontSize: 12, color: colors.muted, marginTop: 2 },
+    slotButton: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: radii.pill },
+    slotButtonText: { fontSize: 12, fontWeight: "900" },
+  }),
+);

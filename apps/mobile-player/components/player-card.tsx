@@ -1,4 +1,4 @@
-import { colors } from "@evolyfoot/design-tokens";
+import { darkColors as colors } from "@evolyfoot/design-tokens";
 import {
   playerAspectCodes,
   playerEvaluationAspects,
@@ -10,6 +10,7 @@ import {
 } from "@evolyfoot/domain";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Defs, Image as SvgImage, LinearGradient, Mask, Path, RadialGradient, Rect, Stop } from "react-native-svg";
+import { themedStyles } from "../lib/themed-styles";
 
 const CARD_WIDTH = 300;
 const CARD_HEIGHT = 470;
@@ -127,36 +128,38 @@ export function PlayerCard({ name, photo, position, jerseyNumber, preferredFoot,
 
 const glow = (color: string) => ({ textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 });
 
-const styles = StyleSheet.create({
-  card: { alignSelf: "center", width: CARD_WIDTH, height: CARD_HEIGHT, paddingHorizontal: 34, paddingTop: 34 },
-  top: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", minHeight: 150 },
-  rating: { alignItems: "center", minWidth: 68, zIndex: 1 },
-  overall: { color: colors.lime, fontSize: 46, lineHeight: 50, fontWeight: "900", ...glow(colors.lime) },
-  position: { color: colors.primary, fontSize: 20, fontWeight: "900", ...glow(colors.primary) },
-  jersey: { color: colors.ink, fontSize: 11, fontWeight: "800", marginTop: 2 },
-  photo: { position: "absolute", top: -22, right: -24 },
-  initial: { color: colors.primary, fontSize: 96, lineHeight: 112, fontWeight: "900", marginRight: 22, ...glow(colors.primary) },
-  name: {
-    color: colors.ink,
-    fontSize: 28,
-    lineHeight: 31,
-    fontWeight: "900",
-    textAlign: "center",
-    textTransform: "uppercase",
-    marginTop: 4,
-    ...glow(colors.primary),
-  },
-  foot: { color: colors.muted, fontSize: 11, fontWeight: "700", textAlign: "center", marginTop: 3 },
-  stats: { flexDirection: "row", marginTop: 8, paddingVertical: 6, borderTopWidth: 1, borderBottomWidth: 1, borderColor: "rgba(198,255,61,0.42)" },
-  column: { flex: 1, alignItems: "center" },
-  columnDivider: { borderRightWidth: 1, borderRightColor: "rgba(198,255,61,0.42)" },
-  stat: { flexDirection: "row", alignItems: "baseline", gap: 6 },
-  statValue: { color: colors.lime, fontSize: 18, lineHeight: 23, fontWeight: "900", minWidth: 16, textAlign: "right" },
-  statCode: { color: colors.ink, fontSize: 14, fontWeight: "800" },
-  statTop: { color: colors.lime, ...glow(colors.lime) },
-  empty: { color: colors.muted, fontSize: 12, lineHeight: 18, textAlign: "center", marginTop: 14 },
-  season: { flexDirection: "row", marginTop: 8 },
-  seasonItem: { flex: 1, alignItems: "center" },
-  seasonValue: { color: colors.primary, fontSize: 20, lineHeight: 23, fontWeight: "900" },
-  seasonLabel: { color: colors.muted, fontSize: 10, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    card: { alignSelf: "center", width: CARD_WIDTH, height: CARD_HEIGHT, paddingHorizontal: 34, paddingTop: 34 },
+    top: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", minHeight: 150 },
+    rating: { alignItems: "center", minWidth: 68, zIndex: 1 },
+    overall: { color: colors.lime, fontSize: 46, lineHeight: 50, fontWeight: "900", ...glow(colors.lime) },
+    position: { color: colors.primary, fontSize: 20, fontWeight: "900", ...glow(colors.primary) },
+    jersey: { color: colors.ink, fontSize: 11, fontWeight: "800", marginTop: 2 },
+    photo: { position: "absolute", top: -22, right: -24 },
+    initial: { color: colors.primary, fontSize: 96, lineHeight: 112, fontWeight: "900", marginRight: 22, ...glow(colors.primary) },
+    name: {
+      color: colors.ink,
+      fontSize: 28,
+      lineHeight: 31,
+      fontWeight: "900",
+      textAlign: "center",
+      textTransform: "uppercase",
+      marginTop: 4,
+      ...glow(colors.primary),
+    },
+    foot: { color: colors.muted, fontSize: 11, fontWeight: "700", textAlign: "center", marginTop: 3 },
+    stats: { flexDirection: "row", marginTop: 8, paddingVertical: 6, borderTopWidth: 1, borderBottomWidth: 1, borderColor: "rgba(198,255,61,0.42)" },
+    column: { flex: 1, alignItems: "center" },
+    columnDivider: { borderRightWidth: 1, borderRightColor: "rgba(198,255,61,0.42)" },
+    stat: { flexDirection: "row", alignItems: "baseline", gap: 6 },
+    statValue: { color: colors.lime, fontSize: 18, lineHeight: 23, fontWeight: "900", minWidth: 16, textAlign: "right" },
+    statCode: { color: colors.ink, fontSize: 14, fontWeight: "800" },
+    statTop: { color: colors.lime, ...glow(colors.lime) },
+    empty: { color: colors.muted, fontSize: 12, lineHeight: 18, textAlign: "center", marginTop: 14 },
+    season: { flexDirection: "row", marginTop: 8 },
+    seasonItem: { flex: 1, alignItems: "center" },
+    seasonValue: { color: colors.primary, fontSize: 20, lineHeight: 23, fontWeight: "900" },
+    seasonLabel: { color: colors.muted, fontSize: 10, fontWeight: "800" },
+  }),
+);

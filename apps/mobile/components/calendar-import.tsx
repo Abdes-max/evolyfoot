@@ -5,6 +5,7 @@ import { File } from "expo-file-system";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 interface Candidate {
   key: string;
@@ -161,30 +162,32 @@ export function CalendarImport({ teamName, gameFormat, formationId, existing, on
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { marginTop: 12 },
-  pick: {
-    minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderStyle: "dashed",
-  },
-  pickText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
-  message: { color: colors.ink, fontSize: 12, marginTop: 8 },
-  review: { marginTop: 10, padding: 12, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
-  hint: { color: colors.muted, fontSize: 11, lineHeight: 16 },
-  row: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.line, marginTop: 6 },
-  box: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: colors.line, alignItems: "center", justifyContent: "center" },
-  boxChecked: { borderColor: colors.primary, backgroundColor: colors.primary },
-  check: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
-  rowText: { flex: 1 },
-  opponent: { color: colors.ink, fontSize: 13, fontWeight: "800" },
-  primary: { minHeight: 46, marginTop: 12, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
-  primaryText: { color: colors.primaryInk, fontSize: 13, fontWeight: "800" },
-  disabled: { opacity: 0.5 },
-  cancel: { minHeight: 40, alignItems: "center", justifyContent: "center" },
-  cancelText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    wrap: { marginTop: 12 },
+    pick: {
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderStyle: "dashed",
+    },
+    pickText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
+    message: { color: colors.ink, fontSize: 12, marginTop: 8 },
+    review: { marginTop: 10, padding: 12, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+    hint: { color: colors.muted, fontSize: 11, lineHeight: 16 },
+    row: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.line, marginTop: 6 },
+    box: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: colors.line, alignItems: "center", justifyContent: "center" },
+    boxChecked: { borderColor: colors.primary, backgroundColor: colors.primary },
+    check: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
+    rowText: { flex: 1 },
+    opponent: { color: colors.ink, fontSize: 13, fontWeight: "800" },
+    primary: { minHeight: 46, marginTop: 12, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    primaryText: { color: colors.primaryInk, fontSize: 13, fontWeight: "800" },
+    disabled: { opacity: 0.5 },
+    cancel: { minHeight: 40, alignItems: "center", justifyContent: "center" },
+    cancelText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
+  }),
+);

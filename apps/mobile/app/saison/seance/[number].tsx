@@ -23,6 +23,7 @@ import { DateTimeField } from "../../../components/date-time-field";
 import { PlaceInput } from "../../../components/place-input";
 import { TacticalPlayer } from "../../../components/tactical-player";
 import { useAuth } from "../../../lib/auth-context";
+import { themedStyles } from "../../../lib/themed-styles";
 
 // Durée écoulée depuis l’ouverture de l’écran (indicateur MVP), rien si elle n’a pas démarré.
 function preparationSeconds(start: number | null): { preparationSeconds?: number } {
@@ -261,38 +262,40 @@ export default function ProgramSessionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  recurring: { gap: 4, padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
-  recurringWhen: { color: colors.ink, fontSize: 15, fontWeight: "800" },
-  recurringHint: { color: colors.muted, fontSize: 12 },
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48 },
-  back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 16 },
-  card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12, gap: 6 },
-  cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink },
-  label: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 0.6, marginTop: 6 },
-  body: { fontSize: 13, lineHeight: 19, color: colors.ink },
-  muted: { fontSize: 11, lineHeight: 16, color: colors.muted },
-  error: { fontSize: 12, fontWeight: "700", color: colors.danger },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  action: { minHeight: 44, minWidth: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
-  actionText: { fontSize: 12, fontWeight: "800", color: colors.ink },
-  primary: { minHeight: 52, marginTop: 10, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
-  primaryText: { fontSize: 15, fontWeight: "800", color: colors.primaryInk },
-  disabled: { opacity: 0.5 },
-  categoryTag: {
-    alignSelf: "flex-start",
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: "800",
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  picker: { maxHeight: 260, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm, backgroundColor: colors.paper },
-  pickerRow: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    recurring: { gap: 4, padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
+    recurringWhen: { color: colors.ink, fontSize: 15, fontWeight: "800" },
+    recurringHint: { color: colors.muted, fontSize: 12 },
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48 },
+    back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 16 },
+    card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12, gap: 6 },
+    cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink },
+    label: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 0.6, marginTop: 6 },
+    body: { fontSize: 13, lineHeight: 19, color: colors.ink },
+    muted: { fontSize: 11, lineHeight: 16, color: colors.muted },
+    error: { fontSize: 12, fontWeight: "700", color: colors.danger },
+    actions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    action: { minHeight: 44, minWidth: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
+    actionText: { fontSize: 12, fontWeight: "800", color: colors.ink },
+    primary: { minHeight: 52, marginTop: 10, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    primaryText: { fontSize: 15, fontWeight: "800", color: colors.primaryInk },
+    disabled: { opacity: 0.5 },
+    categoryTag: {
+      alignSelf: "flex-start",
+      color: colors.primary,
+      fontSize: 11,
+      fontWeight: "800",
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: radii.pill,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    picker: { maxHeight: 260, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm, backgroundColor: colors.paper },
+    pickerRow: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
+  }),
+);

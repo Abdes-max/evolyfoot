@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { sharePdf, statsHtml } from "../lib/pdf-export";
+import { themedStyles } from "../lib/themed-styles";
 
 function ActivityBars({ stats }: { stats: TeamStats }) {
   const data = [
@@ -120,27 +121,29 @@ export default function StatistiquesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48 },
-  back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 20 },
-  card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12 },
-  cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink, marginBottom: 10 },
-  muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 6 },
-  error: { fontSize: 12, fontWeight: "700", color: colors.danger },
-  barRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  barLabel: { width: 62, fontSize: 11, fontWeight: "700", color: colors.muted },
-  barTrack: { flex: 1, height: 10, borderRadius: 5, backgroundColor: colors.line, overflow: "hidden" },
-  barFill: { height: 10, borderRadius: 5, backgroundColor: colors.primary },
-  barValue: { width: 28, textAlign: "right", fontSize: 12, fontWeight: "800", color: colors.ink },
-  rate: { fontSize: 30, fontWeight: "800", color: colors.ink },
-  split: { flexDirection: "row", height: 10, borderRadius: 5, overflow: "hidden", marginTop: 8, backgroundColor: colors.line },
-  present: { backgroundColor: colors.primary },
-  absent: { backgroundColor: colors.danger },
-  pdf: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primary },
-  pdfText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
-  disabled: { opacity: 0.5 },
-  reportLine: { fontSize: 12, lineHeight: 18, color: colors.ink, marginBottom: 4 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48 },
+    back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 20 },
+    card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12 },
+    cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink, marginBottom: 10 },
+    muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 6 },
+    error: { fontSize: 12, fontWeight: "700", color: colors.danger },
+    barRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+    barLabel: { width: 62, fontSize: 11, fontWeight: "700", color: colors.muted },
+    barTrack: { flex: 1, height: 10, borderRadius: 5, backgroundColor: colors.line, overflow: "hidden" },
+    barFill: { height: 10, borderRadius: 5, backgroundColor: colors.primary },
+    barValue: { width: 28, textAlign: "right", fontSize: 12, fontWeight: "800", color: colors.ink },
+    rate: { fontSize: 30, fontWeight: "800", color: colors.ink },
+    split: { flexDirection: "row", height: 10, borderRadius: 5, overflow: "hidden", marginTop: 8, backgroundColor: colors.line },
+    present: { backgroundColor: colors.primary },
+    absent: { backgroundColor: colors.danger },
+    pdf: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primary },
+    pdfText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+    disabled: { opacity: 0.5 },
+    reportLine: { fontSize: 12, lineHeight: 18, color: colors.ink, marginBottom: 4 },
+  }),
+);

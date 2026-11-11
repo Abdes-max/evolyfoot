@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AccessibilityInfo, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Circle, G, Line, Rect, Text as SvgText } from "react-native-svg";
 import { DiagramTargetShape } from "./diagram-target";
+import { themedStyles } from "../lib/themed-styles";
 
 // Portage de la lecture animée du web (apps/web/src/app/tactical-player.tsx) : mêmes étapes
 // (buildDiagramAnimation), même rythme et mêmes couleurs que le schéma fixe.
@@ -211,25 +212,27 @@ export function TacticalPlayer({ exercise, seed, label = "Schéma tactique anim�
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: { marginBottom: 12 },
-  frame: { width: "100%", borderRadius: radii.sm, overflow: "hidden" },
-  progress: { flexDirection: "row", gap: 5, marginTop: 8 },
-  track: { flex: 1, height: 3, borderRadius: 2, overflow: "hidden", backgroundColor: colors.line },
-  fill: { height: "100%", backgroundColor: colors.primary },
-  caption: { minHeight: 22, marginTop: 8, color: colors.ink, fontSize: 14, fontWeight: "700", textAlign: "center" },
-  controls: { flexDirection: "row", justifyContent: "center", gap: 10, marginTop: 6 },
-  control: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-  },
-  controlText: { fontSize: 16, fontWeight: "800", color: colors.ink },
-  play: { width: 52, height: 52, borderRadius: 26, borderColor: colors.primary, backgroundColor: colors.primary },
-  playText: { color: colors.primaryInk },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    wrapper: { marginBottom: 12 },
+    frame: { width: "100%", borderRadius: radii.sm, overflow: "hidden" },
+    progress: { flexDirection: "row", gap: 5, marginTop: 8 },
+    track: { flex: 1, height: 3, borderRadius: 2, overflow: "hidden", backgroundColor: colors.line },
+    fill: { height: "100%", backgroundColor: colors.primary },
+    caption: { minHeight: 22, marginTop: 8, color: colors.ink, fontSize: 14, fontWeight: "700", textAlign: "center" },
+    controls: { flexDirection: "row", justifyContent: "center", gap: 10, marginTop: 6 },
+    control: {
+      width: 44,
+      height: 44,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+    },
+    controlText: { fontSize: 16, fontWeight: "800", color: colors.ink },
+    play: { width: 52, height: 52, borderRadius: 26, borderColor: colors.primary, backgroundColor: colors.primary },
+    playText: { color: colors.primaryInk },
+  }),
+);

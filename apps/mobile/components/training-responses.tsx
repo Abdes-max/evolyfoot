@@ -2,6 +2,7 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { attendanceStatusLabels, attendanceStatusOf, summarizeTrainingResponses, type AttendanceEntry, type ResponsePlayer } from "@evolyfoot/domain";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { themedStyles } from "../lib/themed-styles";
 
 type Tab = "present" | "absent" | "pending";
 
@@ -86,35 +87,37 @@ export function TrainingResponses({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { gap: spacing.sm, marginVertical: spacing.sm },
-  scheduled: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginVertical: spacing.sm },
-  badge: {
-    overflow: "hidden",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: radii.pill,
-    backgroundColor: colors.paper,
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  hint: { flexShrink: 1, color: colors.muted, fontSize: 12.5 },
-  counts: { flexDirection: "row", gap: spacing.sm },
-  count: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 10,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.paper,
-  },
-  countActive: { borderColor: colors.primary },
-  countValue: { fontSize: 22, fontWeight: "900" },
-  countLabel: { color: colors.muted, fontSize: 12, fontWeight: "700" },
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.sm, borderRadius: radii.md, backgroundColor: colors.paper },
-  avatar: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
-  avatarText: { fontWeight: "900" },
-  name: { color: colors.ink, fontSize: 14, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    wrap: { gap: spacing.sm, marginVertical: spacing.sm },
+    scheduled: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginVertical: spacing.sm },
+    badge: {
+      overflow: "hidden",
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      borderRadius: radii.pill,
+      backgroundColor: colors.paper,
+      color: colors.muted,
+      fontSize: 12,
+      fontWeight: "800",
+    },
+    hint: { flexShrink: 1, color: colors.muted, fontSize: 12.5 },
+    counts: { flexDirection: "row", gap: spacing.sm },
+    count: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 10,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.paper,
+    },
+    countActive: { borderColor: colors.primary },
+    countValue: { fontSize: 22, fontWeight: "900" },
+    countLabel: { color: colors.muted, fontSize: 12, fontWeight: "700" },
+    row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.sm, borderRadius: radii.md, backgroundColor: colors.paper },
+    avatar: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
+    avatarText: { fontWeight: "900" },
+    name: { color: colors.ink, fontSize: 14, fontWeight: "800" },
+  }),
+);

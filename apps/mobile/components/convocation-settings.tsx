@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "./concerned-players-picker";
+import { themedStyles } from "../lib/themed-styles";
 
 // Réglage des convocations aux entraînements (même écran que le web, convocation-settings.tsx),
 // joueurs des entraînements compris : déplié tant que l'éducateur n'a pas choisi, sinon un résumé avec « Modifier ».
@@ -128,38 +129,40 @@ export function ConvocationSettings() {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    gap: spacing.sm,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.surface,
-  },
-  summary: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-  },
-  label: { color: colors.muted, fontSize: 11, fontWeight: "900", letterSpacing: 0.6 },
-  summaryText: { color: colors.ink, fontSize: 14, fontWeight: "800", marginTop: 2 },
-  link: { color: colors.primary, fontSize: 14, fontWeight: "800" },
-  title: { color: colors.ink, fontSize: 16, fontWeight: "900" },
-  hint: { color: colors.muted, fontSize: 12.5 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
-  option: { gap: 2, padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
-  selected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  chipText: { color: colors.ink, fontSize: 13.5, fontWeight: "800" },
-  save: { alignItems: "center", paddingVertical: 12, borderRadius: radii.md, backgroundColor: colors.primary },
-  saveText: { color: colors.primaryInk, fontSize: 15, fontWeight: "900" },
-  error: { color: "#ff6b6b", fontSize: 13 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    card: {
+      gap: spacing.sm,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      backgroundColor: colors.surface,
+    },
+    summary: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+    },
+    label: { color: colors.muted, fontSize: 11, fontWeight: "900", letterSpacing: 0.6 },
+    summaryText: { color: colors.ink, fontSize: 14, fontWeight: "800", marginTop: 2 },
+    link: { color: colors.primary, fontSize: 14, fontWeight: "800" },
+    title: { color: colors.ink, fontSize: 16, fontWeight: "900" },
+    hint: { color: colors.muted, fontSize: 12.5 },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    chip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
+    option: { gap: 2, padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
+    selected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+    chipText: { color: colors.ink, fontSize: 13.5, fontWeight: "800" },
+    save: { alignItems: "center", paddingVertical: 12, borderRadius: radii.md, backgroundColor: colors.primary },
+    saveText: { color: colors.primaryInk, fontSize: 15, fontWeight: "900" },
+    error: { color: "#ff6b6b", fontSize: 13 },
+  }),
+);

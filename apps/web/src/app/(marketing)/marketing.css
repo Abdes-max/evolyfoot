@@ -754,3 +754,33 @@
     justify-content: center;
   }
 }
+
+/* Thème clair du site vitrine. */
+:root[data-theme="light"] .marketing-page {
+  --m-ink: #0f1b2a;
+  --m-muted: #566277;
+  --m-bg: #f3f6fa;
+  --m-bg-soft: #eaf0f6;
+  --m-surface: #ffffff;
+  --m-line: #d6dee9;
+  --m-accent: #0b86b8;
+  --m-accent-dark: #086a93;
+  --m-accent-ink: #ffffff;
+  --m-accent-soft: rgba(11, 134, 184, 0.1);
+}
+
+:root[data-theme="light"] .m-header {
+  background: rgba(243, 246, 250, 0.86);
+}
+
+/* Thème clair : le vert fluo n'est pas lisible sur fond clair, les cartes flottantes deviennent blanches. */
+:root[data-theme="light"] .marketing-page {
+  --m-volt: #4d7c0f;
+}
+
+:root[data-theme="light"] .m-float,
+:root[data-theme="light"] .m-hero-card {
+  background: var(--m-surface);
+  border-color: var(--m-line);
+  color: var(--m-ink);
+}

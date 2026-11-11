@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 export default function AccountScreen() {
   const { deleteAccount, educator } = useAuth();
@@ -48,17 +49,27 @@ export default function AccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingTop: 64 },
-  title: { fontSize: 30, fontWeight: "800", color: colors.ink },
-  body: { fontSize: 14, lineHeight: 21, color: colors.muted, marginTop: 10, marginBottom: 18 },
-  label: { fontSize: 12, fontWeight: "800", color: colors.ink, marginBottom: 8 },
-  input: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 14, color: colors.ink },
-  error: { color: colors.danger, fontSize: 13, marginTop: 12 },
-  delete: { minHeight: 48, marginTop: 24, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.danger },
-  disabled: { opacity: 0.5 },
-  deleteText: { color: colors.danger, fontSize: 14, fontWeight: "800" },
-  cancel: { minHeight: 44, marginTop: 8, alignItems: "center", justifyContent: "center" },
-  cancelText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingTop: 64 },
+    title: { fontSize: 30, fontWeight: "800", color: colors.ink },
+    body: { fontSize: 14, lineHeight: 21, color: colors.muted, marginTop: 10, marginBottom: 18 },
+    label: { fontSize: 12, fontWeight: "800", color: colors.ink, marginBottom: 8 },
+    input: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 14, color: colors.ink },
+    error: { color: colors.danger, fontSize: 13, marginTop: 12 },
+    delete: {
+      minHeight: 48,
+      marginTop: 24,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.danger,
+    },
+    disabled: { opacity: 0.5 },
+    deleteText: { color: colors.danger, fontSize: 14, fontWeight: "800" },
+    cancel: { minHeight: 44, marginTop: 8, alignItems: "center", justifyContent: "center" },
+    cancelText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+  }),
+);

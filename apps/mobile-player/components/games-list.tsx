@@ -2,6 +2,7 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import type { PlayerCompetitionGame } from "@evolyfoot/domain";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { themedStyles } from "../lib/themed-styles";
 
 // Matchs, tournois et plateaux du joueur : adversaire, score et ce qu'il a fait. Repliée par défaut.
 export function GamesList({ games }: { games: readonly PlayerCompetitionGame[] }) {
@@ -34,14 +35,16 @@ export function GamesList({ games }: { games: readonly PlayerCompetitionGame[] }
   );
 }
 
-const styles = StyleSheet.create({
-  card: { marginTop: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, overflow: "hidden" },
-  head: { flexDirection: "row", alignItems: "center", padding: spacing.md },
-  title: { color: colors.ink, fontSize: 15, fontWeight: "800" },
-  summary: { color: colors.muted, fontSize: 12, marginTop: 2 },
-  chevron: { color: colors.muted, fontSize: 18, paddingLeft: spacing.sm },
-  body: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },
-  row: { gap: 2, paddingTop: 8 },
-  rowTitle: { color: colors.ink, fontSize: 13, fontWeight: "800" },
-  rowDetail: { color: colors.muted, fontSize: 12.5 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    card: { marginTop: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, overflow: "hidden" },
+    head: { flexDirection: "row", alignItems: "center", padding: spacing.md },
+    title: { color: colors.ink, fontSize: 15, fontWeight: "800" },
+    summary: { color: colors.muted, fontSize: 12, marginTop: 2 },
+    chevron: { color: colors.muted, fontSize: 18, paddingLeft: spacing.sm },
+    body: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },
+    row: { gap: 2, paddingTop: 8 },
+    rowTitle: { color: colors.ink, fontSize: 13, fontWeight: "800" },
+    rowDetail: { color: colors.muted, fontSize: 12.5 },
+  }),
+);

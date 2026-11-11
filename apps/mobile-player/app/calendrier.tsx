@@ -9,6 +9,7 @@ import { WaitingApproval } from "../components/waiting-approval";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { buildAgenda, useDashboard, type AgendaEvent } from "../lib/dashboard";
+import { themedStyles } from "../lib/themed-styles";
 
 const absenceReasons = attendanceStatuses.filter((status) => status !== "present");
 
@@ -146,19 +147,21 @@ export default function CalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  note: { color: colors.muted, fontSize: 14, lineHeight: 20 },
-  weekTitle: { color: colors.muted, fontSize: 14, fontWeight: "800", marginTop: spacing.sm, marginBottom: spacing.sm },
-  meta: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 3 },
-  choices: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
-  filters: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md },
-  filter: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
-  filterActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  filterText: { color: colors.muted, fontSize: 13, fontWeight: "800" },
-  filterTextActive: { color: colors.primaryInk },
-  choice: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
-  choicePresent: { backgroundColor: colors.primary, borderColor: colors.primary },
-  choiceAbsent: { backgroundColor: colors.dangerSoft, borderColor: colors.danger },
-  choiceText: { color: colors.ink, fontSize: 13, fontWeight: "800" },
-  choiceTextActive: { color: colors.primaryInk },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    note: { color: colors.muted, fontSize: 14, lineHeight: 20 },
+    weekTitle: { color: colors.muted, fontSize: 14, fontWeight: "800", marginTop: spacing.sm, marginBottom: spacing.sm },
+    meta: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 3 },
+    choices: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+    filters: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md },
+    filter: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+    filterActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    filterText: { color: colors.muted, fontSize: 13, fontWeight: "800" },
+    filterTextActive: { color: colors.primaryInk },
+    choice: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
+    choicePresent: { backgroundColor: colors.primary, borderColor: colors.primary },
+    choiceAbsent: { backgroundColor: colors.dangerSoft, borderColor: colors.danger },
+    choiceText: { color: colors.ink, fontSize: 13, fontWeight: "800" },
+    choiceTextActive: { color: colors.primaryInk },
+  }),
+);

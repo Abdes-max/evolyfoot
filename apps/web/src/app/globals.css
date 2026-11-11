@@ -1957,3 +1957,96 @@ button.week-calendar-badge:focus-visible {
   font-size: 11px;
   font-weight: 800;
 }
+
+/* Thème clair : mêmes variables que le thème sombre, avec des teintes d'encre sur fond clair. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ink: #0f1b2a;
+  --muted: #566277;
+  --muted-2: #77849a;
+  --paper: #f3f6fa;
+  --surface: #ffffff;
+  --surface-2: #eaf0f6;
+  --line: #d6dee9;
+  --accent: #0b86b8;
+  --accent-ink: #ffffff;
+  --accent-dark: #086a93;
+  --good: #0c8f61;
+  --good-bg: rgba(12, 143, 97, 0.12);
+  --info: #3556d6;
+  --info-bg: #e6ecff;
+  --warn: #b45309;
+  --warn-bg: #fff0dd;
+  --bad: #c0392b;
+  --bad-bg: rgba(192, 57, 43, 0.12);
+  --volt: #4d7c0f;
+}
+
+/* Bouton à bascule : pastille ronde qui glisse dans une piste, lune (sombre) ou soleil (clair). */
+.theme-toggle {
+  position: relative;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  transition: background 0.2s ease;
+}
+
+.theme-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+  transition: transform 0.2s ease;
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle-knob {
+  transform: translateX(24px);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle,
+  .theme-toggle-knob {
+    transition: none;
+  }
+}
+
+@media print {
+  .theme-toggle {
+    display: none;
+  }
+}
+
+/* Thème clair : les bandeaux d'en-tête passent en dégradé clair, les cartes sombres en cartes blanches. */
+:root[data-theme="light"] .page-header,
+:root[data-theme="light"] .diagnostic-header,
+:root[data-theme="light"] .session-header,
+:root[data-theme="light"] .metrics-header,
+:root[data-theme="light"] .observation-header,
+:root[data-theme="light"] .onboarding-intro {
+  background: linear-gradient(155deg, #d9ebf6, #f3f6fa);
+  color: var(--ink);
+}
+
+:root[data-theme="light"] .focus-card,
+:root[data-theme="light"] .roster-team-card,
+:root[data-theme="light"] .photo-choice-option {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}

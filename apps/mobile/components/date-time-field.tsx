@@ -3,6 +3,7 @@ import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/d
 import { createElement, useState } from "react";
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CalendarIcon, ClockIcon } from "./icons";
+import { themedStyles } from "../lib/themed-styles";
 
 type Mode = "date" | "datetime";
 
@@ -136,25 +137,27 @@ export function DateTimeField({
   );
 }
 
-const styles = StyleSheet.create({
-  field: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 14,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-  },
-  value: { flex: 1, color: colors.ink, fontSize: 15, fontWeight: "700" },
-  placeholder: { color: colors.muted, fontWeight: "500" },
-  overlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(3,6,10,0.7)" },
-  sheet: { padding: spacing.lg, paddingBottom: spacing.xl, backgroundColor: colors.surface, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg },
-  title: { color: colors.ink, fontSize: 17, fontWeight: "900", marginBottom: spacing.sm },
-  actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
-  cancel: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
-  cancelText: { color: colors.ink, fontSize: 14, fontWeight: "800" },
-  confirm: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
-  confirmText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    field: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      padding: 14,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+    },
+    value: { flex: 1, color: colors.ink, fontSize: 15, fontWeight: "700" },
+    placeholder: { color: colors.muted, fontWeight: "500" },
+    overlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(3,6,10,0.7)" },
+    sheet: { padding: spacing.lg, paddingBottom: spacing.xl, backgroundColor: colors.surface, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg },
+    title: { color: colors.ink, fontSize: 17, fontWeight: "900", marginBottom: spacing.sm },
+    actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+    cancel: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
+    cancelText: { color: colors.ink, fontSize: 14, fontWeight: "800" },
+    confirm: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    confirmText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },
+  }),
+);

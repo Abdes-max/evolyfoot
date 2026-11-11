@@ -4,6 +4,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../lib/auth-context";
+import { themedStyles } from "../../lib/themed-styles";
 
 interface MessageNotification {
   kind: string;
@@ -91,37 +92,39 @@ export default function MessagesListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48, gap: 10 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 24, fontWeight: "800", color: colors.ink, marginBottom: spacing.sm },
-  muted: { fontSize: 12, lineHeight: 18, color: colors.muted },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 12,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.primaryDark,
-    backgroundColor: colors.surface,
-  },
-  name: { color: colors.ink, fontSize: 15, fontWeight: "800" },
-  meta: { color: colors.muted, fontSize: 12, marginTop: 2 },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.paper,
-  },
-  avatarText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
-  number: { color: "rgba(255,255,255,0.28)", fontSize: 22, fontWeight: "900", fontStyle: "italic" },
-  chevron: { color: colors.muted, fontSize: 20, fontWeight: "800" },
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.pill, backgroundColor: colors.primary },
-  badgeText: { color: colors.primaryInk, fontSize: 10.5, fontWeight: "900" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48, gap: 10 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    title: { fontSize: 24, fontWeight: "800", color: colors.ink, marginBottom: spacing.sm },
+    muted: { fontSize: 12, lineHeight: 18, color: colors.muted },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      padding: 12,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      backgroundColor: colors.surface,
+    },
+    name: { color: colors.ink, fontSize: 15, fontWeight: "800" },
+    meta: { color: colors.muted, fontSize: 12, marginTop: 2 },
+    avatar: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.paper,
+    },
+    avatarText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
+    number: { color: "rgba(255,255,255,0.28)", fontSize: 22, fontWeight: "900", fontStyle: "italic" },
+    chevron: { color: colors.muted, fontSize: 20, fontWeight: "800" },
+    badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.pill, backgroundColor: colors.primary },
+    badgeText: { color: colors.primaryInk, fontSize: 10.5, fontWeight: "900" },
+  }),
+);

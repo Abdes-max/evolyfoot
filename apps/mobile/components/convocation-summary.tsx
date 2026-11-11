@@ -1,6 +1,7 @@
 import { colors, spacing } from "@evolyfoot/design-tokens";
 import { concernedPlayers, summarizeTrainingResponses, type AttendanceEntry, type PlayerSelection } from "@evolyfoot/domain";
 import { StyleSheet, Text, View } from "react-native";
+import { themedStyles } from "../lib/themed-styles";
 
 // Convocation d'un événement sur sa carte (match, tournoi, plateau) : envoyée ou non, puis présents, absents
 // et sans réponse parmi les joueurs concernés.
@@ -31,10 +32,12 @@ export function ConvocationSummary({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { marginTop: 8, gap: 2 },
-  sent: { color: colors.lime, fontSize: 12, fontWeight: "800" },
-  pending: { color: colors.muted, fontSize: 12, fontWeight: "800", marginTop: 8 },
-  counts: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  count: { fontSize: 12, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    wrap: { marginTop: 8, gap: 2 },
+    sent: { color: colors.lime, fontSize: 12, fontWeight: "800" },
+    pending: { color: colors.muted, fontSize: 12, fontWeight: "800", marginTop: 8 },
+    counts: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
+    count: { fontSize: 12, fontWeight: "800" },
+  }),
+);

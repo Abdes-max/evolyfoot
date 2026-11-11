@@ -10,6 +10,7 @@ import { ConvocationSummary } from "./convocation-summary";
 import { CalendarIcon, PinIcon } from "./icons";
 import { DateTimeField } from "./date-time-field";
 import { PlaceInput } from "./place-input";
+import { themedStyles } from "../lib/themed-styles";
 
 async function readError(response: Response | null): Promise<string> {
   const body = response ? await response.json().catch(() => ({})) : {};
@@ -174,51 +175,53 @@ export function CompetitionsPanel({ kind, scope }: { kind: CompetitionKind; scop
   );
 }
 
-const styles = StyleSheet.create({
-  section: { marginTop: 30 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  title: { fontSize: 18, fontWeight: "800", color: colors.ink },
-  addButton: {
-    minHeight: 36,
-    paddingHorizontal: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: radii.sm,
-  },
-  addButtonText: { color: colors.primary, fontSize: 11, fontWeight: "800" },
-  form: { marginTop: 12, padding: spacing.md, gap: 10, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.surface },
-  input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
-  fieldError: { color: colors.danger, fontSize: 10 },
-  actions: { flexDirection: "row", gap: 10 },
-  submitButton: {
-    minHeight: 40,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    borderRadius: radii.sm,
-  },
-  submitButtonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
-  cancelButton: {
-    minHeight: 40,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radii.sm,
-  },
-  cancelButtonText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
-  empty: { color: colors.muted, fontSize: 11, marginTop: 12 },
-  card: { marginTop: 12, padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md },
-  statusBadge: { alignSelf: "flex-start", paddingVertical: 5, paddingHorizontal: 10, borderRadius: radii.pill, backgroundColor: colors.primarySoft },
-  statusBadgePast: { backgroundColor: "rgba(52,211,153,.14)" },
-  statusText: { fontSize: 9, fontWeight: "800", color: colors.primary, textTransform: "uppercase" },
-  statusTextPast: { color: "#34d399" },
-  cardTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginTop: 6 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
-  cardBody: { color: colors.muted, fontSize: 11.5, marginTop: 2 },
-  cardLink: { color: colors.primary, fontSize: 11.5, fontWeight: "800", marginTop: 8 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    section: { marginTop: 30 },
+    header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    title: { fontSize: 18, fontWeight: "800", color: colors.ink },
+    addButton: {
+      minHeight: 36,
+      paddingHorizontal: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: radii.sm,
+    },
+    addButtonText: { color: colors.primary, fontSize: 11, fontWeight: "800" },
+    form: { marginTop: 12, padding: spacing.md, gap: 10, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.surface },
+    input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
+    fieldError: { color: colors.danger, fontSize: 10 },
+    actions: { flexDirection: "row", gap: 10 },
+    submitButton: {
+      minHeight: 40,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderRadius: radii.sm,
+    },
+    submitButtonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
+    cancelButton: {
+      minHeight: 40,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.line,
+      borderRadius: radii.sm,
+    },
+    cancelButtonText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
+    empty: { color: colors.muted, fontSize: 11, marginTop: 12 },
+    card: { marginTop: 12, padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md },
+    statusBadge: { alignSelf: "flex-start", paddingVertical: 5, paddingHorizontal: 10, borderRadius: radii.pill, backgroundColor: colors.primarySoft },
+    statusBadgePast: { backgroundColor: "rgba(52,211,153,.14)" },
+    statusText: { fontSize: 9, fontWeight: "800", color: colors.primary, textTransform: "uppercase" },
+    statusTextPast: { color: "#34d399" },
+    cardTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginTop: 6 },
+    metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+    cardBody: { color: colors.muted, fontSize: 11.5, marginTop: 2 },
+    cardLink: { color: colors.primary, fontSize: 11.5, fontWeight: "800", marginTop: 8 },
+  }),
+);

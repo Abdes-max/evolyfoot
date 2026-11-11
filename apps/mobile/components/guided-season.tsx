@@ -18,6 +18,7 @@ import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { TrainingScheduleBlock, TrainingScheduleFields } from "./training-schedule";
+import { themedStyles } from "../lib/themed-styles";
 
 interface Program {
   priorities: DevelopmentTheme[];
@@ -311,37 +312,39 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
   );
 }
 
-const styles = StyleSheet.create({
-  card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12 },
-  cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink, marginBottom: 6 },
-  muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 3 },
-  label: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 0.8, marginTop: 14, marginBottom: 6 },
-  link: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 8 },
-  error: { fontSize: 11, fontWeight: "700", color: colors.danger, marginTop: 8 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
-  chip: { minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, borderWidth: 2, borderColor: colors.line },
-  chipText: { fontSize: 12, fontWeight: "800", color: colors.ink },
-  chipTextActive: { color: colors.paper },
-  primary: { minHeight: 48, marginTop: 14, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
-  primaryText: { fontSize: 14, fontWeight: "800", color: colors.primaryInk },
-  disabled: { opacity: 0.5 },
-  slotCard: { padding: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, borderLeftWidth: 6, marginBottom: 8 },
-  slotTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginTop: 2 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
-  week: { width: 52, padding: 4, borderRadius: 6, borderWidth: 1, borderColor: colors.line },
-  weekCurrent: { borderColor: colors.primary, borderWidth: 2 },
-  weekPast: { opacity: 0.6 },
-  weekShown: { backgroundColor: colors.paper },
-  weekLabel: { fontSize: 9, fontWeight: "800", color: colors.muted },
-  weekSlots: { flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 3 },
-  dot: { width: 18, height: 14, borderRadius: 3, alignItems: "center", justifyContent: "center" },
-  check: { fontSize: 9, fontWeight: "900", color: "#0b1018", lineHeight: 11 },
-  weekNav: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
-  weekNavLabel: { flex: 1, textAlign: "center", marginTop: 0, marginBottom: 0 },
-  navButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 22, borderWidth: 1, borderColor: colors.line },
-  navText: { fontSize: 20, fontWeight: "800", color: colors.ink },
-  backToWeek: { textAlign: "center", marginTop: 4, marginBottom: 8 },
-  legend: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
-  legendItem: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
-  legendText: { fontSize: 10, fontWeight: "800", color: "#0b1018" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 12 },
+    cardTitle: { fontSize: 15, fontWeight: "800", color: colors.ink, marginBottom: 6 },
+    muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 3 },
+    label: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 0.8, marginTop: 14, marginBottom: 6 },
+    link: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 8 },
+    error: { fontSize: 11, fontWeight: "700", color: colors.danger, marginTop: 8 },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
+    chip: { minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: 999, borderWidth: 2, borderColor: colors.line },
+    chipText: { fontSize: 12, fontWeight: "800", color: colors.ink },
+    chipTextActive: { color: colors.paper },
+    primary: { minHeight: 48, marginTop: 14, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    primaryText: { fontSize: 14, fontWeight: "800", color: colors.primaryInk },
+    disabled: { opacity: 0.5 },
+    slotCard: { padding: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, borderLeftWidth: 6, marginBottom: 8 },
+    slotTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginTop: 2 },
+    grid: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
+    week: { width: 52, padding: 4, borderRadius: 6, borderWidth: 1, borderColor: colors.line },
+    weekCurrent: { borderColor: colors.primary, borderWidth: 2 },
+    weekPast: { opacity: 0.6 },
+    weekShown: { backgroundColor: colors.paper },
+    weekLabel: { fontSize: 9, fontWeight: "800", color: colors.muted },
+    weekSlots: { flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 3 },
+    dot: { width: 18, height: 14, borderRadius: 3, alignItems: "center", justifyContent: "center" },
+    check: { fontSize: 9, fontWeight: "900", color: "#0b1018", lineHeight: 11 },
+    weekNav: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
+    weekNavLabel: { flex: 1, textAlign: "center", marginTop: 0, marginBottom: 0 },
+    navButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 22, borderWidth: 1, borderColor: colors.line },
+    navText: { fontSize: 20, fontWeight: "800", color: colors.ink },
+    backToWeek: { textAlign: "center", marginTop: 4, marginBottom: 8 },
+    legend: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
+    legendItem: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
+    legendText: { fontSize: 10, fontWeight: "800", color: "#0b1018" },
+  }),
+);

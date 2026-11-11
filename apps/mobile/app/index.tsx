@@ -1,4 +1,4 @@
-import { colors, radii, spacing } from "@evolyfoot/design-tokens";
+import { colors, getTheme, radii, spacing } from "@evolyfoot/design-tokens";
 import {
   buildDevelopmentPlan,
   buildPrioritizedSeason,
@@ -22,8 +22,10 @@ import { useCallback, useState } from "react";
 import { CardGlow } from "../components/card-glow";
 import { CalendarIcon, ClockIcon, PinIcon } from "../components/icons";
 import { TeamCrest } from "../components/team-crest";
+import { ThemeToggle } from "../components/theme-toggle";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
 import { useUnread } from "../lib/push";
+import { themedStyles } from "../lib/themed-styles";
 
 function initials(displayName: string): string {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
@@ -165,9 +167,12 @@ export default function HomeScreen() {
               <Text style={styles.subtitle}>{team ? `${team.name} · ${team.ageGroup}` : "Pas encore d’équipe"}</Text>
             </View>
           </View>
-          <TouchableOpacity accessibilityLabel="Mon compte" onPress={confirmLogout} style={styles.avatar}>
-            <Text style={styles.avatarText}>{educator ? initials(educator.displayName) : "?"}</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <ThemeToggle />
+            <TouchableOpacity accessibilityLabel="Mon compte" onPress={confirmLogout} style={styles.avatar}>
+              <Text style={styles.avatarText}>{educator ? initials(educator.displayName) : "?"}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Text style={styles.sectionTitle}>Prochaine séance</Text>
@@ -176,7 +181,7 @@ export default function HomeScreen() {
           {upcoming?.meetingAt ? (
             <>
               <View style={styles.metaRow}>
-                <ClockIcon color={primaryMuted} size={14} />
+                <ClockIcon color={primaryMutedColor()} size={14} />
                 <Text style={[styles.eyebrow, styles.primaryChip]}>{meetingLabel(upcoming.meetingAt)}</Text>
               </View>
               <Text style={[styles.cardTitle, styles.primaryInk]}>{upcoming.title}</Text>
@@ -329,132 +334,142 @@ export default function HomeScreen() {
   );
 }
 
-const primaryMuted = "rgba(6, 35, 48, 0.75)";
+const primaryMutedColor = () => (getTheme() === "light" ? "rgba(255, 255, 255, 0.88)" : "rgba(6, 35, 48, 0.75)");
 
-const styles = StyleSheet.create({
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  unreadBadge: { minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: "#ef4444" },
-  unreadBadgeText: { fontSize: 11, fontWeight: "800", color: "#ffffff" },
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xl },
-  eyebrow: { fontSize: 10, letterSpacing: 1.2, fontWeight: "800", color: colors.muted },
-  title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 6 },
-  subtitle: { fontSize: 13, color: colors.muted, marginTop: 4 },
-  avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: colors.primary, fontSize: 11, fontWeight: "800" },
-  versus: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, marginVertical: spacing.sm },
-  versusTeam: { flex: 1, color: colors.ink, fontSize: 15, fontWeight: "800", textAlign: "center" },
-  versusMark: { color: colors.muted, fontSize: 22, fontWeight: "900", fontStyle: "italic" },
-  // Mêmes fonds que la vue d'ensemble du web (voir CardGlow) : carte « thème » en dégradé bleu nuit
-  // bordée de cyan, halo cyan sur le prochain match, bouton en dégradé.
-  focusCard: {
-    padding: spacing.lg,
-    borderRadius: 20,
-    overflow: "hidden",
-    backgroundColor: colors.primaryDark,
-    borderWidth: 1,
-    borderColor: "rgba(47, 212, 255, 0.4)",
-    shadowColor: colors.primary,
-    shadowOpacity: 0.16,
-    shadowRadius: 13,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  focusEyebrow: { fontSize: 9, letterSpacing: 1, color: colors.lime, fontWeight: "800" },
-  matchCard: { overflow: "hidden" },
-  // Prochaine séance : carte cyan au texte foncé et bouton foncé, comme .session-card.home-primary.
-  primaryCard: {
-    overflow: "hidden",
-    borderWidth: 0,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 12 },
-  },
-  primaryInk: { color: colors.primaryInk },
-  primaryMuted: { color: primaryMuted },
-  primaryChip: {
-    color: colors.primaryInk,
-    fontSize: 11,
-    letterSpacing: 0,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(6, 35, 48, 0.35)",
-    backgroundColor: "rgba(6, 35, 48, 0.12)",
-    overflow: "hidden",
-  },
-  primaryButton: { backgroundColor: colors.primaryInk },
-  primaryButtonText: { fontSize: 12, fontWeight: "800", color: "#ffffff" },
-  pageGlow: { position: "absolute", top: 0, left: 0, right: 0, height: 320 },
-  focusTitle: { fontSize: 23, lineHeight: 29, fontWeight: "800", color: colors.ink, marginTop: 24 },
-  focusBody: { fontSize: 12, lineHeight: 19, color: colors.muted, marginTop: 10 },
-  progress: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,.08)", marginTop: 24, overflow: "hidden" },
-  progressValue: { height: 6, backgroundColor: colors.primary, borderRadius: 3 },
-  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  focusMeta: { fontSize: 10, color: colors.muted, marginTop: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: "800", color: colors.ink, marginTop: 32, marginBottom: 14 },
-  sessionCard: { padding: spacing.lg, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1, borderColor: colors.line },
-  chip: {
-    fontSize: 9,
-    fontWeight: "800",
-    color: colors.primary,
-    backgroundColor: colors.primarySoft,
-    paddingVertical: 6,
-    paddingHorizontal: 9,
-    borderRadius: radii.pill,
-  },
-  cardTitle: { fontSize: 20, fontWeight: "800", color: colors.ink, marginTop: 20 },
-  cardBody: { fontSize: 12, lineHeight: 18, color: colors.muted, marginTop: 8 },
-  button: {
-    minHeight: 44,
-    marginTop: 22,
-    padding: 14,
-    backgroundColor: colors.primary,
-    borderRadius: radii.sm,
-    overflow: "hidden",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  buttonText: { fontSize: 11, fontWeight: "800", color: colors.primaryInk },
-  observationButton: {
-    minHeight: 44,
-    marginTop: 16,
-    padding: 14,
-    backgroundColor: colors.primarySoft,
-    borderColor: colors.primary,
-    borderWidth: 1,
-    borderRadius: radii.sm,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  observationText: { fontSize: 11, fontWeight: "800", color: colors.primary },
-  suggestion: {
-    flexDirection: "row",
-    gap: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    marginTop: 16,
-  },
-  suggestionContent: { flex: 1 },
-  suggestionTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginTop: 5 },
-  setupButton: {
-    minHeight: 44,
-    marginTop: 16,
-    padding: 15,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radii.sm,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  setupText: { color: colors.ink, fontSize: 11, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+    unreadBadge: {
+      minWidth: 22,
+      height: 22,
+      paddingHorizontal: 6,
+      borderRadius: 11,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#ef4444",
+    },
+    unreadBadgeText: { fontSize: 11, fontWeight: "800", color: "#ffffff" },
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48 },
+    header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xl },
+    eyebrow: { fontSize: 10, letterSpacing: 1.2, fontWeight: "800", color: colors.muted },
+    title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 6 },
+    subtitle: { fontSize: 13, color: colors.muted, marginTop: 4 },
+    avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
+    avatarText: { color: colors.primary, fontSize: 11, fontWeight: "800" },
+    versus: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, marginVertical: spacing.sm },
+    versusTeam: { flex: 1, color: colors.ink, fontSize: 15, fontWeight: "800", textAlign: "center" },
+    versusMark: { color: colors.muted, fontSize: 22, fontWeight: "900", fontStyle: "italic" },
+    // Mêmes fonds que la vue d'ensemble du web (voir CardGlow) : carte « thème » en dégradé bleu nuit
+    // bordée de cyan, halo cyan sur le prochain match, bouton en dégradé.
+    focusCard: {
+      padding: spacing.lg,
+      borderRadius: 20,
+      overflow: "hidden",
+      backgroundColor: colors.primaryDark,
+      borderWidth: 1,
+      borderColor: "rgba(47, 212, 255, 0.4)",
+      shadowColor: colors.primary,
+      shadowOpacity: 0.16,
+      shadowRadius: 13,
+      shadowOffset: { width: 0, height: 0 },
+    },
+    focusEyebrow: { fontSize: 9, letterSpacing: 1, color: colors.lime, fontWeight: "800" },
+    matchCard: { overflow: "hidden" },
+    // Prochaine séance : carte cyan au texte foncé et bouton foncé, comme .session-card.home-primary.
+    primaryCard: {
+      overflow: "hidden",
+      borderWidth: 0,
+      shadowColor: colors.primary,
+      shadowOpacity: 0.25,
+      shadowRadius: 20,
+      shadowOffset: { width: 0, height: 12 },
+    },
+    primaryInk: { color: colors.primaryInk },
+    primaryMuted: { color: primaryMutedColor() },
+    primaryChip: {
+      color: colors.primaryInk,
+      fontSize: 11,
+      letterSpacing: 0,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: getTheme() === "light" ? "rgba(255, 255, 255, 0.5)" : "rgba(6, 35, 48, 0.35)",
+      backgroundColor: getTheme() === "light" ? "rgba(255, 255, 255, 0.16)" : "rgba(6, 35, 48, 0.12)",
+      overflow: "hidden",
+    },
+    primaryButton: { backgroundColor: colors.primaryInk },
+    primaryButtonText: { fontSize: 12, fontWeight: "800", color: getTheme() === "light" ? colors.primary : "#ffffff" },
+    pageGlow: { position: "absolute", top: 0, left: 0, right: 0, height: 320 },
+    focusTitle: { fontSize: 23, lineHeight: 29, fontWeight: "800", color: colors.ink, marginTop: 24 },
+    focusBody: { fontSize: 12, lineHeight: 19, color: colors.muted, marginTop: 10 },
+    progress: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,.08)", marginTop: 24, overflow: "hidden" },
+    progressValue: { height: 6, backgroundColor: colors.primary, borderRadius: 3 },
+    row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    focusMeta: { fontSize: 10, color: colors.muted, marginTop: 10 },
+    sectionTitle: { fontSize: 18, fontWeight: "800", color: colors.ink, marginTop: 32, marginBottom: 14 },
+    sessionCard: { padding: spacing.lg, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1, borderColor: colors.line },
+    chip: {
+      fontSize: 9,
+      fontWeight: "800",
+      color: colors.primary,
+      backgroundColor: colors.primarySoft,
+      paddingVertical: 6,
+      paddingHorizontal: 9,
+      borderRadius: radii.pill,
+    },
+    cardTitle: { fontSize: 20, fontWeight: "800", color: colors.ink, marginTop: 20 },
+    cardBody: { fontSize: 12, lineHeight: 18, color: colors.muted, marginTop: 8 },
+    button: {
+      minHeight: 44,
+      marginTop: 22,
+      padding: 14,
+      backgroundColor: colors.primary,
+      borderRadius: radii.sm,
+      overflow: "hidden",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    buttonText: { fontSize: 11, fontWeight: "800", color: colors.primaryInk },
+    observationButton: {
+      minHeight: 44,
+      marginTop: 16,
+      padding: 14,
+      backgroundColor: colors.primarySoft,
+      borderColor: colors.primary,
+      borderWidth: 1,
+      borderRadius: radii.sm,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    observationText: { fontSize: 11, fontWeight: "800", color: colors.primary },
+    suggestion: {
+      flexDirection: "row",
+      gap: 12,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.line,
+      padding: spacing.md,
+      borderRadius: radii.md,
+      marginTop: 16,
+    },
+    suggestionContent: { flex: 1 },
+    suggestionTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginTop: 5 },
+    setupButton: {
+      minHeight: 44,
+      marginTop: 16,
+      padding: 15,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.line,
+      borderRadius: radii.sm,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    setupText: { color: colors.ink, fontSize: 11, fontWeight: "800" },
+  }),
+);

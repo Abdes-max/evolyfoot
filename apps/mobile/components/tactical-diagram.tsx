@@ -3,6 +3,7 @@ import type { DiagramTarget, DiagramTokenRole, TacticalDiagram } from "@evolyfoo
 import { StyleSheet, View } from "react-native";
 import Svg, { Circle, Defs, Marker, Path, Rect, Text as SvgText } from "react-native-svg";
 import { DiagramTargetShape } from "./diagram-target";
+import { themedStyles } from "../lib/themed-styles";
 
 // Mêmes couleurs que le schéma du web (apps/web/src/app/tactical-diagram.css).
 const pitch = { fill: "#152a22", stroke: "#2c463b" };
@@ -72,6 +73,8 @@ export function TacticalDiagramView({
   );
 }
 
-const styles = StyleSheet.create({
-  frame: { width: "100%", borderRadius: radii.sm, overflow: "hidden", marginBottom: 12 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    frame: { width: "100%", borderRadius: radii.sm, overflow: "hidden", marginBottom: 12 },
+  }),
+);

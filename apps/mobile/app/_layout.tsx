@@ -6,6 +6,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { CoachTabBar } from "../components/coach-tab-bar";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { usePushNotifications } from "../lib/push";
+import { ThemeProvider, useTheme } from "../lib/theme";
 
 // Lien web d’une notification → écran de l’appli Coach.
 function routeForLink(link: string): string {
@@ -77,13 +78,21 @@ function Navigation() {
   );
 }
 
+// Barre d'état claire sur le thème sombre, sombre sur le thème clair.
+function ThemedStatusBar() {
+  const { theme } = useTheme();
+  return <StatusBar style={theme === "light" ? "dark" : "light"} />;
+}
+
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <StatusBar style="light" />
-      <AuthGate>
-        <Navigation />
-      </AuthGate>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <ThemedStatusBar />
+        <AuthGate>
+          <Navigation />
+        </AuthGate>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
