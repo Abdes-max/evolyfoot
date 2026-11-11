@@ -4,6 +4,7 @@ import Link from "next/link";
 import { NotificationBell } from "./notification-bell";
 import { useEffect, useState } from "react";
 import { TeamCrest } from "./team-crest";
+import { ThemeToggle } from "./theme-toggle";
 import { addTeam, listTeams, switchTeam, teamChoiceLabel, type TeamChoice } from "./team-switch";
 
 interface Educator {
@@ -198,6 +199,7 @@ export function SidebarIdentity() {
           </div>
         </Link>
         <NotificationBell />
+        <ThemeToggle />
         <button aria-label="Se déconnecter" onClick={logout} type="button">
           Déconnexion
         </button>

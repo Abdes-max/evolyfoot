@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { openInMaps } from "../lib/open-in-maps";
+import { themedStyles } from "../lib/themed-styles";
 
 const searchDelayMs = 300;
 const minQueryLength = 3;
@@ -72,10 +73,12 @@ export function PlaceInput({ value, onChange }: { value: string; onChange: (valu
   );
 }
 
-const styles = StyleSheet.create({
-  input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink, marginTop: 8 },
-  suggestions: { marginTop: 4, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm, overflow: "hidden" },
-  suggestion: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.surface },
-  suggestionText: { fontSize: 13, color: colors.ink },
-  map: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 8 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink, marginTop: 8 },
+    suggestions: { marginTop: 4, borderWidth: 1, borderColor: colors.line, borderRadius: radii.sm, overflow: "hidden" },
+    suggestion: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.surface },
+    suggestionText: { fontSize: 13, color: colors.ink },
+    map: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 8 },
+  }),
+);

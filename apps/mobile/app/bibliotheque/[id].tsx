@@ -7,6 +7,7 @@ import { TacticalPlayer } from "../../components/tactical-player";
 import { useAuth } from "../../lib/auth-context";
 import { activityCategoryLabels } from "@evolyfoot/domain";
 import { kindLabels } from "../../lib/exercise-labels";
+import { themedStyles } from "../../lib/themed-styles";
 
 function Block({ title, text, items }: { title: string; text?: string; items?: readonly string[] }) {
   if (!text && !items?.length) {
@@ -94,32 +95,34 @@ export default function ExerciseScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48 },
-  back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 12 },
-  muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4, marginBottom: 8 },
-  error: { fontSize: 12, fontWeight: "700", color: colors.danger },
-  facts: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  fact: { flex: 1, padding: 10, backgroundColor: colors.surface, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
-  factLabel: { fontSize: 9, fontWeight: "800", color: colors.muted },
-  factValue: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 4 },
-  photo: { width: "100%", height: 220, borderRadius: radii.md, backgroundColor: colors.surface, marginBottom: 12 },
-  card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 10 },
-  categoryTag: {
-    alignSelf: "flex-start",
-    marginBottom: 8,
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: "800",
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-  },
-  cardTitle: { fontSize: 13, fontWeight: "800", color: colors.ink, marginBottom: 6 },
-  text: { fontSize: 12, lineHeight: 18, color: colors.ink },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48 },
+    back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 12 },
+    muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4, marginBottom: 8 },
+    error: { fontSize: 12, fontWeight: "700", color: colors.danger },
+    facts: { flexDirection: "row", gap: 8, marginBottom: 12 },
+    fact: { flex: 1, padding: 10, backgroundColor: colors.surface, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
+    factLabel: { fontSize: 9, fontWeight: "800", color: colors.muted },
+    factValue: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 4 },
+    photo: { width: "100%", height: 220, borderRadius: radii.md, backgroundColor: colors.surface, marginBottom: 12 },
+    card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 10 },
+    categoryTag: {
+      alignSelf: "flex-start",
+      marginBottom: 8,
+      color: colors.primary,
+      fontSize: 11,
+      fontWeight: "800",
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 2,
+    },
+    cardTitle: { fontSize: 13, fontWeight: "800", color: colors.ink, marginBottom: 6 },
+    text: { fontSize: 12, lineHeight: 18, color: colors.ink },
+  }),
+);

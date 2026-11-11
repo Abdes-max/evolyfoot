@@ -11,7 +11,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#070b12"
     },
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "plugins": [
       "expo-router",

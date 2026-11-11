@@ -1,5 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { themedStyles } from "../lib/themed-styles";
 
 // Choix proposé après le détourage : la même photo sans et avec le fond, sur le fond de la carte
 // joueur, pour voir le rendu avant d’enregistrer (même écran que le web, photo-choice.tsx).
@@ -44,24 +45,26 @@ export function PhotoChoice({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(3,6,10,0.7)" },
-  sheet: { padding: spacing.lg, paddingBottom: spacing.xl, backgroundColor: colors.surface, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg },
-  title: { color: colors.ink, fontSize: 17, fontWeight: "900" },
-  hint: { color: colors.muted, fontSize: 13, marginTop: 4, marginBottom: spacing.md },
-  options: { flexDirection: "row", gap: spacing.sm },
-  option: {
-    flex: 1,
-    alignItems: "center",
-    gap: 6,
-    padding: spacing.sm,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.primaryDark,
-    backgroundColor: colors.primarySoft,
-  },
-  image: { width: "100%", aspectRatio: 1 },
-  label: { color: colors.ink, fontSize: 13, fontWeight: "800" },
-  cancel: { alignSelf: "center", marginTop: spacing.md, padding: spacing.sm },
-  cancelText: { color: colors.muted, fontSize: 14, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    overlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(3,6,10,0.7)" },
+    sheet: { padding: spacing.lg, paddingBottom: spacing.xl, backgroundColor: colors.surface, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg },
+    title: { color: colors.ink, fontSize: 17, fontWeight: "900" },
+    hint: { color: colors.muted, fontSize: 13, marginTop: 4, marginBottom: spacing.md },
+    options: { flexDirection: "row", gap: spacing.sm },
+    option: {
+      flex: 1,
+      alignItems: "center",
+      gap: 6,
+      padding: spacing.sm,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      backgroundColor: colors.primarySoft,
+    },
+    image: { width: "100%", aspectRatio: 1 },
+    label: { color: colors.ink, fontSize: 13, fontWeight: "800" },
+    cancel: { alignSelf: "center", marginTop: spacing.md, padding: spacing.sm },
+    cancelText: { color: colors.muted, fontSize: 14, fontWeight: "800" },
+  }),
+);

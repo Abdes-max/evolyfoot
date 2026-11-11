@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { NotificationBell } from "../notification-bell";
+import { ThemeToggle } from "../theme-toggle";
 import { ChildSwitcher } from "./child-switcher";
 import { playerLogout } from "./joueur/use-player-dashboard";
 
@@ -13,6 +14,7 @@ export function PlayerSpaceHeader() {
       </Link>
       <ChildSwitcher />
       <NotificationBell />
+      <ThemeToggle />
       <button className="player-space-logout" onClick={playerLogout} type="button">
         Se déconnecter
       </button>

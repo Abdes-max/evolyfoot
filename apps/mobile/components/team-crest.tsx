@@ -1,5 +1,6 @@
 import { colors } from "@evolyfoot/design-tokens";
 import { Image, StyleSheet, Text, View } from "react-native";
+import { themedStyles } from "../lib/themed-styles";
 
 // Logo de l'équipe, ou ses initiales tant qu'aucun logo n'a été choisi.
 export function TeamCrest({ name, logo, size = 40 }: { name: string; logo?: string | null; size?: number }) {
@@ -22,7 +23,9 @@ export function TeamCrest({ name, logo, size = 40 }: { name: string; logo?: stri
   );
 }
 
-const styles = StyleSheet.create({
-  crest: { alignItems: "center", justifyContent: "center", overflow: "hidden", borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.paper },
-  initials: { color: colors.primary, fontWeight: "900" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    crest: { alignItems: "center", justifyContent: "center", overflow: "hidden", borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.paper },
+    initials: { color: colors.primary, fontWeight: "900" },
+  }),
+);

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Linking, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import { apiBaseUrl } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 export default function ConnexionScreen() {
   const { login } = useAuth();
@@ -50,36 +51,38 @@ export default function ConnexionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingTop: 72 },
-  brand: { color: colors.lime, fontSize: 12, fontWeight: "900", letterSpacing: 1.2 },
-  title: {
-    color: colors.ink,
-    fontSize: 36,
-    lineHeight: 40,
-    fontWeight: "900",
-    textTransform: "uppercase",
-    marginTop: 12,
-    textShadowColor: colors.primary,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 14,
-  },
-  body: { color: colors.muted, fontSize: 14, lineHeight: 21, marginTop: 12, marginBottom: 22 },
-  label: { color: colors.ink, fontSize: 12, fontWeight: "800", marginBottom: 8, marginTop: 16 },
-  input: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 14, color: colors.ink, fontSize: 16 },
-  error: { color: colors.danger, fontSize: 13, marginTop: 16 },
-  button: {
-    marginTop: 28,
-    padding: 16,
-    minHeight: 48,
-    borderRadius: radii.sm,
-    backgroundColor: colors.primary,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  buttonText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },
-  linkButton: { minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 8 },
-  linkText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingTop: 72 },
+    brand: { color: colors.lime, fontSize: 12, fontWeight: "900", letterSpacing: 1.2 },
+    title: {
+      color: colors.ink,
+      fontSize: 36,
+      lineHeight: 40,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      marginTop: 12,
+      textShadowColor: colors.primary,
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 14,
+    },
+    body: { color: colors.muted, fontSize: 14, lineHeight: 21, marginTop: 12, marginBottom: 22 },
+    label: { color: colors.ink, fontSize: 12, fontWeight: "800", marginBottom: 8, marginTop: 16 },
+    input: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 14, color: colors.ink, fontSize: 16 },
+    error: { color: colors.danger, fontSize: 13, marginTop: 16 },
+    button: {
+      marginTop: 28,
+      padding: 16,
+      minHeight: 48,
+      borderRadius: radii.sm,
+      backgroundColor: colors.primary,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    buttonText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },
+    linkButton: { minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 8 },
+    linkText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+  }),
+);

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Circle, Line, Rect } from "react-native-svg";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 const balanceLabels: Record<LineBalance, string> = { advantage: "Surnombre", even: "Égalité", disadvantage: "Infériorité" };
 const balanceColors: Record<LineBalance, string> = { advantage: colors.primary, even: colors.muted, disadvantage: colors.danger };
@@ -113,36 +114,38 @@ export function MatchAnalysis({ matchId, gameFormat, formationId, opponentFormat
   );
 }
 
-const styles = StyleSheet.create({
-  head: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 24 },
-  toggle: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.primary },
-  toggleText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginBottom: 2 },
-  hint: { fontSize: 11, color: colors.muted, marginBottom: 8 },
-  choices: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  choice: {
-    minHeight: 36,
-    paddingHorizontal: 13,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-  },
-  choiceActive: { borderColor: theirColor },
-  choiceText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
-  choiceTextActive: { color: theirColor },
-  error: { color: colors.danger, fontSize: 12, marginTop: 8 },
-  pitch: { width: "70%", alignSelf: "center", aspectRatio: pitchWidth / pitchHeight, marginTop: 16 },
-  legend: { flexDirection: "row", justifyContent: "center", gap: 16, marginTop: 8 },
-  legendItem: { fontSize: 11, fontWeight: "800" },
-  summary: { fontSize: 13, lineHeight: 19, color: colors.ink, marginTop: 12, marginBottom: 6 },
-  line: { padding: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, marginTop: 8 },
-  lineHead: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
-  lineLabel: { fontSize: 12, fontWeight: "800", color: colors.ink },
-  balance: { fontSize: 11, fontWeight: "800" },
-  advice: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4 },
-  themeTitle: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 16, marginBottom: 4 },
-  exercise: { fontSize: 12, fontWeight: "800", color: colors.primary, paddingVertical: 6 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    head: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 24 },
+    toggle: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.primary },
+    toggleText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
+    sectionTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginBottom: 2 },
+    hint: { fontSize: 11, color: colors.muted, marginBottom: 8 },
+    choices: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    choice: {
+      minHeight: 36,
+      paddingHorizontal: 13,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+    },
+    choiceActive: { borderColor: theirColor },
+    choiceText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
+    choiceTextActive: { color: theirColor },
+    error: { color: colors.danger, fontSize: 12, marginTop: 8 },
+    pitch: { width: "70%", alignSelf: "center", aspectRatio: pitchWidth / pitchHeight, marginTop: 16 },
+    legend: { flexDirection: "row", justifyContent: "center", gap: 16, marginTop: 8 },
+    legendItem: { fontSize: 11, fontWeight: "800" },
+    summary: { fontSize: 13, lineHeight: 19, color: colors.ink, marginTop: 12, marginBottom: 6 },
+    line: { padding: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, marginTop: 8 },
+    lineHead: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
+    lineLabel: { fontSize: 12, fontWeight: "800", color: colors.ink },
+    balance: { fontSize: 11, fontWeight: "800" },
+    advice: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4 },
+    themeTitle: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 16, marginBottom: 4 },
+    exercise: { fontSize: 12, fontWeight: "800", color: colors.primary, paddingVertical: 6 },
+  }),
+);

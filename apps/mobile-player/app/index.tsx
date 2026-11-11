@@ -7,6 +7,7 @@ import { EventCard } from "../components/event-card";
 import { GamesList } from "../components/games-list";
 import { PlayerCard } from "../components/player-card";
 import { TeamCrest } from "../components/team-crest";
+import { ThemeToggle } from "../components/theme-toggle";
 import { Screen } from "../components/screen";
 import { WaitingApproval } from "../components/waiting-approval";
 import { useAuth } from "../lib/auth-context";
@@ -14,6 +15,7 @@ import { buildAgenda, endOfCurrentWeek, useDashboard } from "../lib/dashboard";
 import { apiFetch } from "../lib/api";
 import { pickPhoto } from "../lib/photo";
 import { markEvaluationsRead } from "../lib/push";
+import { themedStyles } from "../lib/themed-styles";
 
 export default function MyCardScreen() {
   const { logout, sessionToken } = useAuth();
@@ -72,9 +74,12 @@ export default function MyCardScreen() {
   return (
     <Screen
       action={
-        <TouchableOpacity accessibilityRole="button" onPress={confirmLogout} style={styles.logout}>
-          <Text style={styles.logoutText}>Compte</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <ThemeToggle />
+          <TouchableOpacity accessibilityRole="button" onPress={confirmLogout} style={styles.logout}>
+            <Text style={styles.logoutText}>Compte</Text>
+          </TouchableOpacity>
+        </View>
       }
       title="Ma carte"
     >
@@ -128,21 +133,23 @@ export default function MyCardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  photoButton: {
-    alignSelf: "center",
-    marginTop: spacing.sm,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  photoButtonText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
-  logout: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
-  logoutText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
-  note: { color: colors.muted, fontSize: 14, lineHeight: 20 },
-  teamRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: spacing.sm },
-  team: { color: colors.lime, fontSize: 13, fontWeight: "800", textAlign: "center" },
-  section: { color: colors.ink, fontSize: 22, fontWeight: "900", textTransform: "uppercase", marginTop: spacing.lg, marginBottom: spacing.sm },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    photoButton: {
+      alignSelf: "center",
+      marginTop: spacing.sm,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    photoButtonText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+    logout: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.line },
+    logoutText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
+    note: { color: colors.muted, fontSize: 14, lineHeight: 20 },
+    teamRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: spacing.sm },
+    team: { color: colors.lime, fontSize: 13, fontWeight: "800", textAlign: "center" },
+    section: { color: colors.ink, fontSize: 22, fontWeight: "900", textTransform: "uppercase", marginTop: spacing.lg, marginBottom: spacing.sm },
+  }),
+);

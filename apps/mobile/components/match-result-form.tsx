@@ -3,6 +3,7 @@ import { matchResultMaxGoals, validateMatchResult, type MatchPlayerStat } from "
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 export interface ResultPlayer {
   id: string;
@@ -210,44 +211,46 @@ export function MatchResultForm({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    gap: spacing.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.surface,
-  },
-  title: { color: colors.ink, fontSize: 18, fontWeight: "900" },
-  score: { flexDirection: "row", alignItems: "center", justifyContent: "space-around" },
-  scoreSide: { alignItems: "center", gap: 6 },
-  scoreLabel: { color: colors.muted, fontSize: 12, fontWeight: "800", textTransform: "uppercase" },
-  dash: { color: colors.muted, fontSize: 28, fontWeight: "900" },
-  players: { gap: 8 },
-  playersHead: { flexDirection: "row", alignItems: "center" },
-  headText: { color: colors.muted, fontSize: 11, fontWeight: "800", textTransform: "uppercase" },
-  col: { width: 104, alignItems: "center" },
-  playerRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4, borderTopWidth: 1, borderTopColor: colors.line },
-  playerName: { flex: 1, color: colors.ink, fontSize: 14, fontWeight: "700", paddingRight: 6 },
-  stepper: { flexDirection: "row", alignItems: "center", gap: 6 },
-  stepButton: {
-    width: 30,
-    height: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.paper,
-  },
-  stepText: { color: colors.primary, fontSize: 18, fontWeight: "900", lineHeight: 20 },
-  stepValue: { minWidth: 22, textAlign: "center", color: colors.ink, fontSize: 17, fontWeight: "900" },
-  disabled: { opacity: 0.4 },
-  hint: { color: colors.muted, fontSize: 12, lineHeight: 17 },
-  error: { color: colors.danger, fontSize: 13, fontWeight: "700" },
-  feedback: { color: colors.lime, fontSize: 13, fontWeight: "800" },
-  save: { minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
-  saveText: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    card: {
+      gap: spacing.md,
+      padding: spacing.md,
+      marginTop: spacing.md,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      backgroundColor: colors.surface,
+    },
+    title: { color: colors.ink, fontSize: 18, fontWeight: "900" },
+    score: { flexDirection: "row", alignItems: "center", justifyContent: "space-around" },
+    scoreSide: { alignItems: "center", gap: 6 },
+    scoreLabel: { color: colors.muted, fontSize: 12, fontWeight: "800", textTransform: "uppercase" },
+    dash: { color: colors.muted, fontSize: 28, fontWeight: "900" },
+    players: { gap: 8 },
+    playersHead: { flexDirection: "row", alignItems: "center" },
+    headText: { color: colors.muted, fontSize: 11, fontWeight: "800", textTransform: "uppercase" },
+    col: { width: 104, alignItems: "center" },
+    playerRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4, borderTopWidth: 1, borderTopColor: colors.line },
+    playerName: { flex: 1, color: colors.ink, fontSize: 14, fontWeight: "700", paddingRight: 6 },
+    stepper: { flexDirection: "row", alignItems: "center", gap: 6 },
+    stepButton: {
+      width: 30,
+      height: 30,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 15,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.paper,
+    },
+    stepText: { color: colors.primary, fontSize: 18, fontWeight: "900", lineHeight: 20 },
+    stepValue: { minWidth: 22, textAlign: "center", color: colors.ink, fontSize: 17, fontWeight: "900" },
+    disabled: { opacity: 0.4 },
+    hint: { color: colors.muted, fontSize: 12, lineHeight: 17 },
+    error: { color: colors.danger, fontSize: 13, fontWeight: "700" },
+    feedback: { color: colors.lime, fontSize: 13, fontWeight: "800" },
+    save: { minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    saveText: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
+  }),
+);

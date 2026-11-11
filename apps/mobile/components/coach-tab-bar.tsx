@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../lib/auth-context";
 import { useUnread } from "../lib/push";
 import { BallIcon, CalendarIcon, HomeIcon, MessageIcon, UsersIcon } from "./icons";
+import { themedStyles } from "../lib/themed-styles";
 
 // Écrans racines de l'appli Coach, toujours visibles en bas comme dans l'appli Player. Les autres
 // écrans s'ouvrent par-dessus avec l'en-tête natif (bouton Retour, glissement depuis le bord).
@@ -54,14 +55,16 @@ export function CoachTabBar() {
   );
 }
 
-const styles = StyleSheet.create({
-  bar: { flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.primaryDark, backgroundColor: colors.surface, paddingTop: spacing.xs },
-  tab: { flex: 1, minHeight: 56, alignItems: "center", justifyContent: "center", gap: 3 },
-  iconWrap: { width: 46, height: 30, alignItems: "center", justifyContent: "center", borderRadius: 15 },
-  iconWrapActive: { backgroundColor: colors.primarySoft },
-  label: { color: colors.muted, fontSize: 10.5, fontWeight: "800" },
-  labelActive: { color: colors.primary },
-  line: { width: 24, height: 2, backgroundColor: "transparent" },
-  lineActive: { backgroundColor: colors.lime },
-  dot: { position: "absolute", top: 4, right: 14, width: 9, height: 9, borderRadius: 5, backgroundColor: "#ef4444" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    bar: { flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.primaryDark, backgroundColor: colors.surface, paddingTop: spacing.xs },
+    tab: { flex: 1, minHeight: 56, alignItems: "center", justifyContent: "center", gap: 3 },
+    iconWrap: { width: 46, height: 30, alignItems: "center", justifyContent: "center", borderRadius: 15 },
+    iconWrapActive: { backgroundColor: colors.primarySoft },
+    label: { color: colors.muted, fontSize: 10.5, fontWeight: "800" },
+    labelActive: { color: colors.primary },
+    line: { width: 24, height: 2, backgroundColor: "transparent" },
+    lineActive: { backgroundColor: colors.lime },
+    dot: { position: "absolute", top: 4, right: 14, width: 9, height: 9, borderRadius: 5, backgroundColor: "#ef4444" },
+  }),
+);

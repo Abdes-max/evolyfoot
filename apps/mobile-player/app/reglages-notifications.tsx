@@ -12,6 +12,7 @@ import { Linking, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TouchableO
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { applyForegroundPreferences } from "../lib/push";
+import { themedStyles } from "../lib/themed-styles";
 
 function Row({ label, hint, value, onChange }: { label: string; hint: string; value: boolean; onChange: (value: boolean) => void }) {
   return (
@@ -127,27 +128,37 @@ export default function NotificationSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingTop: 56, paddingBottom: 48 },
-  back: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", marginBottom: 4 },
-  backText: { color: colors.primary, fontSize: 15, fontWeight: "800" },
-  title: { fontSize: 30, fontWeight: "800", color: colors.ink },
-  body: { fontSize: 14, lineHeight: 21, color: colors.muted, marginTop: 8 },
-  section: { color: colors.muted, fontSize: 12, fontWeight: "800", textTransform: "uppercase", marginTop: 24, marginBottom: 8 },
-  card: { borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.line,
-  },
-  rowLabel: { color: colors.ink, fontSize: 15, fontWeight: "800" },
-  rowHint: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 2 },
-  hint: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 16 },
-  error: { color: colors.danger, fontSize: 13, fontWeight: "700", marginTop: 12 },
-  system: { minHeight: 48, marginTop: 12, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primary },
-  systemText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingTop: 56, paddingBottom: 48 },
+    back: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", marginBottom: 4 },
+    backText: { color: colors.primary, fontSize: 15, fontWeight: "800" },
+    title: { fontSize: 30, fontWeight: "800", color: colors.ink },
+    body: { fontSize: 14, lineHeight: 21, color: colors.muted, marginTop: 8 },
+    section: { color: colors.muted, fontSize: 12, fontWeight: "800", textTransform: "uppercase", marginTop: 24, marginBottom: 8 },
+    card: { borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      padding: spacing.md,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.line,
+    },
+    rowLabel: { color: colors.ink, fontSize: 15, fontWeight: "800" },
+    rowHint: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 2 },
+    hint: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 16 },
+    error: { color: colors.danger, fontSize: 13, fontWeight: "700", marginTop: 12 },
+    system: {
+      minHeight: 48,
+      marginTop: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    systemText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+  }),
+);

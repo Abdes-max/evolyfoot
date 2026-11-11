@@ -1,5 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { StyleSheet, Text, View } from "react-native";
+import { themedStyles } from "../lib/themed-styles";
 
 // Compte dont aucune demande de suivi n'est encore acceptée par l'éducateur : rien à montrer de
 // l'enfant d'ici là (même message que le web, waiting-approval.tsx).
@@ -14,8 +15,10 @@ export function WaitingApproval() {
   );
 }
 
-const styles = StyleSheet.create({
-  card: { gap: spacing.sm, padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface },
-  title: { color: colors.ink, fontSize: 18, fontWeight: "900" },
-  body: { color: colors.muted, fontSize: 14, lineHeight: 20 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    card: { gap: spacing.sm, padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface },
+    title: { color: colors.ink, fontSize: 18, fontWeight: "900" },
+    body: { color: colors.muted, fontSize: 14, lineHeight: 20 },
+  }),
+);

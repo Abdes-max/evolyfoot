@@ -14,6 +14,7 @@ import { useCallback, useMemo, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { kindLabels } from "../lib/exercise-labels";
+import { themedStyles } from "../lib/themed-styles";
 
 const kindFilters: readonly (TrainingBlockKind | "all")[] = ["all", "welcome", "activation", "main", "game"];
 const themeFilters: readonly (DevelopmentTheme | "all")[] = ["all", ...developmentThemes];
@@ -229,34 +230,36 @@ export default function BibliothequeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48 },
-  back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 16 },
-  search: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
-  chips: { gap: 6, paddingVertical: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: colors.line },
-  chipActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  chipText: { fontSize: 11, fontWeight: "700", color: colors.ink },
-  section: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 14, marginBottom: 8 },
-  card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginTop: 8 },
-  categoryTag: {
-    alignSelf: "flex-start",
-    marginTop: 5,
-    color: colors.primary,
-    fontSize: 10,
-    fontWeight: "800",
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 1,
-  },
-  meta: { fontSize: 9, fontWeight: "800", color: colors.primary, letterSpacing: 0.6 },
-  cardTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginTop: 5 },
-  muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4 },
-  copy: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 10 },
-  error: { fontSize: 12, fontWeight: "800", color: colors.danger, marginTop: 8 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48 },
+    back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 16 },
+    search: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
+    chips: { gap: 6, paddingVertical: 8 },
+    chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: colors.line },
+    chipActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+    chipText: { fontSize: 11, fontWeight: "700", color: colors.ink },
+    section: { fontSize: 13, fontWeight: "800", color: colors.ink, marginTop: 14, marginBottom: 8 },
+    card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginTop: 8 },
+    categoryTag: {
+      alignSelf: "flex-start",
+      marginTop: 5,
+      color: colors.primary,
+      fontSize: 10,
+      fontWeight: "800",
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 1,
+    },
+    meta: { fontSize: 9, fontWeight: "800", color: colors.primary, letterSpacing: 0.6 },
+    cardTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginTop: 5 },
+    muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 4 },
+    copy: { fontSize: 12, fontWeight: "800", color: colors.primary, marginTop: 10 },
+    error: { fontSize: 12, fontWeight: "800", color: colors.danger, marginTop: 8 },
+  }),
+);

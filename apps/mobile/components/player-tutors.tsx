@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 interface Tutor {
   accountId: string;
@@ -108,23 +109,25 @@ export function PlayerTutors({ playerId }: { playerId: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  block: { gap: spacing.sm, marginTop: spacing.md },
-  title: { color: colors.ink, fontSize: 14, fontWeight: "900", marginTop: spacing.sm },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-  },
-  identity: { flex: 1, minWidth: 0 },
-  name: { color: colors.ink, fontSize: 14, fontWeight: "800" },
-  email: { color: colors.muted, fontSize: 12 },
-  accept: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: radii.sm, backgroundColor: colors.primary },
-  acceptText: { color: colors.primaryInk, fontSize: 12, fontWeight: "900" },
-  refuse: { color: colors.danger, fontSize: 12, fontWeight: "800", paddingHorizontal: 4 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    block: { gap: spacing.sm, marginTop: spacing.md },
+    title: { color: colors.ink, fontSize: 14, fontWeight: "900", marginTop: spacing.sm },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      padding: spacing.sm,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+    },
+    identity: { flex: 1, minWidth: 0 },
+    name: { color: colors.ink, fontSize: 14, fontWeight: "800" },
+    email: { color: colors.muted, fontSize: 12 },
+    accept: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: radii.sm, backgroundColor: colors.primary },
+    acceptText: { color: colors.primaryInk, fontSize: 12, fontWeight: "900" },
+    refuse: { color: colors.danger, fontSize: 12, fontWeight: "800", paddingHorizontal: 4 },
+  }),
+);

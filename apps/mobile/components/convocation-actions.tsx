@@ -4,6 +4,7 @@ import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { TrainingResponses } from "./training-responses";
+import { themedStyles } from "../lib/themed-styles";
 
 // Réponses à la convocation d'un match, d'un tournoi ou d'un plateau, et son envoi : une première fois à tous les
 // joueurs concernés, puis en relance, à tous ou aux seuls joueurs qui n'ont pas encore répondu.
@@ -88,14 +89,16 @@ export function ConvocationActions({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { gap: spacing.sm },
-  actions: { gap: spacing.sm },
-  primary: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary, paddingHorizontal: 12 },
-  primaryText: { color: colors.primaryInk, fontSize: 13, fontWeight: "800" },
-  secondary: { minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primary },
-  secondaryText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
-  disabled: { opacity: 0.5 },
-  feedback: { color: colors.primary, fontSize: 12, fontWeight: "700" },
-  error: { color: colors.danger, fontSize: 12, fontWeight: "700" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    wrap: { gap: spacing.sm },
+    actions: { gap: spacing.sm },
+    primary: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary, paddingHorizontal: 12 },
+    primaryText: { color: colors.primaryInk, fontSize: 13, fontWeight: "800" },
+    secondary: { minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primary },
+    secondaryText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+    disabled: { opacity: 0.5 },
+    feedback: { color: colors.primary, fontSize: 12, fontWeight: "700" },
+    error: { color: colors.danger, fontSize: 12, fontWeight: "700" },
+  }),
+);

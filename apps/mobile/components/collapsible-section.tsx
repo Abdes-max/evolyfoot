@@ -1,6 +1,7 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { useState, type ReactNode } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { themedStyles } from "../lib/themed-styles";
 
 // Section repliable : titre et résumé toujours visibles, contenu au toucher. Repliée par défaut.
 export function CollapsibleSection({
@@ -29,11 +30,13 @@ export function CollapsibleSection({
   );
 }
 
-const styles = StyleSheet.create({
-  card: { borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, overflow: "hidden" },
-  head: { flexDirection: "row", alignItems: "center", padding: spacing.md },
-  title: { color: colors.ink, fontSize: 15, fontWeight: "800" },
-  summary: { color: colors.muted, fontSize: 12, marginTop: 2 },
-  chevron: { color: colors.muted, fontSize: 18, paddingLeft: spacing.sm },
-  body: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    card: { borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, overflow: "hidden" },
+    head: { flexDirection: "row", alignItems: "center", padding: spacing.md },
+    title: { color: colors.ink, fontSize: 15, fontWeight: "800" },
+    summary: { color: colors.muted, fontSize: 12, marginTop: 2 },
+    chevron: { color: colors.muted, fontSize: 18, paddingLeft: spacing.sm },
+    body: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
+  }),
+);

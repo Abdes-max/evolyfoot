@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 const days: TrainingDay[] = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
 const initialProfile: TeamProfile = { name: "", ageGroup: "U12", gameFormat: 8, playerCount: 14, sessionsPerWeek: 2, trainingDays: [] };
@@ -125,43 +126,45 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingTop: 48, paddingBottom: 60 },
-  step: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2, color: colors.primary },
-  title: { fontSize: 34, lineHeight: 39, fontWeight: "800", color: colors.ink, marginTop: 12 },
-  body: { fontSize: 13, lineHeight: 20, color: colors.muted, marginTop: 10, marginBottom: 30 },
-  label: { fontSize: 11, fontWeight: "800", color: colors.ink, marginBottom: 9, marginTop: 20 },
-  hint: { fontSize: 10, color: colors.muted, marginBottom: 10 },
-  input: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 14, color: colors.ink },
-  fieldError: { color: colors.danger, fontSize: 10, marginTop: 6 },
-  error: { color: colors.danger, fontSize: 11, marginTop: 20 },
-  choices: { flexDirection: "row", gap: 8 },
-  choice: { flex: 1, alignItems: "center", padding: 14, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
-  formatGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  formatChoice: {
-    width: "22%",
-    alignItems: "center",
-    padding: 12,
-    backgroundColor: colors.surface,
-    borderColor: colors.line,
-    borderWidth: 1,
-    borderRadius: radii.sm,
-  },
-  dayGrid: { flexDirection: "row", gap: 6 },
-  day: { flex: 1, alignItems: "center", padding: 11, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
-  active: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
-  choiceText: { fontSize: 11, fontWeight: "800", color: colors.muted },
-  activeText: { color: colors.primary },
-  button: {
-    marginTop: 40,
-    padding: 16,
-    minHeight: 44,
-    borderRadius: radii.sm,
-    backgroundColor: colors.primary,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  buttonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingTop: 48, paddingBottom: 60 },
+    step: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2, color: colors.primary },
+    title: { fontSize: 34, lineHeight: 39, fontWeight: "800", color: colors.ink, marginTop: 12 },
+    body: { fontSize: 13, lineHeight: 20, color: colors.muted, marginTop: 10, marginBottom: 30 },
+    label: { fontSize: 11, fontWeight: "800", color: colors.ink, marginBottom: 9, marginTop: 20 },
+    hint: { fontSize: 10, color: colors.muted, marginBottom: 10 },
+    input: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 14, color: colors.ink },
+    fieldError: { color: colors.danger, fontSize: 10, marginTop: 6 },
+    error: { color: colors.danger, fontSize: 11, marginTop: 20 },
+    choices: { flexDirection: "row", gap: 8 },
+    choice: { flex: 1, alignItems: "center", padding: 14, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
+    formatGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    formatChoice: {
+      width: "22%",
+      alignItems: "center",
+      padding: 12,
+      backgroundColor: colors.surface,
+      borderColor: colors.line,
+      borderWidth: 1,
+      borderRadius: radii.sm,
+    },
+    dayGrid: { flexDirection: "row", gap: 6 },
+    day: { flex: 1, alignItems: "center", padding: 11, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm },
+    active: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+    choiceText: { fontSize: 11, fontWeight: "800", color: colors.muted },
+    activeText: { color: colors.primary },
+    button: {
+      marginTop: 40,
+      padding: 16,
+      minHeight: 44,
+      borderRadius: radii.sm,
+      backgroundColor: colors.primary,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    buttonText: { color: colors.primaryInk, fontSize: 11, fontWeight: "800" },
+  }),
+);

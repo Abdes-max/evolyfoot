@@ -24,6 +24,7 @@ import "./design-impact.css";
 import { AuthGate } from "./auth-gate";
 import { GoogleAnalytics } from "./google-analytics";
 import { InstallAppBanner } from "./install-app-banner";
+import { themeInitScript } from "./theme";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 const barlowCondensed = Barlow_Condensed({ subsets: ["latin"], weight: ["700", "800"], variable: "--font-display", display: "swap" });
@@ -38,7 +39,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html className={`${manrope.variable} ${barlowCondensed.variable}`} lang="fr">
+    <html className={`${manrope.variable} ${barlowCondensed.variable}`} data-theme="dark" lang="fr" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>
         <InstallAppBanner />
         <AuthGate>{children}</AuthGate>

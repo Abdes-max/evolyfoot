@@ -5,6 +5,7 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-nativ
 import { Screen } from "../components/screen";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 interface Message {
   id: string;
@@ -106,30 +107,32 @@ export default function MessagesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  note: { color: colors.muted, fontSize: 14, marginBottom: spacing.md },
-  bubble: { maxWidth: "85%", padding: 12, marginBottom: spacing.sm, borderRadius: radii.sm },
-  mine: { alignSelf: "flex-end", backgroundColor: colors.primary },
-  theirs: { alignSelf: "flex-start", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primaryDark },
-  author: { color: colors.lime, fontSize: 11, fontWeight: "800", marginBottom: 2 },
-  text: { color: colors.ink, fontSize: 14, lineHeight: 20 },
-  textMine: { color: colors.primaryInk, fontWeight: "600" },
-  time: { marginTop: 4, color: colors.muted, fontSize: 10.5, fontWeight: "700" },
-  timeMine: { color: "rgba(6,35,48,0.65)", textAlign: "right" },
-  error: { color: colors.danger, fontSize: 13, marginVertical: spacing.sm },
-  input: {
-    minHeight: 76,
-    marginTop: spacing.md,
-    padding: 12,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    color: colors.ink,
-    fontSize: 15,
-    textAlignVertical: "top",
-  },
-  send: { minHeight: 46, marginTop: spacing.sm, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
-  sendDisabled: { opacity: 0.5 },
-  sendText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    note: { color: colors.muted, fontSize: 14, marginBottom: spacing.md },
+    bubble: { maxWidth: "85%", padding: 12, marginBottom: spacing.sm, borderRadius: radii.sm },
+    mine: { alignSelf: "flex-end", backgroundColor: colors.primary },
+    theirs: { alignSelf: "flex-start", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primaryDark },
+    author: { color: colors.lime, fontSize: 11, fontWeight: "800", marginBottom: 2 },
+    text: { color: colors.ink, fontSize: 14, lineHeight: 20 },
+    textMine: { color: colors.primaryInk, fontWeight: "600" },
+    time: { marginTop: 4, color: colors.muted, fontSize: 10.5, fontWeight: "700" },
+    timeMine: { color: "rgba(6,35,48,0.65)", textAlign: "right" },
+    error: { color: colors.danger, fontSize: 13, marginVertical: spacing.sm },
+    input: {
+      minHeight: 76,
+      marginTop: spacing.md,
+      padding: 12,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+      color: colors.ink,
+      fontSize: 15,
+      textAlignVertical: "top",
+    },
+    send: { minHeight: 46, marginTop: spacing.sm, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    sendDisabled: { opacity: 0.5 },
+    sendText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },
+  }),
+);

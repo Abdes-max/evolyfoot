@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth, type ObservationListItem } from "../lib/auth-context";
 import { eventTypeLabel, levelColor, levelLabel } from "../lib/observation-labels";
+import { themedStyles } from "../lib/themed-styles";
 
 export default function ObservationsScreen() {
   const { listObservations } = useAuth();
@@ -53,16 +54,18 @@ export default function ObservationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48 },
-  back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
-  step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-  title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 20 },
-  card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 10 },
-  badges: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  type: { fontSize: 9, fontWeight: "800", color: colors.primary, letterSpacing: 0.8 },
-  trend: { fontSize: 11, fontWeight: "800" },
-  cardTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginTop: 6 },
-  muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 3 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48 },
+    back: { fontSize: 12, fontWeight: "800", color: colors.primary, marginBottom: 14 },
+    step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
+    title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 10, marginBottom: 20 },
+    card: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, marginBottom: 10 },
+    badges: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    type: { fontSize: 9, fontWeight: "800", color: colors.primary, letterSpacing: 0.8 },
+    trend: { fontSize: 11, fontWeight: "800" },
+    cardTitle: { fontSize: 14, fontWeight: "800", color: colors.ink, marginTop: 6 },
+    muted: { fontSize: 11, lineHeight: 16, color: colors.muted, marginTop: 3 },
+  }),
+);

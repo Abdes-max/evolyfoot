@@ -2,6 +2,7 @@ import type { AdjustmentSuggestion } from "@evolyfoot/domain";
 import { useState } from "react";
 import { AccessibilityInfo, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
+import { themedStyles } from "../lib/themed-styles";
 
 type Decision = "pending" | "accepted" | "declined";
 
@@ -93,27 +94,29 @@ export function AdjustmentCard({ suggestion, onDecision }: AdjustmentCardProps) 
   );
 }
 
-const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderColor: colors.line, borderRadius: radii.md, borderWidth: 1, marginTop: 20, padding: spacing.md },
-  eyebrow: { color: colors.primary, fontSize: 10, fontWeight: "800", letterSpacing: 1.1 },
-  title: { color: colors.ink, fontSize: 22, fontWeight: "800", lineHeight: 28, marginTop: 8 },
-  detail: { marginTop: 16 },
-  label: { color: colors.muted, fontSize: 10, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" },
-  body: { color: colors.ink, fontSize: 13, lineHeight: 19, marginTop: 4 },
-  status: { color: colors.primary, fontSize: 13, fontWeight: "800", lineHeight: 19, marginTop: 18 },
-  actions: { gap: 8, marginTop: 18 },
-  action: {
-    alignItems: "center",
-    backgroundColor: colors.paper,
-    borderColor: colors.line,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 44,
-    minWidth: 44,
-    paddingHorizontal: 14,
-  },
-  apply: { backgroundColor: colors.primary, borderColor: colors.primary },
-  actionText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
-  applyText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    card: { backgroundColor: colors.surface, borderColor: colors.line, borderRadius: radii.md, borderWidth: 1, marginTop: 20, padding: spacing.md },
+    eyebrow: { color: colors.primary, fontSize: 10, fontWeight: "800", letterSpacing: 1.1 },
+    title: { color: colors.ink, fontSize: 22, fontWeight: "800", lineHeight: 28, marginTop: 8 },
+    detail: { marginTop: 16 },
+    label: { color: colors.muted, fontSize: 10, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" },
+    body: { color: colors.ink, fontSize: 13, lineHeight: 19, marginTop: 4 },
+    status: { color: colors.primary, fontSize: 13, fontWeight: "800", lineHeight: 19, marginTop: 18 },
+    actions: { gap: 8, marginTop: 18 },
+    action: {
+      alignItems: "center",
+      backgroundColor: colors.paper,
+      borderColor: colors.line,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 44,
+      minWidth: 44,
+      paddingHorizontal: 14,
+    },
+    apply: { backgroundColor: colors.primary, borderColor: colors.primary },
+    actionText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
+    applyText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
+  }),
+);

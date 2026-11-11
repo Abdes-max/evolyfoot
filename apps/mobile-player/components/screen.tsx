@@ -6,6 +6,7 @@ import { useAuth } from "../lib/auth-context";
 import { ChildSwitcher } from "./child-switcher";
 import { pendingResponses, useDashboard } from "../lib/dashboard";
 import { useUnread } from "../lib/push";
+import { themedStyles } from "../lib/themed-styles";
 
 const tabs = [
   { href: "/", label: "Ma carte" },
@@ -99,42 +100,44 @@ export function Screen({
   );
 }
 
-const styles = StyleSheet.create({
-  badge: {
-    position: "absolute",
-    top: -12,
-    right: -14,
-    minWidth: 20,
-    height: 20,
-    paddingHorizontal: 5,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#e5383b",
-    borderWidth: 2,
-    borderColor: colors.surface,
-  },
-  badgeText: { color: "#ffffff", fontSize: 11, fontWeight: "900" },
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingTop: 56, paddingBottom: spacing.xl },
-  back: { alignSelf: "flex-start", marginTop: -36, marginBottom: spacing.sm, paddingVertical: 6 },
-  backText: { color: colors.primary, fontSize: 16, fontWeight: "800" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  title: {
-    flex: 1,
-    color: colors.ink,
-    fontSize: 30,
-    fontWeight: "900",
-    textTransform: "uppercase",
-    textShadowColor: colors.primary,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-  },
-  horizon: { height: 2, marginTop: spacing.sm, marginBottom: spacing.lg, backgroundColor: colors.primary, opacity: 0.8 },
-  tabBar: { flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.primaryDark, backgroundColor: colors.surface, paddingBottom: spacing.md },
-  tab: { flex: 1, minHeight: 56, alignItems: "center", justifyContent: "center", gap: 6 },
-  tabLabel: { color: colors.muted, fontSize: 12, fontWeight: "800" },
-  tabLabelActive: { color: colors.primary },
-  tabLine: { width: 28, height: 2, backgroundColor: "transparent" },
-  tabLineActive: { backgroundColor: colors.lime },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    badge: {
+      position: "absolute",
+      top: -12,
+      right: -14,
+      minWidth: 20,
+      height: 20,
+      paddingHorizontal: 5,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#e5383b",
+      borderWidth: 2,
+      borderColor: colors.surface,
+    },
+    badgeText: { color: "#ffffff", fontSize: 11, fontWeight: "900" },
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingTop: 56, paddingBottom: spacing.xl },
+    back: { alignSelf: "flex-start", marginTop: -36, marginBottom: spacing.sm, paddingVertical: 6 },
+    backText: { color: colors.primary, fontSize: 16, fontWeight: "800" },
+    header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+    title: {
+      flex: 1,
+      color: colors.ink,
+      fontSize: 30,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      textShadowColor: colors.primary,
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 12,
+    },
+    horizon: { height: 2, marginTop: spacing.sm, marginBottom: spacing.lg, backgroundColor: colors.primary, opacity: 0.8 },
+    tabBar: { flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.primaryDark, backgroundColor: colors.surface, paddingBottom: spacing.md },
+    tab: { flex: 1, minHeight: 56, alignItems: "center", justifyContent: "center", gap: 6 },
+    tabLabel: { color: colors.muted, fontSize: 12, fontWeight: "800" },
+    tabLabelActive: { color: colors.primary },
+    tabLine: { width: 28, height: 2, backgroundColor: "transparent" },
+    tabLineActive: { backgroundColor: colors.lime },
+  }),
+);

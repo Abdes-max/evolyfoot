@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
+import { themedStyles } from "../lib/themed-styles";
 
 interface Child {
   playerId: string;
@@ -79,23 +80,25 @@ export function ChildSwitcher({ onChange }: { onChange: () => void }) {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { marginBottom: spacing.md, flexGrow: 0 },
-  row: { gap: spacing.sm, paddingTop: 6, paddingRight: spacing.md },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-  },
-  chipActive: { borderColor: colors.primary, backgroundColor: colors.primary },
-  chipText: { color: colors.ink, fontSize: 14, fontWeight: "800" },
-  chipTextActive: { color: colors.primaryInk },
-  badge: { minWidth: 20, height: 20, paddingHorizontal: 5, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#e5383b" },
-  badgeText: { color: "#ffffff", fontSize: 11, fontWeight: "900" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    scroll: { marginBottom: spacing.md, flexGrow: 0 },
+    row: { gap: spacing.sm, paddingTop: 6, paddingRight: spacing.md },
+    chip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+    },
+    chipActive: { borderColor: colors.primary, backgroundColor: colors.primary },
+    chipText: { color: colors.ink, fontSize: 14, fontWeight: "800" },
+    chipTextActive: { color: colors.primaryInk },
+    badge: { minWidth: 20, height: 20, paddingHorizontal: 5, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#e5383b" },
+    badgeText: { color: "#ffffff", fontSize: 11, fontWeight: "900" },
+  }),
+);

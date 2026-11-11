@@ -15,6 +15,7 @@ import { useCallback, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { CancelEventPanel } from "./cancel-event-panel";
+import { themedStyles } from "../lib/themed-styles";
 
 interface WeekSession {
   id: string;
@@ -151,19 +152,21 @@ export function WeekSessions({ scope }: { scope: SessionScope }) {
   );
 }
 
-const styles = StyleSheet.create({
-  empty: { color: colors.muted, fontSize: 13, textAlign: "center", marginVertical: spacing.lg },
-  day: { marginBottom: spacing.md },
-  dayLabel: { color: colors.muted, fontSize: 11, fontWeight: "900", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 },
-  card: { gap: 4, padding: spacing.md, borderRadius: 20, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, marginBottom: 8 },
-  cardHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: spacing.sm },
-  cardTitle: { flex: 1, color: colors.ink, fontSize: 15, fontWeight: "800" },
-  time: { color: colors.primary, fontSize: 13, fontWeight: "900" },
-  muted: { color: colors.muted, fontSize: 12 },
-  convocation: { fontSize: 12, fontWeight: "800", marginTop: 4 },
-  sent: { color: colors.lime },
-  pending: { color: colors.muted },
-  cancelled: { color: colors.danger },
-  counts: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, marginTop: 2 },
-  count: { fontSize: 12, fontWeight: "800" },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    empty: { color: colors.muted, fontSize: 13, textAlign: "center", marginVertical: spacing.lg },
+    day: { marginBottom: spacing.md },
+    dayLabel: { color: colors.muted, fontSize: 11, fontWeight: "900", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 },
+    card: { gap: 4, padding: spacing.md, borderRadius: 20, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, marginBottom: 8 },
+    cardHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: spacing.sm },
+    cardTitle: { flex: 1, color: colors.ink, fontSize: 15, fontWeight: "800" },
+    time: { color: colors.primary, fontSize: 13, fontWeight: "900" },
+    muted: { color: colors.muted, fontSize: 12 },
+    convocation: { fontSize: 12, fontWeight: "800", marginTop: 4 },
+    sent: { color: colors.lime },
+    pending: { color: colors.muted },
+    cancelled: { color: colors.danger },
+    counts: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, marginTop: 2 },
+    count: { fontSize: 12, fontWeight: "800" },
+  }),
+);

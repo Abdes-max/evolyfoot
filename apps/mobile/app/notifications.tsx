@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { readUnread } from "../lib/push";
+import { themedStyles } from "../lib/themed-styles";
 
 interface NotificationItem {
   id: string;
@@ -77,15 +78,17 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  page: { padding: spacing.lg, paddingBottom: 48, gap: 10 },
-  back: { fontSize: 12, fontWeight: "800", color: colors.primary },
-  title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 6 },
-  link: { fontSize: 13, fontWeight: "800", color: colors.primary },
-  muted: { fontSize: 11, color: colors.muted },
-  item: { padding: 12, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, gap: 3 },
-  unread: { borderLeftWidth: 4, borderLeftColor: colors.primary },
-  itemTitle: { fontSize: 14, fontWeight: "800", color: colors.ink },
-  body: { fontSize: 13, lineHeight: 18, color: colors.ink },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.paper },
+    page: { padding: spacing.lg, paddingBottom: 48, gap: 10 },
+    back: { fontSize: 12, fontWeight: "800", color: colors.primary },
+    title: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 6 },
+    link: { fontSize: 13, fontWeight: "800", color: colors.primary },
+    muted: { fontSize: 11, color: colors.muted },
+    item: { padding: 12, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, gap: 3 },
+    unread: { borderLeftWidth: 4, borderLeftColor: colors.primary },
+    itemTitle: { fontSize: 14, fontWeight: "800", color: colors.ink },
+    body: { fontSize: 13, lineHeight: 18, color: colors.ink },
+  }),
+);

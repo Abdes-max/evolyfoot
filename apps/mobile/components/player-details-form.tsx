@@ -4,6 +4,7 @@ import { useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View, type KeyboardTypeOptions } from "react-native";
 import type { ReportPlayer } from "../lib/pdf-export";
 import { birthDateFromIso, birthDateToIso } from "../lib/player-photo";
+import { themedStyles } from "../lib/themed-styles";
 
 type FieldKey = "firstName" | "lastName" | "birthDate" | "jerseyNumber" | "phone" | "email" | "strengths" | "workAreas";
 type Form = Record<FieldKey | "position" | "preferredFoot", string>;
@@ -134,19 +135,21 @@ export function PlayerDetailsForm({
   }
 }
 
-const styles = StyleSheet.create({
-  field: { marginTop: spacing.sm },
-  label: { fontSize: 10, fontWeight: "800", color: colors.muted, marginBottom: 4 },
-  input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
-  multiline: { minHeight: 72, textAlignVertical: "top" },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: colors.line },
-  chipActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  chipText: { fontSize: 11, fontWeight: "700", color: colors.ink },
-  error: { fontSize: 12, fontWeight: "700", color: colors.danger, marginTop: 8 },
-  primary: { minHeight: 46, marginTop: 12, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
-  primaryText: { color: colors.primaryInk, fontSize: 13, fontWeight: "800" },
-  disabled: { opacity: 0.5 },
-  ghost: { minHeight: 40, alignItems: "center", justifyContent: "center" },
-  link: { fontSize: 13, fontWeight: "800", color: colors.primary },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    field: { marginTop: spacing.sm },
+    label: { fontSize: 10, fontWeight: "800", color: colors.muted, marginBottom: 4 },
+    input: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radii.sm, padding: 12, color: colors.ink },
+    multiline: { minHeight: 72, textAlignVertical: "top" },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: colors.line },
+    chipActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+    chipText: { fontSize: 11, fontWeight: "700", color: colors.ink },
+    error: { fontSize: 12, fontWeight: "700", color: colors.danger, marginTop: 8 },
+    primary: { minHeight: 46, marginTop: 12, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    primaryText: { color: colors.primaryInk, fontSize: 13, fontWeight: "800" },
+    disabled: { opacity: 0.5 },
+    ghost: { minHeight: 40, alignItems: "center", justifyContent: "center" },
+    link: { fontSize: 13, fontWeight: "800", color: colors.primary },
+  }),
+);

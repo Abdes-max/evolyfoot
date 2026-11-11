@@ -4,6 +4,7 @@ import { useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
 import { PlaceInput } from "./place-input";
+import { themedStyles } from "../lib/themed-styles";
 
 // Une ligne par jour d'entraînement : heure (HH:MM) et lieu repris par toutes les séances de ce jour
 // (même écran que le web, training-schedule-editor.tsx).
@@ -125,39 +126,41 @@ export function TrainingScheduleBlock({
   );
 }
 
-const styles = StyleSheet.create({
-  rows: { gap: spacing.sm },
-  row: { gap: 6, padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
-  rowHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  day: { color: colors.ink, fontSize: 14, fontWeight: "900" },
-  time: {
-    width: 84,
-    minHeight: 40,
-    paddingHorizontal: 10,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    color: colors.ink,
-    fontSize: 15,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  block: {
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-  },
-  blockHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { color: colors.ink, fontSize: 15, fontWeight: "900" },
-  summary: { color: colors.muted, fontSize: 13 },
-  muted: { color: colors.muted, fontSize: 12.5 },
-  link: { color: colors.primary, fontSize: 13, fontWeight: "800" },
-  primary: { alignItems: "center", paddingVertical: 12, borderRadius: radii.md, backgroundColor: colors.primary },
-  primaryText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },
-  error: { color: colors.danger, fontSize: 12 },
-});
+const styles = themedStyles(() =>
+  StyleSheet.create({
+    rows: { gap: spacing.sm },
+    row: { gap: 6, padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
+    rowHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    day: { color: colors.ink, fontSize: 14, fontWeight: "900" },
+    time: {
+      width: 84,
+      minHeight: 40,
+      paddingHorizontal: 10,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+      color: colors.ink,
+      fontSize: 15,
+      fontWeight: "800",
+      textAlign: "center",
+    },
+    block: {
+      gap: spacing.sm,
+      marginTop: spacing.md,
+      padding: spacing.md,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+    },
+    blockHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    title: { color: colors.ink, fontSize: 15, fontWeight: "900" },
+    summary: { color: colors.muted, fontSize: 13 },
+    muted: { color: colors.muted, fontSize: 12.5 },
+    link: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+    primary: { alignItems: "center", paddingVertical: 12, borderRadius: radii.md, backgroundColor: colors.primary },
+    primaryText: { color: colors.primaryInk, fontSize: 14, fontWeight: "900" },
+    error: { color: colors.danger, fontSize: 12 },
+  }),
+);
