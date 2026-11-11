@@ -71,6 +71,12 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-}
+      # Paiement Stripe (voir apps/web/src/server/billing.ts et docs/delivery.md). Vides, le paiement
+      # reste désactivé : la page Abonnement l'annonce et l'accès reste ouvert. BILLING_ENFORCED=true
+      # bloque l'appli (sauf Abonnement et Profil) à la fin de l'essai d'un coach non abonné.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      BILLING_ENFORCED: ${BILLING_ENFORCED:-false}
     depends_on:
       migrate:
         condition: service_completed_successfully

@@ -58,6 +58,7 @@ export type { AwaitingConvocation, TrainingConvocationRepository } from "./train
 export { TrainingConvocationService } from "./training-convocation-service";
 export { DiagnosticService } from "./diagnostic-service";
 export { SeasonProgramService } from "./season-program-service";
+export { BillingService, type BillingSummary, type SubscriptionUpdate } from "./billing-service";
 export { NotificationService, NotifyingMessageRepository, type PushSender } from "./notification-service";
 export { EducatorProfileService, seasonFormats } from "./educator-profile-service";
 export { MatchService } from "./match-service";

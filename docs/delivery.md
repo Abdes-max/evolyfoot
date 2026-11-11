@@ -135,6 +135,34 @@ Cet environnement **ne porte aucune règle de protection** (pas d'approbateur re
 
 Les sauvegardes automatisées de PostgreSQL et la supervision de l'application restent à mettre en place avant un usage de production réel — non couvertes par cette configuration de base.
 
+## Paiement (Stripe)
+
+Abonnement des coachs : essai de 14 jours sans carte, puis paiement mensuel ou à la saison (prix dans
+`packages/domain/src/billing.ts`). Le code est dans `apps/web/src/server/billing.ts` et la page `/abonnement`.
+
+Mise en service, à faire dans le tableau de bord Stripe (mode test d'abord, puis mode live) :
+
+1. **Clé secrète** : Développeurs → Clés API → clé secrète (`sk_test_...` puis `sk_live_...`).
+2. **Webhook** : Développeurs → Webhooks → ajouter un endpoint `https://evolyfoot.com/api/billing/webhook`
+   avec les événements `customer.subscription.created`, `customer.subscription.updated` et
+   `customer.subscription.deleted`. Noter le secret de signature (`whsec_...`).
+3. **Portail client** : Paramètres → Facturation → Portail client → activer et enregistrer (moyen de paiement,
+   factures, résiliation, changement de rythme si souhaité).
+4. Renseigner `STRIPE_SECRET_KEY` et `STRIPE_WEBHOOK_SECRET` dans les secrets GitHub du dépôt (environnement
+   `production`) ou dans le `.env` du VPS, puis redéployer.
+
+Les produits et les prix n'ont pas à être créés à la main : le serveur les crée au premier paiement et
+les retrouve ensuite par leur clé (`evolyfoot_base_monthly`, `evolyfoot_team_season`...). Les codes promo
+Stripe sont acceptés sur la page de paiement (coupon de lancement).
+
+Tant que l'accès n'est pas bloqué (`BILLING_ENFORCED` absent ou `false`, variable GitHub du même nom),
+un essai terminé n'empêche rien : la barre latérale invite seulement à s'abonner. À `true`, un coach non
+abonné dont l'essai est fini est renvoyé vers `/abonnement` (le profil reste ouvert). Les coachs inscrits
+avant la mise en service du paiement ont 14 jours d'essai à partir de la migration `add_billing`.
+
+Les applis iOS ne proposent pas d'achat ni de lien de paiement (règle 3.1.1 de l'App Store) : l'abonnement
+se prend sur le web.
+
 ## Déploiement mobile (EAS)
 
 Deux applications, chacune avec son projet EAS et ses fiches sur les stores :

@@ -27,6 +27,10 @@ jobs:
     steps:
       - name: Récupérer le code et redémarrer la stack
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          BILLING_ENFORCED: ${{ vars.BILLING_ENFORCED }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
@@ -37,8 +41,14 @@ jobs:
           timeout: 90s
           # La limite par défaut de 10 minutes coupait le déploiement juste après le build.
           command_timeout: 25m
+          # Paiement Stripe : secrets GitHub facultatifs, transmis à docker compose. Absents, on garde
+          # les valeurs du .env du serveur (une variable vide exportée les masquerait).
+          envs: STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,BILLING_ENFORCED
           script: |
             set -euo pipefail
+            for name in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET BILLING_ENFORCED; do
+              if [ -z "${!name:-}" ]; then unset "$name"; fi
+            done
             cd "${{ secrets.DEPLOY_PATH }}"
             git fetch origin master
             git reset --hard origin/master

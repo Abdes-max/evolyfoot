@@ -1,10 +1,11 @@
 "use client";
 
+import { billingPrices } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useState } from "react";
 
 // Tarifs du lancement : on paie dès le premier coach et la première équipe, les équipes et coachs
-// suivants coûtent moins cher. Aucun paiement n'est encore branché (voir la note de la page).
+// suivants coûtent moins cher. Mêmes prix que l'abonnement Stripe (billing.ts du domaine).
 const cycles = [
   { id: "monthly", label: "Mensuel", per: "/mois", note: "Sans engagement, résiliable à tout moment." },
   { id: "season", label: "À la saison", per: "/saison", note: "D’août à juin, payé en une fois.", badge: "Le moins cher" },
@@ -12,11 +13,7 @@ const cycles = [
 
 type CycleId = (typeof cycles)[number]["id"];
 
-const prices: Record<"base" | "team" | "coach", Record<CycleId, number>> = {
-  base: { monthly: 7.9, season: 59 },
-  team: { monthly: 3.9, season: 29 },
-  coach: { monthly: 2.9, season: 24 },
-};
+const prices: Record<"base" | "team" | "coach", Record<CycleId, number>> = billingPrices;
 
 const included = [
   "Saison guidée de 36 semaines selon tes thèmes prioritaires",

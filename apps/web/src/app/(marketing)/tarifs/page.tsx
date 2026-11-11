@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PricingToggle } from "./pricing-toggle";
+import { billingLines, billingTotal } from "@evolyfoot/domain";
+
+// 1 coach et 1 équipe de base, 5 équipes et 4 coachs en plus.
+const clubExample = billingTotal(billingLines("season", 5, 4));
 
 export const metadata: Metadata = {
   title: "Tarifs — EvolyFoot",
@@ -20,8 +24,8 @@ export default function TarifsPage() {
       <section className="m-section" style={{ paddingTop: 0 }}>
         <PricingToggle />
         <p className="m-legal-notice" role="note" style={{ marginTop: 28 }}>
-          Le paiement n’est pas encore activé : l’accès reste ouvert pendant la phase de lancement, et ces tarifs s’appliqueront à son activation. Exemple : un
-          club de 5 coachs et 6 équipes paie 184 € la saison.
+          14 jours d’essai gratuit sans carte bancaire, puis paiement sécurisé par Stripe, résiliable à tout moment. Exemple : un club de 5 coachs et 6 équipes
+          paie {clubExample} € la saison.
         </p>
       </section>
 

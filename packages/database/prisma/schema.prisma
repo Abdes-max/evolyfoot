@@ -104,6 +104,17 @@ model Educator {
   // Profil de coach : valeurs contrôlées par EducatorProfileService (playStyles côté domaine).
   // Cycle de 4 semaines en cours : les écrans de planification ne lisent que ses séances.
   currentCycle       Int                      @default(1) @map("current_cycle")
+  // Abonnement (compte "coach" seulement ; ses espaces d'équipe et ses adjoints en dépendent). Essai :
+  // `trialEndsAt` si fixé (comptes créés avant le paiement), sinon 14 jours après l'inscription. Les
+  // champs Stripe sont tenus à jour par le webhook (voir BillingService).
+  trialEndsAt          DateTime?                @map("trial_ends_at")
+  stripeCustomerId     String?                  @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?                  @map("stripe_subscription_id")
+  // Statut Stripe de l'abonnement (active, trialing, past_due, canceled...).
+  subscriptionStatus   String?                  @map("subscription_status")
+  // "monthly" | "season"
+  billingCycle         String?                  @map("billing_cycle")
+  currentPeriodEnd     DateTime?                @map("current_period_end")
   playStyle          String?                  @map("play_style")
   preferredFormation String?                  @map("preferred_formation")
   team               Team?

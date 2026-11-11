@@ -333,3 +333,159 @@ nav.profil-tabs {
   color: var(--accent);
   font-weight: 800;
 }
+
+/* Page Abonnement (abonnement/billing-view.tsx) et rappel d'essai de la barre latérale. */
+.abonnement-content {
+  max-width: 720px;
+}
+.profil-plan-cta {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.abonnement-notice,
+.abonnement-status {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.abonnement-notice {
+  border-color: var(--good);
+  color: var(--good);
+  font-weight: 700;
+}
+.abonnement-status {
+  display: grid;
+  gap: 4px;
+}
+.abonnement-status strong {
+  font-size: 16px;
+}
+.abonnement-status span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.abonnement-status-subscribed {
+  border-color: var(--good);
+}
+.abonnement-status-expired {
+  border-color: var(--bad);
+}
+.abonnement-card {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.abonnement-card h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.abonnement-cycles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.abonnement-cycle {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.abonnement-cycle span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.abonnement-cycle.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.abonnement-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+}
+.abonnement-lines li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.abonnement-total {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-weight: 800;
+}
+.abonnement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.abonnement-actions button {
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.abonnement-actions .primary {
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.abonnement-actions .secondary {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+}
+.abonnement-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.abonnement-error {
+  margin: 0;
+  color: var(--bad);
+  font-size: 13px;
+  font-weight: 700;
+}
+.billing-link {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 12px 4px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.billing-link strong {
+  color: var(--accent);
+}
+.billing-link-expired {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+@media (max-width: 760px) {
+  .billing-link {
+    display: none;
+  }
+  .abonnement-cycles {
+    grid-template-columns: 1fr;
+  }
+}
