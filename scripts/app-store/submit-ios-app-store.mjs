@@ -124,7 +124,7 @@ async function api(jwt, method, path, body) {
 
 // Creates or updates the localization of the app info (name, subtitle, privacy policy URL) and of the version
 // (description, keywords, promotional text, support/marketing URLs), and sets the primary category.
-async function applyMetadata(jwt, appId, versionId, metadata) {
+async function applyMetadata(jwt, appId, versionId, metadata, firstRelease) {
   const locale = metadata.locale ?? "fr-FR";
   console.log(`Applying the store listing (${locale})...`);
 
@@ -161,17 +161,20 @@ async function applyMetadata(jwt, appId, versionId, metadata) {
   }
 
   if (metadata.version) {
+    // Apple refuse « Nouveautés » (whatsNew) sur la toute première version d'une app (409 STATE_ERROR).
+    const attributes = { ...metadata.version };
+    if (firstRelease) delete attributes.whatsNew;
     const existing = await api(jwt, "GET", `/appStoreVersions/${versionId}/appStoreVersionLocalizations`);
     const current = (existing.data ?? []).find((entry) => entry.attributes.locale === locale);
     if (current) {
       await api(jwt, "PATCH", `/appStoreVersionLocalizations/${current.id}`, {
-        data: { type: "appStoreVersionLocalizations", id: current.id, attributes: metadata.version },
+        data: { type: "appStoreVersionLocalizations", id: current.id, attributes },
       });
     } else {
       await api(jwt, "POST", "/appStoreVersionLocalizations", {
         data: {
           type: "appStoreVersionLocalizations",
-          attributes: { locale, ...metadata.version },
+          attributes: { locale, ...attributes },
           relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: versionId } } },
         },
       });
@@ -246,16 +249,14 @@ async function main() {
     data: { type: "builds", id: build.id },
   });
 
-  // Apple requires every appStoreVersionLocalization to carry a non-empty
-  // whatsNew before a *first-time* version can be submitted (an existing,
-  // already-submitted-once version tolerates leaving it untouched, which is
-  // what RELEASE_NOTES being optional assumes) -- so this isn't purely
-  // optional in practice, just optional when the version already has one.
-  // Previously hardcoded to en-US, which silently matched nothing (and so
-  // silently skipped writing whatsNew at all) for this app's actual locale
-  // (fr-FR) -- loops over whichever locale(s) the version really has
-  // instead, the same text on each.
-  if (RELEASE_NOTES) {
+  // whatsNew only exists from the second version on: Apple rejects it (409
+  // "cannot be edited at this time") on an app's very first version, so it is
+  // skipped while no other version of the app exists. Loops over whichever
+  // locale(s) the version really has, the same text on each.
+  const allVersions = await api(jwt, "GET", `/apps/${appId}/appStoreVersions?filter[platform]=IOS&limit=200`);
+  const firstRelease = !(allVersions.data ?? []).some((entry) => entry.id !== version.id);
+  if (firstRelease) console.log("  → first version of the app: release notes (whatsNew) skipped.");
+  if (RELEASE_NOTES && !firstRelease) {
     console.log("Setting release notes...");
     const localizations = await api(jwt, "GET", `/appStoreVersions/${version.id}/appStoreVersionLocalizations`);
     if (!localizations.data || localizations.data.length === 0) {
@@ -280,7 +281,7 @@ async function main() {
   // listing is reproducible. Age rating, App Privacy answers and the reviewer's demo account stay manual steps in
   // App Store Connect (Apple offers no API for App Privacy, and the demo account is a credential).
   if (METADATA_FILE) {
-    await applyMetadata(jwt, appId, version.id, JSON.parse(readFileSync(METADATA_FILE, "utf8")));
+    await applyMetadata(jwt, appId, version.id, JSON.parse(readFileSync(METADATA_FILE, "utf8")), firstRelease);
   }
 
   // Screenshots are locked once the version is in review -- replace them
