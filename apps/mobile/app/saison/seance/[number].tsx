@@ -144,7 +144,7 @@ export default function ProgramSessionScreen() {
     const body = await response?.json().catch(() => null);
     setSaving(false);
     if (response?.ok && body?.session?.id) {
-      router.replace(`/terrain/${body.session.id}`);
+      router.replace(`/seance/${body.session.id}`);
       return;
     }
     setError(body?.error ?? "La séance n’a pas pu être préparée.");

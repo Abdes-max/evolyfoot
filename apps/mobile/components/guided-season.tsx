@@ -231,7 +231,7 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
                     <TouchableOpacity
                       accessibilityRole="button"
                       key={`${slot.sessionNumber}-${index}`}
-                      onPress={() => (done ? router.push(`/terrain/${done.id}`) : openSeance(slot.sessionNumber, shownWeek, index))}
+                      onPress={() => (done ? router.push(`/seance/${done.id}`) : openSeance(slot.sessionNumber, shownWeek, index))}
                       style={[styles.slotCard, { borderLeftColor: slotColor(slot) }]}
                     >
                       <Text style={styles.muted}>Séance {index + 1}</Text>
@@ -276,7 +276,7 @@ export function GuidedSeason({ now, fallback }: { now: Date; fallback?: ReactNod
                           accessibilityRole="button"
                           hitSlop={4}
                           key={`${slot.sessionNumber}-${index}`}
-                          onPress={() => (done ? router.push(`/terrain/${done.id}`) : openSeance(slot.sessionNumber, week.week, index))}
+                          onPress={() => (done ? router.push(`/seance/${done.id}`) : openSeance(slot.sessionNumber, week.week, index))}
                           style={[styles.dot, { backgroundColor: slotColor(slot), opacity: done || slot.type !== "theme" || slot.major ? 1 : 0.4 }]}
                         >
                           {done ? <Text style={styles.check}>✓</Text> : null}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ProfileAccountBlocks } from "./account-blocks";
 import { SeasonTab } from "./season-tab";
+import { ThemeToggle } from "../theme-toggle";
 import { useEffect, useMemo, useState } from "react";
 
 interface Profile {
@@ -252,6 +253,7 @@ export function ProfilView() {
           <h1 title="Profil">Profil</h1>
           <p title="Tes informations d’éducateur et l’accès à ton compte.">Tes informations d’éducateur et l’accès à ton compte.</p>
         </div>
+        <ThemeToggle />
       </header>
 
       <section className="profil-content">
