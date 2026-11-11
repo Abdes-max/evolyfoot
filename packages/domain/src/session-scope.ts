@@ -24,6 +24,20 @@ export function sessionsInScope<T extends { meetingAt?: string | null }>(session
     });
 }
 
+// Statut d'une séance de la saison : à préparer (pas encore préparée), préparée, ou terminée (préparée et déjà passée).
+export type SeasonSessionStatus = "toPrepare" | "prepared" | "done";
+
+export const seasonSessionStatusLabels: Record<SeasonSessionStatus, string> = {
+  toPrepare: "À préparer",
+  prepared: "Préparée",
+  done: "Terminée",
+};
+
+export function seasonSessionStatus(prepared: { meetingAt?: string | null } | null | undefined, now: number): SeasonSessionStatus {
+  if (!prepared) return "toPrepare";
+  return isPastSession(prepared.meetingAt, now) ? "done" : "prepared";
+}
+
 // Un créneau de la saison est passé selon, dans l'ordre : le rendez-vous de la séance préparée, la date que lui donne la saison
 // (jour d'entraînement de sa semaine), ou à défaut sa semaine par rapport à la semaine en cours.
 export function isPastSeasonSlot(input: {

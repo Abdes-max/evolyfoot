@@ -82,9 +82,9 @@ export function WeekSessions({ scope }: { scope: SessionScope }) {
   const trainingRoster = concernedPlayers(roster, settings?.playerIds);
 
   function open(session: WeekSession) {
-    // Séance du cycle en cours : l'écran de préparation ; sinon (saison guidée, ancien cycle) le mode terrain.
+    // Séance du cycle en cours : l'écran de préparation ; sinon (saison guidée, ancien cycle) son détail, d'où l'on lance le chronomètre.
     if (session.cycleNumber === 0) {
-      router.push(`/terrain/${session.id}`);
+      router.push(`/seance/${session.id}`);
     } else {
       router.push(`/session?week=${session.weekNumber}&slot=${session.slot}`);
     }

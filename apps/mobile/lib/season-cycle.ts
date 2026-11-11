@@ -72,10 +72,10 @@ export function useSeasonCycle(): SeasonCycleState {
   }, [program, loaded, prepared, sessionsPerWeek, team?.ageGroup, now]);
 }
 
-// Ouvre une séance de la saison : préparée (mode terrain) ou à préparer (sa fiche du programme).
+// Ouvre une séance de la saison : préparée (son détail, d'où l'on lance le chronomètre) ou à préparer (sa fiche du programme).
 export function openSeasonSlot(sessionNumber: number, seasonWeek: number, index: number, preparedId?: string) {
   if (preparedId) {
-    router.push(`/terrain/${preparedId}`);
+    router.push(`/seance/${preparedId}`);
   } else {
     router.push({ pathname: "/saison/seance/[number]", params: { number: String(sessionNumber), semaine: String(seasonWeek), creneau: String(index) } });
   }
