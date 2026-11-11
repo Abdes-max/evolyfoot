@@ -4,6 +4,8 @@ import {
   concernedPlayers,
   convocationFeedback as formatConvocationFeedback,
   guidedSeasonCycle,
+  seasonSessionStatus,
+  seasonSessionStatusLabels,
   type AttendanceEntry,
   type TrainingConvocationSettings,
   type TrainingSession,
@@ -35,6 +37,7 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
   // Passé tel quel à <SessionBuilder>, qui porte désormais le seul input du rendez-vous (voir son
   // commentaire) -- ce fichier ne garde que lieu/description dans son propre formulaire "Détails".
   const [recordMeetingAt, setRecordMeetingAt] = useState<string | null>(null);
+  const [now] = useState(() => Date.now());
   const [personalExercises, setPersonalExercises] = useState<readonly PersonalExercise[]>([]);
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
@@ -286,6 +289,9 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
               {state.guidedSeason ? `Semaine ${state.weekNumber} de la saison` : cycleWeekLabel(state.weekNumber)} · Séance {state.slot + 1}
             </span>
             <h1>Ajuste ta séance.</h1>
+            <span className="activity-category-tag">
+              {cancelledAt ? "Annulée" : seasonSessionStatusLabels[seasonSessionStatus({ meetingAt: recordMeetingAt }, now)]}
+            </span>
             <p>{state.session.intention}</p>
             <Link className="primary-button session-field-link" href={`/session/${sessionId}/terrain`}>
               Lancer le mode terrain

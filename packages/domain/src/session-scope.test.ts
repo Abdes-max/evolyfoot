@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPastSeasonSlot, isPastSession, sessionsInScope } from "./session-scope";
+import { isPastSeasonSlot, isPastSession, seasonSessionStatus, seasonSessionStatusLabels, sessionsInScope } from "./session-scope";
 
 const now = new Date("2026-11-10T12:00:00.000Z").getTime();
 const hours = (count: number) => new Date(now + count * 3600_000).toISOString();
@@ -31,5 +31,15 @@ describe("filtre À venir / Passées des séances", () => {
     expect(isPastSeasonSlot({ ...base, week: 30 })).toBe(false);
     expect(isPastSeasonSlot({ ...base, startDate: null, trainingDays: [], week: 9 })).toBe(true);
     expect(isPastSeasonSlot({ ...base, startDate: null, trainingDays: [], week: 10 })).toBe(false);
+  });
+});
+
+describe("statut d'une séance de la saison", () => {
+  it("est à préparer sans séance, préparée tant qu'elle n'a pas eu lieu, terminée ensuite", () => {
+    expect(seasonSessionStatus(null, now)).toBe("toPrepare");
+    expect(seasonSessionStatus({ meetingAt: hours(24) }, now)).toBe("prepared");
+    expect(seasonSessionStatus({ meetingAt: null }, now)).toBe("prepared");
+    expect(seasonSessionStatus({ meetingAt: hours(-48) }, now)).toBe("done");
+    expect(seasonSessionStatusLabels).toEqual({ toPrepare: "À préparer", prepared: "Préparée", done: "Terminée" });
   });
 });

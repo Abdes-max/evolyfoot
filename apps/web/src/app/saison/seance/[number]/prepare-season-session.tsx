@@ -124,6 +124,7 @@ export function PrepareSeasonSession({ sessionNumber, week, slot, activityIds }:
   return (
     <form className="program-situation prepare-season-session" onSubmit={submit}>
       <h2>Préparer cette séance</h2>
+      <span className="activity-category-tag">À préparer</span>
       <p>Semaine {week} de ta saison. Elle rejoint ton calendrier, avec convocation et présences.</p>
       {recurring ? (
         <div className="prepare-season-recurring">
