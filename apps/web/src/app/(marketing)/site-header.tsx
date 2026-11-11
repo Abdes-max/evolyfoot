@@ -38,6 +38,10 @@ export function SiteHeader() {
         </Link>
       </div>
 
+      <div className="m-header-theme">
+        <ThemeToggle />
+      </div>
+
       <button
         aria-expanded={open}
         aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
