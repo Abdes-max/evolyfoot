@@ -5,6 +5,7 @@ import { NotificationBell } from "./notification-bell";
 import { useEffect, useState } from "react";
 import { TeamCrest } from "./team-crest";
 import { ThemeToggle } from "./theme-toggle";
+import { BillingLink } from "./abonnement/billing-link";
 import { addTeam, listTeams, switchTeam, teamChoiceLabel, type TeamChoice } from "./team-switch";
 
 interface Educator {
@@ -204,6 +205,7 @@ export function SidebarIdentity() {
           Déconnexion
         </button>
       </div>
+      <BillingLink />
       {educator.emailVerified === false && (
         <div className="email-reminder">
           <span>Confirme ton adresse e-mail : un lien t’a été envoyé à l’inscription.</span>

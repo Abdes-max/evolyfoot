@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ProfileAccountBlocks } from "./account-blocks";
 import { SeasonTab } from "./season-tab";
 import { ThemeToggle } from "../theme-toggle";
+import { BillingPlan } from "../abonnement/billing-plan";
 import { useEffect, useMemo, useState } from "react";
 
 interface Profile {
@@ -279,13 +280,7 @@ export function ProfilView() {
                   </span>
                 </div>
               </div>
-              <div className="profil-plan">
-                <span className="profil-plan-name">Phase de lancement</span>
-                <span className="profil-plan-note">Accès complet, paiement pas encore activé</span>
-                <button className="profil-plan-cta" disabled type="button">
-                  Abonnement Coach (bientôt)
-                </button>
-              </div>
+              <BillingPlan />
             </div>
 
             <nav aria-label="Sections du profil" className="profil-tabs">
