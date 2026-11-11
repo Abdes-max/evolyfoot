@@ -784,3 +784,11 @@
   border-color: var(--m-line);
   color: var(--m-ink);
 }
+
+/* Les badges de magasin restent noirs dans les deux thèmes : leur texte doit rester blanc. */
+.marketing-page .m-store-badge,
+.marketing-page .m-store-badge span,
+.marketing-page .m-store-badge small,
+.marketing-page .m-store-badge strong {
+  color: #fff;
+}
