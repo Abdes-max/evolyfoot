@@ -270,7 +270,7 @@ nav {
   color: var(--muted);
   font-size: 11px;
 }
-.coach > button {
+.coach > button:not(.theme-toggle) {
   min-height: 44px;
   margin-left: auto;
   border: 0;
@@ -961,7 +961,8 @@ button.week-calendar-badge:focus-visible {
     margin: 0;
     flex: 0 0 auto;
   }
-  .coach button {
+  .coach button,
+  .coach .theme-toggle {
     display: none;
   }
   .coach-link {

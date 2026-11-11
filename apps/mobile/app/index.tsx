@@ -122,7 +122,7 @@ export default function HomeScreen() {
   // Toute la carte « Prochaine séance » est cliquable : séance datée, sinon prochaine séance à préparer.
   function openNextSession() {
     if (upcoming) {
-      if (upcoming.cycleNumber === guidedSeasonCycle) router.push(`/terrain/${upcoming.id}`);
+      if (upcoming.cycleNumber === guidedSeasonCycle) router.push(`/seance/${upcoming.id}`);
       else router.push(`/session?week=${upcoming.weekNumber}&slot=${upcoming.slot}`);
     } else if (nextGuided) {
       router.push({
