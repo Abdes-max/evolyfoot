@@ -293,6 +293,7 @@ export {
   emptyCompetitionLineup,
   lineupFromTemplate,
   parseCompetitionLineup,
+  restrictLineupToPlayers,
   teamLineupMaxSubstitutes,
   validateCompetitionLineup,
 } from "./competition-lineup";

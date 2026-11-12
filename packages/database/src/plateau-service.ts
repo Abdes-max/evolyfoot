@@ -1,4 +1,4 @@
-import { validatePlateau } from "@evolyfoot/domain";
+import { restrictLineupToPlayers, validatePlateau } from "@evolyfoot/domain";
 import type { PlateauInput } from "@evolyfoot/domain";
 import { EducatorNotFoundError, PlateauNotFoundError, ValidationError } from "./errors";
 import { readPlayerSelection } from "./player-selection";
@@ -79,6 +79,8 @@ export class PlateauService {
       ...(input.description !== undefined ? { description: normalizeOptionalText(input.description) } : {}),
       ...(input.result !== undefined ? { result: normalizeOptionalText(input.result) } : {}),
       ...(selectedPlayerIds !== undefined ? { selectedPlayerIds } : {}),
+      // Les joueurs qui ne sont plus concernés quittent la composition.
+      ...(selectedPlayerIds && existing.lineup ? { lineup: restrictLineupToPlayers(existing.lineup, new Set(selectedPlayerIds)) } : {}),
       ...(input.finished !== undefined ? { finishedAt: input.finished ? (existing.finishedAt ?? new Date()) : null } : {}),
     });
   }

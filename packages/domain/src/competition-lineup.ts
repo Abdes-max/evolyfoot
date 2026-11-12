@@ -77,6 +77,17 @@ export function validateCompetitionLineup(value: CompetitionLineup, maxBench: nu
 
 // Nouveau format et/ou nouvelle formation : les titulaires suivent sur les postes les plus proches,
 // ceux qui n'ont plus de place passent sur le banc tant qu'il en reste.
+// Joueurs concernés changés : ceux qui ne le sont plus quittent la composition (terrain et banc).
+export function restrictLineupToPlayers(value: CompetitionLineup, playerIds: ReadonlySet<string>): CompetitionLineup {
+  const lineup = value.lineup.filter((assignment) => playerIds.has(assignment.playerId));
+  return {
+    ...value,
+    lineup,
+    captainPlayerId: lineup.some((assignment) => assignment.playerId === value.captainPlayerId) ? value.captainPlayerId : null,
+    substitutePlayerIds: value.substitutePlayerIds.filter((id) => playerIds.has(id)),
+  };
+}
+
 // Point de départ d'une compo de tournoi ou de plateau : la compo type, sans les joueurs non
 // concernés et avec le banc ramené à la limite du format.
 export function lineupFromTemplate(template: CompetitionLineup, playerIds: ReadonlySet<string>): CompetitionLineup {

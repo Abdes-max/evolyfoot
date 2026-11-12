@@ -4,6 +4,7 @@ import {
   emptyCompetitionLineup,
   lineupFromTemplate,
   parseCompetitionLineup,
+  restrictLineupToPlayers,
   validateCompetitionLineup,
 } from "./competition-lineup";
 import { formationSlots, listFormations } from "./match";
@@ -36,6 +37,17 @@ describe("composition d'un tournoi ou d'un plateau", () => {
     expect(day.lineup).toHaveLength(0);
     expect(day.captainPlayerId).toBeNull();
     expect(validateCompetitionLineup(day)).toBeNull();
+  });
+
+  it("retire de la compo les joueurs qui ne sont plus concernés", () => {
+    const lineup = [
+      { slotId: first!.id, playerId: "p1", playerName: "Léo" },
+      { slotId: second!.id, playerId: "p2", playerName: "Noé" },
+    ];
+    const restricted = restrictLineupToPlayers({ ...base, lineup, captainPlayerId: "p2", substitutePlayerIds: ["p3", "p4"] }, new Set(["p1", "p3"]));
+    expect(restricted.lineup.map((assignment) => assignment.playerId)).toEqual(["p1"]);
+    expect(restricted.captainPlayerId).toBeNull();
+    expect(restricted.substitutePlayerIds).toEqual(["p3"]);
   });
 
   it("reporte les titulaires sur la nouvelle formation", () => {

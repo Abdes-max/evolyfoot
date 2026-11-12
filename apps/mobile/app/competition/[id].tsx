@@ -40,6 +40,9 @@ export default function CompetitionDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
   const [selection, setSelection] = useState<PlayerSelection>(null);
+  const [selectionFeedback, setSelectionFeedback] = useState("");
+  // Remonte l'éditeur de compo quand le serveur l'a restreinte aux joueurs concernés.
+  const [lineupVersion, setLineupVersion] = useState(0);
   const [teamLineup, setTeamLineup] = useState<CompetitionLineup | null>(null);
 
   useEffect(() => {
@@ -88,7 +91,7 @@ export default function CompetitionDetailScreen() {
     setFeedback("");
     const response = await apiRequest(`${endpoint}/${id}/details`, {
       method: "PATCH",
-      body: JSON.stringify({ date: date ? `${date}T00:00:00.000Z` : null, location, description, result, selectedPlayerIds: selection }),
+      body: JSON.stringify({ date: date ? `${date}T00:00:00.000Z` : null, location, description, result }),
     });
     setSaving(false);
     if (!response?.ok) {
@@ -100,6 +103,22 @@ export default function CompetitionDetailScreen() {
       setItem(updated);
     }
     setFeedback("Détails enregistrés.");
+  }
+
+  // Joueurs concernés : même section que la fiche match. La compo et les rencontres suivent la sélection
+  // enregistrée (un joueur décoché quitte la composition).
+  async function saveSelection() {
+    setSelectionFeedback("");
+    const response = await apiRequest(`${endpoint}/${id}/details`, { method: "PATCH", body: JSON.stringify({ selectedPlayerIds: selection }) });
+    const updated: Competition | undefined = response?.ok ? (await response.json().catch(() => null))?.[itemKey] : undefined;
+    if (!updated) {
+      setSelectionFeedback("Les joueurs concernés n’ont pas été enregistrés, réessaie.");
+      return;
+    }
+    setItem(updated);
+    setSelection(updated.selectedPlayerIds ?? null);
+    setLineupVersion((version) => version + 1);
+    setSelectionFeedback("Joueurs concernés enregistrés.");
   }
 
   // Marque la fiche comme terminée, ou la rouvre : un tournoi terminé passe dans « Passés » même avant sa date.
@@ -189,22 +208,34 @@ export default function CompetitionDetailScreen() {
           <TextInput accessibilityLabel="Description" multiline onChangeText={setDescription} style={[styles.input, styles.multiline]} value={description} />
           <Text style={styles.label}>Bilan</Text>
           <TextInput accessibilityLabel="Bilan" onChangeText={setResult} placeholder="Ex. 2 victoires, 1 nul" style={styles.input} value={result} />
-          <View style={styles.picker}>
-            <CollapsibleSection summary={selectionSummary(selection, roster.length)} title="Joueurs concernés">
-              <ConcernedPlayersPicker
-                hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et peuvent répondre.`}
-                onChange={setSelection}
-                roster={roster}
-                value={selection}
-              />
-            </CollapsibleSection>
-          </View>
           {saveError ? <Text style={styles.fieldError}>{saveError}</Text> : null}
           {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
-          <TouchableOpacity accessibilityRole="button" disabled={saving || selection?.length === 0} onPress={save} style={styles.submitButton}>
+          <TouchableOpacity accessibilityRole="button" disabled={saving} onPress={save} style={styles.submitButton}>
             <Text style={styles.submitButtonText}>{saving ? "Enregistrement…" : "Enregistrer les détails"}</Text>
           </TouchableOpacity>
         </View>
+
+        <CollapsibleSection
+          style={{ marginTop: spacing.md }}
+          summary={selectionSummary(item.selectedPlayerIds ?? null, roster.length)}
+          title="Joueurs concernés"
+        >
+          <ConcernedPlayersPicker
+            hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et entrent dans la composition et les rencontres.`}
+            onChange={(value) => {
+              setSelection(value);
+              setSelectionFeedback("");
+            }}
+            roster={roster}
+            value={selection}
+          />
+          {JSON.stringify(selection) !== JSON.stringify(item.selectedPlayerIds ?? null) ? (
+            <TouchableOpacity accessibilityRole="button" disabled={selection?.length === 0} onPress={() => void saveSelection()} style={styles.submitButton}>
+              <Text style={styles.submitButtonText}>Enregistrer les joueurs concernés</Text>
+            </TouchableOpacity>
+          ) : null}
+          {selectionFeedback ? <Text style={styles.feedback}>{selectionFeedback}</Text> : null}
+        </CollapsibleSection>
 
         <View style={styles.form}>
           <Text style={styles.formTitle}>Convocation</Text>
@@ -236,7 +267,7 @@ export default function CompetitionDetailScreen() {
             <CompetitionLineupEditor
               defaultGameFormat={(team?.gameFormat ?? 8) as GameFormat}
               initial={item.lineup ?? null}
-              key={item.id}
+              key={`${item.id}-${lineupVersion}`}
               lineupUrl={`${endpoint}/${id}/lineup`}
               players={teamRoster.filter(
                 (player) =>

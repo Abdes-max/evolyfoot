@@ -1,4 +1,4 @@
-import { validateTournament } from "@evolyfoot/domain";
+import { restrictLineupToPlayers, validateTournament } from "@evolyfoot/domain";
 import type { TournamentInput } from "@evolyfoot/domain";
 import { EducatorNotFoundError, TournamentNotFoundError, ValidationError } from "./errors";
 import { readPlayerSelection } from "./player-selection";
@@ -82,6 +82,8 @@ export class TournamentService {
       ...(input.description !== undefined ? { description: normalizeOptionalText(input.description) } : {}),
       ...(input.result !== undefined ? { result: normalizeOptionalText(input.result) } : {}),
       ...(selectedPlayerIds !== undefined ? { selectedPlayerIds } : {}),
+      // Les joueurs qui ne sont plus concernés quittent la composition.
+      ...(selectedPlayerIds && existing.lineup ? { lineup: restrictLineupToPlayers(existing.lineup, new Set(selectedPlayerIds)) } : {}),
       ...(input.finished !== undefined ? { finishedAt: input.finished ? (existing.finishedAt ?? new Date()) : null } : {}),
     });
   }
