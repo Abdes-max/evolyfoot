@@ -361,6 +361,8 @@ export async function createStripeGateway(): Promise<PaymentGateway | null> {
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
       const first = subscription.items.data[0];
       const periodEnd = first?.current_period_end;
+      const quantityOf = (item: "team" | "coach") =>
+        subscription.items.data.find((entry) => billingItemOfLookupKey(entry.price.lookup_key)?.item === item)?.quantity ?? 0;
       return {
         customerId,
         update: {
@@ -373,6 +375,8 @@ export async function createStripeGateway(): Promise<PaymentGateway | null> {
             : subscription.cancel_at_period_end && periodEnd
               ? new Date(periodEnd * 1000)
               : null,
+          billedExtraTeams: quantityOf("team"),
+          billedExtraCoaches: quantityOf("coach"),
         },
       };
     },

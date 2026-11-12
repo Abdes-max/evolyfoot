@@ -141,3 +141,18 @@ export function renderPasswordResetEmail(displayName: string, resetUrl: string):
     text: `Bonjour ${displayName},\n\n${message}\n${resetUrl}\n\n${footnote}`,
   };
 }
+
+export function renderBillingReminderEmail(
+  displayName: string,
+  subject: string,
+  message: string,
+  actionLabel: string,
+  actionUrl: string,
+): { subject: string; html: string; text: string } {
+  const footnote = "Tu reçois cet e-mail car tu as un compte coach EvolyFoot. Le paiement se fait uniquement sur le site, jamais par e-mail.";
+  return {
+    subject: `${subject} — EvolyFoot`,
+    html: renderEmailHtml({ displayName, message, actionLabel, actionUrl, footnote }),
+    text: `Bonjour ${displayName},\n\n${message}\n${actionUrl}\n\n${footnote}`,
+  };
+}

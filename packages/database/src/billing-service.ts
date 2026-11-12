@@ -14,6 +14,10 @@ export interface BillingSummary {
   currentPeriodEnd: Date | null;
   // Résiliation programmée : l'accès reste ouvert jusqu'à cette date, sans renouvellement.
   cancelAt: Date | null;
+  // Suppléments payés dans l'abonnement en cours, et dernier rappel envoyé par e-mail.
+  billedExtraTeams: number | null;
+  billedExtraCoaches: number | null;
+  lastReminder: string | null;
   // Facturés en plus de la base : équipes au-delà de la première, adjoints de toutes les équipes.
   extraTeams: number;
   extraCoaches: number;
@@ -25,6 +29,8 @@ export interface SubscriptionUpdate {
   cycle: BillingCycle | null;
   currentPeriodEnd: Date | null;
   cancelAt?: Date | null;
+  billedExtraTeams?: number | null;
+  billedExtraCoaches?: number | null;
 }
 
 // Abonnement porté par le compte coach. Un espace d'équipe ou un adjoint renvoie au coach dont il dépend.
@@ -62,9 +68,22 @@ export class BillingService {
       billingCycle: parseBillingCycle(coach.billingCycle),
       currentPeriodEnd: coach.currentPeriodEnd,
       cancelAt: coach.subscriptionCancelAt,
+      billedExtraTeams: coach.billedExtraTeams,
+      billedExtraCoaches: coach.billedExtraCoaches,
+      lastReminder: coach.billingReminder,
       extraTeams: teamSpaces.length,
       extraCoaches,
     };
+  }
+
+  // Comptes coach à passer en revue pour les rappels d'abonnement.
+  async coachIds(): Promise<string[]> {
+    const coaches = await this.prisma.educator.findMany({ where: { role: "coach" }, select: { id: true } });
+    return coaches.map((coach) => coach.id);
+  }
+
+  async markReminder(coachId: string, key: string): Promise<void> {
+    await this.prisma.educator.update({ where: { id: coachId }, data: { billingReminder: key } });
   }
 
   async setCustomer(coachId: string, stripeCustomerId: string): Promise<void> {
@@ -81,6 +100,8 @@ export class BillingService {
         billingCycle: update.cycle,
         currentPeriodEnd: update.currentPeriodEnd,
         subscriptionCancelAt: update.cancelAt ?? null,
+        billedExtraTeams: update.billedExtraTeams ?? null,
+        billedExtraCoaches: update.billedExtraCoaches ?? null,
       },
     });
     return result.count > 0;
