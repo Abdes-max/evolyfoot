@@ -77,6 +77,10 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
   const [teamGameFormat, setTeamGameFormat] = useState<GameFormat>(8);
   const [teamLineup, setTeamLineup] = useState<CompetitionLineup | null>(null);
   const [selection, setSelection] = useState<PlayerSelection>(null);
+  const [savingSelection, setSavingSelection] = useState(false);
+  const [selectionFeedback, setSelectionFeedback] = useState("");
+  // Remonte l'éditeur de compo quand le serveur l'a restreinte aux joueurs concernés.
+  const [lineupVersion, setLineupVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -147,7 +151,6 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
           location,
           description,
           result,
-          selectedPlayerIds: selection,
         }),
       });
       if (!response.ok) {
@@ -157,12 +160,38 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
       const body = await response.json();
       const updated: Competition = body[itemKey];
       setItem(updated);
-      setSelection(updated.selectedPlayerIds ?? null);
       setDateInput(updated.date ? updated.date.slice(0, 10) : "");
     } catch {
       setSaveError("Une erreur est survenue.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Joueurs concernés : même section que la fiche match. La compo et les rencontres suivent la sélection
+  // enregistrée (un joueur décoché quitte la composition).
+  async function saveSelection() {
+    setSavingSelection(true);
+    setSelectionFeedback("");
+    try {
+      const response = await fetch(`${endpoint}/${competitionId}/details`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ selectedPlayerIds: selection }),
+      });
+      if (!response.ok) {
+        setSelectionFeedback(await readErrorMessage(response));
+        return;
+      }
+      const updated: Competition = (await response.json())[itemKey];
+      setItem(updated);
+      setSelection(updated.selectedPlayerIds ?? null);
+      setLineupVersion((version) => version + 1);
+      setSelectionFeedback("Joueurs concernés enregistrés.");
+    } catch {
+      setSelectionFeedback("Une erreur est survenue.");
+    } finally {
+      setSavingSelection(false);
     }
   }
 
@@ -282,23 +311,33 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
             <span>Bilan</span>
             <input onChange={(event) => setResult(event.target.value)} placeholder="Ex. 2 victoires, 1 nul" value={result} />
           </label>
-          <CollapsibleSection summary={selectionSummary(selection, roster.length)} title="Joueurs concernés">
-            <ConcernedPlayersPicker
-              hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et peuvent répondre.`}
-              onChange={setSelection}
-              roster={roster}
-              value={selection}
-            />
-          </CollapsibleSection>
           {saveError && (
             <p className="field-error" role="alert">
               {saveError}
             </p>
           )}
-          <button className="match-convocation-send" disabled={saving || selection?.length === 0} type="submit">
+          <button className="match-convocation-send" disabled={saving} type="submit">
             {saving ? "Enregistrement…" : "Enregistrer les détails"}
           </button>
         </form>
+
+        <CollapsibleSection summary={selectionSummary(item.selectedPlayerIds ?? null, roster.length)} title="Joueurs concernés">
+          <ConcernedPlayersPicker
+            hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et entrent dans la composition et les rencontres.`}
+            onChange={(value) => {
+              setSelection(value);
+              setSelectionFeedback("");
+            }}
+            roster={roster}
+            value={selection}
+          />
+          {JSON.stringify(selection) !== JSON.stringify(item.selectedPlayerIds ?? null) && (
+            <button className="match-details-save" disabled={savingSelection || selection?.length === 0} onClick={saveSelection} type="button">
+              {savingSelection ? "Enregistrement…" : "Enregistrer les joueurs concernés"}
+            </button>
+          )}
+          {selectionFeedback && <p className="match-convocation-feedback">{selectionFeedback}</p>}
+        </CollapsibleSection>
 
         <div className="event-card">
           <h2>Convocation</h2>
@@ -329,7 +368,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
           <CompetitionLineupEditor
             defaultGameFormat={teamGameFormat}
             initial={item.lineup ?? null}
-            key={item.id}
+            key={`${item.id}-${lineupVersion}`}
             lineupUrl={`${endpoint}/${competitionId}/lineup`}
             players={roster.filter(
               (player) =>
