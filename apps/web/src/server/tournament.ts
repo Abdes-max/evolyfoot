@@ -1,5 +1,5 @@
 import { EducatorNotFoundError, TournamentNotFoundError } from "@evolyfoot/database";
-import type { AttendanceEntry, CompetitionGame } from "@evolyfoot/domain";
+import type { AttendanceEntry, CompetitionGame, CompetitionLineup } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface TournamentSummary {
@@ -18,6 +18,8 @@ export interface TournamentSummary {
   attendance?: readonly AttendanceEntry[];
   // Rencontres saisies (équipe rencontrée, score, buteurs et passeurs).
   games?: readonly CompetitionGame[];
+  // Composition de la journée, null tant qu'elle n'est pas préparée.
+  lineup?: CompetitionLineup | null;
   // ISO de la date où il a été marqué terminé, `null` s'il est en cours.
   finishedAt: string | null;
   // Annulé par le coach (ISO) et la raison communiquée aux joueurs ; `null` s'il est maintenu.
@@ -219,6 +221,7 @@ export async function createTournamentGateway(): Promise<{ gateway: TournamentGa
       convokedAt: tournament.convokedAt ? tournament.convokedAt.toISOString() : null,
       ...(tournament.attendance ? { attendance: tournament.attendance } : {}),
       games: tournament.games ?? [],
+      lineup: tournament.lineup ?? null,
       finishedAt: tournament.finishedAt ? tournament.finishedAt.toISOString() : null,
       cancelledAt: tournament.cancelledAt ? tournament.cancelledAt.toISOString() : null,
       cancellationNote: tournament.cancellationNote ?? null,

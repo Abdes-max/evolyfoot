@@ -1,6 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { useState, type ReactNode } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from "react-native";
 import { themedStyles } from "../lib/themed-styles";
 
 // Section repliable : titre et résumé toujours visibles, contenu au toucher. Repliée par défaut.
@@ -8,16 +8,18 @@ export function CollapsibleSection({
   title,
   summary,
   defaultOpen = false,
+  style,
   children,
 }: {
   title: string;
   summary?: string;
   defaultOpen?: boolean;
+  style?: StyleProp<ViewStyle>;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, style]}>
       <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={styles.head}>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{title}</Text>

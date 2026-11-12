@@ -1,4 +1,4 @@
-import type { AttendanceEntry, CompetitionGame } from "@evolyfoot/domain";
+import type { AttendanceEntry, CompetitionGame, CompetitionLineup } from "@evolyfoot/domain";
 
 // Tournois et plateaux : même API REST côté web (competitions-panel.tsx), seules les clés de la
 // réponse JSON changent.
@@ -18,6 +18,8 @@ export interface Competition {
   attendance?: AttendanceEntry[];
   // Rencontres saisies : équipe rencontrée, score, buteurs et passeurs.
   games?: CompetitionGame[];
+  // Composition de la journée (format, formation, titulaires, capitaine, banc).
+  lineup?: CompetitionLineup | null;
   // Date où le coach l'a marqué terminé, `null` ou absent tant qu'il est en cours.
   finishedAt?: string | null;
   // Annulé par le coach (ISO) et la raison communiquée aux joueurs.

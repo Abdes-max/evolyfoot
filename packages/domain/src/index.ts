@@ -288,6 +288,8 @@ export {
 } from "./competition-games";
 export type { CompetitionGame, CompetitionRecord, PlayerCompetitionGame } from "./competition-games";
 export { nextEvent, nextEventKindLabels } from "./next-event";
+export { changeCompetitionFormation, emptyCompetitionLineup, parseCompetitionLineup, validateCompetitionLineup } from "./competition-lineup";
+export type { CompetitionLineup } from "./competition-lineup";
 export type { NextEventCandidate, NextEventKind } from "./next-event";
 export {
   billingAccess,

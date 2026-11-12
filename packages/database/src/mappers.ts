@@ -1,4 +1,4 @@
-import { defaultFormationId, parseCompetitionGames, sortTrainingDays } from "@evolyfoot/domain";
+import { defaultFormationId, parseCompetitionGames, parseCompetitionLineup, sortTrainingDays } from "@evolyfoot/domain";
 import type {
   AgeGroup as DomainAgeGroup,
   AttendanceEntry,
@@ -464,6 +464,7 @@ export function toPersistedTournament(record: PrismaTournamentRecord): Persisted
     convokedAt: record.convokedAt,
     attendance: toAttendanceEntries(record.attendance),
     games: parseCompetitionGames(record.games),
+    lineup: parseCompetitionLineup(record.lineup),
     finishedAt: record.finishedAt,
     cancelledAt: record.cancelledAt,
     cancellationNote: record.cancellationNote,
@@ -485,6 +486,7 @@ export function toPersistedPlateau(record: PrismaPlateauRecord): PersistedPlatea
     convokedAt: record.convokedAt,
     attendance: toAttendanceEntries(record.attendance),
     games: parseCompetitionGames(record.games),
+    lineup: parseCompetitionLineup(record.lineup),
     finishedAt: record.finishedAt,
     cancelledAt: record.cancelledAt,
     cancellationNote: record.cancellationNote,

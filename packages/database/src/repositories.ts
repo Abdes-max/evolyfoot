@@ -2,6 +2,7 @@ import type {
   AgeGroup,
   AttendanceEntry,
   CompetitionGame,
+  CompetitionLineup,
   DevelopmentTheme,
   DiagnosticScores,
   GameFormat,
@@ -597,6 +598,7 @@ export interface CompetitionUpdate {
   convokedAt?: Date | null;
   attendance?: readonly AttendanceEntry[];
   games?: readonly CompetitionGame[];
+  lineup?: CompetitionLineup | null;
   finishedAt?: Date | null;
   cancelledAt?: Date | null;
   cancellationNote?: string | null;
@@ -621,6 +623,8 @@ export interface PersistedTournament {
   attendance?: readonly AttendanceEntry[];
   // Rencontres saisies (équipe rencontrée, score, buteurs et passeurs).
   games?: readonly CompetitionGame[];
+  // Composition de la journée, null tant qu'elle n'est pas préparée.
+  lineup?: CompetitionLineup | null;
   // Date à laquelle le coach l'a marqué comme terminé ; `null` tant qu'il est en cours.
   finishedAt: Date | null;
   // Annulé par le coach : date, et raison communiquée aux joueurs.
@@ -655,6 +659,7 @@ export interface PersistedPlateau {
   convokedAt: Date | null;
   attendance?: readonly AttendanceEntry[];
   games?: readonly CompetitionGame[];
+  lineup?: CompetitionLineup | null;
   // Date à laquelle le coach l'a marqué comme terminé ; `null` tant qu'il est en cours.
   finishedAt: Date | null;
   // Annulé par le coach : date, et raison communiquée aux joueurs.

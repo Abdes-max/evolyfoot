@@ -618,6 +618,8 @@ model TournamentRecord {
   attendance        Json?
   // Rencontres du tournoi (équipe rencontrée, score, buteurs et passeurs) : voir competition-games.ts côté domaine.
   games             Json?
+  // Composition de la journée : voir competition-lineup.ts côté domaine.
+  lineup            Json?
   // Renseigné quand le coach marque le tournoi comme terminé ; null tant qu'il est en cours.
   finishedAt        DateTime? @map("finished_at")
   // Annulé par le coach (joueurs prévenus par message) et, facultatif, la raison.
@@ -647,6 +649,7 @@ model PlateauRecord {
   attendance        Json?
   // Rencontres du plateau : même forme que TournamentRecord.games.
   games             Json?
+  lineup            Json?
   finishedAt        DateTime? @map("finished_at")
   cancelledAt       DateTime? @map("cancelled_at")
   cancellationNote  String?   @map("cancellation_note")

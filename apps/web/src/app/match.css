@@ -1220,3 +1220,149 @@ span.match-pitch-token-face {
   font-size: 10px;
   vertical-align: middle;
 }
+
+/* Fiches match, tournoi et plateau : une colonne, dans l'ordre de l'app Coach (cartes et sections
+   repliables), lisible du téléphone à l'ordinateur. */
+.event-sheet {
+  display: grid;
+  gap: 14px;
+  width: min(720px, calc(100% - 32px));
+}
+.event-card {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.event-card.match-details-form {
+  border-bottom: 1px solid var(--line);
+}
+.event-card h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.event-card .match-convocation-send,
+.event-wide {
+  width: 100%;
+}
+.event-hint {
+  margin: 0 0 12px;
+  text-align: left;
+}
+.collapsible-section {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.collapsible-section > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.collapsible-section > summary::-webkit-details-marker {
+  display: none;
+}
+.collapsible-section-head {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+.collapsible-section-head strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+.collapsible-section-head small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.collapsible-section-chevron {
+  color: var(--muted);
+  font-size: 18px;
+  transition: transform 160ms ease;
+}
+.collapsible-section[open] > summary .collapsible-section-chevron {
+  transform: rotate(90deg);
+}
+.collapsible-section-body {
+  display: grid;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+/* Imbriquée dans une carte (joueurs concernés) : pas de double cadre. */
+.event-card .collapsible-section {
+  background: var(--paper);
+}
+.convocation-actions {
+  display: grid;
+  gap: 10px;
+}
+.convocation-actions-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+.competition-lineup {
+  display: grid;
+  gap: 12px;
+}
+.competition-lineup .match-pitch {
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+}
+.competition-games {
+  display: grid;
+  gap: 12px;
+}
+.competition-games-record {
+  margin: 0;
+  color: var(--good);
+  font-size: 14px;
+  font-weight: 900;
+}
+.competition-game {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.competition-game-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.competition-game-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.competition-game-opponent {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+@media (max-width: 560px) {
+  .event-sheet {
+    width: calc(100% - 24px);
+    margin-top: 16px;
+  }
+  .convocation-actions-row {
+    grid-template-columns: 1fr;
+  }
+  .match-result-score input {
+    width: 72px;
+  }
+}
