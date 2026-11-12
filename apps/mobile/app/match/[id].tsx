@@ -241,22 +241,34 @@ export default function MatchDetailScreen() {
           {match.dateLabel} · {venueLabel[match.venue]} · Foot à {match.gameFormat}
         </Text>
 
+        {cancelled && !readOnly ? (
+          <Text style={styles.cancelledNote}>
+            Match annulé : tout est bloqué (lieu, joueurs, convocation, composition, « joué »). Rétablis-le juste en dessous de la convocation pour le modifier.
+          </Text>
+        ) : null}
+
         <View style={styles.locationBlock}>
           <Text style={styles.locationLabel}>Lieu</Text>
-          <PlaceInput
-            onChange={(value) => {
-              setLocation(value);
-              setLocationFeedback("");
-            }}
-            value={location}
-          />
-          <TouchableOpacity accessibilityRole="button" onPress={saveLocation} style={styles.locationSave}>
-            <Text style={styles.locationSaveText}>Enregistrer le lieu</Text>
-          </TouchableOpacity>
+          {cancelled ? (
+            <Text style={styles.readonlyValue}>{location || "Lieu non renseigné"}</Text>
+          ) : (
+            <>
+              <PlaceInput
+                onChange={(value) => {
+                  setLocation(value);
+                  setLocationFeedback("");
+                }}
+                value={location}
+              />
+              <TouchableOpacity accessibilityRole="button" onPress={saveLocation} style={styles.locationSave}>
+                <Text style={styles.locationSaveText}>Enregistrer le lieu</Text>
+              </TouchableOpacity>
+            </>
+          )}
           {locationFeedback ? <Text style={styles.body}>{locationFeedback}</Text> : null}
         </View>
 
-        {!readOnly && (
+        {!locked && (
           <View style={styles.concerned}>
             <CollapsibleSection summary={selectionSummary(selection, roster.length)} title="Joueurs concernés">
               <ConcernedPlayersPicker
@@ -315,7 +327,7 @@ export default function MatchDetailScreen() {
               players={resultPlayers}
             />
           </CollapsibleSection>
-        ) : (
+        ) : cancelled ? null : (
           <MatchClockPanel matchId={match.id} />
         )}
 
@@ -397,11 +409,9 @@ export default function MatchDetailScreen() {
 
         {saveError ? <Text style={styles.fieldError}>{saveError}</Text> : null}
 
-        <MatchAnalysis formationId={match.formationId} gameFormat={gameFormat} matchId={match.id} opponentFormationId={match.opponentFormationId ?? null} />
-
-        {cancelled && !readOnly ? (
-          <Text style={styles.cancelledNote}>Match annulé : rétablis-le pour le convoquer, le composer ou le marquer comme joué.</Text>
-        ) : null}
+        {cancelled ? null : (
+          <MatchAnalysis formationId={match.formationId} gameFormat={gameFormat} matchId={match.id} opponentFormationId={match.opponentFormationId ?? null} />
+        )}
 
         {!locked && (
           <View style={styles.resultInfo}>
@@ -557,6 +567,7 @@ const styles = themedStyles(() =>
       fontSize: 13,
       fontWeight: "700",
     },
+    readonlyValue: { color: colors.ink, fontSize: 14 },
     reopenButton: {
       minHeight: 46,
       marginTop: 12,

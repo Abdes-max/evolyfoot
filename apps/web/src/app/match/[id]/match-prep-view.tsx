@@ -517,18 +517,29 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       {/* Même ordre que la fiche match de l'app Coach : lieu, joueurs concernés, convocation, résultat,
           composition (facultative, repliée), analyse, puis « Marquer comme joué ». */}
       <section className="match-content event-sheet">
+        {cancelled && !readOnly && (
+          <p className="event-cancelled-note">
+            Match annulé : tout est bloqué (lieu, joueurs, convocation, composition, « joué »). Rétablis-le depuis la carte Convocation pour le modifier.
+          </p>
+        )}
         <div className="event-card match-details-form">
           <h2>Lieu</h2>
-          <PlaceInput
-            onChange={(value) => {
-              setLocation(value);
-              setLocationFeedback("");
-            }}
-            value={location}
-          />
-          <button className="match-details-save" onClick={saveLocation} type="button">
-            Enregistrer le lieu
-          </button>
+          {cancelled ? (
+            <p className="event-readonly">{location || "Lieu non renseigné"}</p>
+          ) : (
+            <>
+              <PlaceInput
+                onChange={(value) => {
+                  setLocation(value);
+                  setLocationFeedback("");
+                }}
+                value={location}
+              />
+              <button className="match-details-save" onClick={saveLocation} type="button">
+                Enregistrer le lieu
+              </button>
+            </>
+          )}
           {locationFeedback && <p className="match-convocation-feedback">{locationFeedback}</p>}
         </div>
 
@@ -539,12 +550,12 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           <form className="match-details-form" onSubmit={saveDetails}>
             <label>
               <span>Date et heure du match</span>
-              <input disabled={readOnly} onChange={(event) => setDate(event.target.value)} type="datetime-local" value={date} />
+              <input disabled={locked} onChange={(event) => setDate(event.target.value)} type="datetime-local" value={date} />
             </label>
             <label>
               <span>Rendez-vous, minutes avant le match</span>
               <input
-                disabled={readOnly}
+                disabled={locked}
                 min={0}
                 onChange={(event) => setMeetingOffsetMinutes(event.target.value)}
                 placeholder="Ex. 30"
@@ -555,9 +566,9 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             </label>
             <label>
               <span>Description</span>
-              <textarea disabled={readOnly} onChange={(event) => setDescription(event.target.value)} value={description} />
+              <textarea disabled={locked} onChange={(event) => setDescription(event.target.value)} value={description} />
             </label>
-            {!readOnly && (
+            {!locked && (
               <button className="match-details-save" disabled={savingDetails} type="submit">
                 {savingDetails ? "Enregistrement…" : "Enregistrer les détails"}
               </button>
@@ -565,7 +576,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           </form>
         </CollapsibleSection>
 
-        {!readOnly && (
+        {!locked && (
           <CollapsibleSection summary={selectionSummary(selection, roster.length)} title="Joueurs concernés">
             <ConcernedPlayersPicker
               hint="Seuls les joueurs cochés voient le match, reçoivent la convocation et entrent dans la composition."
@@ -709,13 +720,15 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           </section>
         </CollapsibleSection>
 
-        <MatchAnalysis
-          formationId={match.formationId}
-          gameFormat={gameFormat}
-          key={`${match.gameFormat}-${match.formationId}`}
-          matchId={matchId}
-          opponentFormationId={match.opponentFormationId ?? null}
-        />
+        {!cancelled && (
+          <MatchAnalysis
+            formationId={match.formationId}
+            gameFormat={gameFormat}
+            key={`${match.gameFormat}-${match.formationId}`}
+            matchId={matchId}
+            opponentFormationId={match.opponentFormationId ?? null}
+          />
+        )}
 
         {!locked && concernedRoster.length > 0 && (
           <CollapsibleSection summary={`${concernedRoster.length - absentPlayerIds.size} présents sur ${concernedRoster.length}`} title="Présence">
@@ -750,7 +763,6 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           </p>
         )}
 
-        {cancelled && !readOnly && <p className="event-cancelled-note">Match annulé : rétablis-le pour le convoquer, le composer ou le marquer comme joué.</p>}
         {!locked && (
           <button className="continue-button event-wide" disabled={!canFinalize || finalizing} onClick={finalize} type="button">
             {finalizing ? "…" : "Marquer comme joué & observer"} <span aria-hidden="true">→</span>

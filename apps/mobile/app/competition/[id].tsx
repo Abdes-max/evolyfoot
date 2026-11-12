@@ -191,51 +191,73 @@ export default function CompetitionDetailScreen() {
         <Text style={styles.title}>{item.name}</Text>
         <Text style={styles.body}>{item.dateLabel}</Text>
 
-        <View style={styles.form}>
-          <Text style={styles.formTitle}>Détails</Text>
-          <Text style={styles.label}>Date</Text>
-          <TextInput
-            accessibilityLabel="Date"
-            keyboardType="numbers-and-punctuation"
-            onChangeText={setDateInput}
-            placeholder="JJ/MM/AAAA"
-            style={styles.input}
-            value={dateInput}
-          />
-          <Text style={styles.label}>Lieu</Text>
-          <PlaceInput onChange={setLocation} value={location} />
-          <Text style={styles.label}>Description</Text>
-          <TextInput accessibilityLabel="Description" multiline onChangeText={setDescription} style={[styles.input, styles.multiline]} value={description} />
-          <Text style={styles.label}>Bilan</Text>
-          <TextInput accessibilityLabel="Bilan" onChangeText={setResult} placeholder="Ex. 2 victoires, 1 nul" style={styles.input} value={result} />
-          {saveError ? <Text style={styles.fieldError}>{saveError}</Text> : null}
-          {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
-          <TouchableOpacity accessibilityRole="button" disabled={saving} onPress={save} style={styles.submitButton}>
-            <Text style={styles.submitButtonText}>{saving ? "Enregistrement…" : "Enregistrer les détails"}</Text>
-          </TouchableOpacity>
-        </View>
+        {item.cancelledAt ? (
+          <Text
+            style={styles.cancelledNote}
+          >{`Ce ${singular} est annulé : tout est bloqué (détails, joueurs, convocation, composition, rencontres). Rétablis-le depuis la carte Convocation pour le modifier.`}</Text>
+        ) : null}
 
-        <CollapsibleSection
-          style={{ marginTop: spacing.md }}
-          summary={selectionSummary(item.selectedPlayerIds ?? null, roster.length)}
-          title="Joueurs concernés"
-        >
-          <ConcernedPlayersPicker
-            hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et entrent dans la composition et les rencontres.`}
-            onChange={(value) => {
-              setSelection(value);
-              setSelectionFeedback("");
-            }}
-            roster={roster}
-            value={selection}
-          />
-          {JSON.stringify(selection) !== JSON.stringify(item.selectedPlayerIds ?? null) ? (
-            <TouchableOpacity accessibilityRole="button" disabled={selection?.length === 0} onPress={() => void saveSelection()} style={styles.submitButton}>
-              <Text style={styles.submitButtonText}>Enregistrer les joueurs concernés</Text>
+        {item.cancelledAt ? (
+          <View style={styles.form}>
+            <Text style={styles.formTitle}>Détails</Text>
+            <Text style={styles.label}>Lieu</Text>
+            <Text style={styles.readonlyValue}>{item.location || "Lieu non renseigné"}</Text>
+            {item.description ? (
+              <>
+                <Text style={styles.label}>Description</Text>
+                <Text style={styles.readonlyValue}>{item.description}</Text>
+              </>
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.form}>
+            <Text style={styles.formTitle}>Détails</Text>
+            <Text style={styles.label}>Date</Text>
+            <TextInput
+              accessibilityLabel="Date"
+              keyboardType="numbers-and-punctuation"
+              onChangeText={setDateInput}
+              placeholder="JJ/MM/AAAA"
+              style={styles.input}
+              value={dateInput}
+            />
+            <Text style={styles.label}>Lieu</Text>
+            <PlaceInput onChange={setLocation} value={location} />
+            <Text style={styles.label}>Description</Text>
+            <TextInput accessibilityLabel="Description" multiline onChangeText={setDescription} style={[styles.input, styles.multiline]} value={description} />
+            <Text style={styles.label}>Bilan</Text>
+            <TextInput accessibilityLabel="Bilan" onChangeText={setResult} placeholder="Ex. 2 victoires, 1 nul" style={styles.input} value={result} />
+            {saveError ? <Text style={styles.fieldError}>{saveError}</Text> : null}
+            {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
+            <TouchableOpacity accessibilityRole="button" disabled={saving} onPress={save} style={styles.submitButton}>
+              <Text style={styles.submitButtonText}>{saving ? "Enregistrement…" : "Enregistrer les détails"}</Text>
             </TouchableOpacity>
-          ) : null}
-          {selectionFeedback ? <Text style={styles.feedback}>{selectionFeedback}</Text> : null}
-        </CollapsibleSection>
+          </View>
+        )}
+
+        {item.cancelledAt ? null : (
+          <CollapsibleSection
+            style={{ marginTop: spacing.md }}
+            summary={selectionSummary(item.selectedPlayerIds ?? null, roster.length)}
+            title="Joueurs concernés"
+          >
+            <ConcernedPlayersPicker
+              hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et entrent dans la composition et les rencontres.`}
+              onChange={(value) => {
+                setSelection(value);
+                setSelectionFeedback("");
+              }}
+              roster={roster}
+              value={selection}
+            />
+            {JSON.stringify(selection) !== JSON.stringify(item.selectedPlayerIds ?? null) ? (
+              <TouchableOpacity accessibilityRole="button" disabled={selection?.length === 0} onPress={() => void saveSelection()} style={styles.submitButton}>
+                <Text style={styles.submitButtonText}>Enregistrer les joueurs concernés</Text>
+              </TouchableOpacity>
+            ) : null}
+            {selectionFeedback ? <Text style={styles.feedback}>{selectionFeedback}</Text> : null}
+          </CollapsibleSection>
+        )}
 
         <View style={styles.form}>
           <Text style={styles.formTitle}>Convocation</Text>
@@ -304,9 +326,7 @@ export default function CompetitionDetailScreen() {
           )}
         </CollapsibleSection>
 
-        {item.cancelledAt ? (
-          <Text style={styles.cancelledNote}>{`Ce ${singular} est annulé : rétablis-le pour le convoquer, le composer ou le marquer comme terminé.`}</Text>
-        ) : (
+        {item.cancelledAt ? null : (
           <TouchableOpacity
             accessibilityRole="button"
             disabled={saving}
@@ -359,6 +379,7 @@ const styles = themedStyles(() =>
       fontSize: 13,
       fontWeight: "700",
     },
+    readonlyValue: { color: colors.ink, fontSize: 14 },
     gamesHint: { color: colors.muted, fontSize: 12.5, marginTop: 6 },
     fieldError: { color: colors.danger, fontSize: 10, marginTop: 10 },
     feedback: { color: colors.primary, fontSize: 11, fontWeight: "700", marginTop: 10 },
