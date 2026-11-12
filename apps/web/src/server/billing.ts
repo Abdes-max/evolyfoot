@@ -41,6 +41,8 @@ export interface PaymentGateway {
   createPortal(input: { customerId: string; returnUrl: string; cancelSubscriptionId?: string }): Promise<string>;
   // Aligne les quantités de l'abonnement sur les équipes et coachs du moment (au prorata).
   syncQuantities(input: { subscriptionId: string; cycle: BillingCycle; lines: BillingLine[] }): Promise<void>;
+  // État actuel de l'abonnement chez Stripe ; null s'il n'existe pas (ou plus) dans le mode des clés en place.
+  subscriptionState(subscriptionId: string): Promise<SubscriptionUpdate | null>;
   // Vérifie la signature et ne garde que les événements d'abonnement ; null pour les autres.
   readWebhook(payload: string, signature: string): Promise<WebhookSubscriptionEvent | null>;
 }
@@ -129,9 +131,30 @@ async function withSummary(
   }
 }
 
-export function createGetBillingHandler(resolveAccount: Resolve, store: Pick<BillingStore, "summary">, enabled: boolean, log: Log) {
+// GET : état de l'abonnement. Pour un abonné, l'état est revérifié chez Stripe : un webhook manqué, ou un
+// abonnement de test resté en base après le passage aux clés live, ne laisse pas un état faux affiché.
+export function createGetBillingHandler(
+  resolveAccount: Resolve,
+  store: Pick<BillingStore, "summary" | "applySubscription">,
+  payments: PaymentGateway | null,
+  log: Log,
+) {
   return (request: Request) =>
-    withSummary(request, resolveAccount, store, log, async (account, summary) => Response.json({ billing: toBillingView(summary, account, enabled) }));
+    withSummary(request, resolveAccount, store, log, async (account, summary) => {
+      let current = summary;
+      if (payments && summary.access.state === "subscribed" && summary.stripeSubscriptionId && summary.stripeCustomerId) {
+        const fresh = await payments.subscriptionState(summary.stripeSubscriptionId).catch((error: unknown) => {
+          log(error);
+          return undefined;
+        });
+        const update = fresh === null ? { subscriptionId: summary.stripeSubscriptionId, status: "canceled", cycle: null, currentPeriodEnd: null } : fresh;
+        if (update && (update.status !== summary.subscriptionStatus || (update.cancelAt ?? null)?.getTime() !== summary.cancelAt?.getTime())) {
+          await store.applySubscription(summary.stripeCustomerId, update);
+          current = await store.summary(account.id);
+        }
+      }
+      return Response.json({ billing: toBillingView(current, account, payments !== null) });
+    });
 }
 
 // POST { cycle } : page de paiement Stripe. Pendant l'essai, le premier prélèvement attend la fin de l'essai.
@@ -354,31 +377,42 @@ export async function createStripeGateway(): Promise<PaymentGateway | null> {
       }
       await stripe.subscriptions.update(subscriptionId, { items, proration_behavior: "create_prorations" });
     },
+    async subscriptionState(subscriptionId) {
+      try {
+        return toUpdate(await stripe.subscriptions.retrieve(subscriptionId)).update;
+      } catch (error) {
+        if ((error as { code?: string }).code === "resource_missing") return null;
+        throw error;
+      }
+    },
     async readWebhook(payload, signature) {
       const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
       if (!subscriptionEvents.has(event.type)) return null;
-      const subscription = event.data.object as import("stripe").Stripe.Subscription;
-      const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
-      const first = subscription.items.data[0];
-      const periodEnd = first?.current_period_end;
-      const quantityOf = (item: "team" | "coach") =>
-        subscription.items.data.find((entry) => billingItemOfLookupKey(entry.price.lookup_key)?.item === item)?.quantity ?? 0;
-      return {
-        customerId,
-        update: {
-          subscriptionId: subscription.id,
-          status: subscription.status,
-          cycle: billingItemOfLookupKey(first?.price.lookup_key)?.cycle ?? parseBillingCycle(subscription.metadata?.cycle),
-          currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
-          cancelAt: subscription.cancel_at
-            ? new Date(subscription.cancel_at * 1000)
-            : subscription.cancel_at_period_end && periodEnd
-              ? new Date(periodEnd * 1000)
-              : null,
-          billedExtraTeams: quantityOf("team"),
-          billedExtraCoaches: quantityOf("coach"),
-        },
-      };
+      return toUpdate(event.data.object as import("stripe").Stripe.Subscription);
+    },
+  };
+}
+
+function toUpdate(subscription: import("stripe").Stripe.Subscription): WebhookSubscriptionEvent {
+  const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+  const first = subscription.items.data[0];
+  const periodEnd = first?.current_period_end;
+  const quantityOf = (item: "team" | "coach") =>
+    subscription.items.data.find((entry) => billingItemOfLookupKey(entry.price.lookup_key)?.item === item)?.quantity ?? 0;
+  return {
+    customerId,
+    update: {
+      subscriptionId: subscription.id,
+      status: subscription.status,
+      cycle: billingItemOfLookupKey(first?.price.lookup_key)?.cycle ?? parseBillingCycle(subscription.metadata?.cycle),
+      currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
+      cancelAt: subscription.cancel_at
+        ? new Date(subscription.cancel_at * 1000)
+        : subscription.cancel_at_period_end && periodEnd
+          ? new Date(periodEnd * 1000)
+          : null,
+      billedExtraTeams: quantityOf("team"),
+      billedExtraCoaches: quantityOf("coach"),
     },
   };
 }
