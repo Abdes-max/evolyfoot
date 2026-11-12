@@ -343,7 +343,7 @@ test("l’éducateur enregistre un tournoi et un plateau depuis Matchs & compét
 
   const plateauForm = page.locator(".competitions-panel", { hasText: "Plateaux" });
   await plateauForm.getByPlaceholder("Nom du plateau").fill("Plateau de rentrée");
-  await plateauForm.getByLabel("Date").fill("2026-09-14");
+  await plateauForm.getByLabel("Date").fill("2027-09-14");
   await plateauForm.getByRole("button", { name: "Ajouter" }).click();
   await expect(plateauForm.getByText("Plateau de rentrée")).toBeVisible();
 });
@@ -355,8 +355,8 @@ test("l’éducateur ouvre la fiche d’un tournoi depuis sa carte et modifie se
   const tournament = {
     id: "tournament-1",
     name: "Tournoi de printemps",
-    dateLabel: "12 avril 2026",
-    date: "2026-04-12T00:00:00.000Z",
+    dateLabel: "12 avril 2027",
+    date: "2027-04-12T00:00:00.000Z",
     location: null,
     description: null,
     result: null,

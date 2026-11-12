@@ -7,7 +7,8 @@ import { resizeImageToDataUrl } from "../image-resize";
 import { useNotifications } from "../notification-bell";
 import { SidebarNav } from "../sidebar-nav";
 import { TeamCrest } from "../team-crest";
-import { NextMatchLineup } from "./next-match-lineup";
+import type { GameFormat } from "@evolyfoot/domain";
+import { TeamLineup } from "./team-lineup";
 
 interface RosterPlayer {
   id: string;
@@ -274,7 +275,7 @@ export function RosterView() {
                 </div>
               </div>
 
-              <NextMatchLineup />
+              <TeamLineup gameFormat={(team?.gameFormat ?? 8) as GameFormat} players={players} />
 
               <span className="roster-side-title">OUTILS</span>
               <form className="roster-add-form" onSubmit={addPlayer}>

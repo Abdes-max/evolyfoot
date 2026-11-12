@@ -1,6 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, useLocalSearchParams } from "expo-router";
-import { competitionRecordLabel, concernedPlayers, type GameFormat, type PlayerSelection } from "@evolyfoot/domain";
+import { competitionRecordLabel, concernedPlayers, type CompetitionLineup, type GameFormat, type PlayerSelection } from "@evolyfoot/domain";
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -40,15 +40,22 @@ export default function CompetitionDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
   const [selection, setSelection] = useState<PlayerSelection>(null);
+  const [teamLineup, setTeamLineup] = useState<CompetitionLineup | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [response, rosterResponse] = await Promise.all([apiRequest(`${endpoint}/${id}`), apiRequest("/api/roster")]);
+      const [response, rosterResponse, teamLineupResponse] = await Promise.all([
+        apiRequest(`${endpoint}/${id}`),
+        apiRequest("/api/roster"),
+        apiRequest("/api/team/lineup"),
+      ]);
       if (cancelled) {
         return;
       }
       const rosterBody = rosterResponse?.ok ? await rosterResponse.json().catch(() => null) : null;
+      const teamLineupBody = teamLineupResponse?.ok ? await teamLineupResponse.json().catch(() => null) : null;
+      setTeamLineup(teamLineupBody?.lineup ?? null);
       setRoster(Array.isArray(rosterBody?.players) ? rosterBody.players : []);
       if (!response?.ok) {
         setLoadError(await readError(response));
@@ -203,7 +210,7 @@ export default function CompetitionDetailScreen() {
           <Text style={styles.formTitle}>Convocation</Text>
           <ConvocationActions
             attendance={item.attendance}
-            canSend={!isPastCompetition(item)}
+            canSend={!isPastCompetition(item) && !item.cancelledAt}
             convokeUrl={`${endpoint}/${id}/convoke`}
             convokedAt={item.convokedAt ?? null}
             onSent={refresh}
@@ -237,7 +244,8 @@ export default function CompetitionDetailScreen() {
                   item.lineup?.lineup.some((assignment) => assignment.playerId === player.id) ||
                   item.lineup?.substitutePlayerIds.includes(player.id),
               )}
-              readOnly={Boolean(item.finishedAt)}
+              readOnly={Boolean(item.finishedAt || item.cancelledAt)}
+              template={teamLineup}
             />
           </View>
         </CollapsibleSection>
@@ -247,26 +255,36 @@ export default function CompetitionDetailScreen() {
           summary={competitionRecordLabel(item.games ?? []) || "Aucune rencontre saisie"}
           title="Rencontres et scores"
         >
-          <Text style={styles.gamesHint}>Une ligne par rencontre jouée : équipe rencontrée, score, buteurs et passeurs décisifs.</Text>
-          <View style={{ marginTop: spacing.md }}>
-            <CompetitionGames
-              gamesUrl={`${endpoint}/${id}/games`}
-              games={item.games ?? []}
-              key={item.id}
-              onSaved={(games) => setItem((current) => (current ? { ...current, games } : current))}
-              players={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
-            />
-          </View>
+          <Text style={styles.gamesHint}>
+            {item.cancelledAt
+              ? `Ce ${singular} est annulé : rétablis-le pour saisir les rencontres.`
+              : "Une ligne par rencontre jouée : équipe rencontrée, score, buteurs et passeurs décisifs."}
+          </Text>
+          {item.cancelledAt ? null : (
+            <View style={{ marginTop: spacing.md }}>
+              <CompetitionGames
+                gamesUrl={`${endpoint}/${id}/games`}
+                games={item.games ?? []}
+                key={item.id}
+                onSaved={(games) => setItem((current) => (current ? { ...current, games } : current))}
+                players={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
+              />
+            </View>
+          )}
         </CollapsibleSection>
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          disabled={saving}
-          onPress={() => void toggleFinished()}
-          style={[styles.finishButton, saving && { opacity: 0.5 }]}
-        >
-          <Text style={styles.finishButtonText}>{item.finishedAt ? `Rouvrir ce ${singular}` : `Marquer ce ${singular} comme terminé`}</Text>
-        </TouchableOpacity>
+        {item.cancelledAt ? (
+          <Text style={styles.cancelledNote}>{`Ce ${singular} est annulé : rétablis-le pour le convoquer, le composer ou le marquer comme terminé.`}</Text>
+        ) : (
+          <TouchableOpacity
+            accessibilityRole="button"
+            disabled={saving}
+            onPress={() => void toggleFinished()}
+            style={[styles.finishButton, saving && { opacity: 0.5 }]}
+          >
+            <Text style={styles.finishButtonText}>{item.finishedAt ? `Rouvrir ce ${singular}` : `Marquer ce ${singular} comme terminé`}</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity accessibilityRole="button" onPress={confirmRemove} style={styles.removeButton}>
           <Text style={styles.removeButtonText}>{`Retirer ce ${singular}`}</Text>
@@ -299,6 +317,17 @@ const styles = themedStyles(() =>
       marginTop: spacing.md,
     },
     finishButtonText: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
+    cancelledNote: {
+      marginTop: spacing.md,
+      padding: 12,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      backgroundColor: colors.dangerSoft,
+      color: colors.danger,
+      fontSize: 13,
+      fontWeight: "700",
+    },
     gamesHint: { color: colors.muted, fontSize: 12.5, marginTop: 6 },
     fieldError: { color: colors.danger, fontSize: 10, marginTop: 10 },
     feedback: { color: colors.primary, fontSize: 11, fontWeight: "700", marginTop: 10 },

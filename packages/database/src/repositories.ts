@@ -238,6 +238,9 @@ export interface TeamRepository {
   findForEducator(educatorId: string): Promise<PersistedTeamProfile | null>;
   // Logo seul : l'enregistrement du profil ne le modifie jamais. `null` le retire.
   updateLogo(educatorId: string, logo: string | null): Promise<PersistedTeamProfile>;
+  // Compo type de l'équipe ; null tant qu'elle n'est pas préparée (ou sans équipe).
+  findDefaultLineup(educatorId: string): Promise<CompetitionLineup | null>;
+  updateDefaultLineup(educatorId: string, lineup: CompetitionLineup | null): Promise<void>;
 }
 
 export interface PersistedDiagnostic {

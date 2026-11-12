@@ -1,4 +1,4 @@
-import type { TeamProfile } from "@evolyfoot/domain";
+import { defaultFormationId, formationSlots, type CompetitionLineup, type TeamProfile } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
 import { EducatorNotFoundError, TeamNotFoundError, ValidationError } from "./errors";
 import type { EducatorRecord, EducatorRepository, PersistedTeamProfile, TeamRepository } from "./repositories";
@@ -91,9 +91,37 @@ class InMemoryTeamRepository implements TeamRepository {
     this.readEducatorIds.push(educatorId);
     return this.teamsByEducatorId.get(educatorId) ?? null;
   }
+
+  readonly lineups = new Map<string, CompetitionLineup | null>();
+
+  async findDefaultLineup(educatorId: string): Promise<CompetitionLineup | null> {
+    return this.lineups.get(educatorId) ?? null;
+  }
+
+  async updateDefaultLineup(educatorId: string, lineup: CompetitionLineup | null): Promise<void> {
+    this.lineups.set(educatorId, lineup);
+  }
 }
 
 describe("TeamProfileService", () => {
+  it("enregistre une compo type avec 6 remplaçants, joueurs de l’effectif seulement", async () => {
+    const teamRepository = new InMemoryTeamRepository();
+    const service = new TeamProfileService(new InMemoryEducatorRepository([]), teamRepository);
+    const slot = formationSlots(8, defaultFormationId(8))[0]!;
+    const roster = new Map([["p1", "Léo"], ...["b1", "b2", "b3", "b4", "b5", "b6"].map((id) => [id, id] as [string, string])]);
+    const value = {
+      gameFormat: 8,
+      formationId: defaultFormationId(8),
+      lineup: [{ slotId: slot.id, playerId: "p1", playerName: "x" }],
+      captainPlayerId: "p1",
+      substitutePlayerIds: ["b1", "b2", "b3", "b4", "b5", "b6"],
+    };
+    expect((await service.saveDefaultLineup("coach-1", value, roster))?.lineup[0]?.playerName).toBe("Léo");
+    await expect(service.saveDefaultLineup("coach-1", { ...value, substitutePlayerIds: [...value.substitutePlayerIds, "p9"] }, roster)).rejects.toThrow(
+      /effectif/,
+    );
+  });
+
   it("rejects an incomplete profile before writing a team", async () => {
     const teamRepository = new InMemoryTeamRepository();
     const service = new TeamProfileService(new InMemoryEducatorRepository(["educator-1"]), teamRepository);

@@ -18,8 +18,12 @@ export class CompetitionLineupService {
       throw new ValidationError("Composition invalide.");
     }
     const repository = kind === "tournament" ? this.tournamentRepository : this.plateauRepository;
-    if (!(await repository.findById(competitionId, educatorId))) {
+    const competition = await repository.findById(competitionId, educatorId);
+    if (!competition) {
       throw kind === "tournament" ? new TournamentNotFoundError() : new PlateauNotFoundError();
+    }
+    if (competition.cancelledAt) {
+      throw new ValidationError(`Ce ${kind === "tournament" ? "tournoi" : "plateau"} est annulé : rétablis-le d’abord.`);
     }
     const roster = new Map((await this.playerRepository.listByEducator(educatorId)).map((player) => [player.id, player.name]));
     const playerIds = [...parsed.lineup.map((assignment) => assignment.playerId), ...parsed.substitutePlayerIds];

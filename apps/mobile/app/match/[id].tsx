@@ -214,6 +214,9 @@ export default function MatchDetailScreen() {
   const formations = listFormations(gameFormat);
   const slots = formationSlots(gameFormat, match.formationId);
   const readOnly = match.status === "played";
+  // Match annulé : plus de convocation, de composition ni de « joué » tant qu'il n'est pas rétabli.
+  const cancelled = Boolean(match.cancelledAt);
+  const locked = readOnly || cancelled;
   const canFinalize = canFinalizeMatchPlan(toMatchPlan(match));
   // Ce qui manque pour pouvoir marquer le match comme joué (adversaire, date).
   const missing = Object.values(validateMatchPlan(toMatchPlan(match)));
@@ -278,7 +281,7 @@ export default function MatchDetailScreen() {
         <View style={styles.concerned}>
           <ConvocationActions
             attendance={match.attendance}
-            canSend={!readOnly}
+            canSend={!locked}
             convokeUrl={`/api/matches/${encodeURIComponent(match.id)}/convoke`}
             convokedAt={match.convokedAt ?? null}
             onSent={refreshMatch}
@@ -322,7 +325,7 @@ export default function MatchDetailScreen() {
           summary={match.lineup.length > 0 ? `${match.lineup.length} titulaires · ${match.substitutePlayerIds.length} remplaçants` : "Facultative"}
           title="Composition"
         >
-          {!readOnly && formations.length > 1 && (
+          {!locked && formations.length > 1 && (
             <View style={styles.formationRow}>
               {formations.map((formation) => (
                 <TouchableOpacity
@@ -344,7 +347,7 @@ export default function MatchDetailScreen() {
               lineup={match.lineup}
               numberOf={(playerId) => roster.find((player) => player.id === playerId)?.jerseyNumber || null}
               onSlotTap={
-                readOnly
+                locked
                   ? undefined
                   : (slotId) => {
                       setPickerSlotId(slotId);
@@ -355,7 +358,7 @@ export default function MatchDetailScreen() {
           </View>
 
           <View style={styles.bench}>
-            <Text style={styles.benchTitle}>Remplaçants{readOnly ? "" : ` (max. ${maxSubstitutes(match.gameFormat as GameFormat)})`}</Text>
+            <Text style={styles.benchTitle}>Remplaçants{locked ? "" : ` (max. ${maxSubstitutes(match.gameFormat as GameFormat)})`}</Text>
             <View style={styles.benchRow}>
               {Array.from({ length: maxSubstitutes(match.gameFormat as GameFormat) }, (_, index) => {
                 const playerId = match.substitutePlayerIds[index];
@@ -364,7 +367,7 @@ export default function MatchDetailScreen() {
                   <TouchableOpacity
                     accessibilityLabel={player ? `Remplaçant : ${player.name}` : "Remplaçant : aucun joueur, toucher pour affecter"}
                     accessibilityRole="button"
-                    disabled={readOnly}
+                    disabled={locked}
                     key={index}
                     onPress={() =>
                       player
@@ -389,14 +392,18 @@ export default function MatchDetailScreen() {
           </View>
 
           {/* La composition se fait directement sur le terrain : pas de liste des postes en dessous. */}
-          {!readOnly && <Text style={styles.sectionHint}>Touche un poste sur le terrain pour y affecter un joueur.</Text>}
+          {!locked && <Text style={styles.sectionHint}>Touche un poste sur le terrain pour y affecter un joueur.</Text>}
         </CollapsibleSection>
 
         {saveError ? <Text style={styles.fieldError}>{saveError}</Text> : null}
 
         <MatchAnalysis formationId={match.formationId} gameFormat={gameFormat} matchId={match.id} opponentFormationId={match.opponentFormationId ?? null} />
 
-        {!readOnly && (
+        {cancelled && !readOnly ? (
+          <Text style={styles.cancelledNote}>Match annulé : rétablis-le pour le convoquer, le composer ou le marquer comme joué.</Text>
+        ) : null}
+
+        {!locked && (
           <View style={styles.resultInfo}>
             <Text style={styles.resultInfoTitle}>Score, buteurs et passeurs</Text>
             <Text style={styles.resultInfoText}>
@@ -407,7 +414,7 @@ export default function MatchDetailScreen() {
           </View>
         )}
 
-        {!readOnly ? (
+        {cancelled && !readOnly ? null : !readOnly ? (
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityState={{ disabled: !canFinalize || finalizing }}
@@ -539,6 +546,17 @@ const styles = themedStyles(() =>
     finalizeButton: { minHeight: 48, marginTop: 20, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
     finalizeButtonDisabled: { opacity: 0.45 },
     finalizeButtonText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
+    cancelledNote: {
+      marginTop: spacing.md,
+      padding: 12,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      backgroundColor: colors.dangerSoft,
+      color: colors.danger,
+      fontSize: 13,
+      fontWeight: "700",
+    },
     reopenButton: {
       minHeight: 46,
       marginTop: 12,

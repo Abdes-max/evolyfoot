@@ -224,6 +224,9 @@ export class MatchService {
     },
   ): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
+    if (match.cancelledAt) {
+      throw new ValidationError("Ce match est annulé : rétablis-le d’abord.");
+    }
     validateLineupAgainstFormation(match.gameFormat, match.formationId, input.lineup);
     if (input.captainPlayerId && !input.lineup.some((assignment) => assignment.playerId === input.captainPlayerId)) {
       throw new ValidationError("Le capitaine doit faire partie des titulaires.");
@@ -242,6 +245,9 @@ export class MatchService {
   // autorisés (voir maxSubstitutes) : le banc est alors tronqué plutôt que rejeté en bloc.
   async changeFormation(educatorId: string, matchId: string, input: { formationId: string; gameFormat?: number }): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
+    if (match.cancelledAt) {
+      throw new ValidationError("Ce match est annulé : rétablis-le d’abord.");
+    }
     const gameFormat = input.gameFormat === undefined ? match.gameFormat : normalizeGameFormat(input.gameFormat);
     if (!listFormations(gameFormat).some((formation) => formation.id === input.formationId)) {
       throw new ValidationError("Cette formation ne correspond pas au format de jeu.");
@@ -266,6 +272,9 @@ export class MatchService {
 
   async markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
+    if (match.cancelledAt) {
+      throw new ValidationError("Ce match est annulé : rétablis-le d’abord.");
+    }
     const errors = validateMatchPlan(toMatchPlan(match));
     if (Object.keys(errors).length > 0) {
       throw new ValidationError(Object.values(errors)[0]!);
@@ -284,6 +293,9 @@ export class MatchService {
 
   async saveResult(educatorId: string, matchId: string, result: MatchResult): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
+    if (match.cancelledAt) {
+      throw new ValidationError("Ce match est annulé : rétablis-le d’abord.");
+    }
     if (match.status !== "played") {
       throw new ValidationError("Le résultat se saisit une fois le match joué.");
     }

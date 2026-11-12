@@ -477,6 +477,9 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   const formations = listFormations(gameFormat);
   const slots = formationSlots(gameFormat, match.formationId);
   const readOnly = match.status === "played";
+  // Match annulé : plus de convocation, de composition ni de « joué » tant qu'il n'est pas rétabli.
+  const cancelled = Boolean(match.cancelledAt);
+  const locked = readOnly || cancelled;
   const assignedPlayerIds = new Set(match.lineup.map((assignment) => assignment.playerId));
   const concernedRoster = teamRoster(match);
   const selectionChanged = JSON.stringify(selection) !== JSON.stringify(match.selectedPlayerIds ?? null);
@@ -586,7 +589,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           <h2>Convocation</h2>
           <ConvocationActions
             attendance={match.attendance}
-            canSend={!readOnly}
+            canSend={!locked}
             convokeUrl={`/api/matches/${matchId}/convoke`}
             convokedAt={match.convokedAt ?? null}
             meetingAt={match.date}
@@ -629,7 +632,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           summary={match.lineup.length > 0 ? `${match.lineup.length} titulaires · ${match.substitutePlayerIds.length} remplaçants` : "Facultative"}
           title="Composition"
         >
-          {!readOnly && (
+          {!locked && (
             <label className="match-game-format-picker">
               <span>Format de jeu</span>
               <select onChange={(event) => changeGameFormat(Number(event.target.value) as GameFormat)} value={gameFormat}>
@@ -641,7 +644,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               </select>
             </label>
           )}
-          {!readOnly && formations.length > 1 && (
+          {!locked && formations.length > 1 && (
             <div className="match-formation-picker" role="group" aria-label="Formation">
               {formations.map((formation) => (
                 <button
@@ -660,18 +663,18 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             <MatchPitch
               captainPlayerId={match.captainPlayerId}
               lineup={match.lineup}
-              onSlotAssign={readOnly ? undefined : assignSlot}
-              onCaptainChange={readOnly ? undefined : (playerId) => setCaptainPlayer(playerId ?? "")}
-              onSlotClear={readOnly ? undefined : (slotId) => assignSlot(slotId, "")}
+              onSlotAssign={locked ? undefined : assignSlot}
+              onCaptainChange={locked ? undefined : (playerId) => setCaptainPlayer(playerId ?? "")}
+              onSlotClear={locked ? undefined : (slotId) => assignSlot(slotId, "")}
               roster={concernedRoster}
               slots={slots}
               substitutePlayerIds={match.substitutePlayerIds}
             />
           </div>
-          {!readOnly && <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur.</p>}
+          {!locked && <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur.</p>}
 
           <section aria-labelledby="match-bench-title" className="match-bench">
-            <h2 id="match-bench-title">Remplaçants {readOnly ? "" : `(max. ${maxSubstitutes(gameFormat)})`}</h2>
+            <h2 id="match-bench-title">Remplaçants {locked ? "" : `(max. ${maxSubstitutes(gameFormat)})`}</h2>
             <div aria-label="Remplaçants" className="match-bench-tokens" role="group">
               {benchSlots.map((playerId, index) => {
                 const player = playerId ? roster.find((candidate) => candidate.id === playerId) : null;
@@ -679,7 +682,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
 
                 return (
                   <div aria-label={label} className={`match-pitch-token ${player ? "filled" : "empty"}`} key={index}>
-                    {!readOnly && <button aria-label={label} className="match-pitch-token-hit" onClick={() => setPickingBenchIndex(index)} type="button" />}
+                    {!locked && <button aria-label={label} className="match-pitch-token-hit" onClick={() => setPickingBenchIndex(index)} type="button" />}
                     <span aria-hidden="true">{player ? initials(player.name) : "+"}</span>
                   </div>
                 );
@@ -714,7 +717,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           opponentFormationId={match.opponentFormationId ?? null}
         />
 
-        {!readOnly && concernedRoster.length > 0 && (
+        {!locked && concernedRoster.length > 0 && (
           <CollapsibleSection summary={`${concernedRoster.length - absentPlayerIds.size} présents sur ${concernedRoster.length}`} title="Présence">
             <p className="match-slot-hint event-hint">Décoche les joueurs absents : la présence est enregistrée quand tu marques le match comme joué.</p>
             <ul className="match-attendance-list">
@@ -747,7 +750,8 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           </p>
         )}
 
-        {!readOnly && (
+        {cancelled && !readOnly && <p className="event-cancelled-note">Match annulé : rétablis-le pour le convoquer, le composer ou le marquer comme joué.</p>}
+        {!locked && (
           <button className="continue-button event-wide" disabled={!canFinalize || finalizing} onClick={finalize} type="button">
             {finalizing ? "…" : "Marquer comme joué & observer"} <span aria-hidden="true">→</span>
           </button>

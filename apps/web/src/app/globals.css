@@ -418,8 +418,9 @@ nav {
   background: rgba(6, 35, 48, 0.12);
   color: var(--accent-ink);
 }
+/* Bouton sombre fixe : lisible sur le dégradé bleu dans les deux thèmes. */
 .session-card.home-primary .primary-button {
-  background: var(--accent-ink);
+  background: #062330;
   color: #fff;
 }
 .home-match {
@@ -2077,8 +2078,25 @@ button.week-calendar-badge:focus-visible {
 
 :root[data-theme="light"] .focus-card,
 :root[data-theme="light"] .roster-team-card,
-:root[data-theme="light"] .photo-choice-option {
+:root[data-theme="light"] .photo-choice-option,
+:root[data-theme="light"] .insight-card,
+:root[data-theme="light"] .sheet-stage {
   background: var(--surface);
   border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+/* Thème clair : les rouges et orangés pâles du thème sombre deviennent des teintes foncées lisibles sur blanc. */
+:root[data-theme="light"] .field-error,
+:root[data-theme="light"] .session-cancel-state,
+:root[data-theme="light"] .training-responses-count.absent strong,
+:root[data-theme="light"] .training-responses-avatar.absent,
+:root[data-theme="light"] .convocation-settings-status.error,
+:root[data-theme="light"] .match-analysis-balance.disadvantage,
+:root[data-theme="light"] .match-analysis-system[aria-pressed="true"] {
+  color: var(--bad);
+}
+
+:root[data-theme="light"] .insight-card h3 {
   color: var(--ink);
 }

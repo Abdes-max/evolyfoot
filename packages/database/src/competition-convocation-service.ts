@@ -41,6 +41,9 @@ export class CompetitionConvocationService {
     if (!educator) {
       throw new EducatorNotFoundError();
     }
+    if (competition.cancelledAt) {
+      throw new ValidationError(`Ce ${kindLabels[kind]} est annulé : rétablis-le pour envoyer la convocation.`);
+    }
     const everyone = concernedPlayers(await this.playerRepository.listByEducator(educatorId), competition.selectedPlayerIds);
     if (everyone.length === 0) {
       throw new ValidationError("Coche les joueurs concernés avant d’envoyer la convocation.");
