@@ -43,6 +43,15 @@
 //                                       screenshots and build but stops before
 //                                       the review submission, to check the
 //                                       version in App Store Connect first)
+//   TEMPLATE_BUNDLE_ID=com.arenapulse.mobile
+//                                     (optional -- another app of the same account
+//                                       used as the model: its age rating answers
+//                                       and App Review contact are copied, never
+//                                       printed in full)
+//   REVIEW_DEMO_LOGIN / REVIEW_DEMO_PASSWORD
+//                                     (optional -- demo account for Apple's
+//                                       reviewer, from GitHub secrets; written to
+//                                       App Store Connect, never printed)
 //   RELEASE_TYPE=MANUAL               (optional, default MANUAL -- MANUAL
 //                                       means approval doesn't auto-publish;
 //                                       release stays a deliberate separate
@@ -67,6 +76,9 @@ const {
   SCREENSHOTS_DIR,
   METADATA_FILE,
   SUBMIT = "true",
+  TEMPLATE_BUNDLE_ID,
+  REVIEW_DEMO_LOGIN,
+  REVIEW_DEMO_PASSWORD,
 } = process.env;
 
 for (const [name, value] of Object.entries({
@@ -190,6 +202,88 @@ async function applyMetadata(jwt, appId, versionId, metadata, firstRelease) {
   console.log("  → store listing applied.");
 }
 
+// "jean.dupont@example.com" → "j…@example.com", "+33612345678" → "…78" : enough to recognise, nothing more in the logs.
+function mask(value) {
+  if (!value) return "(vide)";
+  if (value.includes("@")) return `${value[0]}…@${value.split("@")[1]}`;
+  return `…${value.slice(-2)}`;
+}
+
+// App info still being prepared (the one Apple reviews with the version), else the only one.
+async function editableAppInfo(jwt, appId) {
+  const infos = await api(jwt, "GET", `/apps/${appId}/appInfos`);
+  const live = ["READY_FOR_DISTRIBUTION", "READY_FOR_SALE", "REPLACED_WITH_NEW_INFO"];
+  return (infos.data ?? []).find((info) => !live.includes(info.attributes?.state ?? info.attributes?.appStoreState)) ?? infos.data?.[0];
+}
+
+// Age rating answers and App Review contact copied from another app of the same account (TEMPLATE_BUNDLE_ID),
+// then the review notes and demo account of this app. The model app's data is never printed in full.
+async function applyReviewSetup(jwt, appId, versionId, review) {
+  const templates = await api(jwt, "GET", `/apps?filter[bundleId]=${encodeURIComponent(TEMPLATE_BUNDLE_ID)}`);
+  const template = templates.data?.[0];
+  if (!template) {
+    console.warn(`  ⚠ model app "${TEMPLATE_BUNDLE_ID}" not found with this API key: age rating and review contact left as they are.`);
+    return;
+  }
+
+  console.log(`Copying the age rating answers of ${TEMPLATE_BUNDLE_ID}...`);
+  const templateInfo = await editableAppInfo(jwt, template.id);
+  const templateRating = (await api(jwt, "GET", `/appInfos/${templateInfo.id}/ageRatingDeclaration`)).data;
+  const ownInfo = await editableAppInfo(jwt, appId);
+  const ownRating = (await api(jwt, "GET", `/appInfos/${ownInfo.id}/ageRatingDeclaration`)).data;
+  const answers = Object.fromEntries(
+    Object.entries({ ...templateRating.attributes, ...(review?.ageRatingOverrides ?? {}) }).filter(([, value]) => value !== null && value !== undefined),
+  );
+  try {
+    await api(jwt, "PATCH", `/ageRatingDeclarations/${ownRating.id}`, { data: { type: "ageRatingDeclarations", id: ownRating.id, attributes: answers } });
+    console.log(`  → applied: ${JSON.stringify(answers)}`);
+  } catch (error) {
+    console.warn(`  ⚠ age rating not applied (${error.message}). Answers of the model: ${JSON.stringify(answers)}`);
+  }
+
+  console.log("Setting the App Review information...");
+  const templateVersions = await api(jwt, "GET", `/apps/${template.id}/appStoreVersions?filter[platform]=IOS&limit=20`);
+  let contact = null;
+  for (const templateVersion of templateVersions.data ?? []) {
+    const detail = await api(jwt, "GET", `/appStoreVersions/${templateVersion.id}/appStoreReviewDetail`).catch(() => null);
+    if (detail?.data?.attributes?.contactEmail) {
+      contact = detail.data.attributes;
+      break;
+    }
+  }
+  const demoAccountRequired = Boolean(review?.demoAccountRequired);
+  const attributes = {
+    ...(contact
+      ? {
+          contactFirstName: contact.contactFirstName,
+          contactLastName: contact.contactLastName,
+          contactPhone: contact.contactPhone,
+          contactEmail: contact.contactEmail,
+        }
+      : {}),
+    demoAccountRequired,
+    ...(REVIEW_DEMO_LOGIN && REVIEW_DEMO_PASSWORD ? { demoAccountName: REVIEW_DEMO_LOGIN, demoAccountPassword: REVIEW_DEMO_PASSWORD } : {}),
+    ...(review?.notes ? { notes: review.notes } : {}),
+  };
+  const existing = await api(jwt, "GET", `/appStoreVersions/${versionId}/appStoreReviewDetail`).catch(() => null);
+  if (existing?.data) {
+    await api(jwt, "PATCH", `/appStoreReviewDetails/${existing.data.id}`, { data: { type: "appStoreReviewDetails", id: existing.data.id, attributes } });
+  } else {
+    await api(jwt, "POST", "/appStoreReviewDetails", {
+      data: { type: "appStoreReviewDetails", attributes, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: versionId } } } },
+    });
+  }
+  console.log(
+    contact
+      ? `  → contact: ${contact.contactFirstName} ${mask(contact.contactLastName)}, ${mask(contact.contactEmail)}, ${mask(contact.contactPhone)}`
+      : "  ⚠ no App Review contact found on the model app: fill it in App Store Connect.",
+  );
+  console.log(`  → demo account required: ${demoAccountRequired ? "yes" : "no"}, provided: ${REVIEW_DEMO_LOGIN && REVIEW_DEMO_PASSWORD ? "yes" : "no"}`);
+  if (demoAccountRequired && !(REVIEW_DEMO_LOGIN && REVIEW_DEMO_PASSWORD)) {
+    console.warn("  ⚠ demo account required but its secrets are missing: Apple will reject the submission without it.");
+  }
+}
+
 async function main() {
   const privateKeyPem = Buffer.from(APP_STORE_CONNECT_API_KEY_BASE64, "base64").toString("utf8");
   const jwt = buildJwt(privateKeyPem);
@@ -287,8 +381,12 @@ async function main() {
   // Store listing text (description, keywords, URLs, name, subtitle, category) from a committed JSON file, so the
   // listing is reproducible. Age rating, App Privacy answers and the reviewer's demo account stay manual steps in
   // App Store Connect (Apple offers no API for App Privacy, and the demo account is a credential).
-  if (METADATA_FILE) {
-    await applyMetadata(jwt, appId, version.id, JSON.parse(readFileSync(METADATA_FILE, "utf8")), firstRelease);
+  const metadata = METADATA_FILE ? JSON.parse(readFileSync(METADATA_FILE, "utf8")) : null;
+  if (metadata) {
+    await applyMetadata(jwt, appId, version.id, metadata, firstRelease);
+  }
+  if (TEMPLATE_BUNDLE_ID) {
+    await applyReviewSetup(jwt, appId, version.id, metadata?.review);
   }
 
   // Screenshots are locked once the version is in review -- replace them
