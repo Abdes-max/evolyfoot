@@ -371,6 +371,9 @@ nav.profil-tabs {
 .abonnement-status-subscribed {
   border-color: var(--good);
 }
+.abonnement-actions .abonnement-cancel {
+  color: var(--bad);
+}
 .abonnement-status-expired {
   border-color: var(--bad);
 }
