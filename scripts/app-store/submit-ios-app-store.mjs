@@ -123,7 +123,7 @@ async function api(jwt, method, path, body) {
 }
 
 // Creates or updates the localization of the app info (name, subtitle, privacy policy URL) and of the version
-// (description, keywords, promotional text, support/marketing URLs), and sets the primary category.
+// (description, keywords, promotional text, support/marketing URLs), and sets the copyright and primary category.
 async function applyMetadata(jwt, appId, versionId, metadata, firstRelease) {
   const locale = metadata.locale ?? "fr-FR";
   console.log(`Applying the store listing (${locale})...`);
@@ -131,6 +131,13 @@ async function applyMetadata(jwt, appId, versionId, metadata, firstRelease) {
   const appInfos = await api(jwt, "GET", `/apps/${appId}/appInfos`);
   const appInfo = (appInfos.data ?? []).find((info) => info.attributes.appStoreState !== "READY_FOR_SALE") ?? appInfos.data?.[0];
   if (!appInfo) throw new Error("No app info found for this app.");
+
+  // Copyright shown on the store page ("© 2026 KELTO Studio"): an attribute of the version, not of a localization.
+  if (metadata.copyright) {
+    await api(jwt, "PATCH", `/appStoreVersions/${versionId}`, {
+      data: { type: "appStoreVersions", id: versionId, attributes: { copyright: metadata.copyright } },
+    });
+  }
 
   if (metadata.primaryCategory) {
     await api(jwt, "PATCH", `/appInfos/${appInfo.id}`, {

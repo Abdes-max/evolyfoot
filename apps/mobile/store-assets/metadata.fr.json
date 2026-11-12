@@ -1,6 +1,7 @@
 {
   "locale": "fr-FR",
   "primaryCategory": "SPORTS",
+  "copyright": "© 2026 KELTO Studio",
   "app": {
     "name": "EvolyFoot Coach",
     "subtitle": "Entraîne, convoque, progresse",
