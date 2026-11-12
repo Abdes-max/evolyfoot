@@ -155,6 +155,11 @@ Les produits et les prix n'ont pas à être créés à la main : le serveur les 
 les retrouve ensuite par leur clé (`evolyfoot_base_monthly`, `evolyfoot_team_season`...). Les codes promo
 Stripe sont acceptés sur la page de paiement (coupon de lancement).
 
+Passage du test au live : annuler d’abord, en mode test, les abonnements de test (le webhook les marque
+résiliés), puis remplacer les deux secrets par les valeurs live (nouveau webhook créé en mode live, portail
+client à réactiver en live) et redéployer. Les clients Stripe de test restés en base sont recréés au premier
+paiement live.
+
 Tant que l'accès n'est pas bloqué (`BILLING_ENFORCED` absent ou `false`, variable GitHub du même nom),
 un essai terminé n'empêche rien : la barre latérale invite seulement à s'abonner. À `true`, un coach non
 abonné dont l'essai est fini est renvoyé vers `/abonnement` (le profil reste ouvert). Les coachs inscrits
