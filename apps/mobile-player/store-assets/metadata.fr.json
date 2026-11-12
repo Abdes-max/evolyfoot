@@ -14,5 +14,9 @@
     "supportUrl": "https://evolyfoot.com/contact",
     "marketingUrl": "https://evolyfoot.com",
     "whatsNew": "Annulations d'entraînement et de match avec le message de l'éducateur, matchs et tournois dans ta carte, logo d'équipe, notifications réglables et nombreuses améliorations."
+  },
+  "review": {
+    "demoAccountRequired": true,
+    "notes": "EvolyFoot Player is the companion app for players (and their parents) of a team managed with EvolyFoot Coach: player card, calendar, call-up answers and messages from the coach.\n\nThere is no sign-up in this app: a player account is created from an invitation sent by the coach. Please use the demo account provided, which is linked to a demo team.\n\nNo digital content is sold in the app. The app is in French.\n\nCompte joueur obtenu par l'invitation de l'éducateur : utiliser le compte de démonstration fourni."
   }
 }

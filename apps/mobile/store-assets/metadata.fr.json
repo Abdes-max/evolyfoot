@@ -14,5 +14,9 @@
     "supportUrl": "https://evolyfoot.com/contact",
     "marketingUrl": "https://evolyfoot.com",
     "whatsNew": "Programmation U12-U13, annulation d'un entraînement, d'un match, d'un tournoi ou d'un plateau avec message aux joueurs, filtre À venir / Passées, logo d'équipe et nombreuses améliorations."
+  },
+  "review": {
+    "demoAccountRequired": false,
+    "notes": "EvolyFoot Coach is for youth football coaches (U10-U13): season planning, training sessions, match line-ups, call-ups and player follow-up.\n\nSign-in: create a free account directly in the app (« Créer un compte »), then confirm the e-mail address. A 14-day free trial starts automatically, with every feature available.\n\nNo digital content is sold in the app. The app is in French.\n\nEvolyFoot Coach est l'application des éducateurs de football de jeunes. Création de compte gratuite dans l'application, essai de 14 jours."
   }
 }
