@@ -19,6 +19,11 @@ concurrency:
   group: deploy-production
   cancel-in-progress: false
 
+# Dépôt privé : le serveur récupère le code avec le jeton temporaire du workflow (lecture seule, expire
+# à la fin du job, jamais écrit sur le serveur).
+permissions:
+  contents: read
+
 jobs:
   deploy:
     name: Déployer sur le VPS
@@ -31,6 +36,7 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           BILLING_ENFORCED: ${{ vars.BILLING_ENFORCED }}
+          FETCH_TOKEN: ${{ github.token }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
@@ -43,14 +49,16 @@ jobs:
           command_timeout: 25m
           # Paiement Stripe : secrets GitHub facultatifs, transmis à docker compose. Absents, on garde
           # les valeurs du .env du serveur (une variable vide exportée les masquerait).
-          envs: STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,BILLING_ENFORCED
+          envs: STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,BILLING_ENFORCED,FETCH_TOKEN
           script: |
             set -euo pipefail
             for name in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET BILLING_ENFORCED; do
               if [ -z "${!name:-}" ]; then unset "$name"; fi
             done
             cd "${{ secrets.DEPLOY_PATH }}"
-            git fetch origin master
+            auth="$(printf 'x-access-token:%s' "$FETCH_TOKEN" | base64 -w0)"
+            git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $auth" fetch origin master
+            unset auth FETCH_TOKEN
             git reset --hard origin/master
             docker compose up -d --build
             docker image prune -f
