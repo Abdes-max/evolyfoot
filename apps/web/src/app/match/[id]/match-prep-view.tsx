@@ -422,6 +422,24 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     }
   }
 
+  async function reopen() {
+    if (!window.confirm("Rouvrir ce match ? Il redevient à préparer ; le score saisi est gardé.")) return;
+    setFinalizing(true);
+    setSaveError("");
+    try {
+      const response = await fetch(`/api/matches/${matchId}/played`, { method: "DELETE" });
+      if (!response.ok) {
+        setSaveError(await readErrorMessage(response));
+        return;
+      }
+      setMatch((await response.json()).match);
+    } catch {
+      setSaveError("Une erreur est survenue.");
+    } finally {
+      setFinalizing(false);
+    }
+  }
+
   if (authenticated === false) {
     return (
       <main className="match-shell">
@@ -708,6 +726,11 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
             <Link className="continue-button" href={`/observation?type=match&matchId=${matchId}`}>
               Ajouter une observation <span aria-hidden="true">→</span>
             </Link>
+          )}
+          {readOnly && (
+            <button className="match-details-save match-reopen" disabled={finalizing} onClick={reopen} type="button">
+              {finalizing ? "…" : "Rouvrir ce match"}
+            </button>
           )}
         </div>
       </section>

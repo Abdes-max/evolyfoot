@@ -276,6 +276,12 @@ export class MatchService {
     });
   }
 
+  // Rouvre un match marqué joué par erreur : il redevient à préparer, le score déjà saisi est gardé.
+  async reopen(educatorId: string, matchId: string): Promise<PersistedMatch> {
+    await this.get(educatorId, matchId);
+    return this.matchRepository.update(matchId, educatorId, { status: "scheduled" });
+  }
+
   async saveResult(educatorId: string, matchId: string, result: MatchResult): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
     if (match.status !== "played") {

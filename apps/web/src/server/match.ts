@@ -82,6 +82,7 @@ export interface MatchGateway {
   ): Promise<MatchSummary>;
   changeFormation(educatorId: string, matchId: string, input: { formationId: string; gameFormat?: number }): Promise<MatchSummary>;
   markPlayed(educatorId: string, matchId: string, attendance?: readonly AttendanceEntry[]): Promise<MatchSummary>;
+  reopen(educatorId: string, matchId: string): Promise<MatchSummary>;
   saveResult(educatorId: string, matchId: string, result: MatchResult): Promise<MatchSummary>;
   remove(educatorId: string, matchId: string): Promise<void>;
 }
@@ -348,6 +349,25 @@ export function createMarkPlayedHandler(
   };
 }
 
+// DELETE /played : le match redevient à préparer (marqué joué par erreur, ou à compléter).
+export function createReopenMatchHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  matches: Pick<MatchGateway, "reopen">,
+  log: (error: unknown) => void,
+): (request: Request, matchId: string) => Promise<Response> {
+  return async (request, matchId) => {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    try {
+      return Response.json({ match: await matches.reopen(educator.id, matchId) });
+    } catch (error) {
+      return errorResponse(error, log);
+    }
+  };
+}
+
 function isPlayerStatShaped(value: unknown): value is MatchPlayerStat {
   const stat = value as Partial<MatchPlayerStat> | null;
   return (
@@ -476,6 +496,9 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       },
       async markPlayed(educatorId, matchId, attendance) {
         return toSummary(await service.markPlayed(educatorId, matchId, attendance));
+      },
+      async reopen(educatorId, matchId) {
+        return toSummary(await service.reopen(educatorId, matchId));
       },
       remove(educatorId, matchId) {
         return service.remove(educatorId, matchId);

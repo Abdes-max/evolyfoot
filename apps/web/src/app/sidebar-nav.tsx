@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BallIcon, CalendarIcon, EyeIcon, HomeIcon, UsersIcon } from "./icons";
+import { UnreadBadge, useNotifications } from "./notification-bell";
 import { SidebarIdentity } from "./sidebar-identity";
 
 // Auparavant définie une seule fois, en dur, dans page.tsx (l'accueil) : chaque autre page
@@ -26,6 +27,8 @@ export function SidebarNav() {
   // contexte App Router réel -- notamment en test unitaire (@testing-library/react sans harnais
   // Next), où ce composant est rendu directement sans passer par le routeur.
   const pathname = usePathname() ?? "";
+  const [feed] = useNotifications();
+  const pendingTutors = feed.pendingTutorPlayerIds.length;
 
   return (
     <aside className="sidebar">
@@ -43,6 +46,7 @@ export function SidebarNav() {
           return (
             <Link className={isActive ? "nav-item active" : "nav-item"} href={href} key={href}>
               <Icon /> <span className="nav-label">{label}</span>
+              {href === "/equipe" && <UnreadBadge count={pendingTutors} label={pendingTutors > 1 ? "demandes de tuteur" : "demande de tuteur"} />}
             </Link>
           );
         })}

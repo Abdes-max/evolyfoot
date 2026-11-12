@@ -240,7 +240,7 @@
   font-weight: 500;
 }
 .messagerie-number {
-  color: rgba(255, 255, 255, 0.28);
+  color: var(--muted-2);
   font-size: 24px;
   font-style: italic;
   font-weight: 900;

@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  nextEvent,
+  nextEventKindLabels,
   buildDevelopmentPlan,
   buildPrioritizedSeason,
   currentCycleWeek,
@@ -44,6 +46,19 @@ interface UpcomingMatch {
   captainPlayerId: string | null;
 }
 
+interface UpcomingCompetition {
+  kind: "tournament" | "plateau";
+  id: string;
+  name: string;
+  dateLabel: string;
+  date: string | null;
+  location: string | null;
+  finishedAt?: string | null;
+  cancelledAt?: string | null;
+}
+
+const competitionPaths = { tournament: "/match/tournois", plateau: "/match/plateaux" } as const;
+
 interface SeasonProgram {
   priorities: string[];
   startDate: string;
@@ -57,6 +72,7 @@ interface DashboardData {
   sessionsPerWeek: number;
   ageGroup?: AgeGroup;
   matches: readonly UpcomingMatch[];
+  competitions: readonly UpcomingCompetition[];
   seasonProgram: SeasonProgram | null;
   seasonPreparedCount: number;
   // Toutes les séances (cycles et saison guidée) : prochaine séance datée et séances préparées de la saison.
@@ -96,16 +112,27 @@ export function DashboardView() {
           return;
         }
 
-        const [teamResponse, diagnosticResponse, sessionsResponse, observationsResponse, matchesResponse, seasonResponse, seasonSessionsResponse] =
-          await Promise.all([
-            fetch("/api/team"),
-            fetch("/api/diagnostic"),
-            fetch("/api/sessions"),
-            fetch("/api/observations"),
-            fetch("/api/matches"),
-            fetch("/api/season-program"),
-            fetch("/api/sessions?scope=season"),
-          ]);
+        const [
+          teamResponse,
+          diagnosticResponse,
+          sessionsResponse,
+          observationsResponse,
+          matchesResponse,
+          seasonResponse,
+          seasonSessionsResponse,
+          tournamentsResponse,
+          plateauxResponse,
+        ] = await Promise.all([
+          fetch("/api/team"),
+          fetch("/api/diagnostic"),
+          fetch("/api/sessions"),
+          fetch("/api/observations"),
+          fetch("/api/matches"),
+          fetch("/api/season-program"),
+          fetch("/api/sessions?scope=season"),
+          fetch("/api/tournaments"),
+          fetch("/api/plateaux"),
+        ]);
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const diagnosticBody = await diagnosticResponse.json().catch(() => ({ scores: null }));
         const sessionsBody = await sessionsResponse.json().catch(() => ({ sessions: [] }));
@@ -113,6 +140,8 @@ export function DashboardView() {
         const matchesBody = await matchesResponse.json().catch(() => ({ matches: [] }));
         const seasonBody = await seasonResponse.json().catch(() => ({ program: null }));
         const seasonSessionsBody = await seasonSessionsResponse.json().catch(() => ({ sessions: [] }));
+        const tournamentsBody = await tournamentsResponse.json().catch(() => ({ tournaments: [] }));
+        const plateauxBody = await plateauxResponse.json().catch(() => ({ plateaux: [] }));
         if (cancelled) {
           return;
         }
@@ -125,6 +154,10 @@ export function DashboardView() {
           sessionsPerWeek: teamBody.profile?.sessionsPerWeek ?? 2,
           ageGroup: teamBody.profile?.ageGroup,
           matches: matchesBody.matches ?? [],
+          competitions: [
+            ...((tournamentsBody.tournaments ?? []) as Omit<UpcomingCompetition, "kind">[]).map((item) => ({ ...item, kind: "tournament" as const })),
+            ...((plateauxBody.plateaux ?? []) as Omit<UpcomingCompetition, "kind">[]).map((item) => ({ ...item, kind: "plateau" as const })),
+          ],
           seasonProgram: seasonBody.program ?? null,
           seasonPreparedCount: ((seasonSessionsBody.sessions ?? []) as Array<{ cycleNumber: number }>).filter(
             (session) => session.cycleNumber === guidedSeasonCycle,
@@ -200,10 +233,22 @@ export function DashboardView() {
     : [];
   const suggestion = latestObservation && week ? suggestAdjustmentFromObservation(latestObservation, week) : null;
 
-  // Prochain match à jouer : le plus proche à venir, sinon le premier sans date.
-  const nextMatch = [...(data?.matches ?? [])]
-    .filter((match) => match.status === "scheduled" && (!match.date || new Date(match.date).getTime() >= now - 3 * 3600_000))
-    .sort((a, b) => (a.date ? new Date(a.date).getTime() : Infinity) - (b.date ? new Date(b.date).getTime() : Infinity))[0];
+  // Prochain match, tournoi ou plateau : le plus proche à venir (un match sans date en dernier).
+  const next = nextEvent(
+    [
+      ...(data?.matches ?? []).map((match) => ({ kind: "match" as const, id: match.id, date: match.date, open: match.status === "scheduled", match })),
+      ...(data?.competitions ?? []).map((competition) => ({
+        kind: competition.kind,
+        id: competition.id,
+        date: competition.date,
+        open: !competition.finishedAt && !competition.cancelledAt,
+        competition,
+      })),
+    ],
+    new Date(now),
+  );
+  const nextMatch = next && "match" in next ? next.match : null;
+  const nextCompetition = next && "competition" in next ? next.competition : null;
 
   const season = seasonProgram;
   const seasonWeeks = seasonPlanWeeks;
@@ -261,10 +306,19 @@ export function DashboardView() {
 
             <article className="home-match">
               <div className="card-top">
-                <span className="eyebrow">PROCHAIN MATCH</span>
-                {nextMatch && <span className="date-chip">{nextMatch.dateLabel}</span>}
+                <span className="eyebrow">MATCH / COMPÉTITION</span>
+                {(nextCompetition ?? nextMatch) && <span className="date-chip">{(nextCompetition ?? nextMatch)!.dateLabel}</span>}
               </div>
-              {nextMatch ? (
+              {nextCompetition ? (
+                <>
+                  <span className="home-event-kind">{nextEventKindLabels[nextCompetition.kind]}</span>
+                  <h2>{nextCompetition.name}</h2>
+                  {nextCompetition.location && <p className="home-match-place">📍 {nextCompetition.location}</p>}
+                  <Link className="small-primary" href={`${competitionPaths[nextCompetition.kind]}/${nextCompetition.id}`}>
+                    Préparer le {nextEventKindLabels[nextCompetition.kind].toLowerCase()}
+                  </Link>
+                </>
+              ) : nextMatch ? (
                 <>
                   <div className="home-versus">
                     <strong>{nextMatch.venue === "home" ? (data.teamName ?? "Mon équipe") : nextMatch.opponent}</strong>
@@ -278,9 +332,9 @@ export function DashboardView() {
                 </>
               ) : (
                 <>
-                  <h2>Aucun match prévu</h2>
+                  <h2>Rien de prévu</h2>
                   <Link className="small-primary" href="/match">
-                    Ajouter un match
+                    Ajouter un match, un tournoi ou un plateau
                   </Link>
                 </>
               )}

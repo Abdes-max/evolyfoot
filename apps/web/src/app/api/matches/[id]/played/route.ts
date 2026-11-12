@@ -1,5 +1,5 @@
 import { createAuthGateway, readSessionToken, type PublicEducator } from "@/server/auth";
-import { createMarkPlayedHandler, createMatchGateway } from "@/server/match";
+import { createMarkPlayedHandler, createMatchGateway, createReopenMatchHandler } from "@/server/match";
 
 async function resolveEducator(request: Request): Promise<PublicEducator | null> {
   const token = readSessionToken(request);
@@ -24,6 +24,16 @@ export async function POST(request: Request, { params }: RouteParams): Promise<R
   const { gateway, disconnect } = await createMatchGateway();
   try {
     return await createMarkPlayedHandler(resolveEducator, gateway, console.error)(request, id);
+  } finally {
+    await disconnect();
+  }
+}
+
+export async function DELETE(request: Request, { params }: RouteParams): Promise<Response> {
+  const { id } = await params;
+  const { gateway, disconnect } = await createMatchGateway();
+  try {
+    return await createReopenMatchHandler(resolveEducator, gateway, console.error)(request, id);
   } finally {
     await disconnect();
   }

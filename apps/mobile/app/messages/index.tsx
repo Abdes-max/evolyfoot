@@ -122,7 +122,7 @@ const styles = themedStyles(() =>
       backgroundColor: colors.paper,
     },
     avatarText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
-    number: { color: "rgba(255,255,255,0.28)", fontSize: 22, fontWeight: "900", fontStyle: "italic" },
+    number: { color: colors.muted, opacity: 0.6, fontSize: 22, fontWeight: "900", fontStyle: "italic" },
     chevron: { color: colors.muted, fontSize: 20, fontWeight: "800" },
     badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.pill, backgroundColor: colors.primary },
     badgeText: { color: colors.primaryInk, fontSize: 10.5, fontWeight: "900" },

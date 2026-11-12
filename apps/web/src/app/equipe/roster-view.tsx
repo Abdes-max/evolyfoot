@@ -4,6 +4,7 @@ import { playerPositionCodes, playerPositions } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { resizeImageToDataUrl } from "../image-resize";
+import { useNotifications } from "../notification-bell";
 import { SidebarNav } from "../sidebar-nav";
 import { TeamCrest } from "../team-crest";
 import { NextMatchLineup } from "./next-match-lineup";
@@ -88,6 +89,8 @@ export function RosterView() {
     }
   }
   const [players, setPlayers] = useState<RosterPlayer[]>([]);
+  // Joueurs dont un tuteur attend une réponse : pastille sur leur ligne.
+  const [feed] = useNotifications();
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
   const [addError, setAddError] = useState("");
@@ -370,6 +373,7 @@ export function RosterView() {
                                   </span>
                                   <span className="roster-row-identity">
                                     <strong>{player.name}</strong>
+                                    {feed.pendingTutorPlayerIds.includes(player.id) && <span className="roster-tutor-request">Demande de tuteur</span>}
                                     <small>
                                       {group.key
                                         ? `${group.key} (${playerPositionCodes[group.key as keyof typeof playerPositionCodes]})`

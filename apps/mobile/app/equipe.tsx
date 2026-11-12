@@ -5,6 +5,7 @@ import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { TeamCrest } from "../components/team-crest";
 import { useAuth } from "../lib/auth-context";
+import { useUnread } from "../lib/push";
 import { pickTeamLogo } from "../lib/team-logo";
 import { themedStyles } from "../lib/themed-styles";
 
@@ -24,7 +25,8 @@ function initials(name: string): string {
 }
 
 export default function EquipeScreen() {
-  const { team, roster, addPlayer, renamePlayer, removePlayer, saveTeamLogo } = useAuth();
+  const { team, roster, addPlayer, renamePlayer, removePlayer, saveTeamLogo, sessionToken } = useAuth();
+  const { pendingTutorPlayerIds } = useUnread(sessionToken);
   const [logoBusy, setLogoBusy] = useState(false);
   const [logoError, setLogoError] = useState("");
 
@@ -195,6 +197,11 @@ export default function EquipeScreen() {
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.rowName}>{player.name}</Text>
+                          {pendingTutorPlayerIds.includes(player.id) ? (
+                            <View style={styles.tutorRequest}>
+                              <Text style={styles.tutorRequestText}>Demande de tuteur</Text>
+                            </View>
+                          ) : null}
                           <Text style={styles.rowPosition}>
                             {group.key ? `${group.key} (${playerPositionCodes[group.key as keyof typeof playerPositionCodes]})` : "Poste à renseigner"}
                           </Text>
@@ -282,7 +289,9 @@ const styles = themedStyles(() =>
     },
     avatarText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
     rowPosition: { fontSize: 11.5, color: colors.muted, marginTop: 2 },
-    jersey: { color: "rgba(255,255,255,0.28)", fontSize: 26, fontWeight: "900", fontStyle: "italic", marginRight: 4 },
+    tutorRequest: { alignSelf: "flex-start", marginTop: 3, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: "#ef4444" },
+    tutorRequestText: { color: "#ffffff", fontSize: 10.5, fontWeight: "800" },
+    jersey: { color: colors.muted, opacity: 0.6, fontSize: 26, fontWeight: "900", fontStyle: "italic", marginRight: 4 },
     noTeamLink: { marginTop: 12, padding: 12, backgroundColor: colors.primarySoft, borderRadius: radii.sm },
     noTeamText: { color: colors.primary, fontSize: 11, fontWeight: "800" },
     label: { fontSize: 11, fontWeight: "800", color: colors.ink, marginTop: 24, marginBottom: 9 },

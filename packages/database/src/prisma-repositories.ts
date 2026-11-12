@@ -538,6 +538,19 @@ export class PrismaNotificationRepository implements NotificationRepository {
     return links.map((link) => link.accountId);
   }
 
+  async pendingFollowRequestPlayerIds(accountId: string): Promise<string[]> {
+    const account = await this.prisma.educator.findUnique({ where: { id: accountId }, select: { id: true, role: true, ownerEducatorId: true } });
+    if (!account || account.role === "player") return [];
+    // Un adjoint voit l'équipe de son coach (ou de l'espace d'équipe qui l'a invité) ; un coach, ses espaces d'équipe en plus.
+    const ownerId = account.role === "coach" || !account.ownerEducatorId ? account.id : account.ownerEducatorId;
+    const spaces = await this.prisma.educator.findMany({ where: { ownerEducatorId: ownerId, role: "team" }, select: { id: true } });
+    const requests = await this.prisma.playerFollowRequest.findMany({
+      where: { player: { educatorId: { in: [ownerId, ...spaces.map((space) => space.id)] } } },
+      select: { playerId: true },
+    });
+    return [...new Set(requests.map((request) => request.playerId))];
+  }
+
   async createMany(inputs: NotificationInput[]): Promise<void> {
     await this.prisma.notification.createMany({ data: inputs.map((input) => ({ ...input, threadPlayerId: input.threadPlayerId ?? null })) });
   }

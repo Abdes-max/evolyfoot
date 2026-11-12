@@ -254,7 +254,6 @@
   color: var(--ink);
   font: inherit;
   font-size: 14px;
-  color-scheme: dark;
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease;
@@ -496,6 +495,40 @@
 
 .notification-panel li span {
   font-size: 0.85rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.notification-panel li strong {
+  overflow-wrap: anywhere;
+}
+
+/* Téléphone et tablette : panneau centré à l’écran, au-dessus de la barre du bas (coach) ou sous
+   l’en-tête (joueur), assez haut pour lire chaque alerte en entier. */
+@media (max-width: 950px) {
+  .notification-panel,
+  .player-space-header .notification-panel {
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    left: 50%;
+    max-height: calc(100dvh - 160px);
+    position: fixed;
+    right: auto;
+    top: auto;
+    transform: translateX(-50%);
+    width: min(440px, calc(100vw - 24px));
+    z-index: 60;
+  }
+
+  .player-space-header .notification-panel {
+    bottom: auto;
+    max-height: calc(100dvh - 96px);
+    top: 72px;
+  }
+
+  .notification-panel li a {
+    padding: 12px 16px;
+  }
 }
 
 .notification-panel li small,
@@ -667,7 +700,6 @@
   background: var(--surface-2);
   color: var(--ink);
   font: inherit;
-  color-scheme: dark;
 }
 .training-schedule-hint,
 .prepare-season-tip {

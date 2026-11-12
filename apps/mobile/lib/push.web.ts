@@ -12,16 +12,18 @@ export function applyForegroundPreferences(): void {}
 export interface UnreadCounts {
   unreadCount: number;
   unreadMessages: number;
+  // Joueurs dont un tuteur attend une réponse du coach.
+  pendingTutorPlayerIds: string[];
 }
 
 export async function readUnread(sessionToken: string): Promise<UnreadCounts | null> {
   const response = await apiFetch("/api/notifications", { sessionToken }).catch(() => null);
   const body = response?.ok ? await response.json().catch(() => null) : null;
-  return body ? { unreadCount: body.unreadCount, unreadMessages: body.unreadMessages } : null;
+  return body ? { unreadCount: body.unreadCount, unreadMessages: body.unreadMessages, pendingTutorPlayerIds: body.pendingTutorPlayerIds ?? [] } : null;
 }
 
 export function useUnread(sessionToken: string | null): UnreadCounts {
-  const [counts, setCounts] = useState<UnreadCounts>({ unreadCount: 0, unreadMessages: 0 });
+  const [counts, setCounts] = useState<UnreadCounts>({ unreadCount: 0, unreadMessages: 0, pendingTutorPlayerIds: [] });
   useFocusEffect(
     useCallback(() => {
       if (sessionToken) void readUnread(sessionToken).then((value) => value && setCounts(value));

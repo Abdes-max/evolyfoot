@@ -1169,7 +1169,7 @@ span.match-pitch-token-face {
   font-weight: 700;
 }
 .player-picker-number {
-  color: rgba(255, 255, 255, 0.28);
+  color: var(--muted-2);
   font-size: 26px;
   font-style: italic;
   font-weight: 900;
