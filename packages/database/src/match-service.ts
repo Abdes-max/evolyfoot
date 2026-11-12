@@ -195,6 +195,9 @@ export class MatchService {
     },
   ): Promise<PersistedMatch> {
     const match = await this.get(educatorId, matchId);
+    if (match.cancelledAt) {
+      throw new ValidationError("Ce match est annulé : rétablis-le d’abord.");
+    }
     if (input.opponentFormationId && !listFormations(match.gameFormat).some((formation) => formation.id === input.opponentFormationId)) {
       throw new ValidationError("Ce système n’existe pas pour ce format de jeu.");
     }

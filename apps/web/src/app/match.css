@@ -1402,3 +1402,8 @@ span.match-pitch-token-face {
   background: var(--accent);
   color: var(--accent-ink);
 }
+.event-readonly {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+}

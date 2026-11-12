@@ -272,6 +272,8 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
     return <main className="match-shell" />;
   }
 
+  // Annulé : tout est bloqué sauf « Rétablir » (carte Convocation) et « Retirer ».
+  const cancelled = Boolean(item.cancelledAt);
   const isPast = Boolean(item.finishedAt) || (item.date ? new Date(item.date).getTime() < new Date().getTime() : false);
 
   return (
@@ -293,51 +295,60 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
       </header>
 
       <section className="match-content event-sheet">
+        {item.cancelledAt && (
+          <p className="event-cancelled-note">
+            {`Ce ${singular} est annulé : tout est bloqué (détails, joueurs, convocation, composition, rencontres). Rétablis-le depuis la carte Convocation pour le modifier.`}
+          </p>
+        )}
         <form className="event-card match-details-form" onSubmit={saveDetails}>
           <h2>Détails</h2>
           <label>
             <span>Date</span>
-            <input onChange={(event) => setDateInput(event.target.value)} type="date" value={dateInput} />
+            <input disabled={cancelled} onChange={(event) => setDateInput(event.target.value)} type="date" value={dateInput} />
           </label>
           <label>
             <span>Lieu</span>
-            <PlaceInput onChange={setLocation} value={location} />
+            <PlaceInput disabled={cancelled} onChange={setLocation} value={location} />
           </label>
           <label>
             <span>Description</span>
-            <textarea onChange={(event) => setDescription(event.target.value)} value={description} />
+            <textarea disabled={cancelled} onChange={(event) => setDescription(event.target.value)} value={description} />
           </label>
           <label>
             <span>Bilan</span>
-            <input onChange={(event) => setResult(event.target.value)} placeholder="Ex. 2 victoires, 1 nul" value={result} />
+            <input disabled={cancelled} onChange={(event) => setResult(event.target.value)} placeholder="Ex. 2 victoires, 1 nul" value={result} />
           </label>
           {saveError && (
             <p className="field-error" role="alert">
               {saveError}
             </p>
           )}
-          <button className="match-convocation-send" disabled={saving} type="submit">
-            {saving ? "Enregistrement…" : "Enregistrer les détails"}
-          </button>
-        </form>
-
-        <CollapsibleSection summary={selectionSummary(item.selectedPlayerIds ?? null, roster.length)} title="Joueurs concernés">
-          <ConcernedPlayersPicker
-            hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et entrent dans la composition et les rencontres.`}
-            onChange={(value) => {
-              setSelection(value);
-              setSelectionFeedback("");
-            }}
-            roster={roster}
-            value={selection}
-          />
-          {JSON.stringify(selection) !== JSON.stringify(item.selectedPlayerIds ?? null) && (
-            <button className="match-details-save" disabled={savingSelection || selection?.length === 0} onClick={saveSelection} type="button">
-              {savingSelection ? "Enregistrement…" : "Enregistrer les joueurs concernés"}
+          {!cancelled && (
+            <button className="match-convocation-send" disabled={saving} type="submit">
+              {saving ? "Enregistrement…" : "Enregistrer les détails"}
             </button>
           )}
-          {selectionFeedback && <p className="match-convocation-feedback">{selectionFeedback}</p>}
-        </CollapsibleSection>
+        </form>
+
+        {!cancelled && (
+          <CollapsibleSection summary={selectionSummary(item.selectedPlayerIds ?? null, roster.length)} title="Joueurs concernés">
+            <ConcernedPlayersPicker
+              hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et entrent dans la composition et les rencontres.`}
+              onChange={(value) => {
+                setSelection(value);
+                setSelectionFeedback("");
+              }}
+              roster={roster}
+              value={selection}
+            />
+            {JSON.stringify(selection) !== JSON.stringify(item.selectedPlayerIds ?? null) && (
+              <button className="match-details-save" disabled={savingSelection || selection?.length === 0} onClick={saveSelection} type="button">
+                {savingSelection ? "Enregistrement…" : "Enregistrer les joueurs concernés"}
+              </button>
+            )}
+            {selectionFeedback && <p className="match-convocation-feedback">{selectionFeedback}</p>}
+          </CollapsibleSection>
+        )}
 
         <div className="event-card">
           <h2>Convocation</h2>
@@ -396,9 +407,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
           )}
         </CollapsibleSection>
 
-        {item.cancelledAt ? (
-          <p className="event-cancelled-note">{`Ce ${singular} est annulé : rétablis-le pour le convoquer, le composer ou le marquer comme terminé.`}</p>
-        ) : (
+        {!cancelled && (
           <button className="match-convocation-send event-wide" disabled={saving} onClick={toggleFinished} type="button">
             {item.finishedAt ? `Rouvrir ce ${singular}` : `Marquer ce ${singular} comme terminé`}
           </button>
