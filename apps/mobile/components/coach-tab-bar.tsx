@@ -25,16 +25,25 @@ export function CoachTabBar() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { sessionToken } = useAuth();
-  const { unreadMessages } = useUnread(sessionToken);
+  const { unreadMessages, pendingTutorPlayerIds } = useUnread(sessionToken);
 
   return (
     <View accessibilityRole="tablist" style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
       {coachTabs.map((tab) => {
         const active = isActive(pathname, tab.href);
-        const badge = tab.href === "/messages" && unreadMessages > 0 && !active;
+        const messageBadge = tab.href === "/messages" && unreadMessages > 0 && !active;
+        // Demande d’accès d’un tuteur en attente : pastille sur Équipe tant qu’elle n’est pas traitée.
+        const tutorBadge = tab.href === "/equipe" && pendingTutorPlayerIds.length > 0;
+        const badge = messageBadge || tutorBadge;
         return (
           <TouchableOpacity
-            accessibilityLabel={badge ? `${tab.label}, ${unreadMessages} non lus` : tab.label}
+            accessibilityLabel={
+              messageBadge
+                ? `${tab.label}, ${unreadMessages} non lus`
+                : tutorBadge
+                  ? `${tab.label}, ${pendingTutorPlayerIds.length} demande${pendingTutorPlayerIds.length > 1 ? "s" : ""} de tuteur`
+                  : tab.label
+            }
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
             key={tab.href}

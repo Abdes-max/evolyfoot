@@ -770,6 +770,8 @@ export interface NotificationRepository {
   list(recipientId: string, limit: number): Promise<NotificationRecord[]>;
   countUnread(recipientId: string, kind?: NotificationKind): Promise<number>;
   markRead(recipientId: string, filter: { ids?: string[]; threadPlayerId?: string; kind?: NotificationKind }): Promise<void>;
+  // Joueurs de l'équipe de ce compte (coach ou adjoint) dont un tuteur attend une réponse.
+  pendingFollowRequestPlayerIds(accountId: string): Promise<string[]>;
 }
 
 export interface PushDeviceRepository {

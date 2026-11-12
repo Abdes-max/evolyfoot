@@ -1,5 +1,7 @@
 import { colors, getTheme, radii, spacing } from "@evolyfoot/design-tokens";
 import {
+  nextEvent,
+  nextEventKindLabels,
   buildDevelopmentPlan,
   buildPrioritizedSeason,
   currentCycleWeek,
@@ -24,6 +26,7 @@ import { CalendarIcon, ClockIcon, PinIcon } from "../components/icons";
 import { TeamCrest } from "../components/team-crest";
 import { ThemeToggle } from "../components/theme-toggle";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
+import { competitionKinds, type Competition, type CompetitionKind } from "../lib/competitions";
 import { useUnread } from "../lib/push";
 import { themedStyles } from "../lib/themed-styles";
 
@@ -52,6 +55,7 @@ export default function HomeScreen() {
   const [sessions, setSessions] = useState<readonly SavedTrainingSession[]>([]);
   const [now] = useState(() => Date.now());
   const [matches, setMatches] = useState<readonly MobileMatch[]>([]);
+  const [competitions, setCompetitions] = useState<readonly { kind: CompetitionKind; item: Competition }[]>([]);
   const [season, setSeason] = useState<{ priorities: string[]; startDate: string } | null>(null);
   // Toutes les séances (cycles et saison guidée) : prochaine séance datée et séances préparées de la saison.
   const [allSessions, setAllSessions] = useState<readonly SavedTrainingSession[]>([]);
@@ -69,6 +73,16 @@ export default function HomeScreen() {
       });
       listMatches().then((result) => {
         if (!cancelled && result.ok) setMatches(result.matches);
+      });
+      Promise.all(
+        (["tournament", "plateau"] as const).map(async (kind) => {
+          const { endpoint, listKey } = competitionKinds[kind];
+          const response = await apiRequest(endpoint).catch(() => null);
+          const body = response?.ok ? await response.json().catch(() => null) : null;
+          return (Array.isArray(body?.[listKey]) ? (body[listKey] as Competition[]) : []).map((item) => ({ kind, item }));
+        }),
+      ).then((lists) => {
+        if (!cancelled) setCompetitions(lists.flat());
       });
       apiRequest("/api/sessions?scope=season")
         .then((response) => (response?.ok ? response.json() : null))
@@ -135,10 +149,22 @@ export default function HomeScreen() {
       router.push(`/session?week=${target.weekNumber}&slot=${target.slot}`);
     }
   }
-  // Même logique que l’accueil web : le prochain match à jouer, puis l’avancement de la saison guidée.
-  const nextMatch = [...matches]
-    .filter((match) => match.status === "scheduled" && (!match.date || new Date(match.date).getTime() >= now - 3 * 3600_000))
-    .sort((a, b) => (a.date ? new Date(a.date).getTime() : Infinity) - (b.date ? new Date(b.date).getTime() : Infinity))[0];
+  // Même logique que l’accueil web : le prochain match, tournoi ou plateau, puis l’avancement de la saison guidée.
+  const next = nextEvent(
+    [
+      ...matches.map((match) => ({ kind: "match" as const, id: match.id, date: match.date ?? null, open: match.status === "scheduled", match })),
+      ...competitions.map(({ kind, item }) => ({ kind, id: item.id, date: item.date, open: !item.finishedAt && !item.cancelledAt, competition: item })),
+    ],
+    new Date(now),
+  );
+  const nextMatch = next && "match" in next ? next.match : null;
+  const nextCompetition = next && "competition" in next ? { kind: next.kind as CompetitionKind, item: next.competition } : null;
+
+  function openNextEvent() {
+    if (nextMatch) router.push({ pathname: "/match/[id]", params: { id: nextMatch.id } });
+    else if (nextCompetition) router.push({ pathname: "/competition/[id]", params: { id: nextCompetition.item.id, kind: nextCompetition.kind } });
+    else router.push("/match");
+  }
   const seasonWeeks = seasonPlanWeeks;
   const seasonWeek = season ? Math.min(currentSeasonWeek, seasonWeeks.length) : 0;
 
@@ -204,18 +230,28 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>Prochain match</Text>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={() => (nextMatch ? router.push({ pathname: "/match/[id]", params: { id: nextMatch.id } }) : router.push("/match"))}
-          style={[styles.sessionCard, styles.matchCard]}
-        >
+        <Text style={styles.sectionTitle}>Match / Compétition</Text>
+        <TouchableOpacity accessibilityRole="button" onPress={openNextEvent} style={[styles.sessionCard, styles.matchCard]}>
           <CardGlow variant="match" />
-          {nextMatch ? (
+          {nextCompetition ? (
             <>
               <View style={styles.metaRow}>
                 <CalendarIcon color={colors.muted} size={14} />
-                <Text style={styles.eyebrow}>{nextMatch.dateLabel.toUpperCase()}</Text>
+                <Text style={styles.eyebrow}>{`${nextEventKindLabels[nextCompetition.kind]} · ${nextCompetition.item.dateLabel}`.toUpperCase()}</Text>
+              </View>
+              <Text style={styles.cardTitle}>{nextCompetition.item.name}</Text>
+              {nextCompetition.item.location ? (
+                <View style={styles.metaRow}>
+                  <PinIcon color={colors.primary} size={16} />
+                  <Text style={styles.cardBody}>{nextCompetition.item.location}</Text>
+                </View>
+              ) : null}
+            </>
+          ) : nextMatch ? (
+            <>
+              <View style={styles.metaRow}>
+                <CalendarIcon color={colors.muted} size={14} />
+                <Text style={styles.eyebrow}>{`Match · ${nextMatch.dateLabel}`.toUpperCase()}</Text>
               </View>
               <View style={styles.versus}>
                 <Text style={styles.versusTeam}>{nextMatch.venue === "home" ? (team?.name ?? "Mon équipe") : nextMatch.opponent}</Text>
@@ -231,8 +267,8 @@ export default function HomeScreen() {
             </>
           ) : (
             <>
-              <Text style={styles.cardTitle}>Aucun match prévu</Text>
-              <Text style={styles.cardBody}>Ajoute ton prochain match pour préparer la composition.</Text>
+              <Text style={styles.cardTitle}>Rien de prévu</Text>
+              <Text style={styles.cardBody}>Ajoute ton prochain match, tournoi ou plateau pour préparer la composition.</Text>
             </>
           )}
         </TouchableOpacity>

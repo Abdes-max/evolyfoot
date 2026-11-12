@@ -287,6 +287,8 @@ export {
   validateCompetitionGames,
 } from "./competition-games";
 export type { CompetitionGame, CompetitionRecord, PlayerCompetitionGame } from "./competition-games";
+export { nextEvent, nextEventKindLabels } from "./next-event";
+export type { NextEventCandidate, NextEventKind } from "./next-event";
 export {
   billingAccess,
   billingCycleLabels,

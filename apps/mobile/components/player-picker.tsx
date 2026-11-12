@@ -174,7 +174,7 @@ const styles = themedStyles(() =>
     name: { color: colors.ink, fontSize: 14, fontWeight: "800" },
     meta: { color: colors.muted, fontSize: 12, marginTop: 2 },
     status: { color: colors.primary, fontWeight: "800" },
-    number: { color: "rgba(255,255,255,0.28)", fontSize: 24, fontWeight: "900", fontStyle: "italic" },
+    number: { color: colors.muted, opacity: 0.6, fontSize: 24, fontWeight: "900", fontStyle: "italic" },
     captain: {
       flexDirection: "row",
       alignItems: "center",

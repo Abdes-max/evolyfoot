@@ -17,10 +17,12 @@ export interface NotificationFeed {
   notifications: NotificationItem[];
   unreadCount: number;
   unreadMessages: number;
+  // Joueurs dont un tuteur attend une réponse du coach.
+  pendingTutorPlayerIds: string[];
 }
 
 const refreshMs = 60_000;
-const emptyFeed: NotificationFeed = { notifications: [], unreadCount: 0, unreadMessages: 0 };
+const emptyFeed: NotificationFeed = { notifications: [], unreadCount: 0, unreadMessages: 0, pendingTutorPlayerIds: [] };
 
 // Lit les notifications du compte connecté et les relit chaque minute et au retour sur l'onglet.
 export function useNotifications(): [NotificationFeed, () => Promise<void>] {
@@ -28,7 +30,7 @@ export function useNotifications(): [NotificationFeed, () => Promise<void>] {
   const reload = useCallback(async () => {
     const response = await fetch("/api/notifications").catch(() => null);
     const body = response?.ok ? await response.json().catch(() => null) : null;
-    if (body) setFeed(body);
+    if (body) setFeed({ ...emptyFeed, ...body });
   }, []);
 
   useEffect(() => {

@@ -256,11 +256,21 @@
   color: var(--muted);
   font-size: 11.5px;
 }
+/* Demande d’accès d’un tuteur en attente : à accepter ou refuser sur la fiche du joueur. */
+.roster-tutor-request {
+  align-self: flex-start;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+}
 /* Numéro de maillot en grand, en filigrane à droite de la ligne. */
 .roster-jersey {
   margin-left: auto;
   padding-right: 6px;
-  color: rgba(255, 255, 255, 0.28);
+  color: var(--muted-2);
   font-size: 30px;
   font-style: italic;
   font-weight: 900;

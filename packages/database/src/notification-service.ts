@@ -102,13 +102,16 @@ export class NotificationService {
     }
   }
 
-  async list(recipientId: string): Promise<{ notifications: NotificationRecord[]; unreadCount: number; unreadMessages: number }> {
-    const [notifications, unreadCount, unreadMessages] = await Promise.all([
+  async list(
+    recipientId: string,
+  ): Promise<{ notifications: NotificationRecord[]; unreadCount: number; unreadMessages: number; pendingTutorPlayerIds: string[] }> {
+    const [notifications, unreadCount, unreadMessages, pendingTutorPlayerIds] = await Promise.all([
       this.notificationRepository.list(recipientId, 30),
       this.notificationRepository.countUnread(recipientId),
       this.notificationRepository.countUnread(recipientId, "message"),
+      this.notificationRepository.pendingFollowRequestPlayerIds(recipientId),
     ]);
-    return { notifications, unreadCount, unreadMessages };
+    return { notifications, unreadCount, unreadMessages, pendingTutorPlayerIds };
   }
 
   async markRead(recipientId: string, filter: { ids?: string[]; threadPlayerId?: string; kind?: NotificationKind }): Promise<void> {

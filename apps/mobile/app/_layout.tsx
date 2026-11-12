@@ -10,8 +10,11 @@ import { ThemeProvider, useTheme } from "../lib/theme";
 
 // Lien web d’une notification → écran de l’appli Coach.
 function routeForLink(link: string): string {
-  // /messagerie?joueur=:id (ou /equipe/:id pour les anciennes alertes) → fil de ce joueur.
-  const player = link.match(/[?&]joueur=([^&#]+)/)?.[1] ?? link.match(/^\/equipe\/([^/?#]+)/)?.[1];
+  // /equipe/:id (demande d’accès d’un tuteur) → fiche du joueur, où l’accepter ou la refuser.
+  const rosterPlayer = link.match(/^\/equipe\/([^/?#]+)/)?.[1];
+  if (rosterPlayer) return `/equipe/${rosterPlayer}`;
+  // /messagerie?joueur=:id → fil de ce joueur.
+  const player = link.match(/[?&]joueur=([^&#]+)/)?.[1];
   return player ? `/messages/${player}` : "/notifications";
 }
 

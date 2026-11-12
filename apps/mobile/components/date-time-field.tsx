@@ -1,4 +1,4 @@
-import { colors, radii, spacing } from "@evolyfoot/design-tokens";
+import { colors, getTheme, radii, spacing } from "@evolyfoot/design-tokens";
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { createElement, useState } from "react";
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -54,7 +54,7 @@ export function DateTimeField({
         background: colors.surface,
         color: colors.ink,
         fontSize: 15,
-        colorScheme: "dark",
+        colorScheme: getTheme(),
       },
       type: mode === "date" ? "date" : "datetime-local",
       value: value ? webValue(value, mode) : "",
@@ -112,7 +112,8 @@ export function DateTimeField({
               locale="fr-FR"
               mode={mode}
               onChange={(_, picked) => picked && setDraft(picked)}
-              themeVariant="dark"
+              textColor={colors.ink}
+              themeVariant={getTheme()}
               value={draft}
             />
             <View style={styles.actions}>

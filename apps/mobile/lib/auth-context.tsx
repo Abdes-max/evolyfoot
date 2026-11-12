@@ -163,7 +163,8 @@ export interface AuthContextValue {
   }): Promise<MatchResult>;
   updateMatchLineup(id: string, lineup: MatchLineupAssignment[], captainPlayerId: string | null, substitutePlayerIds?: readonly string[]): Promise<MatchResult>;
   changeMatchFormation(id: string, formationId: string): Promise<MatchResult>;
-  markMatchPlayed(id: string): Promise<MatchResult>;
+  // played = false : rouvre un match marqué joué.
+  markMatchPlayed(id: string, played?: boolean): Promise<MatchResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -684,11 +685,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const markMatchPlayed = useCallback(
-    async (id: string): Promise<MatchResult> => {
+    async (id: string, played = true): Promise<MatchResult> => {
       if (!sessionToken) {
         return { ok: false, error: "Connecte-toi pour marquer ce match comme joué." };
       }
-      const response = await apiFetch(`/api/matches/${id}/played`, { method: "POST", sessionToken });
+      const response = await apiFetch(`/api/matches/${id}/played`, { method: played ? "POST" : "DELETE", sessionToken });
       if (!response.ok) {
         return { ok: false, error: await readErrorMessage(response) };
       }

@@ -23,6 +23,9 @@ class InMemoryNotifications implements NotificationRepository {
   async playerAccountIds(playerId: string) {
     return this.accounts[playerId] ? [this.accounts[playerId]!] : [];
   }
+  async pendingFollowRequestPlayerIds() {
+    return [];
+  }
   async createMany(inputs: NotificationInput[]) {
     for (const input of inputs) {
       this.records.push({ ...input, threadPlayerId: input.threadPlayerId ?? null, id: `n-${this.records.length + 1}`, readAt: null, createdAt: new Date() });

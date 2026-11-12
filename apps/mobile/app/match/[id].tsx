@@ -144,8 +144,8 @@ const pitchStyles = themedStyles(() =>
     boxTop: { top: -1.5 },
     boxBottom: { bottom: -1.5 },
     slot: { position: "absolute", width: 92, marginLeft: -46, marginTop: -28, alignItems: "center", gap: 4 },
-    slotName: { maxWidth: 92, color: colors.ink, fontSize: 12, fontWeight: "800", textShadowColor: "rgba(0,0,0,.6)", textShadowRadius: 3 },
-    slotNameFree: { color: colors.muted, fontWeight: "700" },
+    slotName: { maxWidth: 92, color: "#f4f6f9", fontSize: 12, fontWeight: "800", textShadowColor: "rgba(0,0,0,.6)", textShadowRadius: 3 },
+    slotNameFree: { color: "rgba(244,246,249,0.7)", fontWeight: "700" },
     token: {
       width: 56,
       height: 56,
@@ -308,6 +308,18 @@ export default function MatchDetailScreen() {
     // Reste sur la fiche : le résultat (score, buteurs, passeurs) se saisit tout de suite, l'observation ensuite.
     setMatch(result.match);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }
+
+  async function reopen() {
+    setFinalizing(true);
+    setSaveError("");
+    const result = await markMatchPlayed(id, false);
+    setFinalizing(false);
+    if (!result.ok) {
+      setSaveError(result.error);
+      return;
+    }
+    setMatch(result.match);
   }
 
   if (loadError) {
@@ -524,9 +536,24 @@ export default function MatchDetailScreen() {
             <Text style={styles.finalizeButtonText}>{finalizing ? "…" : "Marquer comme joué →"}</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity accessibilityRole="button" onPress={() => router.push(`/observation?type=match&matchId=${id}`)} style={styles.finalizeButton}>
-            <Text style={styles.finalizeButtonText}>Ajouter une observation →</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity accessibilityRole="button" onPress={() => router.push(`/observation?type=match&matchId=${id}`)} style={styles.finalizeButton}>
+              <Text style={styles.finalizeButtonText}>Ajouter une observation →</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              disabled={finalizing}
+              onPress={() =>
+                Alert.alert("Rouvrir ce match ?", "Il redevient à préparer : composition, convocation et lieu modifiables. Le score saisi est gardé.", [
+                  { text: "Annuler", style: "cancel" },
+                  { text: "Rouvrir", onPress: () => void reopen() },
+                ])
+              }
+              style={styles.reopenButton}
+            >
+              <Text style={styles.reopenButtonText}>{finalizing ? "…" : "Rouvrir ce match"}</Text>
+            </TouchableOpacity>
+          </>
         )}
       </ScrollView>
 
@@ -630,6 +657,16 @@ const styles = themedStyles(() =>
     finalizeButton: { minHeight: 48, marginTop: 20, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, borderRadius: radii.sm },
     finalizeButtonDisabled: { opacity: 0.45 },
     finalizeButtonText: { color: colors.primaryInk, fontSize: 12, fontWeight: "800" },
+    reopenButton: {
+      minHeight: 46,
+      marginTop: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    reopenButtonText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
     modalClose: {
       minHeight: 44,
       marginTop: 10,

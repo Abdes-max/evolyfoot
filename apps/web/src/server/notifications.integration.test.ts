@@ -18,7 +18,7 @@ function post(body: unknown, method = "POST"): Request {
 
 describe("notifications : API", () => {
   it("liste les notifications du compte connecté", async () => {
-    const feed = { notifications: [], unreadCount: 2, unreadMessages: 1 };
+    const feed = { notifications: [], unreadCount: 2, unreadMessages: 1, pendingTutorPlayerIds: [] };
     const request = new Request("https://evolyfoot.test/api/notifications");
     expect((await createListNotificationsHandler(anonymous, { list: async () => feed }, () => undefined)(request)).status).toBe(401);
     expect(await (await createListNotificationsHandler(authenticated, { list: async () => feed }, () => undefined)(request)).json()).toEqual(feed);

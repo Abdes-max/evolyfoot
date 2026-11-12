@@ -16,7 +16,7 @@ export interface NotificationSummary {
 }
 
 export interface NotificationGateway {
-  list(recipientId: string): Promise<{ notifications: NotificationSummary[]; unreadCount: number; unreadMessages: number }>;
+  list(recipientId: string): Promise<{ notifications: NotificationSummary[]; unreadCount: number; unreadMessages: number; pendingTutorPlayerIds: string[] }>;
   markRead(recipientId: string, filter: { ids?: string[]; threadPlayerId?: string; kind?: "message" | "evaluation" }): Promise<void>;
   preferences(educatorId: string): Promise<NotificationPreferences>;
   savePreferences(educatorId: string, value: unknown): Promise<NotificationPreferences>;
