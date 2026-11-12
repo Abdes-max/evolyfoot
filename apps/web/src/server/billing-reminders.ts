@@ -1,5 +1,6 @@
 import type { BillingSummary } from "@evolyfoot/database";
 import { billingCycleLabels, billingLines, billingReminderDue, billingTotal, type BillingCycle, type BillingReminder } from "@evolyfoot/domain";
+import type { SubscriptionNotice } from "./billing";
 import { renderBillingReminderEmail, sendMail } from "./mailer";
 
 function euros(value: number): string {
@@ -55,6 +56,59 @@ export function billingReminderEmail(summary: BillingSummary, reminder: BillingR
     "Mettre à jour mon abonnement",
     url,
   );
+}
+
+// E-mail de suivi de l'abonnement (souscription, résiliation, reprise, fin), d'après l'état déjà enregistré.
+export function subscriptionNoticeEmail(summary: BillingSummary, notice: SubscriptionNotice, baseUrl: string): { subject: string; html: string; text: string } {
+  const url = `${baseUrl.replace(/\/$/, "")}/abonnement`;
+  const cycle = summary.billingCycle ?? "season";
+  const billed = `${euros(billingTotal(billingLines(cycle, summary.billedExtraTeams ?? 0, summary.billedExtraCoaches ?? 0)))} ${cycle === "monthly" ? "par mois" : "la saison"}`;
+  const team = teamSummary(summary.billedExtraTeams ?? 0, summary.billedExtraCoaches ?? 0);
+  if (notice === "started") {
+    const next =
+      summary.subscriptionStatus === "trialing" && summary.currentPeriodEnd
+        ? `Ton essai gratuit continue jusqu’au ${longDate(summary.currentPeriodEnd)} : le premier prélèvement aura lieu ce jour-là, et ta facture t’arrivera par e-mail.`
+        : "Ta facture est disponible dans « Gérer mon abonnement ».";
+    return renderBillingReminderEmail(
+      summary.displayName,
+      "Ton abonnement est confirmé",
+      `Merci pour ta confiance ! Ton abonnement EvolyFoot (${billingCycleLabels[cycle].toLowerCase()}) est en place : ${billed} pour ${team}. ${next}`,
+      "Voir mon abonnement",
+      url,
+    );
+  }
+  if (notice === "cancel-scheduled") {
+    const until = summary.cancelAt ? ` jusqu’au ${longDate(summary.cancelAt)}` : " jusqu’à la fin de la période en cours";
+    return renderBillingReminderEmail(
+      summary.displayName,
+      "Ta résiliation est confirmée",
+      `Ta résiliation est bien prise en compte : plus aucun prélèvement ne sera fait. Tu gardes l’accès complet${until}, et tu peux reprendre ton abonnement d’ici là depuis la page Abonnement.`,
+      "Voir mon abonnement",
+      url,
+    );
+  }
+  if (notice === "resumed") {
+    const renewal = summary.currentPeriodEnd ? ` Prochaine échéance : le ${longDate(summary.currentPeriodEnd)}.` : "";
+    return renderBillingReminderEmail(
+      summary.displayName,
+      "Ton abonnement continue",
+      `Ta résiliation est annulée : ton abonnement EvolyFoot continue, ${billed} pour ${team}.${renewal}`,
+      "Voir mon abonnement",
+      url,
+    );
+  }
+  return renderBillingReminderEmail(
+    summary.displayName,
+    "Ton abonnement est terminé",
+    "Ton abonnement EvolyFoot est terminé. Tes séances, ta saison et tes joueurs restent enregistrés : tu peux te réabonner à tout moment sur le site pour les retrouver.",
+    "Me réabonner",
+    url,
+  );
+}
+
+export async function sendSubscriptionNotice(summary: BillingSummary, notice: SubscriptionNotice): Promise<void> {
+  const baseUrl = process.env.APP_URL?.trim() || "http://localhost:3000";
+  await sendMail({ to: summary.email, ...subscriptionNoticeEmail(summary, notice, baseUrl) });
 }
 
 // Passage du planificateur (voir instrumentation.ts) : envoie les rappels dus, une fois chacun.

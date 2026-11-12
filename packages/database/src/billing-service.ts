@@ -86,6 +86,11 @@ export class BillingService {
     await this.prisma.educator.update({ where: { id: coachId }, data: { billingReminder: key } });
   }
 
+  async coachIdOfCustomer(stripeCustomerId: string): Promise<string | null> {
+    const coach = await this.prisma.educator.findFirst({ where: { stripeCustomerId }, select: { id: true } });
+    return coach?.id ?? null;
+  }
+
   async setCustomer(coachId: string, stripeCustomerId: string): Promise<void> {
     await this.prisma.educator.update({ where: { id: coachId }, data: { stripeCustomerId } });
   }

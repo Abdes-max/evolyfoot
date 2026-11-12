@@ -1,7 +1,15 @@
 import type { BillingSummary } from "@evolyfoot/database";
 import { describe, expect, it, vi } from "vitest";
 import type { PublicAccount } from "./auth";
-import { createCheckoutHandler, createGetBillingHandler, createPortalHandler, createSyncHandler, createWebhookHandler, type PaymentGateway } from "./billing";
+import {
+  createCheckoutHandler,
+  createGetBillingHandler,
+  createPortalHandler,
+  createSyncHandler,
+  createWebhookHandler,
+  subscriptionNotice,
+  type PaymentGateway,
+} from "./billing";
 
 const coach: PublicAccount = { id: "coach-1", email: "c@example.test", displayName: "Karim", role: "coach", linkedPlayerId: null, emailVerified: true };
 const assistant: PublicAccount = { ...coach, id: "adjoint-1", role: "assistant" };
@@ -48,7 +56,7 @@ describe("abonnement : API", () => {
   it("renvoie l'état et les devis des deux rythmes", async () => {
     const response = await createGetBillingHandler(
       async () => coach,
-      { summary: async () => summary(), applySubscription: vi.fn() },
+      { summary: async () => summary(), applySubscription: vi.fn(), coachIdOfCustomer: vi.fn() },
       payments(),
       () => undefined,
     )(new Request("http://localhost/api/billing"));
@@ -73,6 +81,7 @@ describe("abonnement : API", () => {
         status = update.status;
         return true;
       }),
+      coachIdOfCustomer: vi.fn(async () => "coach-1"),
     };
     const response = await createGetBillingHandler(
       async () => coach,
@@ -86,7 +95,12 @@ describe("abonnement : API", () => {
 
   it("crée le client Stripe puis la page de paiement, en gardant les jours d'essai", async () => {
     const gateway = payments();
-    const store = { summary: async () => summary(), setCustomer: vi.fn(async () => undefined), applySubscription: vi.fn(async () => true) };
+    const store = {
+      summary: async () => summary(),
+      setCustomer: vi.fn(async () => undefined),
+      applySubscription: vi.fn(async () => true),
+      coachIdOfCustomer: vi.fn(),
+    };
     const response = await createCheckoutHandler(
       async () => coach,
       store,
@@ -109,6 +123,7 @@ describe("abonnement : API", () => {
       summary: async () => summary({ stripeCustomerId: "cus_test_mode" }),
       setCustomer: vi.fn(async () => undefined),
       applySubscription: vi.fn(async () => true),
+      coachIdOfCustomer: vi.fn(),
     };
     await createCheckoutHandler(
       async () => coach,
@@ -122,7 +137,7 @@ describe("abonnement : API", () => {
   });
 
   it("refuse le paiement à un adjoint, sans rythme, ou sans Stripe configuré", async () => {
-    const store = { summary: async () => summary(), setCustomer: vi.fn(), applySubscription: vi.fn() };
+    const store = { summary: async () => summary(), setCustomer: vi.fn(), applySubscription: vi.fn(), coachIdOfCustomer: vi.fn() };
     expect(
       (
         await createCheckoutHandler(
@@ -198,11 +213,27 @@ describe("abonnement : API", () => {
   });
 
   it("enregistre l'abonnement reçu par le webhook, et rejette une signature absente", async () => {
-    const store = { applySubscription: vi.fn(async () => true) };
-    const handler = createWebhookHandler(store, payments(), () => undefined);
+    const store = { summary: async () => summary(), applySubscription: vi.fn(async () => true), coachIdOfCustomer: vi.fn(async () => "coach-1") };
+    const notify = vi.fn(async () => undefined);
+    const handler = createWebhookHandler(store, payments(), () => undefined, notify);
     expect((await handler(new Request("http://localhost", { method: "POST", body: "{}" }))).status).toBe(400);
     const response = await handler(new Request("http://localhost", { method: "POST", body: "{}", headers: { "stripe-signature": "t=1,v1=x" } }));
     expect(response.status).toBe(200);
     expect(store.applySubscription).toHaveBeenCalledWith("cus_1", expect.objectContaining({ status: "active" }));
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ coachId: "coach-1" }), "started");
+  });
+
+  it("repère la souscription, la résiliation, la reprise et la fin, sans répéter un état déjà connu", () => {
+    const update = { subscriptionId: "sub_1", status: "trialing", cycle: "season" as const, currentPeriodEnd: null };
+    const subscribed = summary({ stripeSubscriptionId: "sub_1", subscriptionStatus: "trialing" });
+    const cancelAt = new Date("2026-11-25");
+    expect(subscriptionNotice(summary(), update)).toBe("started");
+    expect(subscriptionNotice(summary(), { ...update, status: "incomplete" })).toBeNull();
+    expect(subscriptionNotice(subscribed, update)).toBeNull();
+    expect(subscriptionNotice(subscribed, { ...update, cancelAt })).toBe("cancel-scheduled");
+    expect(subscriptionNotice({ ...subscribed, cancelAt }, { ...update, cancelAt })).toBeNull();
+    expect(subscriptionNotice({ ...subscribed, cancelAt }, update)).toBe("resumed");
+    expect(subscriptionNotice({ ...subscribed, cancelAt }, { ...update, status: "canceled" })).toBe("ended");
+    expect(subscriptionNotice(summary({ stripeSubscriptionId: "sub_1", subscriptionStatus: "canceled" }), { ...update, status: "canceled" })).toBeNull();
   });
 });
