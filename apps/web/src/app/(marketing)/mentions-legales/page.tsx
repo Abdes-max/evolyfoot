@@ -8,22 +8,24 @@ export default function MentionsLegalesPage() {
     <LegalPage
       intro="Informations sur l’éditeur, l’hébergement et la propriété intellectuelle du site et de l’application EvolyFoot."
       title="Mentions légales"
-      updatedAt="[à compléter]"
+      updatedAt="12 novembre 2026"
       sections={[
         {
           title: "Éditeur du site",
           paragraphs: [
-            "EvolyFoot est édité par [Raison sociale], [forme juridique], au capital de [montant] €, immatriculée au RCS de [ville] sous le numéro [SIRET].",
-            "Siège social : [Adresse complète]. Contact : [adresse e-mail de contact].",
+            "EvolyFoot est édité par Abdeslem Ziaissa, entrepreneur individuel (EI) exerçant sous le nom commercial EvolyFoot, micro-entreprise immatriculée sous le numéro SIRET 917 443 376 00020. TVA non applicable, art. 293 B du CGI.",
+            "Adresse : 485 route d’Eguilles, Résidence Les Jardins de la Chapelle, 13090 Aix-en-Provence. Contact : contact@evolyfoot.com.",
           ],
         },
         {
           title: "Directeur de la publication",
-          paragraphs: ["[Nom du directeur de la publication], en qualité de [fonction]."],
+          paragraphs: ["Abdeslem Ziaissa, en qualité d’éditeur."],
         },
         {
           title: "Hébergement",
-          paragraphs: ["Le site et l’application sont hébergés par [Nom de l’hébergeur], [adresse de l’hébergeur], [contact ou site web de l’hébergeur]."],
+          paragraphs: [
+            "Le site et l’application sont hébergés par Hostinger International Ltd, 61 Lordou Vironos Street, 6023 Larnaca, Chypre (www.hostinger.fr).",
+          ],
         },
         {
           title: "Propriété intellectuelle",

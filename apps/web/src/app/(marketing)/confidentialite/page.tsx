@@ -8,12 +8,12 @@ export default function ConfidentialitePage() {
     <LegalPage
       intro="Comment EvolyFoot collecte, utilise et protège les données de l’éducateur et, via son compte, celles de son équipe."
       title="Politique de confidentialité"
-      updatedAt="[à compléter]"
+      updatedAt="12 novembre 2026"
       sections={[
         {
           title: "Responsable de traitement",
           paragraphs: [
-            "[Raison sociale], éditrice d’EvolyFoot, est responsable du traitement des données décrites ci-dessous. Contact : [adresse e-mail de contact données].",
+            "Abdeslem Ziaissa, entrepreneur individuel (EI) exerçant sous le nom commercial EvolyFoot, 485 route d’Eguilles, Résidence Les Jardins de la Chapelle, 13090 Aix-en-Provence, est responsable du traitement des données décrites ci-dessous. Contact : contact@evolyfoot.com.",
           ],
         },
         {
@@ -22,6 +22,7 @@ export default function ConfidentialitePage() {
             "Compte éducateur : nom, e-mail, mot de passe (chiffré), informations de profil renseignées volontairement.",
             "Effectif et suivi : identité et coordonnées des joueurs saisies par l’éducateur, présences, évaluations, diagnostics et observations.",
             "Compte joueur / tuteur : nom, e-mail, mot de passe (chiffré), créés à l’acceptation d’une invitation envoyée par l’éducateur.",
+            "Abonnement : formule, échéances, adresse de facturation et n° de TVA éventuel. Les données de carte bancaire sont saisies et conservées par Stripe, jamais par EvolyFoot.",
           ],
         },
         {
@@ -39,6 +40,8 @@ export default function ConfidentialitePage() {
         {
           title: "Prestataires techniques",
           paragraphs: [
+            "Hostinger héberge le site, l’application et leurs données sur ses serveurs.",
+            "Stripe traite les paiements et les abonnements, et envoie les factures et reçus par e-mail.",
             "Brevo achemine les e-mails du service : confirmation d’adresse, mot de passe oublié.",
             "Photon, service fondé sur OpenStreetMap, reçoit le texte saisi dans le champ Lieu pour proposer des adresses. La demande passe par nos serveurs : ton adresse IP ne lui est pas transmise.",
             "Google Maps affiche les cartes de lieu, uniquement après ton accord dans l’application. Google reçoit alors l’adresse affichée et ton adresse IP.",
@@ -47,14 +50,15 @@ export default function ConfidentialitePage() {
         {
           title: "Durée de conservation",
           paragraphs: [
-            "Les données sont conservées le temps de l’utilisation active du compte, puis [durée à préciser] après la dernière connexion, sauf demande de suppression anticipée.",
+            "Les données sont conservées le temps de l’utilisation active du compte, puis 3 ans après la dernière connexion, sauf demande de suppression anticipée.",
+            "Les factures et données de paiement sont conservées 10 ans, durée imposée par les obligations comptables.",
           ],
         },
         {
           title: "Droits des personnes",
           paragraphs: [
             "Depuis ton profil, tu peux télécharger toutes tes données et supprimer ton compte. Pour un compte éducateur, la suppression efface aussi l’équipe, ses joueurs et les comptes tuteur liés.",
-            "Conformément au RGPD, toute personne concernée dispose d’un droit d’accès, de rectification, d’effacement, de limitation et de portabilité de ses données, exerçable auprès de [adresse e-mail de contact données].",
+            "Conformément au RGPD, toute personne concernée dispose d’un droit d’accès, de rectification, d’effacement, de limitation et de portabilité de ses données, exerçable auprès de contact@evolyfoot.com. Tu peux aussi saisir la CNIL (www.cnil.fr).",
           ],
         },
         {
