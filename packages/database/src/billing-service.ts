@@ -12,6 +12,8 @@ export interface BillingSummary {
   subscriptionStatus: string | null;
   billingCycle: BillingCycle | null;
   currentPeriodEnd: Date | null;
+  // Résiliation programmée : l'accès reste ouvert jusqu'à cette date, sans renouvellement.
+  cancelAt: Date | null;
   // Facturés en plus de la base : équipes au-delà de la première, adjoints de toutes les équipes.
   extraTeams: number;
   extraCoaches: number;
@@ -22,6 +24,7 @@ export interface SubscriptionUpdate {
   status: string;
   cycle: BillingCycle | null;
   currentPeriodEnd: Date | null;
+  cancelAt?: Date | null;
 }
 
 // Abonnement porté par le compte coach. Un espace d'équipe ou un adjoint renvoie au coach dont il dépend.
@@ -58,6 +61,7 @@ export class BillingService {
       subscriptionStatus: coach.subscriptionStatus,
       billingCycle: parseBillingCycle(coach.billingCycle),
       currentPeriodEnd: coach.currentPeriodEnd,
+      cancelAt: coach.subscriptionCancelAt,
       extraTeams: teamSpaces.length,
       extraCoaches,
     };
@@ -76,6 +80,7 @@ export class BillingService {
         subscriptionStatus: update.status,
         billingCycle: update.cycle,
         currentPeriodEnd: update.currentPeriodEnd,
+        subscriptionCancelAt: update.cancelAt ?? null,
       },
     });
     return result.count > 0;

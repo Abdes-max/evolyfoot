@@ -11,6 +11,7 @@ export interface BillingState {
   access: { state: "subscribed"; status: string } | { state: "trial"; trialEndsAt: string; daysLeft: number } | { state: "expired"; trialEndsAt: string };
   cycle: BillingCycle | null;
   currentPeriodEnd: string | null;
+  cancelAt: string | null;
   extraTeams: number;
   extraCoaches: number;
   quotes: Record<BillingCycle, { lines: BillingLine[]; total: number }>;
@@ -34,7 +35,7 @@ function longDate(iso: string): string {
 
 // Libellé court de l'état de l'abonnement (profil, rappel dans la barre latérale).
 export function billingStateLabel(billing: BillingState): string {
-  if (billing.access.state === "subscribed") return "Abonnement actif";
+  if (billing.access.state === "subscribed") return billing.cancelAt ? "Abonnement résilié" : "Abonnement actif";
   if (billing.access.state === "trial")
     return `Essai gratuit : ${billing.access.daysLeft} jour${billing.access.daysLeft > 1 ? "s" : ""} restant${billing.access.daysLeft > 1 ? "s" : ""}`;
   return "Essai terminé";
@@ -93,6 +94,11 @@ export function BillingView() {
 
   return (
     <>
+      {params.get("resiliation") === "ok" && (
+        <p className="abonnement-notice" role="status">
+          Résiliation enregistrée : tu gardes l’accès jusqu’à la fin de la période payée. Recharge la page si elle n’apparaît pas encore.
+        </p>
+      )}
       {params.get("paiement") === "ok" && !subscribed && (
         <p className="abonnement-notice" role="status">
           Paiement reçu : ton abonnement s’active dans quelques instants. Recharge la page si besoin.
@@ -102,17 +108,19 @@ export function BillingView() {
       <div className={`abonnement-status abonnement-status-${billing.access.state}`}>
         <strong>{billingStateLabel(billing)}</strong>
         <span>
-          {billing.access.state === "subscribed"
-            ? [
-                statusLabels[billing.access.status] ?? billing.access.status,
-                billing.cycle ? billingCycleLabels[billing.cycle] : null,
-                billing.currentPeriodEnd ? `prochaine échéance le ${longDate(billing.currentPeriodEnd)}` : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")
-            : billing.access.state === "trial"
-              ? `Accès complet jusqu’au ${longDate(billing.access.trialEndsAt)}, sans carte bancaire. Abonne-toi quand tu veux : le premier prélèvement attend la fin de l’essai.`
-              : `Ton essai s’est terminé le ${longDate(billing.access.trialEndsAt)}. Abonne-toi pour continuer à préparer tes séances.`}
+          {billing.access.state === "subscribed" && billing.cancelAt
+            ? `Plus de prélèvement : accès complet jusqu’au ${longDate(billing.cancelAt)}. Tu peux reprendre ton abonnement d’ici là depuis « Gérer mon abonnement ».`
+            : billing.access.state === "subscribed"
+              ? [
+                  statusLabels[billing.access.status] ?? billing.access.status,
+                  billing.cycle ? billingCycleLabels[billing.cycle] : null,
+                  billing.currentPeriodEnd ? `prochaine échéance le ${longDate(billing.currentPeriodEnd)}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              : billing.access.state === "trial"
+                ? `Accès complet jusqu’au ${longDate(billing.access.trialEndsAt)}, sans carte bancaire. Abonne-toi quand tu veux : le premier prélèvement attend la fin de l’essai.`
+                : `Ton essai s’est terminé le ${longDate(billing.access.trialEndsAt)}. Abonne-toi pour continuer à préparer tes séances.`}
         </span>
       </div>
 
@@ -178,6 +186,11 @@ export function BillingView() {
             <button className="secondary" disabled={busy || synced} onClick={() => go("/api/billing/sync")} type="button">
               {synced ? "Abonnement mis à jour" : "Mettre à jour selon mes équipes et adjoints"}
             </button>
+            {!billing.cancelAt && (
+              <button className="secondary abonnement-cancel" disabled={busy} onClick={() => go("/api/billing/portal", { action: "cancel" })} type="button">
+                Résilier mon abonnement
+              </button>
+            )}
           </div>
         ) : (
           <div className="abonnement-actions">

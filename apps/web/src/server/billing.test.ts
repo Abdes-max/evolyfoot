@@ -1,7 +1,7 @@
 import type { BillingSummary } from "@evolyfoot/database";
 import { describe, expect, it, vi } from "vitest";
 import type { PublicAccount } from "./auth";
-import { createCheckoutHandler, createGetBillingHandler, createSyncHandler, createWebhookHandler, type PaymentGateway } from "./billing";
+import { createCheckoutHandler, createGetBillingHandler, createPortalHandler, createSyncHandler, createWebhookHandler, type PaymentGateway } from "./billing";
 
 const coach: PublicAccount = { id: "coach-1", email: "c@example.test", displayName: "Karim", role: "coach", linkedPlayerId: null, emailVerified: true };
 const assistant: PublicAccount = { ...coach, id: "adjoint-1", role: "assistant" };
@@ -17,6 +17,7 @@ function summary(overrides: Partial<BillingSummary> = {}): BillingSummary {
     subscriptionStatus: null,
     billingCycle: null,
     currentPeriodEnd: null,
+    cancelAt: null,
     extraTeams: 1,
     extraCoaches: 2,
     ...overrides,
@@ -126,6 +127,30 @@ describe("abonnement : API", () => {
         )(post({ cycle: "monthly" }))
       ).status,
     ).toBe(503);
+  });
+
+  it("ouvre directement la résiliation avec le bouton Résilier, sauf si elle est déjà programmée", async () => {
+    const subscribed = { access: { state: "subscribed" as const, status: "active" }, stripeCustomerId: "cus_1", stripeSubscriptionId: "sub_1" };
+    const portal = (overrides: Partial<BillingSummary>) => {
+      const gateway = payments();
+      const handler = createPortalHandler(
+        async () => coach,
+        { summary: async () => summary({ ...subscribed, ...overrides }) },
+        gateway,
+        () => "https://evolyfoot.test",
+        () => undefined,
+      );
+      return { gateway, handler };
+    };
+    const cancel = () => new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "cancel" }) });
+
+    const first = portal({});
+    expect(await (await first.handler(cancel())).json()).toEqual({ url: "https://billing.stripe.test/p" });
+    expect(vi.mocked(first.gateway.createPortal).mock.calls[0][0]).toMatchObject({ customerId: "cus_1", cancelSubscriptionId: "sub_1" });
+
+    const already = portal({ cancelAt: new Date("2027-01-01") });
+    await already.handler(cancel());
+    expect(vi.mocked(already.gateway.createPortal).mock.calls[0][0].cancelSubscriptionId).toBeUndefined();
   });
 
   it("met à jour les quantités d'un abonnement actif", async () => {

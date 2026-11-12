@@ -43,7 +43,13 @@ describe("BillingService", () => {
     const coach = await account("abonne");
     await service.setCustomer(coach.id, `cus_${run}`);
     expect(
-      await service.applySubscription(`cus_${run}`, { subscriptionId: "sub_1", status: "active", cycle: "season", currentPeriodEnd: new Date("2027-11-14") }),
+      await service.applySubscription(`cus_${run}`, {
+        subscriptionId: "sub_1",
+        status: "active",
+        cycle: "season",
+        currentPeriodEnd: new Date("2027-11-14"),
+        cancelAt: new Date("2027-11-14"),
+      }),
     ).toBe(true);
     const summary = await service.summary(coach.id);
     expect(summary.access).toEqual({ state: "subscribed", status: "active" });

@@ -115,6 +115,8 @@ model Educator {
   // "monthly" | "season"
   billingCycle         String?                  @map("billing_cycle")
   currentPeriodEnd     DateTime?                @map("current_period_end")
+  // Fin d'accès d'un abonnement résilié (fin de la période payée) ; null tant qu'il se renouvelle.
+  subscriptionCancelAt DateTime?                @map("subscription_cancel_at")
   playStyle          String?                  @map("play_style")
   preferredFormation String?                  @map("preferred_formation")
   team               Team?

@@ -37,7 +37,8 @@ export interface PaymentGateway {
     successUrl: string;
     cancelUrl: string;
   }): Promise<string>;
-  createPortal(input: { customerId: string; returnUrl: string }): Promise<string>;
+  // Avec subscriptionId, ouvre directement la résiliation de cet abonnement (bouton « Résilier »).
+  createPortal(input: { customerId: string; returnUrl: string; cancelSubscriptionId?: string }): Promise<string>;
   // Aligne les quantités de l'abonnement sur les équipes et coachs du moment (au prorata).
   syncQuantities(input: { subscriptionId: string; cycle: BillingCycle; lines: BillingLine[] }): Promise<void>;
   // Vérifie la signature et ne garde que les événements d'abonnement ; null pour les autres.
@@ -54,6 +55,7 @@ export interface BillingView {
   access: { state: "subscribed"; status: string } | { state: "trial"; trialEndsAt: string; daysLeft: number } | { state: "expired"; trialEndsAt: string };
   cycle: BillingCycle | null;
   currentPeriodEnd: string | null;
+  cancelAt: string | null;
   extraTeams: number;
   extraCoaches: number;
   quotes: Record<BillingCycle, { lines: BillingLine[]; total: number }>;
@@ -89,6 +91,7 @@ export function toBillingView(summary: BillingSummary, account: PublicAccount, e
           : { state: "expired", trialEndsAt: access.trialEndsAt.toISOString() },
     cycle: summary.billingCycle,
     currentPeriodEnd: summary.currentPeriodEnd?.toISOString() ?? null,
+    cancelAt: summary.cancelAt?.toISOString() ?? null,
     extraTeams: summary.extraTeams,
     extraCoaches: summary.extraCoaches,
     quotes,
@@ -175,7 +178,8 @@ export function createCheckoutHandler(
   };
 }
 
-// POST : portail Stripe (moyen de paiement, factures, changement de rythme, résiliation).
+// POST : portail Stripe (moyen de paiement, factures, résiliation). { action: "cancel" } ouvre directement la
+// résiliation, pour le bouton « Résilier mon abonnement » exigé par la loi (résiliation en trois clics).
 export function createPortalHandler(
   resolveAccount: Resolve,
   store: Pick<BillingStore, "summary">,
@@ -185,11 +189,16 @@ export function createPortalHandler(
 ) {
   return async (request: Request) => {
     if (!payments) return notEnabled();
+    const cancel = (await readJsonBody(request))?.action === "cancel";
     return withSummary(request, resolveAccount, store, log, async (account, summary) => {
       if (account.id !== summary.coachId || !summary.stripeCustomerId || !(await payments.customerExists(summary.stripeCustomerId))) {
         return Response.json({ error: "Aucun abonnement à gérer." }, { status: 403 });
       }
-      return Response.json({ url: await payments.createPortal({ customerId: summary.stripeCustomerId, returnUrl: `${origin(request)}/abonnement` }) });
+      const cancelSubscriptionId =
+        cancel && summary.access.state === "subscribed" && !summary.cancelAt ? (summary.stripeSubscriptionId ?? undefined) : undefined;
+      return Response.json({
+        url: await payments.createPortal({ customerId: summary.stripeCustomerId, returnUrl: `${origin(request)}/abonnement`, cancelSubscriptionId }),
+      });
     });
   };
 }
@@ -312,8 +321,21 @@ export async function createStripeGateway(): Promise<PaymentGateway | null> {
       if (!session.url) throw new Error("Stripe n’a pas renvoyé de page de paiement.");
       return session.url;
     },
-    async createPortal({ customerId, returnUrl }) {
-      const session = await stripe.billingPortal.sessions.create({ customer: customerId, return_url: returnUrl, locale: "fr" });
+    async createPortal({ customerId, returnUrl, cancelSubscriptionId }) {
+      const session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: returnUrl,
+        locale: "fr",
+        ...(cancelSubscriptionId
+          ? {
+              flow_data: {
+                type: "subscription_cancel" as const,
+                subscription_cancel: { subscription: cancelSubscriptionId },
+                after_completion: { type: "redirect" as const, redirect: { return_url: `${returnUrl}?resiliation=ok` } },
+              },
+            }
+          : {}),
+      });
       return session.url;
     },
     async syncQuantities({ subscriptionId, cycle, lines }) {
@@ -346,6 +368,11 @@ export async function createStripeGateway(): Promise<PaymentGateway | null> {
           status: subscription.status,
           cycle: billingItemOfLookupKey(first?.price.lookup_key)?.cycle ?? parseBillingCycle(subscription.metadata?.cycle),
           currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
+          cancelAt: subscription.cancel_at
+            ? new Date(subscription.cancel_at * 1000)
+            : subscription.cancel_at_period_end && periodEnd
+              ? new Date(periodEnd * 1000)
+              : null,
         },
       };
     },
