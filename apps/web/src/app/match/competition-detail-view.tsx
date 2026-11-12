@@ -4,11 +4,23 @@ import Link from "next/link";
 import { PlaceInput } from "../place-input";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { concernedPlayers, convocationFeedback, type AttendanceEntry, type PlayerSelection } from "@evolyfoot/domain";
+import {
+  competitionRecordLabel,
+  concernedPlayers,
+  type AttendanceEntry,
+  type CompetitionGame,
+  type CompetitionLineup,
+  type GameFormat,
+  type PlayerSelection,
+} from "@evolyfoot/domain";
 import { parseDateInputValue } from "../date-format";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "../concerned-players-picker";
 import { CancelEventPanel } from "../cancel-event-panel";
-import { TrainingResponses } from "../training-responses";
+import { selectionSummary } from "../selection-summary";
+import { CollapsibleSection } from "../collapsible-section";
+import { ConvocationActions } from "../convocation-actions";
+import { CompetitionGames } from "./competition-games";
+import { CompetitionLineupEditor } from "./competition-lineup";
 
 interface Competition {
   id: string;
@@ -22,6 +34,8 @@ interface Competition {
   selectedPlayerIds: string[] | null;
   convokedAt: string | null;
   attendance?: AttendanceEntry[];
+  games?: CompetitionGame[];
+  lineup?: CompetitionLineup | null;
   // Date où il a été marqué terminé, `null` tant qu'il est en cours.
   finishedAt?: string | null;
   // Annulé par le coach (ISO) et la raison communiquée aux joueurs.
@@ -44,10 +58,9 @@ async function readErrorMessage(response: Response): Promise<string> {
   return typeof body.error === "string" ? body.error : "Une erreur est survenue.";
 }
 
-// Fiche détail d'un tournoi ou d'un plateau -- même forme que la préparation d'un match
-// (match-prep-view.tsx) : en-tête avec statut, panneau « Détails » modifiable (date, lieu,
-// description, bilan), joueurs concernés, convocation et réponses. Pas de composition : un
-// tournoi/plateau n'a pas de feuille de match individuelle rattachée.
+// Fiche détail d'un tournoi ou d'un plateau, dans le même ordre que l'app Coach : détails (date,
+// lieu, description, bilan, joueurs concernés repliés), convocation et réponses, composition et
+// rencontres repliées, puis terminer/rouvrir et retirer.
 export function CompetitionDetailView({ competitionId, endpoint, itemKey, singular, backHref }: CompetitionDetailViewProps) {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState<boolean | undefined>(undefined);
@@ -60,10 +73,9 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
   const [result, setResult] = useState("");
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
+  const [roster, setRoster] = useState<Array<ConcernedPlayer & { position?: string | null; jerseyNumber?: string | null; photo?: string | null }>>([]);
+  const [teamGameFormat, setTeamGameFormat] = useState<GameFormat>(8);
   const [selection, setSelection] = useState<PlayerSelection>(null);
-  const [convoking, setConvoking] = useState(false);
-  const [convocationStatus, setConvocationStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,19 +93,21 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
           return;
         }
 
-        const [response, rosterResponse] = await Promise.all([fetch(`${endpoint}/${competitionId}`), fetch("/api/roster")]);
+        const [response, rosterResponse, teamResponse] = await Promise.all([fetch(`${endpoint}/${competitionId}`), fetch("/api/roster"), fetch("/api/team")]);
         if (!response.ok) {
           setLoadError(await readErrorMessage(response));
           return;
         }
         const body = await response.json();
         const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
+        const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
         const loaded: Competition = body[itemKey];
         if (cancelled) {
           return;
         }
         setItem(loaded);
         setRoster(rosterBody.players ?? []);
+        if (typeof teamBody.profile?.gameFormat === "number") setTeamGameFormat(teamBody.profile.gameFormat as GameFormat);
         setSelection(loaded.selectedPlayerIds ?? null);
         setDateInput(loaded.date ? loaded.date.slice(0, 10) : "");
         setLocation(loaded.location ?? "");
@@ -144,27 +158,12 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
     }
   }
 
-  // Convocation aux joueurs concernés (messagerie + e-mail) ; ouvre les réponses côté joueur.
-  async function convoke() {
-    setConvoking(true);
-    setConvocationStatus(null);
-    try {
-      const response = await fetch(`${endpoint}/${competitionId}/convoke`, { method: "POST" });
-      if (!response.ok) {
-        setConvocationStatus(await readErrorMessage(response));
-        return;
-      }
-      const body = await response.json();
-      setConvocationStatus(convocationFeedback(body.sentCount, body.emailCount));
-      const refreshed = await fetch(`${endpoint}/${competitionId}`);
-      const refreshedBody = refreshed.ok ? await refreshed.json().catch(() => null) : null;
-      if (refreshedBody?.[itemKey]) {
-        setItem(refreshedBody[itemKey]);
-      }
-    } catch {
-      setConvocationStatus("Une erreur est survenue.");
-    } finally {
-      setConvoking(false);
+  // Relit la fiche après l'envoi d'une convocation : date d'envoi et réponses.
+  async function refresh() {
+    const refreshed = await fetch(`${endpoint}/${competitionId}`).catch(() => null);
+    const refreshedBody = refreshed?.ok ? await refreshed.json().catch(() => null) : null;
+    if (refreshedBody?.[itemKey]) {
+      setItem(refreshedBody[itemKey]);
     }
   }
 
@@ -256,54 +255,56 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
         </div>
       </header>
 
-      <section className="match-content">
-        <div className="match-slot-panel">
-          <form className="match-details-form" onSubmit={saveDetails}>
-            <h2>Détails</h2>
-            <label>
-              <span>Date</span>
-              <input onChange={(event) => setDateInput(event.target.value)} type="date" value={dateInput} />
-            </label>
-            <label>
-              <span>Lieu</span>
-              <PlaceInput onChange={setLocation} value={location} />
-            </label>
-            <label>
-              <span>Description</span>
-              <textarea onChange={(event) => setDescription(event.target.value)} value={description} />
-            </label>
-            <label>
-              <span>Bilan</span>
-              <input onChange={(event) => setResult(event.target.value)} placeholder="Ex. 2 victoires, 1 nul" value={result} />
-            </label>
+      <section className="match-content event-sheet">
+        <form className="event-card match-details-form" onSubmit={saveDetails}>
+          <h2>Détails</h2>
+          <label>
+            <span>Date</span>
+            <input onChange={(event) => setDateInput(event.target.value)} type="date" value={dateInput} />
+          </label>
+          <label>
+            <span>Lieu</span>
+            <PlaceInput onChange={setLocation} value={location} />
+          </label>
+          <label>
+            <span>Description</span>
+            <textarea onChange={(event) => setDescription(event.target.value)} value={description} />
+          </label>
+          <label>
+            <span>Bilan</span>
+            <input onChange={(event) => setResult(event.target.value)} placeholder="Ex. 2 victoires, 1 nul" value={result} />
+          </label>
+          <CollapsibleSection summary={selectionSummary(selection, roster.length)} title="Joueurs concernés">
             <ConcernedPlayersPicker
               hint={`Seuls les joueurs cochés voient ce ${singular}, reçoivent la convocation et peuvent répondre.`}
               onChange={setSelection}
               roster={roster}
               value={selection}
             />
-            <button className="match-details-save" disabled={saving || selection?.length === 0} type="submit">
-              {saving ? "Enregistrement…" : "Enregistrer les détails"}
-            </button>
-          </form>
+          </CollapsibleSection>
+          {saveError && (
+            <p className="field-error" role="alert">
+              {saveError}
+            </p>
+          )}
+          <button className="match-convocation-send" disabled={saving || selection?.length === 0} type="submit">
+            {saving ? "Enregistrement…" : "Enregistrer les détails"}
+          </button>
+        </form>
 
-          <TrainingResponses
+        <div className="event-card">
+          <h2>Convocation</h2>
+          <ConvocationActions
             attendance={item.attendance}
+            canSend={!isPast}
+            convokeUrl={`${endpoint}/${competitionId}/convoke`}
             convokedAt={item.convokedAt}
             meetingAt={item.date}
-            roster={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
+            onSent={refresh}
+            roster={roster}
             scheduledText={`Les joueurs concernés voient ce ${singular} sans pouvoir répondre tant que tu n’as pas envoyé la convocation.`}
-            settings={null}
+            selectedPlayerIds={item.selectedPlayerIds}
           />
-          {!isPast && (
-            <div className="match-convocation">
-              <button className="match-convocation-send" disabled={convoking} onClick={convoke} type="button">
-                {convoking ? "Envoi…" : item.convokedAt ? "Renvoyer la convocation" : "Envoyer la convocation"}
-              </button>
-              {convocationStatus && <p className="match-convocation-feedback">{convocationStatus}</p>}
-            </div>
-          )}
-
           <CancelEventPanel
             cancellationNote={item.cancellationNote}
             cancelledAt={item.cancelledAt}
@@ -311,21 +312,45 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
             onChange={(state) => setItem((current) => (current ? { ...current, ...state } : current))}
             url={`${endpoint}/${competitionId}/cancel`}
           />
-
-          {saveError && (
-            <p className="field-error" role="alert">
-              {saveError}
-            </p>
-          )}
-
-          <button className="match-details-save" disabled={saving} onClick={toggleFinished} type="button">
-            {item.finishedAt ? `Rouvrir ce ${singular}` : `Marquer ce ${singular} comme terminé`}
-          </button>
-
-          <button className="competition-detail-remove" disabled={removing} onClick={remove} type="button">
-            {removing ? "…" : `Retirer ce ${singular}`}
-          </button>
         </div>
+
+        <CollapsibleSection
+          summary={item.lineup?.lineup.length ? `${item.lineup.lineup.length} titulaires · foot à ${item.lineup.gameFormat}` : "Facultative"}
+          title="Composition"
+        >
+          <CompetitionLineupEditor
+            defaultGameFormat={teamGameFormat}
+            initial={item.lineup ?? null}
+            key={item.id}
+            lineupUrl={`${endpoint}/${competitionId}/lineup`}
+            players={roster.filter(
+              (player) =>
+                concernedPlayers([player], item.selectedPlayerIds ?? null).length > 0 ||
+                item.lineup?.lineup.some((assignment) => assignment.playerId === player.id) ||
+                item.lineup?.substitutePlayerIds.includes(player.id),
+            )}
+            readOnly={Boolean(item.finishedAt)}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection summary={competitionRecordLabel(item.games ?? []) || "Aucune rencontre saisie"} title="Rencontres et scores">
+          <p className="match-slot-hint event-hint">Une ligne par rencontre jouée : équipe rencontrée, score, buteurs et passeurs décisifs.</p>
+          <CompetitionGames
+            games={item.games ?? []}
+            gamesUrl={`${endpoint}/${competitionId}/games`}
+            key={item.id}
+            onSaved={(games) => setItem((current) => (current ? { ...current, games } : current))}
+            players={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
+          />
+        </CollapsibleSection>
+
+        <button className="match-convocation-send event-wide" disabled={saving} onClick={toggleFinished} type="button">
+          {item.finishedAt ? `Rouvrir ce ${singular}` : `Marquer ce ${singular} comme terminé`}
+        </button>
+
+        <button className="competition-detail-remove event-wide" disabled={removing} onClick={remove} type="button">
+          {removing ? "…" : `Retirer ce ${singular}`}
+        </button>
       </section>
 
       <Link className="back-link match-back-link" href={backHref}>

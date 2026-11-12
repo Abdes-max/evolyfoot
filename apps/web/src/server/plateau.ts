@@ -1,5 +1,5 @@
 import { EducatorNotFoundError, PlateauNotFoundError } from "@evolyfoot/database";
-import type { AttendanceEntry, CompetitionGame } from "@evolyfoot/domain";
+import type { AttendanceEntry, CompetitionGame, CompetitionLineup } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface PlateauSummary {
@@ -15,6 +15,8 @@ export interface PlateauSummary {
   convokedAt: string | null;
   attendance?: readonly AttendanceEntry[];
   games?: readonly CompetitionGame[];
+  // Composition de la journée, null tant qu'elle n'est pas préparée.
+  lineup?: CompetitionLineup | null;
   // ISO de la date où il a été marqué terminé, `null` s'il est en cours.
   finishedAt: string | null;
   // Annulé par le coach (ISO) et la raison communiquée aux joueurs ; `null` s'il est maintenu.
@@ -214,6 +216,7 @@ export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway;
       convokedAt: plateau.convokedAt ? plateau.convokedAt.toISOString() : null,
       ...(plateau.attendance ? { attendance: plateau.attendance } : {}),
       games: plateau.games ?? [],
+      lineup: plateau.lineup ?? null,
       finishedAt: plateau.finishedAt ? plateau.finishedAt.toISOString() : null,
       cancelledAt: plateau.cancelledAt ? plateau.cancelledAt.toISOString() : null,
       cancellationNote: plateau.cancellationNote ?? null,

@@ -7,7 +7,6 @@ import {
   canFinalizeMatchPlan,
   clearSlot,
   concernedPlayers,
-  convocationFeedback as formatConvocationFeedback,
   defaultFormationId,
   formationSlots,
   gameFormats,
@@ -29,6 +28,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { CancelEventPanel } from "../../cancel-event-panel";
+import { CollapsibleSection } from "../../collapsible-section";
+import { ConvocationActions } from "../../convocation-actions";
+import { selectionSummary } from "../../selection-summary";
 import { parseDatetimeInputValue, toDatetimeInputValue } from "../../date-format";
 import { initials, MatchPitch } from "../match-pitch";
 import { PlayerPicker } from "../player-picker";
@@ -61,6 +63,7 @@ interface MatchRecord {
   goalsFor?: number | null;
   goalsAgainst?: number | null;
   playerStats?: MatchPlayerStat[];
+  convokedAt?: string | null;
   // Annulé par le coach (ISO) et la raison communiquée aux joueurs.
   cancelledAt?: string | null;
   cancellationNote?: string | null;
@@ -111,8 +114,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
   const [selection, setSelection] = useState<PlayerSelection>(null);
   const [savingSelection, setSavingSelection] = useState(false);
   const [selectionFeedback, setSelectionFeedback] = useState<string | null>(null);
-  const [sendingConvocation, setSendingConvocation] = useState(false);
-  const [convocationFeedback, setConvocationFeedback] = useState<string | null>(null);
+  const [locationFeedback, setLocationFeedback] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -357,25 +359,22 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     }
   }
 
-  // Envoie un message de convocation (via la messagerie) à chaque joueur concerné -- voir
-  // ConvocationService côté base. Pas de blocage si déjà envoyée : renvoyer
-  // (composition modifiée, rappel...) est un geste volontaire du coach.
-  async function sendConvocation() {
-    setSendingConvocation(true);
-    setConvocationFeedback(null);
-    try {
-      const response = await fetch(`/api/matches/${matchId}/convoke`, { method: "POST" });
-      if (!response.ok) {
-        setConvocationFeedback(await readErrorMessage(response));
-        return;
-      }
-      const body = await response.json();
-      setConvocationFeedback(formatConvocationFeedback(body.sentCount, body.emailCount));
-    } catch {
-      setConvocationFeedback("Une erreur est survenue.");
-    } finally {
-      setSendingConvocation(false);
-    }
+  // Relit le match après l'envoi d'une convocation : date d'envoi et réponses.
+  async function refreshMatch() {
+    const response = await fetch(`/api/matches/${matchId}`).catch(() => null);
+    const body = response?.ok ? await response.json().catch(() => null) : null;
+    if (body?.match) setMatch((current) => (current ? { ...current, convokedAt: body.match.convokedAt, attendance: body.match.attendance } : body.match));
+  }
+
+  // Lieu seul, comme dans l'app Coach : les autres détails restent inchangés.
+  async function saveLocation() {
+    setLocationFeedback("");
+    const response = await fetch(`/api/matches/${matchId}/details`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ location: location.trim() || null }),
+    }).catch(() => null);
+    setLocationFeedback(response?.ok ? "Lieu enregistré." : "Le lieu n’a pas été enregistré, réessaie.");
   }
 
   function toggleAttendance(playerId: string) {
@@ -512,8 +511,124 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         </div>
       </header>
 
-      <section className="match-content match-prep-layout">
-        <div>
+      {/* Même ordre que la fiche match de l'app Coach : lieu, joueurs concernés, convocation, résultat,
+          composition (facultative, repliée), analyse, puis « Marquer comme joué ». */}
+      <section className="match-content event-sheet">
+        <div className="event-card match-details-form">
+          <h2>Lieu</h2>
+          <PlaceInput
+            onChange={(value) => {
+              setLocation(value);
+              setLocationFeedback("");
+            }}
+            value={location}
+          />
+          <button className="match-details-save" onClick={saveLocation} type="button">
+            Enregistrer le lieu
+          </button>
+          {locationFeedback && <p className="match-convocation-feedback">{locationFeedback}</p>}
+        </div>
+
+        <CollapsibleSection
+          summary={match.kickoffTime ? `${match.dateLabel} · ${match.kickoffTime}` : match.dateLabel}
+          title="Date, rendez-vous et description"
+        >
+          <form className="match-details-form" onSubmit={saveDetails}>
+            <label>
+              <span>Date et heure du match</span>
+              <input disabled={readOnly} onChange={(event) => setDate(event.target.value)} type="datetime-local" value={date} />
+            </label>
+            <label>
+              <span>Rendez-vous, minutes avant le match</span>
+              <input
+                disabled={readOnly}
+                min={0}
+                onChange={(event) => setMeetingOffsetMinutes(event.target.value)}
+                placeholder="Ex. 30"
+                type="number"
+                value={meetingOffsetMinutes}
+              />
+              {match.meetingTime && <span className="match-slot-hint">Rendez-vous calculé : {match.meetingTime}</span>}
+            </label>
+            <label>
+              <span>Description</span>
+              <textarea disabled={readOnly} onChange={(event) => setDescription(event.target.value)} value={description} />
+            </label>
+            {!readOnly && (
+              <button className="match-details-save" disabled={savingDetails} type="submit">
+                {savingDetails ? "Enregistrement…" : "Enregistrer les détails"}
+              </button>
+            )}
+          </form>
+        </CollapsibleSection>
+
+        {!readOnly && (
+          <CollapsibleSection summary={selectionSummary(selection, roster.length)} title="Joueurs concernés">
+            <ConcernedPlayersPicker
+              hint="Seuls les joueurs cochés voient le match, reçoivent la convocation et entrent dans la composition."
+              onChange={(value) => {
+                setSelection(value);
+                setSelectionFeedback(null);
+              }}
+              roster={roster}
+              value={selection}
+            />
+            {selectionChanged && (
+              <button className="match-details-save" disabled={savingSelection || selection?.length === 0} onClick={saveSelection} type="button">
+                {savingSelection ? "Enregistrement…" : "Enregistrer les joueurs concernés"}
+              </button>
+            )}
+            {selectionFeedback && <p className="match-convocation-feedback">{selectionFeedback}</p>}
+          </CollapsibleSection>
+        )}
+
+        <div className="event-card">
+          <h2>Convocation</h2>
+          <ConvocationActions
+            attendance={match.attendance}
+            canSend={!readOnly}
+            convokeUrl={`/api/matches/${matchId}/convoke`}
+            convokedAt={match.convokedAt ?? null}
+            meetingAt={match.date}
+            onSent={refreshMatch}
+            roster={roster}
+            scheduledText="Les joueurs concernés voient le match sans pouvoir répondre tant que la convocation n’est pas envoyée."
+            selectedPlayerIds={match.selectedPlayerIds}
+          />
+          {!readOnly && (
+            <CancelEventPanel
+              cancellationNote={match.cancellationNote}
+              cancelledAt={match.cancelledAt}
+              noun="le match"
+              onChange={(state) => setMatch((current) => (current ? { ...current, ...state } : current))}
+              url={`/api/matches/${matchId}/cancel`}
+            />
+          )}
+        </div>
+
+        {readOnly && (
+          <CollapsibleSection
+            summary={match.goalsFor != null && match.goalsAgainst != null ? `${match.goalsFor} - ${match.goalsAgainst}` : "Pas encore saisi"}
+            title="Résultat du match"
+          >
+            <MatchResultForm
+              goalsAgainst={match.goalsAgainst ?? null}
+              goalsFor={match.goalsFor ?? null}
+              matchId={matchId}
+              playerStats={match.playerStats ?? []}
+              players={
+                sheetPlayers.length > 0
+                  ? sheetPlayers
+                  : concernedPlayers(roster, match.selectedPlayerIds ?? null).map((player) => ({ id: player.id, name: player.name }))
+              }
+            />
+          </CollapsibleSection>
+        )}
+
+        <CollapsibleSection
+          summary={match.lineup.length > 0 ? `${match.lineup.length} titulaires · ${match.substitutePlayerIds.length} remplaçants` : "Facultative"}
+          title="Composition"
+        >
           {!readOnly && (
             <label className="match-game-format-picker">
               <span>Format de jeu</span>
@@ -541,16 +656,18 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               ))}
             </div>
           )}
-          <MatchPitch
-            captainPlayerId={match.captainPlayerId}
-            lineup={match.lineup}
-            onSlotAssign={readOnly ? undefined : assignSlot}
-            onCaptainChange={readOnly ? undefined : (playerId) => setCaptainPlayer(playerId ?? "")}
-            onSlotClear={readOnly ? undefined : (slotId) => assignSlot(slotId, "")}
-            roster={concernedRoster}
-            slots={slots}
-            substitutePlayerIds={match.substitutePlayerIds}
-          />
+          <div className="competition-lineup">
+            <MatchPitch
+              captainPlayerId={match.captainPlayerId}
+              lineup={match.lineup}
+              onSlotAssign={readOnly ? undefined : assignSlot}
+              onCaptainChange={readOnly ? undefined : (playerId) => setCaptainPlayer(playerId ?? "")}
+              onSlotClear={readOnly ? undefined : (slotId) => assignSlot(slotId, "")}
+              roster={concernedRoster}
+              slots={slots}
+              substitutePlayerIds={match.substitutePlayerIds}
+            />
+          </div>
           {!readOnly && <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur.</p>}
 
           <section aria-labelledby="match-bench-title" className="match-bench">
@@ -587,152 +704,64 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               />
             )}
           </section>
-        </div>
+        </CollapsibleSection>
 
-        <div className="match-slot-panel">
-          <form className="match-details-form" onSubmit={saveDetails}>
-            <h2>Détails</h2>
-            <label>
-              <span>Date et heure du match</span>
-              <input disabled={readOnly} onChange={(event) => setDate(event.target.value)} type="datetime-local" value={date} />
-            </label>
-            {!date && <p className="match-slot-hint">Coup d’envoi : {match.kickoffTime ? `${match.dateLabel} · ${match.kickoffTime}` : match.dateLabel}</p>}
-            <label>
-              <span>Rendez-vous, minutes avant le match</span>
-              <input
-                disabled={readOnly}
-                min={0}
-                onChange={(event) => setMeetingOffsetMinutes(event.target.value)}
-                placeholder="Ex. 30"
-                type="number"
-                value={meetingOffsetMinutes}
-              />
-              {match.meetingTime && <span className="match-slot-hint">Rendez-vous calculé : {match.meetingTime}</span>}
-            </label>
-            <label>
-              <span>Lieu</span>
-              <PlaceInput disabled={readOnly} onChange={setLocation} value={location} />
-            </label>
-            <label>
-              <span>Description</span>
-              <textarea disabled={readOnly} onChange={(event) => setDescription(event.target.value)} value={description} />
-            </label>
-            {!readOnly && (
-              <button className="match-details-save" disabled={savingDetails} type="submit">
-                {savingDetails ? "Enregistrement…" : "Enregistrer les détails"}
-              </button>
-            )}
-          </form>
+        <MatchAnalysis
+          formationId={match.formationId}
+          gameFormat={gameFormat}
+          key={`${match.gameFormat}-${match.formationId}`}
+          matchId={matchId}
+          opponentFormationId={match.opponentFormationId ?? null}
+        />
 
-          <MatchAnalysis
-            formationId={match.formationId}
-            gameFormat={gameFormat}
-            key={`${match.gameFormat}-${match.formationId}`}
-            matchId={matchId}
-            opponentFormationId={match.opponentFormationId ?? null}
-          />
+        {!readOnly && concernedRoster.length > 0 && (
+          <CollapsibleSection summary={`${concernedRoster.length - absentPlayerIds.size} présents sur ${concernedRoster.length}`} title="Présence">
+            <p className="match-slot-hint event-hint">Décoche les joueurs absents : la présence est enregistrée quand tu marques le match comme joué.</p>
+            <ul className="match-attendance-list">
+              {concernedRoster.map((player) => {
+                const present = !absentPlayerIds.has(player.id);
+                // Réponse déjà laissée par le joueur/tuteur à sa convocation : motif et commentaire éventuel.
+                const rsvp = match.attendance?.find((entry) => entry.playerId === player.id);
+                return (
+                  <li key={player.id}>
+                    <label className={present ? "" : "absent"}>
+                      <input checked={present} onChange={() => toggleAttendance(player.id)} type="checkbox" />
+                      {player.name}
+                    </label>
+                    {rsvp?.status && rsvp.status !== "present" && (
+                      <p className="match-attendance-rsvp">
+                        {attendanceStatusLabels[rsvp.status]}
+                        {rsvp.comment && <> — « {rsvp.comment} »</>}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </CollapsibleSection>
+        )}
 
-          {!readOnly && (
-            <section className="match-concerned">
-              <ConcernedPlayersPicker
-                hint="Seuls les joueurs cochés voient le match, reçoivent la convocation et entrent dans la composition."
-                onChange={setSelection}
-                roster={roster}
-                value={selection}
-              />
-              {selectionChanged && (
-                <button className="match-details-save" disabled={savingSelection || selection?.length === 0} onClick={saveSelection} type="button">
-                  {savingSelection ? "Enregistrement…" : "Enregistrer les joueurs concernés"}
-                </button>
-              )}
-              {selectionFeedback && <p className="match-convocation-feedback">{selectionFeedback}</p>}
-            </section>
-          )}
+        {saveError && (
+          <p className="field-error" role="alert">
+            {saveError}
+          </p>
+        )}
 
-          {!readOnly && (
-            <div className="match-convocation">
-              <button className="match-convocation-send" disabled={sendingConvocation || concernedRoster.length === 0} onClick={sendConvocation} type="button">
-                {sendingConvocation ? "Envoi…" : `Envoyer la convocation (${concernedPlayers(roster, match.selectedPlayerIds ?? null).length})`}
-              </button>
-              {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
-            </div>
-          )}
-
-          {!readOnly && (
-            <CancelEventPanel
-              cancellationNote={match.cancellationNote}
-              cancelledAt={match.cancelledAt}
-              noun="le match"
-              onChange={(state) => setMatch((current) => (current ? { ...current, ...state } : current))}
-              url={`/api/matches/${matchId}/cancel`}
-            />
-          )}
-
-          {!readOnly && concernedRoster.length > 0 && (
-            <section aria-labelledby="match-attendance-title" className="match-attendance">
-              <h2 id="match-attendance-title">Présence</h2>
-              <p>Décoche les joueurs absents.</p>
-              <ul className="match-attendance-list">
-                {concernedRoster.map((player) => {
-                  const present = !absentPlayerIds.has(player.id);
-                  // Réponse déjà laissée par le joueur/tuteur à sa convocation (voir
-                  // match-detail-view.tsx côté joueur) -- motif et commentaire éventuel, envoyé
-                  // par ailleurs au coach dans le fil de messagerie (voir MessagingThread).
-                  const rsvp = match.attendance?.find((entry) => entry.playerId === player.id);
-                  return (
-                    <li key={player.id}>
-                      <label className={present ? "" : "absent"}>
-                        <input checked={present} onChange={() => toggleAttendance(player.id)} type="checkbox" />
-                        {player.name}
-                      </label>
-                      {rsvp?.status && rsvp.status !== "present" && (
-                        <p className="match-attendance-rsvp">
-                          {attendanceStatusLabels[rsvp.status]}
-                          {rsvp.comment && <> — « {rsvp.comment} »</>}
-                        </p>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-
-          {saveError && (
-            <p className="field-error" role="alert">
-              {saveError}
-            </p>
-          )}
-
-          {!readOnly && (
-            <button className="continue-button" disabled={!canFinalize || finalizing} onClick={finalize} type="button">
-              {finalizing ? "…" : "Marquer comme joué & observer"} <span aria-hidden="true">→</span>
-            </button>
-          )}
-          {readOnly && (
-            <MatchResultForm
-              goalsAgainst={match.goalsAgainst ?? null}
-              goalsFor={match.goalsFor ?? null}
-              matchId={matchId}
-              playerStats={match.playerStats ?? []}
-              players={
-                sheetPlayers.length > 0
-                  ? sheetPlayers
-                  : concernedPlayers(roster, match.selectedPlayerIds ?? null).map((player) => ({ id: player.id, name: player.name }))
-              }
-            />
-          )}
-          {readOnly && (
-            <Link className="continue-button" href={`/observation?type=match&matchId=${matchId}`}>
-              Ajouter une observation <span aria-hidden="true">→</span>
-            </Link>
-          )}
-          {readOnly && (
-            <button className="match-details-save match-reopen" disabled={finalizing} onClick={reopen} type="button">
-              {finalizing ? "…" : "Rouvrir ce match"}
-            </button>
-          )}
-        </div>
+        {!readOnly && (
+          <button className="continue-button event-wide" disabled={!canFinalize || finalizing} onClick={finalize} type="button">
+            {finalizing ? "…" : "Marquer comme joué & observer"} <span aria-hidden="true">→</span>
+          </button>
+        )}
+        {readOnly && (
+          <Link className="continue-button event-wide" href={`/observation?type=match&matchId=${matchId}`}>
+            Ajouter une observation <span aria-hidden="true">→</span>
+          </Link>
+        )}
+        {readOnly && (
+          <button className="match-details-save event-wide" disabled={finalizing} onClick={reopen} type="button">
+            {finalizing ? "…" : "Rouvrir ce match"}
+          </button>
+        )}
       </section>
 
       <Link className="back-link match-back-link" href="/match">

@@ -1,6 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, useLocalSearchParams } from "expo-router";
-import { competitionRecordLabel, concernedPlayers, type PlayerSelection } from "@evolyfoot/domain";
+import { competitionRecordLabel, concernedPlayers, type GameFormat, type PlayerSelection } from "@evolyfoot/domain";
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,6 +9,7 @@ import { PlaceInput } from "../../components/place-input";
 import { CancelEventPanel } from "../../components/cancel-event-panel";
 import { CollapsibleSection } from "../../components/collapsible-section";
 import { CompetitionGames } from "../../components/competition-games";
+import { CompetitionLineupEditor } from "../../components/competition-lineup";
 import { ConvocationActions } from "../../components/convocation-actions";
 import { useAuth } from "../../lib/auth-context";
 import { selectionSummary } from "../../lib/selection-summary";
@@ -27,7 +28,7 @@ export default function CompetitionDetailScreen() {
   const { id, kind: kindParam } = useLocalSearchParams<{ id: string; kind: string }>();
   const kind = isCompetitionKind(kindParam) ? kindParam : "tournament";
   const { endpoint, itemKey, singular } = competitionKinds[kind];
-  const { apiRequest } = useAuth();
+  const { apiRequest, team, roster: teamRoster } = useAuth();
   const [item, setItem] = useState<Competition | null>(null);
   const [loadError, setLoadError] = useState("");
   const [dateInput, setDateInput] = useState("");
@@ -219,7 +220,33 @@ export default function CompetitionDetailScreen() {
           />
         </View>
 
-        <CollapsibleSection summary={competitionRecordLabel(item.games ?? []) || "Aucune rencontre saisie"} title="Rencontres et scores">
+        <CollapsibleSection
+          style={{ marginTop: spacing.md }}
+          summary={item.lineup?.lineup.length ? `${item.lineup.lineup.length} titulaires · foot à ${item.lineup.gameFormat}` : "Facultative"}
+          title="Composition"
+        >
+          <View style={{ marginTop: spacing.md }}>
+            <CompetitionLineupEditor
+              defaultGameFormat={(team?.gameFormat ?? 8) as GameFormat}
+              initial={item.lineup ?? null}
+              key={item.id}
+              lineupUrl={`${endpoint}/${id}/lineup`}
+              players={teamRoster.filter(
+                (player) =>
+                  concernedPlayers([player], item.selectedPlayerIds ?? null).length > 0 ||
+                  item.lineup?.lineup.some((assignment) => assignment.playerId === player.id) ||
+                  item.lineup?.substitutePlayerIds.includes(player.id),
+              )}
+              readOnly={Boolean(item.finishedAt)}
+            />
+          </View>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          style={{ marginTop: spacing.md }}
+          summary={competitionRecordLabel(item.games ?? []) || "Aucune rencontre saisie"}
+          title="Rencontres et scores"
+        >
           <Text style={styles.gamesHint}>Une ligne par rencontre jouée : équipe rencontrée, score, buteurs et passeurs décisifs.</Text>
           <View style={{ marginTop: spacing.md }}>
             <CompetitionGames
