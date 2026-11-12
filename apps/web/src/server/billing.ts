@@ -15,6 +15,46 @@ export interface BillingStore {
   summary(accountId: string): Promise<BillingSummary>;
   setCustomer(coachId: string, stripeCustomerId: string): Promise<void>;
   applySubscription(stripeCustomerId: string, update: SubscriptionUpdate): Promise<boolean>;
+  coachIdOfCustomer(stripeCustomerId: string): Promise<string | null>;
+}
+
+// E-mail envoyé au coach quand son abonnement change : Stripe n'envoie ni reçu pour un essai à 0 €, ni
+// confirmation de résiliation.
+export type SubscriptionNotice = "started" | "cancel-scheduled" | "resumed" | "ended";
+export type Notify = (summary: BillingSummary, notice: SubscriptionNotice) => Promise<void>;
+
+const liveStatuses = new Set(["trialing", "active", "past_due"]);
+
+// Changement à annoncer entre l'état enregistré et l'état reçu de Stripe ; null s'il n'y a rien de neuf
+// (un webhook rejoué ou déjà appliqué par la revérification ne renvoie pas d'e-mail).
+export function subscriptionNotice(before: BillingSummary, update: SubscriptionUpdate): SubscriptionNotice | null {
+  const wasLive = liveStatuses.has(before.subscriptionStatus ?? "");
+  if (!liveStatuses.has(update.status)) {
+    return wasLive && before.stripeSubscriptionId === update.subscriptionId && update.status === "canceled" ? "ended" : null;
+  }
+  if (before.stripeSubscriptionId !== update.subscriptionId || !wasLive) return "started";
+  const cancelAt = update.cancelAt ?? null;
+  if (cancelAt && !before.cancelAt) return "cancel-scheduled";
+  if (!cancelAt && before.cancelAt) return "resumed";
+  return null;
+}
+
+// Enregistre l'état reçu de Stripe et prévient le coach du changement.
+async function applyAndNotify(
+  store: Pick<BillingStore, "summary" | "applySubscription" | "coachIdOfCustomer">,
+  customerId: string,
+  update: SubscriptionUpdate,
+  notify: Notify,
+  log: Log,
+): Promise<void> {
+  const coachId = await store.coachIdOfCustomer(customerId);
+  if (!coachId) return;
+  const before = await store.summary(coachId);
+  await store.applySubscription(customerId, update);
+  const notice = subscriptionNotice(before, update);
+  if (notice) {
+    await notify(await store.summary(coachId), notice).catch(log);
+  }
 }
 
 export interface WebhookSubscriptionEvent {
@@ -135,9 +175,10 @@ async function withSummary(
 // abonnement de test resté en base après le passage aux clés live, ne laisse pas un état faux affiché.
 export function createGetBillingHandler(
   resolveAccount: Resolve,
-  store: Pick<BillingStore, "summary" | "applySubscription">,
+  store: Pick<BillingStore, "summary" | "applySubscription" | "coachIdOfCustomer">,
   payments: PaymentGateway | null,
   log: Log,
+  notify: Notify = async () => undefined,
 ) {
   return (request: Request) =>
     withSummary(request, resolveAccount, store, log, async (account, summary) => {
@@ -147,9 +188,17 @@ export function createGetBillingHandler(
           log(error);
           return undefined;
         });
-        const update = fresh === null ? { subscriptionId: summary.stripeSubscriptionId, status: "canceled", cycle: null, currentPeriodEnd: null } : fresh;
-        if (update && (update.status !== summary.subscriptionStatus || (update.cancelAt ?? null)?.getTime() !== summary.cancelAt?.getTime())) {
-          await store.applySubscription(summary.stripeCustomerId, update);
+        if (fresh && (fresh.status !== summary.subscriptionStatus || (fresh.cancelAt ?? null)?.getTime() !== summary.cancelAt?.getTime())) {
+          await applyAndNotify(store, summary.stripeCustomerId, fresh, notify, log);
+          current = await store.summary(account.id);
+        } else if (fresh === null) {
+          // Abonnement inconnu de Stripe (resté des clés de test) : pas d'e-mail, il n'a jamais été payé.
+          await store.applySubscription(summary.stripeCustomerId, {
+            subscriptionId: summary.stripeSubscriptionId,
+            status: "canceled",
+            cycle: null,
+            currentPeriodEnd: null,
+          });
           current = await store.summary(account.id);
         }
       }
@@ -245,7 +294,12 @@ export function createSyncHandler(resolveAccount: Resolve, store: Pick<BillingSt
 }
 
 // Webhook Stripe : la seule source de vérité de l'état de l'abonnement.
-export function createWebhookHandler(store: Pick<BillingStore, "applySubscription">, payments: PaymentGateway | null, log: Log) {
+export function createWebhookHandler(
+  store: Pick<BillingStore, "summary" | "applySubscription" | "coachIdOfCustomer">,
+  payments: PaymentGateway | null,
+  log: Log,
+  notify: Notify = async () => undefined,
+) {
   return async (request: Request) => {
     if (!payments) return notEnabled();
     const signature = request.headers.get("stripe-signature");
@@ -261,7 +315,7 @@ export function createWebhookHandler(store: Pick<BillingStore, "applySubscriptio
     }
     if (event) {
       try {
-        await store.applySubscription(event.customerId, event.update);
+        await applyAndNotify(store, event.customerId, event.update, notify, log);
       } catch (error) {
         log(error);
         return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
@@ -426,6 +480,7 @@ export async function createBillingStore(): Promise<{ store: BillingStore; disco
       summary: (accountId) => service.summary(accountId),
       setCustomer: (coachId, customerId) => service.setCustomer(coachId, customerId),
       applySubscription: (customerId, update) => service.applySubscription(customerId, update),
+      coachIdOfCustomer: (customerId) => service.coachIdOfCustomer(customerId),
     },
     disconnect: () => database.disconnect(),
   };

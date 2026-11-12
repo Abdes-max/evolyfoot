@@ -1,6 +1,6 @@
 import type { BillingSummary } from "@evolyfoot/database";
 import { describe, expect, it } from "vitest";
-import { billingReminderEmail } from "./billing-reminders";
+import { billingReminderEmail, subscriptionNoticeEmail } from "./billing-reminders";
 
 function summary(overrides: Partial<BillingSummary> = {}): BillingSummary {
   return {
@@ -41,5 +41,23 @@ describe("rappels d'abonnement par e-mail", () => {
     expect(email.subject).toContain("mets à jour ton abonnement");
     expect(email.text).toContain("Tu as maintenant 2 équipes et 2 adjoints, alors que ton abonnement (mensuel) en couvre 1 équipe et 1 adjoint");
     expect(email.text).toContain("17,60 € par mois");
+  });
+
+  it("confirme la souscription et la résiliation", () => {
+    const subscribed = summary({
+      access: { state: "subscribed", status: "trialing" },
+      subscriptionStatus: "trialing",
+      billingCycle: "season",
+      currentPeriodEnd: new Date("2026-11-25T10:00:00Z"),
+      billedExtraTeams: 0,
+      billedExtraCoaches: 0,
+    });
+    const started = subscriptionNoticeEmail(subscribed, "started", "https://evolyfoot.test");
+    expect(started.subject).toBe("Ton abonnement est confirmé — EvolyFoot");
+    expect(started.text).toContain("59 € la saison pour 1 équipe et 0 adjoint");
+    expect(started.text).toContain("jusqu’au 25 novembre 2026");
+    const canceled = subscriptionNoticeEmail({ ...subscribed, cancelAt: new Date("2026-11-25T10:00:00Z") }, "cancel-scheduled", "https://evolyfoot.test");
+    expect(canceled.subject).toBe("Ta résiliation est confirmée — EvolyFoot");
+    expect(canceled.text).toContain("accès complet jusqu’au 25 novembre 2026");
   });
 });
