@@ -34,6 +34,7 @@ function payments(): PaymentGateway {
     createCheckout: vi.fn(async () => "https://checkout.stripe.test/s"),
     createPortal: vi.fn(async () => "https://billing.stripe.test/p"),
     syncQuantities: vi.fn(async () => undefined),
+    subscriptionState: vi.fn(async () => null),
     readWebhook: vi.fn(async () => ({
       customerId: "cus_1",
       update: { subscriptionId: "sub_1", status: "active", cycle: "monthly" as const, currentPeriodEnd: null },
@@ -47,8 +48,8 @@ describe("abonnement : API", () => {
   it("renvoie l'état et les devis des deux rythmes", async () => {
     const response = await createGetBillingHandler(
       async () => coach,
-      { summary: async () => summary() },
-      true,
+      { summary: async () => summary(), applySubscription: vi.fn() },
+      payments(),
       () => undefined,
     )(new Request("http://localhost/api/billing"));
     const { billing } = await response.json();
@@ -56,6 +57,31 @@ describe("abonnement : API", () => {
     expect(billing.canManage).toBe(true);
     expect(billing.quotes.monthly.total).toBe(7.9 + 3.9 + 2 * 2.9);
     expect(billing.quotes.season.total).toBe(59 + 29 + 2 * 24);
+  });
+
+  it("corrige l'état d'un abonnement que Stripe ne connaît plus (abonnement de test après le passage en live)", async () => {
+    let status: string | null = "trialing";
+    const store = {
+      summary: async () =>
+        summary({
+          access: status === "trialing" ? { state: "subscribed", status } : { state: "trial", trialEndsAt: new Date(Date.now() + 86400000), daysLeft: 1 },
+          subscriptionStatus: status,
+          stripeCustomerId: "cus_test",
+          stripeSubscriptionId: "sub_test",
+        }),
+      applySubscription: vi.fn(async (_customer: string, update: { status: string }) => {
+        status = update.status;
+        return true;
+      }),
+    };
+    const response = await createGetBillingHandler(
+      async () => coach,
+      store,
+      payments(),
+      () => undefined,
+    )(new Request("http://localhost/api/billing"));
+    expect(store.applySubscription).toHaveBeenCalledWith("cus_test", expect.objectContaining({ subscriptionId: "sub_test", status: "canceled" }));
+    expect((await response.json()).billing.access.state).toBe("trial");
   });
 
   it("crée le client Stripe puis la page de paiement, en gardant les jours d'essai", async () => {
