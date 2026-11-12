@@ -25,6 +25,9 @@ export interface WebhookSubscriptionEvent {
 // Ce dont l'appli a besoin chez Stripe (voir createStripeGateway) : remplaçable dans les tests.
 export interface PaymentGateway {
   createCustomer(input: { email: string; name: string; coachId: string }): Promise<string>;
+  // false si le client n'existe pas (ou plus) dans le mode Stripe des clés en place : un client créé
+  // avec les clés de test est inconnu une fois les clés live installées.
+  customerExists(customerId: string): Promise<boolean>;
   createCheckout(input: {
     customerId: string;
     coachId: string;
@@ -150,7 +153,7 @@ export function createCheckoutHandler(
         return Response.json({ error: "Tu es déjà abonné : gère ton abonnement depuis le portail." }, { status: 409 });
       }
       let customerId = summary.stripeCustomerId;
-      if (!customerId) {
+      if (!customerId || !(await payments.customerExists(customerId))) {
         customerId = await payments.createCustomer({ email: summary.email, name: summary.displayName, coachId: summary.coachId });
         await store.setCustomer(summary.coachId, customerId);
       }
@@ -183,7 +186,7 @@ export function createPortalHandler(
   return async (request: Request) => {
     if (!payments) return notEnabled();
     return withSummary(request, resolveAccount, store, log, async (account, summary) => {
-      if (account.id !== summary.coachId || !summary.stripeCustomerId) {
+      if (account.id !== summary.coachId || !summary.stripeCustomerId || !(await payments.customerExists(summary.stripeCustomerId))) {
         return Response.json({ error: "Aucun abonnement à gérer." }, { status: 403 });
       }
       return Response.json({ url: await payments.createPortal({ customerId: summary.stripeCustomerId, returnUrl: `${origin(request)}/abonnement` }) });
@@ -272,6 +275,15 @@ export async function createStripeGateway(): Promise<PaymentGateway | null> {
     async createCustomer({ email, name, coachId }) {
       const customer = await stripe.customers.create({ email, name, metadata: { coachId } });
       return customer.id;
+    },
+    async customerExists(customerId) {
+      try {
+        const customer = await stripe.customers.retrieve(customerId);
+        return !customer.deleted;
+      } catch (error) {
+        if ((error as { code?: string }).code === "resource_missing") return false;
+        throw error;
+      }
     },
     async createCheckout({ customerId, coachId, cycle, lines, trialEnd, successUrl, cancelUrl }) {
       const session = await stripe.checkout.sessions.create({

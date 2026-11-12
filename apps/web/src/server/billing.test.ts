@@ -26,6 +26,7 @@ function summary(overrides: Partial<BillingSummary> = {}): BillingSummary {
 function payments(): PaymentGateway {
   return {
     createCustomer: vi.fn(async () => "cus_1"),
+    customerExists: vi.fn(async (customerId: string) => customerId !== "cus_test_mode"),
     createCheckout: vi.fn(async () => "https://checkout.stripe.test/s"),
     createPortal: vi.fn(async () => "https://billing.stripe.test/p"),
     syncQuantities: vi.fn(async () => undefined),
@@ -70,6 +71,24 @@ describe("abonnement : API", () => {
     expect(checkout.lines.map((line) => line.item)).toEqual(["base", "team", "coach"]);
     expect(checkout.trialEnd).not.toBeNull();
     expect(checkout.successUrl).toBe("https://evolyfoot.test/abonnement?paiement=ok");
+  });
+
+  it("recrée le client Stripe enregistré s'il est inconnu (passage des clés de test aux clés live)", async () => {
+    const gateway = payments();
+    const store = {
+      summary: async () => summary({ stripeCustomerId: "cus_test_mode" }),
+      setCustomer: vi.fn(async () => undefined),
+      applySubscription: vi.fn(async () => true),
+    };
+    await createCheckoutHandler(
+      async () => coach,
+      store,
+      gateway,
+      () => "https://evolyfoot.test",
+      () => undefined,
+    )(post({ cycle: "monthly" }));
+    expect(store.setCustomer).toHaveBeenCalledWith("coach-1", "cus_1");
+    expect(vi.mocked(gateway.createCheckout).mock.calls[0][0].customerId).toBe("cus_1");
   });
 
   it("refuse le paiement à un adjoint, sans rythme, ou sans Stripe configuré", async () => {
