@@ -11,6 +11,9 @@ export interface CompetitionLineup {
   readonly substitutePlayerIds: readonly string[];
 }
 
+// Compo type de l'équipe (page Équipe) : indépendante des matchs, avec un banc plus large.
+export const teamLineupMaxSubstitutes = 6;
+
 export function emptyCompetitionLineup(gameFormat: GameFormat): CompetitionLineup {
   return { gameFormat, formationId: defaultFormationId(gameFormat), lineup: [], captainPlayerId: null, substitutePlayerIds: [] };
 }
@@ -45,7 +48,7 @@ export function parseCompetitionLineup(value: unknown): CompetitionLineup | null
 
 // Première incohérence trouvée, ou null : formation du format, postes et joueurs uniques, capitaine
 // titulaire, banc sans titulaire ni doublon et dans la limite du format.
-export function validateCompetitionLineup(value: CompetitionLineup): string | null {
+export function validateCompetitionLineup(value: CompetitionLineup, maxBench: number = maxSubstitutes(value.gameFormat)): string | null {
   if (!listFormations(value.gameFormat).some((formation) => formation.id === value.formationId)) {
     return "Cette formation ne correspond pas au format de jeu.";
   }
@@ -60,8 +63,8 @@ export function validateCompetitionLineup(value: CompetitionLineup): string | nu
     starters.add(assignment.playerId);
   }
   if (value.captainPlayerId && !starters.has(value.captainPlayerId)) return "Le capitaine doit faire partie des titulaires.";
-  if (value.substitutePlayerIds.length > maxSubstitutes(value.gameFormat)) {
-    return `${maxSubstitutes(value.gameFormat)} remplaçants au plus en foot à ${value.gameFormat}.`;
+  if (value.substitutePlayerIds.length > maxBench) {
+    return `${maxBench} remplaçants au plus.`;
   }
   const bench = new Set<string>();
   for (const playerId of value.substitutePlayerIds) {
@@ -74,9 +77,26 @@ export function validateCompetitionLineup(value: CompetitionLineup): string | nu
 
 // Nouveau format et/ou nouvelle formation : les titulaires suivent sur les postes les plus proches,
 // ceux qui n'ont plus de place passent sur le banc tant qu'il en reste.
-export function changeCompetitionFormation(value: CompetitionLineup, gameFormat: GameFormat, formationId: string): CompetitionLineup {
+// Point de départ d'une compo de tournoi ou de plateau : la compo type, sans les joueurs non
+// concernés et avec le banc ramené à la limite du format.
+export function lineupFromTemplate(template: CompetitionLineup, playerIds: ReadonlySet<string>): CompetitionLineup {
+  const lineup = template.lineup.filter((assignment) => playerIds.has(assignment.playerId));
+  return {
+    ...template,
+    lineup,
+    captainPlayerId: lineup.some((assignment) => assignment.playerId === template.captainPlayerId) ? template.captainPlayerId : null,
+    substitutePlayerIds: template.substitutePlayerIds.filter((id) => playerIds.has(id)).slice(0, maxSubstitutes(template.gameFormat)),
+  };
+}
+
+export function changeCompetitionFormation(
+  value: CompetitionLineup,
+  gameFormat: GameFormat,
+  formationId: string,
+  maxBench: number = maxSubstitutes(gameFormat),
+): CompetitionLineup {
   const { lineup, leftOver } = transferLineup(value.lineup, formationSlots(value.gameFormat, value.formationId), formationSlots(gameFormat, formationId));
-  const substitutePlayerIds = [...value.substitutePlayerIds, ...leftOver.map((assignment) => assignment.playerId)].slice(0, maxSubstitutes(gameFormat));
+  const substitutePlayerIds = [...value.substitutePlayerIds, ...leftOver.map((assignment) => assignment.playerId)].slice(0, maxBench);
   const captainPlayerId = lineup.some((assignment) => assignment.playerId === value.captainPlayerId) ? value.captainPlayerId : null;
   return { gameFormat, formationId, lineup, captainPlayerId, substitutePlayerIds };
 }

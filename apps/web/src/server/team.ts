@@ -1,11 +1,13 @@
 import { EducatorNotFoundError, TeamNotFoundError, ValidationError } from "@evolyfoot/database";
-import type { TeamProfile } from "@evolyfoot/domain";
+import type { CompetitionLineup, TeamProfile } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 
 export interface TeamGateway {
   get(educatorId: string): Promise<TeamProfile | null>;
   save(educatorId: string, profile: TeamProfile): Promise<TeamProfile>;
   saveLogo(educatorId: string, logo: string | null): Promise<TeamProfile>;
+  defaultLineup(educatorId: string): Promise<CompetitionLineup | null>;
+  saveDefaultLineup(educatorId: string, lineup: unknown): Promise<CompetitionLineup | null>;
 }
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
@@ -113,8 +115,40 @@ export function createSaveTeamLogoHandler(
   };
 }
 
+// GET : compo type de l'équipe (indépendante des matchs) ; PUT `{ lineup }` (null pour la retirer).
+export function createTeamLineupHandlers(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  team: Pick<TeamGateway, "defaultLineup" | "saveDefaultLineup">,
+  log: (error: unknown) => void,
+) {
+  async function guard(request: Request, run: (educator: PublicEducator) => Promise<CompetitionLineup | null>): Promise<Response> {
+    const educator = await resolveEducator(request);
+    if (!educator) {
+      return Response.json({ error: "Authentification requise." }, { status: 401 });
+    }
+    try {
+      return Response.json({ lineup: await run(educator) });
+    } catch (error) {
+      if (error instanceof ValidationError) return Response.json({ error: error.message }, { status: 400 });
+      if (error instanceof TeamNotFoundError) return Response.json({ error: "Crée d’abord ton équipe." }, { status: 404 });
+      log(error);
+      return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
+    }
+  }
+  return {
+    get: (request: Request) => guard(request, (educator) => team.defaultLineup(educator.id)),
+    save: (request: Request) =>
+      guard(request, async (educator) => {
+        const body = await readJsonBody(request);
+        if (!body || !("lineup" in body)) throw new ValidationError("Composition manquante.");
+        return team.saveDefaultLineup(educator.id, body.lineup);
+      }),
+  };
+}
+
 export async function createTeamGateway(): Promise<{ gateway: TeamGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, TeamProfileService, PrismaEducatorRepository, PrismaTeamRepository, TeamNotFoundError } = await import("@evolyfoot/database");
+  const { createDatabaseClient, TeamProfileService, PrismaEducatorRepository, PrismaPlayerRepository, PrismaTeamRepository, TeamNotFoundError } =
+    await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new TeamProfileService(new PrismaEducatorRepository(database.prisma), new PrismaTeamRepository(database.prisma));
 
@@ -138,6 +172,11 @@ export async function createTeamGateway(): Promise<{ gateway: TeamGateway; disco
       async saveLogo(educatorId, logo) {
         const team = await service.saveLogo(educatorId, logo);
         return team.profile;
+      },
+      defaultLineup: (educatorId) => service.defaultLineup(educatorId),
+      async saveDefaultLineup(educatorId, lineup) {
+        const players = await new PrismaPlayerRepository(database.prisma).listByEducator(educatorId);
+        return service.saveDefaultLineup(educatorId, lineup, new Map(players.map((player) => [player.id, player.name])));
       },
     },
     disconnect: database.disconnect,

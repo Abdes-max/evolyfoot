@@ -7,6 +7,7 @@ import {
   emptyCompetitionLineup,
   formationSlots,
   gameFormats,
+  lineupFromTemplate,
   listFormations,
   maxSubstitutes,
   removeSubstitute,
@@ -48,6 +49,9 @@ export function CompetitionLineupEditor({
   defaultGameFormat,
   players,
   readOnly,
+  maxBench,
+  template,
+  startLabel = "Préparer la composition",
 }: {
   lineupUrl: string;
   initial: CompetitionLineup | null;
@@ -55,6 +59,11 @@ export function CompetitionLineupEditor({
   // Joueurs concernés (plus ceux déjà placés s’ils ont été décochés), avec poste et numéro.
   players: readonly PickablePlayer[];
   readOnly?: boolean;
+  // Remplaçants au plus (6 pour la compo type) ; par défaut, la limite du format de jeu.
+  maxBench?: number;
+  // Compo type de l'équipe : point de départ proposé quand la compo est vide.
+  template?: CompetitionLineup | null;
+  startLabel?: string;
 }) {
   const { apiRequest } = useAuth();
   const [value, setValue] = useState<CompetitionLineup>(() => initial ?? emptyCompetitionLineup(defaultGameFormat));
@@ -78,7 +87,8 @@ export function CompetitionLineupEditor({
 
   const slots = formationSlots(value.gameFormat, value.formationId);
   const formations = listFormations(value.gameFormat);
-  const benchSize = Math.max(maxSubstitutes(value.gameFormat), value.substitutePlayerIds.length);
+  const benchMax = maxBench ?? maxSubstitutes(value.gameFormat);
+  const benchSize = Math.max(benchMax, value.substitutePlayerIds.length);
   const nameOf = (playerId: string) =>
     players.find((player) => player.id === playerId)?.name ?? value.lineup.find((assignment) => assignment.playerId === playerId)?.playerName ?? "";
 
@@ -95,9 +105,23 @@ export function CompetitionLineupEditor({
     return readOnly ? (
       <Text style={styles.hint}>Pas de composition pour cette journée.</Text>
     ) : (
-      <TouchableOpacity accessibilityRole="button" onPress={() => setStarted(true)} style={styles.start}>
-        <Text style={styles.startText}>Préparer la composition</Text>
-      </TouchableOpacity>
+      <View style={styles.wrap}>
+        {template ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            onPress={() => {
+              setStarted(true);
+              void persist(lineupFromTemplate(template, new Set(players.map((player) => player.id))));
+            }}
+            style={styles.startPrimary}
+          >
+            <Text style={styles.startPrimaryText}>Partir de la compo type</Text>
+          </TouchableOpacity>
+        ) : null}
+        <TouchableOpacity accessibilityRole="button" onPress={() => setStarted(true)} style={styles.start}>
+          <Text style={styles.startText}>{template ? "Compo vide" : startLabel}</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
@@ -110,7 +134,7 @@ export function CompetitionLineupEditor({
               accessibilityRole="button"
               accessibilityState={{ selected: format === value.gameFormat }}
               key={format}
-              onPress={() => format !== value.gameFormat && void persist(changeCompetitionFormation(value, format, listFormations(format)[0]!.id))}
+              onPress={() => format !== value.gameFormat && void persist(changeCompetitionFormation(value, format, listFormations(format)[0]!.id, maxBench))}
               style={[styles.choice, format === value.gameFormat && styles.choiceActive]}
             >
               <Text style={[styles.choiceText, format === value.gameFormat && styles.choiceTextActive]}>{`Foot à ${format}`}</Text>
@@ -125,7 +149,7 @@ export function CompetitionLineupEditor({
               accessibilityRole="button"
               accessibilityState={{ selected: formation.id === value.formationId }}
               key={formation.id}
-              onPress={() => formation.id !== value.formationId && void persist(changeCompetitionFormation(value, value.gameFormat, formation.id))}
+              onPress={() => formation.id !== value.formationId && void persist(changeCompetitionFormation(value, value.gameFormat, formation.id, maxBench))}
               style={[styles.choice, formation.id === value.formationId && styles.choiceActive]}
             >
               <Text style={[styles.choiceText, formation.id === value.formationId && styles.choiceTextActive]}>{formation.label}</Text>
@@ -144,7 +168,7 @@ export function CompetitionLineupEditor({
       {!readOnly && <Text style={styles.hint}>Touche un poste sur le terrain pour y affecter un joueur.</Text>}
 
       <View style={styles.bench}>
-        <Text style={styles.benchTitle}>Remplaçants{readOnly ? "" : ` (max. ${maxSubstitutes(value.gameFormat)})`}</Text>
+        <Text style={styles.benchTitle}>Remplaçants{readOnly ? "" : ` (max. ${benchMax})`}</Text>
         <View style={styles.benchRow}>
           {Array.from({ length: benchSize }, (_, index) => {
             const playerId = value.substitutePlayerIds[index];
@@ -203,7 +227,7 @@ export function CompetitionLineupEditor({
         onClose={() => setBenchPicking(false)}
         onPick={(playerId) => {
           const player = players.find((candidate) => candidate.id === playerId);
-          if (player) void persist(fromPlan(value, addSubstitute(asPlan(value), player)));
+          if (player && value.substitutePlayerIds.length < benchMax) void persist(fromPlan(value, addSubstitute(asPlan(value), player)));
           setBenchPicking(false);
         }}
         players={players.filter((player) => !value.substitutePlayerIds.includes(player.id))}
@@ -235,6 +259,8 @@ const styles = themedStyles(() =>
     hint: { fontSize: 11, color: colors.muted },
     start: { minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, borderWidth: 1, borderColor: colors.primary },
     startText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+    startPrimary: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.primary },
+    startPrimaryText: { color: colors.primaryInk, fontSize: 13, fontWeight: "900" },
     bench: { padding: spacing.md, borderRadius: 20, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
     benchTitle: { color: colors.ink, fontSize: 15, fontWeight: "800", marginBottom: spacing.sm },
     benchRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },

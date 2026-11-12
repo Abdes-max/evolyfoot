@@ -57,7 +57,7 @@
   color: var(--muted);
   font-size: 12px;
 }
-/* Composition du prochain match (next-match-lineup.tsx). */
+/* Compo type de l'équipe (team-lineup.tsx). */
 .roster-lineup {
   display: grid;
   gap: 8px;

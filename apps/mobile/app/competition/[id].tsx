@@ -1,6 +1,6 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, useLocalSearchParams } from "expo-router";
-import { competitionRecordLabel, concernedPlayers, type GameFormat, type PlayerSelection } from "@evolyfoot/domain";
+import { competitionRecordLabel, concernedPlayers, type CompetitionLineup, type GameFormat, type PlayerSelection } from "@evolyfoot/domain";
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -40,15 +40,22 @@ export default function CompetitionDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
   const [selection, setSelection] = useState<PlayerSelection>(null);
+  const [teamLineup, setTeamLineup] = useState<CompetitionLineup | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [response, rosterResponse] = await Promise.all([apiRequest(`${endpoint}/${id}`), apiRequest("/api/roster")]);
+      const [response, rosterResponse, teamLineupResponse] = await Promise.all([
+        apiRequest(`${endpoint}/${id}`),
+        apiRequest("/api/roster"),
+        apiRequest("/api/team/lineup"),
+      ]);
       if (cancelled) {
         return;
       }
       const rosterBody = rosterResponse?.ok ? await rosterResponse.json().catch(() => null) : null;
+      const teamLineupBody = teamLineupResponse?.ok ? await teamLineupResponse.json().catch(() => null) : null;
+      setTeamLineup(teamLineupBody?.lineup ?? null);
       setRoster(Array.isArray(rosterBody?.players) ? rosterBody.players : []);
       if (!response?.ok) {
         setLoadError(await readError(response));
@@ -238,6 +245,7 @@ export default function CompetitionDetailScreen() {
                   item.lineup?.substitutePlayerIds.includes(player.id),
               )}
               readOnly={Boolean(item.finishedAt || item.cancelledAt)}
+              template={teamLineup}
             />
           </View>
         </CollapsibleSection>

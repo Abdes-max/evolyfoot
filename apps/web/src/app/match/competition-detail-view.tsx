@@ -75,6 +75,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
   const [removing, setRemoving] = useState(false);
   const [roster, setRoster] = useState<Array<ConcernedPlayer & { position?: string | null; jerseyNumber?: string | null; photo?: string | null }>>([]);
   const [teamGameFormat, setTeamGameFormat] = useState<GameFormat>(8);
+  const [teamLineup, setTeamLineup] = useState<CompetitionLineup | null>(null);
   const [selection, setSelection] = useState<PlayerSelection>(null);
 
   useEffect(() => {
@@ -93,7 +94,12 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
           return;
         }
 
-        const [response, rosterResponse, teamResponse] = await Promise.all([fetch(`${endpoint}/${competitionId}`), fetch("/api/roster"), fetch("/api/team")]);
+        const [response, rosterResponse, teamResponse, teamLineupResponse] = await Promise.all([
+          fetch(`${endpoint}/${competitionId}`),
+          fetch("/api/roster"),
+          fetch("/api/team"),
+          fetch("/api/team/lineup"),
+        ]);
         if (!response.ok) {
           setLoadError(await readErrorMessage(response));
           return;
@@ -101,6 +107,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
         const body = await response.json();
         const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
         const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
+        const teamLineupBody = teamLineupResponse.ok ? await teamLineupResponse.json().catch(() => null) : null;
         const loaded: Competition = body[itemKey];
         if (cancelled) {
           return;
@@ -108,6 +115,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
         setItem(loaded);
         setRoster(rosterBody.players ?? []);
         if (typeof teamBody.profile?.gameFormat === "number") setTeamGameFormat(teamBody.profile.gameFormat as GameFormat);
+        setTeamLineup(teamLineupBody?.lineup ?? null);
         setSelection(loaded.selectedPlayerIds ?? null);
         setDateInput(loaded.date ? loaded.date.slice(0, 10) : "");
         setLocation(loaded.location ?? "");
@@ -330,6 +338,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
                 item.lineup?.substitutePlayerIds.includes(player.id),
             )}
             readOnly={Boolean(item.finishedAt || item.cancelledAt)}
+            template={teamLineup}
           />
         </CollapsibleSection>
 

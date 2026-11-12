@@ -88,6 +88,12 @@ class InMemorySessions implements SessionRepository {
 class InMemoryTeams implements TeamRepository {
   readonly names = new Map<string, string>();
 
+  async findDefaultLineup(): Promise<null> {
+    return null;
+  }
+
+  async updateDefaultLineup(): Promise<void> {}
+
   async upsertForEducator(): Promise<PersistedTeamProfile> {
     throw new Error("non utilisé");
   }

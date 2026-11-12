@@ -1,5 +1,6 @@
 import { Prisma } from "./generated/prisma/client";
-import type { MatchPlayerStat, PersonalExercise, PersonalExerciseInput, PlayerSelection, TrainingSlotSchedule } from "@evolyfoot/domain";
+import type { CompetitionLineup, MatchPlayerStat, PersonalExercise, PersonalExerciseInput, PlayerSelection, TrainingSlotSchedule } from "@evolyfoot/domain";
+import { parseCompetitionLineup } from "@evolyfoot/domain";
 import type { PrismaClient } from "./generated/prisma/client";
 import {
   DiagnosticNotFoundError,
@@ -741,6 +742,22 @@ export class PrismaTeamRepository implements TeamRepository {
       return toPersistedTeamProfile(team);
     } catch (error) {
       return translateTeamWriteError(error);
+    }
+  }
+
+  async findDefaultLineup(educatorId: string): Promise<CompetitionLineup | null> {
+    const team = await this.prisma.team.findUnique({ where: { educatorId }, select: { defaultLineup: true } });
+    return parseCompetitionLineup(team?.defaultLineup ?? null);
+  }
+
+  async updateDefaultLineup(educatorId: string, lineup: CompetitionLineup | null): Promise<void> {
+    try {
+      await this.prisma.team.update({
+        where: { educatorId },
+        data: { defaultLineup: lineup === null ? Prisma.DbNull : (lineup as unknown as Prisma.InputJsonValue) },
+      });
+    } catch (error) {
+      translateTeamWriteError(error);
     }
   }
 

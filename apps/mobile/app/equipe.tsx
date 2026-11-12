@@ -1,7 +1,9 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { playerPositionCodes, playerPositions } from "@evolyfoot/domain";
-import { Link, router } from "expo-router";
-import { useState } from "react";
+import { playerPositionCodes, playerPositions, teamLineupMaxSubstitutes, type CompetitionLineup, type GameFormat } from "@evolyfoot/domain";
+import { Link, router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import { CollapsibleSection } from "../components/collapsible-section";
+import { CompetitionLineupEditor } from "../components/competition-lineup";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { TeamCrest } from "../components/team-crest";
 import { useAuth } from "../lib/auth-context";
@@ -25,7 +27,23 @@ function initials(name: string): string {
 }
 
 export default function EquipeScreen() {
-  const { team, roster, addPlayer, renamePlayer, removePlayer, saveTeamLogo, sessionToken } = useAuth();
+  const { team, roster, addPlayer, renamePlayer, removePlayer, saveTeamLogo, sessionToken, apiRequest } = useAuth();
+  // Compo type de l'équipe (indépendante des matchs) : undefined tant qu'elle n'est pas chargée.
+  const [teamLineup, setTeamLineup] = useState<CompetitionLineup | null | undefined>(undefined);
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      apiRequest("/api/team/lineup")
+        .then((response) => (response?.ok ? response.json() : null))
+        .then((body) => {
+          if (!cancelled) setTeamLineup(body?.lineup ?? null);
+        })
+        .catch(() => undefined);
+      return () => {
+        cancelled = true;
+      };
+    }, [apiRequest]),
+  );
   const { pendingTutorPlayerIds } = useUnread(sessionToken);
   const [logoBusy, setLogoBusy] = useState(false);
   const [logoError, setLogoError] = useState("");
@@ -140,6 +158,30 @@ export default function EquipeScreen() {
           <Text style={styles.statsLinkText}>Statistiques de l’équipe</Text>
           <Text style={styles.statsLinkText}>→</Text>
         </TouchableOpacity>
+
+        {team && teamLineup !== undefined ? (
+          <CollapsibleSection
+            style={{ marginTop: spacing.lg }}
+            summary={
+              teamLineup?.lineup.length
+                ? `${teamLineup.lineup.length} titulaires · ${teamLineup.substitutePlayerIds.length} remplaçants · foot à ${teamLineup.gameFormat}`
+                : "Facultative"
+            }
+            title="Compo type"
+          >
+            <Text style={styles.lineupHint}>{`Ta composition de référence, sans lien avec un match : jusqu’à ${teamLineupMaxSubstitutes} remplaçants.`}</Text>
+            <View style={{ marginTop: spacing.md }}>
+              <CompetitionLineupEditor
+                defaultGameFormat={(team.gameFormat ?? 8) as GameFormat}
+                initial={teamLineup}
+                lineupUrl="/api/team/lineup"
+                maxBench={teamLineupMaxSubstitutes}
+                players={roster}
+                startLabel="Préparer la compo type"
+              />
+            </View>
+          </CollapsibleSection>
+        ) : null}
 
         <Text style={styles.label}>Ajouter un joueur</Text>
         <View style={styles.addRow}>
@@ -289,6 +331,7 @@ const styles = themedStyles(() =>
     },
     avatarText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
     rowPosition: { fontSize: 11.5, color: colors.muted, marginTop: 2 },
+    lineupHint: { color: colors.muted, fontSize: 12.5, lineHeight: 18 },
     tutorRequest: { alignSelf: "flex-start", marginTop: 3, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: "#ef4444" },
     tutorRequestText: { color: "#ffffff", fontSize: 10.5, fontWeight: "800" },
     jersey: { color: colors.muted, opacity: 0.6, fontSize: 26, fontWeight: "900", fontStyle: "italic", marginRight: 4 },

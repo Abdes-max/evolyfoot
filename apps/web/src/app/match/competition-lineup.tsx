@@ -8,6 +8,7 @@ import {
   emptyCompetitionLineup,
   formationSlots,
   gameFormats,
+  lineupFromTemplate,
   listFormations,
   maxSubstitutes,
   removeSubstitute,
@@ -46,6 +47,9 @@ export function CompetitionLineupEditor({
   defaultGameFormat,
   players,
   readOnly,
+  maxBench,
+  template,
+  startLabel = "Préparer la composition",
 }: {
   lineupUrl: string;
   initial: CompetitionLineup | null;
@@ -53,6 +57,11 @@ export function CompetitionLineupEditor({
   // Joueurs concernés (plus ceux déjà placés s'ils ont été décochés), avec poste et numéro.
   players: readonly (PickablePlayer & { photo?: string | null })[];
   readOnly?: boolean;
+  // Remplaçants au plus (6 pour la compo type) ; par défaut, la limite du format de jeu.
+  maxBench?: number;
+  // Compo type de l'équipe : point de départ proposé quand la compo est vide.
+  template?: CompetitionLineup | null;
+  startLabel?: string;
 }) {
   const [value, setValue] = useState<CompetitionLineup>(() => initial ?? emptyCompetitionLineup(defaultGameFormat));
   const [pickingBenchIndex, setPickingBenchIndex] = useState<number | null>(null);
@@ -78,8 +87,9 @@ export function CompetitionLineupEditor({
 
   const slots = formationSlots(value.gameFormat, value.formationId);
   const formations = listFormations(value.gameFormat);
+  const benchMax = maxBench ?? maxSubstitutes(value.gameFormat);
   const bench: Array<string | null> = Array.from(
-    { length: Math.max(maxSubstitutes(value.gameFormat), value.substitutePlayerIds.length) },
+    { length: Math.max(benchMax, value.substitutePlayerIds.length) },
     (_, index) => value.substitutePlayerIds[index] ?? null,
   );
   const nameOf = (playerId: string) =>
@@ -94,9 +104,23 @@ export function CompetitionLineupEditor({
     return readOnly ? (
       <p className="match-slot-hint">Pas de composition pour cette journée.</p>
     ) : (
-      <button className="match-details-save" onClick={() => setStarted(true)} type="button">
-        Préparer la composition
-      </button>
+      <div className="competition-lineup-start">
+        {template && (
+          <button
+            className="match-convocation-send"
+            onClick={() => {
+              setStarted(true);
+              void persist(lineupFromTemplate(template, new Set(players.map((player) => player.id))));
+            }}
+            type="button"
+          >
+            Partir de la compo type
+          </button>
+        )}
+        <button className="match-details-save" onClick={() => setStarted(true)} type="button">
+          {template ? "Compo vide" : startLabel}
+        </button>
+      </div>
     );
   }
 
@@ -109,7 +133,7 @@ export function CompetitionLineupEditor({
               aria-pressed={format === value.gameFormat}
               className={format === value.gameFormat ? "choice active" : "choice"}
               key={format}
-              onClick={() => format !== value.gameFormat && void persist(changeCompetitionFormation(value, format, listFormations(format)[0]!.id))}
+              onClick={() => format !== value.gameFormat && void persist(changeCompetitionFormation(value, format, listFormations(format)[0]!.id, maxBench))}
               type="button"
             >
               Foot à {format}
@@ -124,7 +148,7 @@ export function CompetitionLineupEditor({
               aria-pressed={formation.id === value.formationId}
               className={formation.id === value.formationId ? "choice active" : "choice"}
               key={formation.id}
-              onClick={() => formation.id !== value.formationId && void persist(changeCompetitionFormation(value, value.gameFormat, formation.id))}
+              onClick={() => formation.id !== value.formationId && void persist(changeCompetitionFormation(value, value.gameFormat, formation.id, maxBench))}
               type="button"
             >
               {formation.label}
@@ -146,7 +170,7 @@ export function CompetitionLineupEditor({
       {!readOnly && <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur.</p>}
 
       <section className="match-bench">
-        <h2>Remplaçants {readOnly ? "" : `(max. ${maxSubstitutes(value.gameFormat)})`}</h2>
+        <h2>Remplaçants {readOnly ? "" : `(max. ${benchMax})`}</h2>
         <div aria-label="Remplaçants" className="match-bench-tokens" role="group">
           {bench.map((playerId, index) => {
             const label = playerId ? `Remplaçant : ${nameOf(playerId)}` : "Remplaçant : aucun joueur, toucher pour affecter";
@@ -169,7 +193,7 @@ export function CompetitionLineupEditor({
             onClose={() => setPickingBenchIndex(null)}
             onPick={(playerId) => {
               const player = players.find((candidate) => candidate.id === playerId);
-              if (player) void persist(fromPlan(value, addSubstitute(asPlan(value), player)));
+              if (player && value.substitutePlayerIds.length < benchMax) void persist(fromPlan(value, addSubstitute(asPlan(value), player)));
               setPickingBenchIndex(null);
             }}
             // Une place déjà occupée ne propose que « Laisser le poste libre ».

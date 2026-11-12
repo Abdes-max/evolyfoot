@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { changeCompetitionFormation, emptyCompetitionLineup, parseCompetitionLineup, validateCompetitionLineup } from "./competition-lineup";
+import {
+  changeCompetitionFormation,
+  emptyCompetitionLineup,
+  lineupFromTemplate,
+  parseCompetitionLineup,
+  validateCompetitionLineup,
+} from "./competition-lineup";
 import { formationSlots, listFormations } from "./match";
 
 describe("composition d'un tournoi ou d'un plateau", () => {
@@ -19,6 +25,17 @@ describe("composition d'un tournoi ou d'un plateau", () => {
     expect(validateCompetitionLineup({ ...base, lineup: [...lineup, { slotId: second!.id, playerId: "p1", playerName: "Léo" }] })).toMatch(/seul poste/);
     expect(validateCompetitionLineup({ ...base, lineup, captainPlayerId: "p2" })).toMatch(/capitaine/);
     expect(validateCompetitionLineup({ ...base, lineup, substitutePlayerIds: ["p1"] })).toMatch(/titulaire et remplaçant/);
+  });
+
+  it("compo type : banc de 6, puis reprise pour une journée sans les joueurs non concernés", () => {
+    const lineup = [{ slotId: first!.id, playerId: "p1", playerName: "Léo" }];
+    const bench = ["b1", "b2", "b3", "b4", "b5", "b6"];
+    expect(validateCompetitionLineup({ ...base, lineup, substitutePlayerIds: bench }, 6)).toBeNull();
+    expect(validateCompetitionLineup({ ...base, lineup, substitutePlayerIds: bench })).toMatch(/remplaçants au plus/);
+    const day = lineupFromTemplate({ ...base, lineup, captainPlayerId: "p1", substitutePlayerIds: bench }, new Set(["b1", "b2", "b3", "b4", "b5"]));
+    expect(day.lineup).toHaveLength(0);
+    expect(day.captainPlayerId).toBeNull();
+    expect(validateCompetitionLineup(day)).toBeNull();
   });
 
   it("reporte les titulaires sur la nouvelle formation", () => {
