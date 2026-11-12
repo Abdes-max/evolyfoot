@@ -293,6 +293,15 @@ export async function createStripeGateway(): Promise<PaymentGateway | null> {
         line_items: await lineItems(cycle, lines),
         allow_promotion_codes: true,
         locale: "fr",
+        // Adresse de facturation et n° de TVA (clubs, associations) : repris sur les factures envoyées par Stripe.
+        billing_address_collection: "required",
+        tax_id_collection: { enabled: true },
+        customer_update: { address: "auto", name: "auto" },
+        custom_text: {
+          submit: {
+            message: "Facture envoyée par e-mail à chaque échéance. Résiliable à tout moment depuis la page Abonnement d’EvolyFoot.",
+          },
+        },
         subscription_data: {
           metadata: { coachId, cycle },
           ...(trialEnd ? { trial_end: Math.floor(trialEnd.getTime() / 1000) } : {}),
