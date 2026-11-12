@@ -31,7 +31,7 @@ export default function CguPage() {
         {
           title: "Abonnement et paiement",
           paragraphs: [
-            "Le service est vendu par Abdeslem Ziaissa, entrepreneur individuel (EI) exerçant sous le nom commercial EvolyFoot, SIRET 917 443 376 00020, 485 route d’Eguilles, Résidence Les Jardins de la Chapelle, 13090 Aix-en-Provence.",
+            "Le service est vendu par KELTO Studio, entreprise individuelle (EI), SIRET 917 443 376 00020, 485 route d’Eguilles, Résidence Les Jardins de la Chapelle, 13090 Aix-en-Provence.",
             "Après l’essai gratuit de 14 jours, sans carte bancaire, l’abonnement est payé au mois ou à la saison (12 mois), aux prix affichés sur la page Tarifs : une formule de base pour 1 coach et 1 équipe, et un supplément par équipe et par coach adjoint en plus. Les prix sont nets : TVA non applicable, art. 293 B du CGI.",
             "Le paiement se fait par carte bancaire via Stripe ; EvolyFoot n’a jamais accès aux numéros de carte. L’abonnement se renouvelle automatiquement à chaque échéance. L’ajout ou le retrait d’une équipe ou d’un adjoint ajuste le montant au prorata. Une facture est envoyée par e-mail à chaque prélèvement.",
             "L’éducateur peut résilier à tout moment depuis la page Abonnement : l’accès reste ouvert jusqu’à la fin de la période déjà payée, sans remboursement de la période en cours.",

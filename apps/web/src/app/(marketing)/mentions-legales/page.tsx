@@ -13,13 +13,13 @@ export default function MentionsLegalesPage() {
         {
           title: "Éditeur du site",
           paragraphs: [
-            "EvolyFoot est édité par Abdeslem Ziaissa, entrepreneur individuel (EI) exerçant sous le nom commercial EvolyFoot, micro-entreprise immatriculée sous le numéro SIRET 917 443 376 00020. TVA non applicable, art. 293 B du CGI.",
+            "EvolyFoot est édité par KELTO Studio, entreprise individuelle (EI), micro-entreprise immatriculée sous le numéro SIRET 917 443 376 00020. TVA non applicable, art. 293 B du CGI.",
             "Adresse : 485 route d’Eguilles, Résidence Les Jardins de la Chapelle, 13090 Aix-en-Provence. Contact : contact@evolyfoot.com.",
           ],
         },
         {
           title: "Directeur de la publication",
-          paragraphs: ["Abdeslem Ziaissa, en qualité d’éditeur."],
+          paragraphs: ["Le représentant de KELTO Studio, en qualité d’éditeur."],
         },
         {
           title: "Hébergement",

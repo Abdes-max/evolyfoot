@@ -13,7 +13,7 @@ export default function ConfidentialitePage() {
         {
           title: "Responsable de traitement",
           paragraphs: [
-            "Abdeslem Ziaissa, entrepreneur individuel (EI) exerçant sous le nom commercial EvolyFoot, 485 route d’Eguilles, Résidence Les Jardins de la Chapelle, 13090 Aix-en-Provence, est responsable du traitement des données décrites ci-dessous. Contact : contact@evolyfoot.com.",
+            "KELTO Studio, entreprise individuelle (EI), 485 route d’Eguilles, Résidence Les Jardins de la Chapelle, 13090 Aix-en-Provence, est responsable du traitement des données décrites ci-dessous. Contact : contact@evolyfoot.com.",
           ],
         },
         {
