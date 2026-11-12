@@ -296,9 +296,10 @@ export {
   billingLines,
   billingPriceLookupKey,
   billingPrices,
+  billingReminderDue,
   billingTotal,
   parseBillingCycle,
   trialDays,
   trialEndOf,
 } from "./billing";
-export type { BillingAccess, BillingCycle, BillingItem, BillingLine } from "./billing";
+export type { BillingAccess, BillingCycle, BillingItem, BillingLine, BillingReminder, BillingReminderKind } from "./billing";

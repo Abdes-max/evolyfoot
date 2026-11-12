@@ -2,7 +2,8 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { allFormationIds, playStyles } from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState, type ReactNode } from "react";
-import { Alert, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Linking, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { apiBaseUrl } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { themedStyles } from "../lib/themed-styles";
 
@@ -562,6 +563,15 @@ export default function ProfilScreen() {
         {educator?.role !== "assistant" && <TeamsSection />}
         {educator?.role !== "assistant" && <StaffSection />}
         {educator?.role !== "assistant" && <ClubSection />}
+
+        {educator?.role !== "assistant" && (
+          <Section title="Mon compte EvolyFoot">
+            <Text style={styles.muted}>Ton abonnement, tes équipes et adjoints en supplément et tes factures se gèrent sur le site evolyfoot.com.</Text>
+            <TouchableOpacity accessibilityRole="link" onPress={() => Linking.openURL(`${apiBaseUrl()}/abonnement`)} style={styles.primary}>
+              <Text style={styles.primaryText}>Gérer mon compte sur evolyfoot.com</Text>
+            </TouchableOpacity>
+          </Section>
+        )}
 
         <TouchableOpacity accessibilityRole="button" onPress={signOut} style={styles.ghost}>
           <Text style={styles.link}>Se déconnecter</Text>

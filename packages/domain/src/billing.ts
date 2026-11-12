@@ -77,3 +77,37 @@ export function billingAccess(input: { createdAt: Date; trialEndsAt: Date | null
   }
   return { state: "expired", trialEndsAt };
 }
+
+// Rappels par e-mail : fin d'essai proche (3 jours), essai terminé (dans la semaine qui suit), équipes ou
+// adjoints ajoutés ou retirés depuis le dernier paiement. `key` est mémorisée pour n'envoyer chaque rappel
+// qu'une fois (celui des suppléments revient si le nombre change encore).
+export type BillingReminderKind = "trial-ending" | "trial-ended" | "extras";
+
+export interface BillingReminder {
+  kind: BillingReminderKind;
+  key: string;
+}
+
+export function billingReminderDue(input: {
+  access: BillingAccess;
+  // Déjà abonné une fois (résilié depuis) : pas de rappel de fin d'essai.
+  everSubscribed: boolean;
+  extraTeams: number;
+  extraCoaches: number;
+  // Suppléments payés dans l'abonnement en cours ; null hors abonnement.
+  billedExtraTeams: number | null;
+  billedExtraCoaches: number | null;
+  lastReminder: string | null;
+  now: Date;
+}): BillingReminder | null {
+  const due = (kind: BillingReminderKind, key: string = kind) => (input.lastReminder === key ? null : { kind, key });
+  const { access } = input;
+  if (access.state === "trial") return !input.everSubscribed && access.daysLeft <= 3 ? due("trial-ending") : null;
+  if (access.state === "expired") {
+    const sinceEnd = input.now.getTime() - access.trialEndsAt.getTime();
+    return !input.everSubscribed && sinceEnd < 7 * 24 * 60 * 60 * 1000 ? due("trial-ended") : null;
+  }
+  if (input.billedExtraTeams === null || input.billedExtraCoaches === null) return null;
+  if (input.extraTeams === input.billedExtraTeams && input.extraCoaches === input.billedExtraCoaches) return null;
+  return due("extras", `extras:${input.extraTeams}:${input.extraCoaches}`);
+}

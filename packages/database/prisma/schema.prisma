@@ -117,6 +117,11 @@ model Educator {
   currentPeriodEnd     DateTime?                @map("current_period_end")
   // Fin d'accès d'un abonnement résilié (fin de la période payée) ; null tant qu'il se renouvelle.
   subscriptionCancelAt DateTime?                @map("subscription_cancel_at")
+  // Équipes et adjoints en plus payés dans l'abonnement (quantités Stripe), pour rappeler une mise à jour.
+  billedExtraTeams     Int?                     @map("billed_extra_teams")
+  billedExtraCoaches   Int?                     @map("billed_extra_coaches")
+  // Dernier rappel d'abonnement envoyé par e-mail (voir billingReminderDue).
+  billingReminder      String?                  @map("billing_reminder")
   playStyle          String?                  @map("play_style")
   preferredFormation String?                  @map("preferred_formation")
   team               Team?
