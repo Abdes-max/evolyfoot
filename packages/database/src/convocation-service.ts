@@ -130,6 +130,9 @@ export class ConvocationService {
     if (!match) {
       throw new MatchNotFoundError();
     }
+    if (match.cancelledAt) {
+      throw new ValidationError("Ce match est annulé : rétablis-le pour envoyer la convocation.");
+    }
     const everyone = concernedPlayers(await this.playerRepository.listByEducator(educatorId), match.selectedPlayerIds);
     if (everyone.length === 0) {
       throw new ValidationError("Coche les joueurs concernés avant d’envoyer la convocation.");

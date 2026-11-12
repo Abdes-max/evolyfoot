@@ -1366,3 +1366,39 @@ span.match-pitch-token-face {
     width: 72px;
   }
 }
+
+/* Événement annulé : les actions sont bloquées jusqu'à ce qu'il soit rétabli. */
+.event-cancelled-note {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--bad);
+  border-radius: 12px;
+  background: var(--bad-bg);
+  color: var(--bad);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Filtre À venir / Passés de la page Matchs, comme dans l'app Coach. */
+.match-scope-filters {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0 12px;
+}
+.match-scope-filters button {
+  min-height: 38px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.match-scope-filters button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}

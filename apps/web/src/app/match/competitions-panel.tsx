@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { frenchDateLabel, parseDateInputValue, sortChronologically } from "../date-format";
-import type { PlayerSelection } from "@evolyfoot/domain";
+import type { MatchScope, PlayerSelection } from "@evolyfoot/domain";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "../concerned-players-picker";
 import { PlaceInput } from "../place-input";
 
@@ -30,6 +30,8 @@ interface CompetitionsPanelProps {
   // Base de la fiche détail cliquable (voir competition-detail-view.tsx), même forme qu'un match
   // (/match/:id) : `${detailBasePath}/${item.id}`.
   detailBasePath: string;
+  // N'affiche que les fiches à venir ou passées (l'ajout reste toujours possible).
+  scope?: MatchScope;
 }
 
 async function readError(response: Response): Promise<string> {
@@ -37,7 +39,13 @@ async function readError(response: Response): Promise<string> {
   return typeof body.error === "string" ? body.error : "Une erreur est survenue.";
 }
 
-export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey, detailBasePath }: CompetitionsPanelProps) {
+// Passé : marqué terminé, ou jour dépassé (la date ne porte que le jour, enregistrée à minuit UTC).
+function isPastCompetition(item: { date: string | null; finishedAt?: string | null }, now = new Date()): boolean {
+  if (item.finishedAt) return true;
+  return item.date ? new Date(item.date).getTime() < Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) : false;
+}
+
+export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey, detailBasePath, scope }: CompetitionsPanelProps) {
   const [items, setItems] = useState<Competition[]>([]);
   const [name, setName] = useState("");
   // "YYYY-MM-DD" (valeur brute d'un <input type="date">) -- dateLabel en dérive automatiquement
@@ -107,6 +115,14 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
     }
   }
 
+  // À venir : les plus proches d'abord ; passés : les plus récents d'abord.
+  const sorted = sortChronologically(items, (item) => (item.date ? new Date(item.date) : null));
+  const visible = scope
+    ? scope === "past"
+      ? sorted.filter((item) => isPastCompetition(item)).reverse()
+      : sorted.filter((item) => !isPastCompetition(item))
+    : sorted;
+
   return (
     <section className="competitions-panel" aria-labelledby={`competitions-${listKey}`}>
       <h2 id={`competitions-${listKey}`}>{title}</h2>
@@ -134,15 +150,17 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
           {error}
         </p>
       )}
-      {items.length === 0 ? (
-        <p className="competitions-empty">Aucun {singular} pour l’instant.</p>
+      {visible.length === 0 ? (
+        <p className="competitions-empty">
+          {scope === "past" ? `Aucun ${singular} passé.` : scope === "upcoming" ? `Aucun ${singular} à venir.` : `Aucun ${singular} pour l’instant.`}
+        </p>
       ) : (
         // Même forme qu'un match (match-list-view.tsx) : une carte cliquable menant à la fiche
         // détail (competition-detail-view.tsx), plutôt qu'une simple ligne avec un bouton
         // "Retirer" -- la suppression se fait désormais depuis la fiche détail.
         <ul className="match-list competitions-list" aria-label={title}>
-          {sortChronologically(items, (item) => (item.date ? new Date(item.date) : null)).map((item) => {
-            const isPast = Boolean(item.finishedAt) || (item.date ? new Date(item.date).getTime() < new Date().getTime() : false);
+          {visible.map((item) => {
+            const isPast = isPastCompetition(item);
             return (
               <li key={item.id}>
                 <Link aria-label={`${item.name} — Voir le détail`} className="match-card card-link" href={`${detailBasePath}/${item.id}`}>

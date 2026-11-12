@@ -1,11 +1,11 @@
 "use client";
 
-import { gameFormats, listFormations } from "@evolyfoot/domain";
+import { matchesInScope, matchScopeLabels, type MatchScope, gameFormats, listFormations } from "@evolyfoot/domain";
 import type { GameFormat, MatchStatus, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { frenchDateLabel, parseDatetimeInputValue, sortChronologically } from "../date-format";
+import { frenchDateLabel, parseDatetimeInputValue } from "../date-format";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "../concerned-players-picker";
 import { PlaceInput } from "../place-input";
 import { CalendarImport } from "./calendar-import";
@@ -44,6 +44,9 @@ export function MatchListView() {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState<boolean | undefined>(undefined);
   const [matches, setMatches] = useState<MatchSummary[]>([]);
+  // Filtre À venir / Passés, comme dans l'app Coach : s'applique aux matchs, tournois et plateaux.
+  const [scope, setScope] = useState<MatchScope>("upcoming");
+  const [now] = useState(() => Date.now());
   const [teamName, setTeamName] = useState("");
   const [creating, setCreating] = useState(false);
   const [opponent, setOpponent] = useState("");
@@ -259,11 +262,25 @@ export function MatchListView() {
             </form>
           )}
 
-          {matches.length === 0 ? (
-            <p className="match-empty">Aucun match préparé pour l’instant.</p>
+          <div aria-label="Période" className="match-scope-filters" role="group">
+            {(["upcoming", "past"] as const).map((value) => (
+              <button
+                aria-pressed={scope === value}
+                className={scope === value ? "active" : undefined}
+                key={value}
+                onClick={() => setScope(value)}
+                type="button"
+              >
+                {matchScopeLabels[value]}
+              </button>
+            ))}
+          </div>
+
+          {matchesInScope(matches, scope, now).length === 0 ? (
+            <p className="match-empty">{scope === "past" ? "Aucun match passé." : "Aucun match à venir."}</p>
           ) : (
             <ul className="match-list" aria-label="Matchs">
-              {sortChronologically(matches, (match) => (match.date ? new Date(match.date) : null)).map((match) => (
+              {matchesInScope(matches, scope, now).map((match) => (
                 <li key={match.id}>
                   <Link
                     aria-label={`${match.opponent} — ${match.status === "played" ? "Voir la composition" : "Préparer la composition"}`}
@@ -306,6 +323,7 @@ export function MatchListView() {
             endpoint="/api/tournaments"
             itemKey="tournament"
             listKey="tournaments"
+            scope={scope}
             singular="tournoi"
             title="Tournois"
           />
@@ -314,6 +332,7 @@ export function MatchListView() {
             endpoint="/api/plateaux"
             itemKey="plateau"
             listKey="plateaux"
+            scope={scope}
             singular="plateau"
             title="Plateaux"
           />

@@ -296,7 +296,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
           <h2>Convocation</h2>
           <ConvocationActions
             attendance={item.attendance}
-            canSend={!isPast}
+            canSend={!isPast && !item.cancelledAt}
             convokeUrl={`${endpoint}/${competitionId}/convoke`}
             convokedAt={item.convokedAt}
             meetingAt={item.date}
@@ -329,24 +329,32 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
                 item.lineup?.lineup.some((assignment) => assignment.playerId === player.id) ||
                 item.lineup?.substitutePlayerIds.includes(player.id),
             )}
-            readOnly={Boolean(item.finishedAt)}
+            readOnly={Boolean(item.finishedAt || item.cancelledAt)}
           />
         </CollapsibleSection>
 
         <CollapsibleSection summary={competitionRecordLabel(item.games ?? []) || "Aucune rencontre saisie"} title="Rencontres et scores">
           <p className="match-slot-hint event-hint">Une ligne par rencontre jouée : équipe rencontrée, score, buteurs et passeurs décisifs.</p>
-          <CompetitionGames
-            games={item.games ?? []}
-            gamesUrl={`${endpoint}/${competitionId}/games`}
-            key={item.id}
-            onSaved={(games) => setItem((current) => (current ? { ...current, games } : current))}
-            players={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
-          />
+          {item.cancelledAt ? (
+            <p className="match-slot-hint">{`Ce ${singular} est annulé : rétablis-le pour saisir les rencontres.`}</p>
+          ) : (
+            <CompetitionGames
+              games={item.games ?? []}
+              gamesUrl={`${endpoint}/${competitionId}/games`}
+              key={item.id}
+              onSaved={(games) => setItem((current) => (current ? { ...current, games } : current))}
+              players={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
+            />
+          )}
         </CollapsibleSection>
 
-        <button className="match-convocation-send event-wide" disabled={saving} onClick={toggleFinished} type="button">
-          {item.finishedAt ? `Rouvrir ce ${singular}` : `Marquer ce ${singular} comme terminé`}
-        </button>
+        {item.cancelledAt ? (
+          <p className="event-cancelled-note">{`Ce ${singular} est annulé : rétablis-le pour le convoquer, le composer ou le marquer comme terminé.`}</p>
+        ) : (
+          <button className="match-convocation-send event-wide" disabled={saving} onClick={toggleFinished} type="button">
+            {item.finishedAt ? `Rouvrir ce ${singular}` : `Marquer ce ${singular} comme terminé`}
+          </button>
+        )}
 
         <button className="competition-detail-remove event-wide" disabled={removing} onClick={remove} type="button">
           {removing ? "…" : `Retirer ce ${singular}`}

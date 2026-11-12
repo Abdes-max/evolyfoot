@@ -72,6 +72,9 @@ export class TournamentService {
     if (!existing) {
       throw new TournamentNotFoundError();
     }
+    if (existing.cancelledAt && input.finished !== undefined) {
+      throw new ValidationError("Ce tournoi est annulé : rétablis-le d’abord.");
+    }
     const selectedPlayerIds = await readPlayerSelection(this.playerRepository, educatorId, input.selectedPlayerIds);
     return this.tournamentRepository.update(tournamentId, educatorId, {
       ...(input.date !== undefined ? { date: input.date } : {}),

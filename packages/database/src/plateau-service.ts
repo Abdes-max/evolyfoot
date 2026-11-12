@@ -69,6 +69,9 @@ export class PlateauService {
     if (!existing) {
       throw new PlateauNotFoundError();
     }
+    if (existing.cancelledAt && input.finished !== undefined) {
+      throw new ValidationError("Ce plateau est annulé : rétablis-le d’abord.");
+    }
     const selectedPlayerIds = await readPlayerSelection(this.playerRepository, educatorId, input.selectedPlayerIds);
     return this.plateauRepository.update(plateauId, educatorId, {
       ...(input.date !== undefined ? { date: input.date } : {}),
