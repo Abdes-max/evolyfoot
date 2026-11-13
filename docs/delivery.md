@@ -224,18 +224,24 @@ Lancement manuel : choisir l'appli (`apps`) et décocher « Envoyer sur TestFlig
 
 `app.json` déclare `usesNonExemptEncryption: false`, ce qui évite le blocage « Missing Compliance » sur chaque build. `expo-notifications` y est en mode `production`, ce qui correspond à l'entitlement push d'un profil App Store.
 
-### Déploiement continu Android — terrain prêt côté code, inerte tant que les comptes manquent
+### Déploiement continu Android (Google Play)
 
-`.github/workflows/mobile-cd.yml` construit et soumet l'app Android (`eas build --platform android --profile production --non-interactive --auto-submit`) automatiquement à chaque `push` dans `master` touchant le mobile ou ses dépendances partagées (`packages/domain`, `packages/design-tokens`). Il échoue proprement dès sa première étape tant que les comptes et secrets ci-dessous ne sont pas en place — aucun risque de déclenchement accidentel avant.
+Même méthode qu'arena-pulse (TournArena), sans EAS ni Fastlane :
 
-Reste à faire, une seule fois, en local et de façon interactive (EAS ne permet pas de générer des identifiants Apple/Google en mode non-interactif pour un premier build) :
+- `.github/workflows/deploy-android.yml` construit Coach et Player sur un runner Linux à chaque merge qui touche le mobile (seulement les applis concernées). `expo prebuild` régénère `android/`, le `versionCode` est le numéro de run, l'App Bundle est signé avec la clé d'upload puis envoyé sur la **piste de test interne** (jamais la production). L'App Bundle reste aussi dans les artefacts du run.
+- `.github/workflows/promote-android-production.yml` (manuel) promeut vers la production une release déjà testée sur la piste interne, sans reconstruire (`scripts/play-store/promote-android-release.mjs`).
 
-1. Créer le compte Expo/EAS (gratuit), Apple Developer Program (99$/an) et Google Play Console (25$ une fois) — paiement/identité du porteur du projet, hors périmètre d'un agent.
-2. `npm install -g eas-cli && eas login`, puis depuis `apps/mobile/` : `eas build:configure`.
-3. `eas credentials` pour générer/importer les certificats iOS et le keystore Android.
-4. Renseigner `submit.production.ios` dans `apps/mobile/eas.json` (`appleId`, `ascAppId`, `appleTeamId`) — `submit.production.android` pointe déjà vers `./google-service-account.json` (écrit par le workflow depuis le secret ci-dessous, jamais committé).
-5. Créer un token d'accès Expo (expo.dev → compte → Access Tokens) et un compte de service Google Play (Play Console → Configuration → Accès API, export JSON), puis les ajouter comme secrets GitHub sur l'environnement `production` : `EXPO_TOKEN` et `GOOGLE_SERVICE_ACCOUNT_JSON`.
-6. Icônes/splash screen (point suivant) avant toute vraie soumission aux stores.
+À faire une seule fois :
+
+1. **Play Console → Créer une application** : « EvolyFoot Coach » (`com.evolyfoot.coach`) et « EvolyFoot Player » (`com.evolyfoot.player`). Le nom de package est définitif.
+2. **Clé d'upload** : un keystore PKCS12 généré en local (`keytool -genkeypair -v -storetype PKCS12 -keystore evolyfoot-upload.keystore -alias evolyfoot-upload -keyalg RSA -keysize 2048 -validity 9125`). Une seule clé pour les deux applis ; Google signe ensuite avec sa propre clé (Play App Signing). À sauvegarder hors du dépôt.
+3. **Compte de service** : celui d'arena-pulse convient (même compte Play Console). Play Console → Utilisateurs et autorisations : lui donner le droit de publier sur les deux applis.
+4. **Secrets du dépôt** (mêmes noms qu'arena-pulse) : `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`.
+5. **Fiche Play Console** (pas d'API pour la première fois) : fiche principale, captures, icône 512 px, image de présentation 1024 × 500, classification du contenu, public cible, sécurité des données, accès à l'appli (compte de démo pour Player), publicités : non.
+
+Tant que l'appli n'a jamais été publiée, Google n'accepte que des releases en brouillon : le workflow les envoie en `draft`. Une fois la fiche validée, la variable de dépôt `ANDROID_RELEASE_STATUS=completed` les publie directement aux testeurs internes.
+
+Notifications push Android : `expo-notifications` a besoin d'un projet Firebase (`google-services.json` dans chaque appli) et des identifiants FCM côté Expo. Sans eux, l'appli fonctionne mais ne reçoit pas de notifications.
 
 ### Checklist avant soumission aux stores
 

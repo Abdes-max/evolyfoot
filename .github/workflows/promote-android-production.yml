@@ -1,0 +1,46 @@
+name: Promote Android release to production
+
+# Mise en production Android en un clic : promeut une release déjà envoyée ET testée sur la piste
+# interne vers la production, via l'API Google Play Developer Publishing -- sans jamais reconstruire
+# ni renvoyer de binaire (le même .aab que les testeurs ont utilisé). Lancer d'abord
+# deploy-android.yml, tester sur un appareil, puis ce workflow. Mêmes secrets que deploy-android.yml.
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Appli à promouvoir."
+        type: choice
+        options: [coach, player]
+        default: coach
+      version_code:
+        description: >-
+          versionCode à promouvoir depuis la piste interne. Vide : la release interne la plus récente.
+        required: false
+      rollout_fraction:
+        description: >-
+          Part des utilisateurs servis (0-1]. 1 = tout le monde tout de suite ; 0.1 pour un
+          déploiement progressif, à augmenter dans un run suivant.
+        required: false
+        default: "1.0"
+
+jobs:
+  promote:
+    name: Promouvoir interne → production (${{ inputs.app }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Promouvoir la release
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          PACKAGE_NAME: ${{ inputs.app == 'player' && 'com.evolyfoot.player' || 'com.evolyfoot.coach' }}
+          SOURCE_TRACK: internal
+          TARGET_TRACK: production
+          VERSION_CODE: ${{ inputs.version_code }}
+          ROLLOUT_FRACTION: ${{ inputs.rollout_fraction }}
+        run: node scripts/play-store/promote-android-release.mjs
