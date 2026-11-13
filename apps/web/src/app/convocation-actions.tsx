@@ -26,7 +26,7 @@ export function ConvocationActions({
   meetingAt: string | null;
   attendance: readonly AttendanceEntry[] | undefined;
   selectedPlayerIds: PlayerSelection | undefined;
-  roster: readonly { id: string; name: string }[];
+  roster: readonly { id: string; name: string; photo?: string | null }[];
   scheduledText: string;
   // Faux pour un événement passé : plus de convocation à envoyer.
   canSend: boolean;

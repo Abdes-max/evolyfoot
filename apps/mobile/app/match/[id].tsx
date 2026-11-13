@@ -294,10 +294,15 @@ export default function MatchDetailScreen() {
               canSend={!locked}
               convokeUrl={`/api/matches/${encodeURIComponent(match.id)}/convoke`}
               convokedAt={match.convokedAt ?? null}
+              onAttendanceSaved={(body) => {
+                const saved = body.match as { attendance?: MobileMatch["attendance"] } | undefined;
+                setMatch((current) => (current && saved ? { ...current, attendance: saved.attendance } : current));
+              }}
               onSent={refreshMatch}
               roster={roster}
               scheduledText="Les joueurs concernés voient le match sans pouvoir répondre tant que la convocation n’est pas envoyée."
               selectedPlayerIds={match.selectedPlayerIds}
+              validateUrl={readOnly ? `/api/matches/${encodeURIComponent(match.id)}/attendance` : undefined}
             />
           )}
           {!readOnly ? (
