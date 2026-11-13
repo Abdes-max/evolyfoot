@@ -264,10 +264,15 @@ export default function CompetitionDetailScreen() {
               canSend={!isPastCompetition(item) && !item.cancelledAt}
               convokeUrl={`${endpoint}/${id}/convoke`}
               convokedAt={item.convokedAt ?? null}
+              onAttendanceSaved={(body) => {
+                const saved = body[itemKey] as { attendance?: Competition["attendance"] } | undefined;
+                setItem((current) => (current && saved ? { ...current, attendance: saved.attendance } : current));
+              }}
               onSent={refresh}
               roster={roster}
               scheduledText={`Les joueurs concernés voient ce ${singular} sans pouvoir répondre tant que la convocation n’est pas envoyée.`}
               selectedPlayerIds={item.selectedPlayerIds}
+              validateUrl={isPastCompetition(item) ? `${endpoint}/${id}/attendance` : undefined}
             />
           )}
           <CancelEventPanel

@@ -1,5 +1,6 @@
 import { restrictLineupToPlayers, validatePlateau } from "@evolyfoot/domain";
 import type { PlateauInput } from "@evolyfoot/domain";
+import { correctAttendance } from "./attendance-correction";
 import { EducatorNotFoundError, PlateauNotFoundError, ValidationError } from "./errors";
 import { readPlayerSelection } from "./player-selection";
 import type { EducatorRepository, PersistedPlateau, PlayerRepository, PlateauRepository } from "./repositories";
@@ -83,6 +84,28 @@ export class PlateauService {
       ...(selectedPlayerIds && existing.lineup ? { lineup: restrictLineupToPlayers(existing.lineup, new Set(selectedPlayerIds)) } : {}),
       ...(input.finished !== undefined ? { finishedAt: input.finished ? (existing.finishedAt ?? new Date()) : null } : {}),
     });
+  }
+
+  // Présences validées ou corrigées par l’éducateur une fois le plateau terminé (fini ou date passée).
+  async setAttendance(educatorId: string, plateauId: string, updates: unknown, now: Date = new Date()): Promise<PersistedPlateau> {
+    const existing = await this.plateauRepository.findById(plateauId, educatorId);
+    if (!existing) {
+      throw new PlateauNotFoundError();
+    }
+    if (existing.cancelledAt) {
+      throw new ValidationError("Ce plateau est annulé : rétablis-le d’abord.");
+    }
+    if (!existing.finishedAt && !(existing.date && existing.date <= now)) {
+      throw new ValidationError("Les présences se valident une fois le plateau terminé.");
+    }
+    const attendance = await correctAttendance({
+      playerRepository: this.playerRepository,
+      educatorId,
+      selectedPlayerIds: existing.selectedPlayerIds,
+      existing: existing.attendance,
+      updates,
+    });
+    return this.plateauRepository.update(plateauId, educatorId, { attendance });
   }
 
   async remove(educatorId: string, plateauId: string): Promise<void> {

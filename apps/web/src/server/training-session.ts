@@ -1,4 +1,5 @@
 import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "@evolyfoot/database";
+import { createSetAttendanceHandler } from "./set-attendance";
 import { ageGroups, developmentThemes, type AgeGroup, type AttendanceEntry, type DevelopmentTheme } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 import { databaseErrorResponse } from "./api-errors";
@@ -71,6 +72,7 @@ export interface TrainingSessionGateway {
   currentCycle(educatorId: string): Promise<number>;
   startNextCycle(educatorId: string): Promise<number>;
   getById(educatorId: string, id: string): Promise<PersistedTrainingSession | null>;
+  setAttendance(educatorId: string, id: string, updates: unknown): Promise<PersistedTrainingSession>;
   updateDetails(
     educatorId: string,
     id: string,
@@ -333,17 +335,38 @@ export function createUpdateTrainingSessionDetailsHandler(
   };
 }
 
+export function createSetTrainingSessionAttendanceHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  gateway: Pick<TrainingSessionGateway, "setAttendance">,
+  log: (error: unknown) => void,
+): (request: Request, id: string) => Promise<Response> {
+  return createSetAttendanceHandler({
+    resolveEducator,
+    setAttendance: (educatorId, id, updates) => gateway.setAttendance(educatorId, id, updates),
+    isNotFound: (error) => error instanceof TrainingSessionNotFoundError,
+    key: "session",
+    log,
+  });
+}
+
 export async function createTrainingSessionGateway(): Promise<{
   gateway: TrainingSessionGateway;
   disconnect: () => Promise<void>;
 }> {
-  const { createDatabaseClient, TrainingSessionService, PrismaEducatorRepository, PrismaPersonalExerciseRepository, PrismaTrainingSessionRepository } =
-    await import("@evolyfoot/database");
+  const {
+    createDatabaseClient,
+    TrainingSessionService,
+    PrismaEducatorRepository,
+    PrismaPersonalExerciseRepository,
+    PrismaPlayerRepository,
+    PrismaTrainingSessionRepository,
+  } = await import("@evolyfoot/database");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new TrainingSessionService(
     new PrismaEducatorRepository(database.prisma),
     new PrismaTrainingSessionRepository(database.prisma),
     new PrismaPersonalExerciseRepository(database.prisma),
+    new PrismaPlayerRepository(database.prisma),
   );
 
   const toSummary = (session: Awaited<ReturnType<typeof service.save>>): PersistedTrainingSession => ({
@@ -383,6 +406,9 @@ export async function createTrainingSessionGateway(): Promise<{
       async getById(educatorId, id) {
         const session = await service.getById(educatorId, id);
         return session ? toSummary(session) : null;
+      },
+      async setAttendance(educatorId, id, updates) {
+        return toSummary(await service.setAttendance(educatorId, id, updates));
       },
       async updateDetails(educatorId, id, input) {
         return toSummary(

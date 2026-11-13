@@ -601,3 +601,249 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* Validation des présences d'un événement terminé (attendance-validation.tsx) : carte résumé puis écran
+   dédié, sur le modèle de Spond (Annuler / Sauvegarder, sections, pastille à cocher, feuille de note). */
+.attendance-validation {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.attendance-validation h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.attendance-validation-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.attendance-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  justify-items: center;
+  background: rgba(7, 11, 18, 0.55);
+}
+.attendance-sheet-panel {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  width: min(100%, 560px);
+  height: 100%;
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--ink);
+}
+.attendance-sheet-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.attendance-sheet-header h2 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 16px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attendance-sheet-action {
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.attendance-sheet-action.primary {
+  color: var(--accent);
+  font-weight: 900;
+}
+.attendance-sheet-action:disabled {
+  opacity: 0.5;
+}
+.attendance-sheet-body {
+  overflow-y: auto;
+  padding-bottom: 32px;
+  background: var(--paper);
+}
+.attendance-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 16px 8px;
+}
+.attendance-section-head h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.attendance-section-action {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.attendance-section-action.danger {
+  color: var(--bad);
+}
+.attendance-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--surface);
+}
+.attendance-row {
+  border-bottom: 1px solid var(--line);
+}
+.attendance-row-main {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 60px;
+  padding: 8px 16px;
+}
+.attendance-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+.attendance-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.attendance-row-name {
+  display: grid;
+  gap: 2px;
+  font-weight: 700;
+}
+.attendance-row-status {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.attendance-row-status.late {
+  color: var(--warn, #ffb073);
+}
+.attendance-row-status.sick,
+.attendance-row-status.injured,
+.attendance-row-status.personal {
+  color: var(--bad);
+}
+.attendance-note-button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.attendance-check {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.attendance-check span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--accent-ink);
+  font-size: 16px;
+  font-weight: 900;
+}
+.attendance-check.is-checked span {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.attendance-action-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  align-content: end;
+  justify-items: center;
+  padding: 12px;
+  background: rgba(7, 11, 18, 0.45);
+}
+.attendance-action-sheet-panel {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 520px);
+}
+.attendance-action-group,
+.attendance-action-cancel {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--surface);
+}
+.attendance-action-group {
+  display: grid;
+}
+.attendance-action-title {
+  margin: 0;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+.attendance-action-group button,
+.attendance-action-cancel {
+  min-height: 52px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+.attendance-action-group button:last-child {
+  border-bottom: 0;
+}
+.attendance-action-group button.danger {
+  color: var(--bad);
+}
+.attendance-action-cancel {
+  border-bottom: 0;
+  font-weight: 800;
+}

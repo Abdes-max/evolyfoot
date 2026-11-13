@@ -75,3 +75,50 @@ export function summarizeAttendance(entries: ReadonlyArray<AttendanceEntry>): At
     rate: total === 0 ? 0 : Math.round((present / total) * 100),
   });
 }
+
+// Correction de présence saisie par l'éducateur une fois l'événement terminé.
+export interface AttendanceUpdate {
+  readonly playerId: string;
+  readonly status: AttendanceStatus;
+  readonly comment?: string | null;
+}
+
+export const maxAttendanceCommentLength = 200;
+
+// Valide les corrections reçues et les transforme en entrées de présence. Le nom du joueur vient de
+// l'effectif, jamais de la requête. Le commentaire (motif libre) n'est gardé que pour un statut
+// autre que « présent ». Lève une Error métier (message pour l'éducateur).
+export function buildAttendanceEntries(updates: unknown, players: ReadonlyArray<{ readonly id: string; readonly name: string }>): AttendanceEntry[] {
+  if (!Array.isArray(updates) || updates.length === 0) {
+    throw new Error("Indique la présence d'au moins un joueur.");
+  }
+  const names = new Map(players.map((player) => [player.id, player.name]));
+  const seen = new Set<string>();
+  return updates.map((raw: unknown) => {
+    const update = (typeof raw === "object" && raw !== null ? raw : {}) as Record<string, unknown>;
+    const playerId = update.playerId;
+    const status = update.status;
+    if (typeof playerId !== "string" || !names.has(playerId)) {
+      throw new Error("Un des joueurs ne fait pas partie des joueurs concernés.");
+    }
+    if (seen.has(playerId)) {
+      throw new Error("Un joueur est indiqué deux fois.");
+    }
+    seen.add(playerId);
+    if (typeof status !== "string" || !(attendanceStatuses as readonly string[]).includes(status)) {
+      throw new Error("Statut de présence inconnu.");
+    }
+    const comment = typeof update.comment === "string" ? update.comment.trim() : "";
+    if (comment.length > maxAttendanceCommentLength) {
+      throw new Error(`Le commentaire est trop long (${maxAttendanceCommentLength} caractères maximum).`);
+    }
+    const keepsComment = status !== "present";
+    return createAttendanceEntry(playerId, names.get(playerId) as string, status as AttendanceStatus, keepsComment && comment ? comment : null);
+  });
+}
+
+// Remplace les entrées des joueurs corrigés et garde les autres telles quelles.
+export function mergeAttendance(existing: ReadonlyArray<AttendanceEntry> | undefined, corrections: ReadonlyArray<AttendanceEntry>): AttendanceEntry[] {
+  const corrected = new Set(corrections.map((entry) => entry.playerId));
+  return [...(existing ?? []).filter((entry) => !corrected.has(entry.playerId)), ...corrections];
+}

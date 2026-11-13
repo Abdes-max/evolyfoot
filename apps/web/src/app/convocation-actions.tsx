@@ -2,6 +2,7 @@
 
 import { concernedPlayers, convocationFeedback, playersWithoutResponse, type AttendanceEntry, type PlayerSelection } from "@evolyfoot/domain";
 import { useState } from "react";
+import { AttendanceValidation } from "./attendance-validation";
 import { TrainingResponses } from "./training-responses";
 
 // Réponses à la convocation d'un match, d'un tournoi ou d'un plateau, et son envoi, comme dans l'app
@@ -17,18 +18,24 @@ export function ConvocationActions({
   scheduledText,
   canSend,
   onSent,
+  validateUrl,
+  onAttendanceSaved,
 }: {
   convokeUrl: string;
   convokedAt: string | null;
   meetingAt: string | null;
   attendance: readonly AttendanceEntry[] | undefined;
   selectedPlayerIds: PlayerSelection | undefined;
-  roster: readonly { id: string; name: string }[];
+  roster: readonly { id: string; name: string; photo?: string | null }[];
   scheduledText: string;
   // Faux pour un événement passé : plus de convocation à envoyer.
   canSend: boolean;
   // Appelée après un envoi réussi : la fiche relit l'événement (date d'envoi, réponses).
   onSent: () => void | Promise<void>;
+  // Événement terminé : `PUT .../attendance` pour valider ou corriger les présences (présent, en
+  // retard, absent). Absent tant que l’événement n’est pas terminé ou s’il est annulé.
+  validateUrl?: string;
+  onAttendanceSaved?: (body: Record<string, unknown>) => void;
 }) {
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState("");
@@ -92,6 +99,7 @@ export function ConvocationActions({
           {status}
         </p>
       )}
+      {validateUrl && <AttendanceValidation attendance={attendance} onSaved={(body) => onAttendanceSaved?.(body)} players={concerned} url={validateUrl} />}
     </div>
   );
 }

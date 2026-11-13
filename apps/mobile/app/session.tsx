@@ -28,6 +28,7 @@ import { TacticalDiagramView } from "../components/tactical-diagram";
 import { TacticalPlayer } from "../components/tactical-player";
 import { DateTimeField } from "../components/date-time-field";
 import { PlaceInput } from "../components/place-input";
+import { AttendanceValidation } from "../components/attendance-validation";
 import { TrainingResponses } from "../components/training-responses";
 import { CancelledBanner } from "../components/cancel-event-panel";
 import { useAuth } from "../lib/auth-context";
@@ -70,6 +71,7 @@ export default function SessionScreen() {
   const plan = buildDevelopmentPlan(summarizeDiagnostic(diagnosticScores ?? demoScores));
   const week = plan.weeks[weekNumber - 1] ?? plan.weeks[0];
   const [variant, setVariant] = useState(0);
+  const [now] = useState(() => Date.now());
   // Un seul schéma animé à la fois, pour ne pas faire tourner une animation par exercice.
   const [animatedBlockId, setAnimatedBlockId] = useState<string | null>(null);
   const [playStyle, setPlayStyle] = useState<string | null>(null);
@@ -514,6 +516,14 @@ export default function SessionScreen() {
             ) : (
               <>
                 <TrainingResponses attendance={attendance} convokedAt={convokedAt} roster={trainingRoster} />
+                {new Date(meetingAt).getTime() <= now ? (
+                  <AttendanceValidation
+                    attendance={attendance}
+                    onSaved={(body) => setAttendance((body.session as { attendance?: readonly AttendanceEntry[] } | undefined)?.attendance)}
+                    players={trainingRoster}
+                    url={`/api/sessions/${encodeURIComponent(savedId)}/attendance`}
+                  />
+                ) : null}
                 <TouchableOpacity
                   accessibilityRole="button"
                   disabled={convoking}

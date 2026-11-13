@@ -1,4 +1,5 @@
 import { EducatorNotFoundError, MatchNotFoundError } from "@evolyfoot/database";
+import { createSetAttendanceHandler } from "./set-attendance";
 import type { AttendanceEntry, MatchLineupAssignment, MatchPlayerStat, MatchResult, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 import { databaseErrorResponse } from "./api-errors";
@@ -43,6 +44,7 @@ export interface MatchSummary {
 export interface MatchGateway {
   list(educatorId: string): Promise<MatchSummary[]>;
   get(educatorId: string, matchId: string): Promise<MatchSummary>;
+  setAttendance(educatorId: string, matchId: string, updates: unknown): Promise<MatchSummary>;
   create(
     educatorId: string,
     input: {
@@ -429,6 +431,20 @@ export function createRemoveMatchHandler(
   };
 }
 
+export function createSetMatchAttendanceHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  gateway: Pick<MatchGateway, "setAttendance">,
+  log: (error: unknown) => void,
+): (request: Request, id: string) => Promise<Response> {
+  return createSetAttendanceHandler({
+    resolveEducator,
+    setAttendance: (educatorId, id, updates) => gateway.setAttendance(educatorId, id, updates),
+    isNotFound: (error) => error instanceof MatchNotFoundError,
+    key: "match",
+    log,
+  });
+}
+
 export async function createMatchGateway(): Promise<{ gateway: MatchGateway; disconnect: () => Promise<void> }> {
   const { createDatabaseClient, MatchService, PrismaEducatorRepository, PrismaMatchRepository, PrismaPlayerRepository, matchKickoffTime, matchMeetingTime } =
     await import("@evolyfoot/database");
@@ -477,6 +493,9 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       },
       async get(educatorId, matchId) {
         return toSummary(await service.get(educatorId, matchId));
+      },
+      async setAttendance(educatorId, matchId, updates) {
+        return toSummary(await service.setAttendance(educatorId, matchId, updates));
       },
       async create(educatorId, input) {
         return toSummary(await service.create(educatorId, { ...input, date: input.date ? new Date(input.date) : null }));

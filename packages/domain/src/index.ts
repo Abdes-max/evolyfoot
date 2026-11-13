@@ -156,10 +156,13 @@ export {
   attendanceStatusCodes,
   attendanceStatusLabels,
   attendanceStatusOf,
+  buildAttendanceEntries,
   createAttendanceEntry,
+  maxAttendanceCommentLength,
+  mergeAttendance,
   summarizeAttendance,
 } from "./attendance";
-export type { AttendanceEntry, AttendanceStatus, AttendanceSummary } from "./attendance";
+export type { AttendanceEntry, AttendanceStatus, AttendanceSummary, AttendanceUpdate } from "./attendance";
 export {
   attendanceDefaultOptions,
   convocationDue,

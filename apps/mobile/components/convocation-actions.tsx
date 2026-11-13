@@ -3,6 +3,7 @@ import { concernedPlayers, convocationFeedback, playersWithoutResponse, type Att
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../lib/auth-context";
+import { AttendanceValidation } from "./attendance-validation";
 import { TrainingResponses } from "./training-responses";
 import { themedStyles } from "../lib/themed-styles";
 
@@ -17,17 +18,23 @@ export function ConvocationActions({
   scheduledText,
   canSend,
   onSent,
+  validateUrl,
+  onAttendanceSaved,
 }: {
   convokeUrl: string;
   convokedAt: string | null;
   attendance: readonly AttendanceEntry[] | undefined;
   selectedPlayerIds: PlayerSelection | undefined;
-  roster: readonly { id: string; name: string }[];
+  roster: readonly { id: string; name: string; photo?: string | null }[];
   scheduledText: string;
   // Faux pour un événement passé : plus de convocation à envoyer.
   canSend: boolean;
   // Appelée après un envoi réussi : l'écran relit l'événement pour afficher la date d'envoi et les réponses.
   onSent: () => void | Promise<void>;
+  // Événement terminé : `PUT .../attendance` pour valider ou corriger les présences (présent, en
+  // retard, absent). Absent tant que l'événement n'est pas terminé ou s'il est annulé.
+  validateUrl?: string;
+  onAttendanceSaved?: (body: Record<string, unknown>) => void;
 }) {
   const { apiRequest } = useAuth();
   const [sending, setSending] = useState(false);
@@ -85,6 +92,9 @@ export function ConvocationActions({
         )
       ) : null}
       {status ? <Text style={failed ? styles.error : styles.feedback}>{status}</Text> : null}
+      {validateUrl ? (
+        <AttendanceValidation attendance={attendance} onSaved={(body) => onAttendanceSaved?.(body)} players={concerned} url={validateUrl} />
+      ) : null}
     </View>
   );
 }

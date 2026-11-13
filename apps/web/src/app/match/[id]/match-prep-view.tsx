@@ -602,10 +602,15 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
               convokeUrl={`/api/matches/${matchId}/convoke`}
               convokedAt={match.convokedAt ?? null}
               meetingAt={match.date}
+              onAttendanceSaved={(body) => {
+                const saved = body.match as { attendance?: MatchRecord["attendance"] } | undefined;
+                setMatch((current) => (current && saved ? { ...current, attendance: saved.attendance } : current));
+              }}
               onSent={refreshMatch}
               roster={roster}
               scheduledText="Les joueurs concernés voient le match sans pouvoir répondre tant que la convocation n’est pas envoyée."
               selectedPlayerIds={match.selectedPlayerIds}
+              validateUrl={readOnly ? `/api/matches/${matchId}/attendance` : undefined}
             />
           )}
           {!readOnly && (
