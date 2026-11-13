@@ -77,6 +77,7 @@ const {
   METADATA_FILE,
   SUBMIT = "true",
   TEMPLATE_BUNDLE_ID,
+  REVIEW_DETAILS_ONLY = "false",
   REVIEW_DEMO_LOGIN,
   REVIEW_DEMO_PASSWORD,
 } = process.env;
@@ -261,7 +262,7 @@ async function applyAppSetup(jwt, appId, template) {
 
 // Age rating answers and App Review contact copied from another app of the same account (TEMPLATE_BUNDLE_ID),
 // then the review notes and demo account of this app. The model app's data is never printed in full.
-async function applyReviewSetup(jwt, appId, versionId, review) {
+async function applyReviewSetup(jwt, appId, versionId, review, { reviewOnly = false } = {}) {
   const templates = await api(jwt, "GET", `/apps?filter[bundleId]=${encodeURIComponent(TEMPLATE_BUNDLE_ID)}`);
   const template = templates.data?.[0];
   if (!template) {
@@ -269,24 +270,28 @@ async function applyReviewSetup(jwt, appId, versionId, review) {
     return;
   }
 
-  console.log("Setting content rights and price...");
-  await applyAppSetup(jwt, appId, template);
+  if (!reviewOnly) {
+    console.log("Setting content rights and price...");
+    await applyAppSetup(jwt, appId, template);
+  }
 
-  console.log(`Copying the age rating answers of ${TEMPLATE_BUNDLE_ID}...`);
-  const templateInfo = await editableAppInfo(jwt, template.id);
-  const templateRating = (await api(jwt, "GET", `/appInfos/${templateInfo.id}/ageRatingDeclaration`)).data;
-  const ownInfo = await editableAppInfo(jwt, appId);
-  const ownRating = (await api(jwt, "GET", `/appInfos/${ownInfo.id}/ageRatingDeclaration`)).data;
-  const answers = Object.fromEntries(
-    Object.entries({ ...templateRating.attributes, ...(review?.ageRatingOverrides ?? {}) }).filter(([, value]) => value !== null && value !== undefined),
-  );
-  // Ancien et nouveau questionnaire : Apple refuse l'override v1 quand le v2 est renseigné.
-  if (answers.ageRatingOverrideV2 !== undefined) delete answers.ageRatingOverride;
-  try {
-    await api(jwt, "PATCH", `/ageRatingDeclarations/${ownRating.id}`, { data: { type: "ageRatingDeclarations", id: ownRating.id, attributes: answers } });
-    console.log(`  → applied: ${JSON.stringify(answers)}`);
-  } catch (error) {
-    console.warn(`  ⚠ age rating not applied (${error.message}). Answers of the model: ${JSON.stringify(answers)}`);
+  if (!reviewOnly) {
+    console.log(`Copying the age rating answers of ${TEMPLATE_BUNDLE_ID}...`);
+    const templateInfo = await editableAppInfo(jwt, template.id);
+    const templateRating = (await api(jwt, "GET", `/appInfos/${templateInfo.id}/ageRatingDeclaration`)).data;
+    const ownInfo = await editableAppInfo(jwt, appId);
+    const ownRating = (await api(jwt, "GET", `/appInfos/${ownInfo.id}/ageRatingDeclaration`)).data;
+    const answers = Object.fromEntries(
+      Object.entries({ ...templateRating.attributes, ...(review?.ageRatingOverrides ?? {}) }).filter(([, value]) => value !== null && value !== undefined),
+    );
+    // Ancien et nouveau questionnaire : Apple refuse l'override v1 quand le v2 est renseigné.
+    if (answers.ageRatingOverrideV2 !== undefined) delete answers.ageRatingOverride;
+    try {
+      await api(jwt, "PATCH", `/ageRatingDeclarations/${ownRating.id}`, { data: { type: "ageRatingDeclarations", id: ownRating.id, attributes: answers } });
+      console.log(`  → applied: ${JSON.stringify(answers)}`);
+    } catch (error) {
+      console.warn(`  ⚠ age rating not applied (${error.message}). Answers of the model: ${JSON.stringify(answers)}`);
+    }
   }
 
   console.log("Setting the App Review information...");
@@ -343,6 +348,19 @@ async function main() {
     throw new Error(`No app found for bundle ID "${BUNDLE_ID}" in App Store Connect.`);
   }
   const appId = app.id;
+
+  // Compte de démo changé alors que la version est déjà en revue : seules les informations pour la
+  // revue sont réécrites (compte de démo, notes, contact), sans toucher à la version ni la soumettre.
+  if (REVIEW_DETAILS_ONLY === "true") {
+    const found = await api(jwt, "GET", `/apps/${appId}/appStoreVersions?filter[versionString]=${encodeURIComponent(VERSION_STRING)}&filter[platform]=IOS`);
+    const target = found.data?.[0];
+    if (!target) throw new Error(`No App Store version "${VERSION_STRING}" found.`);
+    console.log(`Updating the App Review information of version ${VERSION_STRING} (${target.attributes.appStoreState})...`);
+    const metadata = METADATA_FILE ? JSON.parse(readFileSync(METADATA_FILE, "utf8")) : null;
+    await applyReviewSetup(jwt, appId, target.id, metadata?.review, { reviewOnly: true });
+    console.log("✓ App Review information updated.");
+    return;
+  }
 
   console.log(BUILD_NUMBER ? `Looking up build ${BUILD_NUMBER}...` : "Looking up the most recently processed build...");
   const buildFilter = BUILD_NUMBER ? `&filter[version]=${encodeURIComponent(BUILD_NUMBER)}` : "";
