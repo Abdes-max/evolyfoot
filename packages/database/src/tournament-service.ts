@@ -1,5 +1,6 @@
 import { restrictLineupToPlayers, validateTournament } from "@evolyfoot/domain";
 import type { TournamentInput } from "@evolyfoot/domain";
+import { correctAttendance } from "./attendance-correction";
 import { EducatorNotFoundError, TournamentNotFoundError, ValidationError } from "./errors";
 import { readPlayerSelection } from "./player-selection";
 import type { EducatorRepository, PersistedTournament, PlayerRepository, TournamentRepository } from "./repositories";
@@ -86,6 +87,28 @@ export class TournamentService {
       ...(selectedPlayerIds && existing.lineup ? { lineup: restrictLineupToPlayers(existing.lineup, new Set(selectedPlayerIds)) } : {}),
       ...(input.finished !== undefined ? { finishedAt: input.finished ? (existing.finishedAt ?? new Date()) : null } : {}),
     });
+  }
+
+  // Présences validées ou corrigées par l’éducateur une fois le tournoi terminé (fini ou date passée).
+  async setAttendance(educatorId: string, tournamentId: string, updates: unknown, now: Date = new Date()): Promise<PersistedTournament> {
+    const existing = await this.tournamentRepository.findById(tournamentId, educatorId);
+    if (!existing) {
+      throw new TournamentNotFoundError();
+    }
+    if (existing.cancelledAt) {
+      throw new ValidationError("Ce tournoi est annulé : rétablis-le d’abord.");
+    }
+    if (!existing.finishedAt && !(existing.date && existing.date <= now)) {
+      throw new ValidationError("Les présences se valident une fois le tournoi terminé.");
+    }
+    const attendance = await correctAttendance({
+      playerRepository: this.playerRepository,
+      educatorId,
+      selectedPlayerIds: existing.selectedPlayerIds,
+      existing: existing.attendance,
+      updates,
+    });
+    return this.tournamentRepository.update(tournamentId, educatorId, { attendance });
   }
 
   async remove(educatorId: string, tournamentId: string): Promise<void> {

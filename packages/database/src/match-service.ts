@@ -11,6 +11,7 @@ import {
 import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchResult, MatchVenue } from "@evolyfoot/domain";
 import { EducatorNotFoundError, MatchNotFoundError, ValidationError } from "./errors";
 import { readPlayerSelection } from "./player-selection";
+import { correctAttendance } from "./attendance-correction";
 import type { EducatorRepository, MatchRepository, PersistedMatch, PlayerRepository } from "./repositories";
 
 function normalizeOpponent(opponent: string): string {
@@ -339,6 +340,25 @@ export class MatchService {
       goalsAgainst: result.goalsAgainst,
       playerStats,
     });
+  }
+
+  // Présences validées ou corrigées par l’éducateur une fois le match joué (présent, en retard, absent).
+  async setAttendance(educatorId: string, matchId: string, updates: unknown): Promise<PersistedMatch> {
+    const match = await this.get(educatorId, matchId);
+    if (match.cancelledAt) {
+      throw new ValidationError("Ce match est annulé : rétablis-le d’abord.");
+    }
+    if (match.status !== "played") {
+      throw new ValidationError("Les présences se valident une fois le match joué.");
+    }
+    const attendance = await correctAttendance({
+      playerRepository: this.playerRepository,
+      educatorId,
+      selectedPlayerIds: match.selectedPlayerIds,
+      existing: match.attendance,
+      updates,
+    });
+    return this.matchRepository.update(matchId, educatorId, { attendance });
   }
 
   async remove(educatorId: string, matchId: string): Promise<void> {

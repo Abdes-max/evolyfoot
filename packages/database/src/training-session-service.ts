@@ -13,7 +13,8 @@ import {
 } from "@evolyfoot/domain";
 import type { AgeGroup, AttendanceEntry, DevelopmentTheme, TrainingBlock, TrainingSession } from "@evolyfoot/domain";
 import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "./errors";
-import type { EducatorRepository, PersistedTrainingSession, PersonalExerciseRepository, TrainingSessionRepository } from "./repositories";
+import { correctAttendance } from "./attendance-correction";
+import type { EducatorRepository, PersistedTrainingSession, PersonalExerciseRepository, PlayerRepository, TrainingSessionRepository } from "./repositories";
 
 // Cycle du plan de progression : 4 semaines (voir buildDevelopmentPlan côté domaine).
 export const trainingCycleWeekCount = 4;
@@ -62,6 +63,8 @@ export class TrainingSessionService {
     private readonly educatorRepository: EducatorRepository,
     private readonly trainingSessionRepository: TrainingSessionRepository,
     private readonly personalExerciseRepository?: PersonalExerciseRepository,
+    // Effectif, pour valider les présences (voir setAttendance).
+    private readonly playerRepository?: Pick<PlayerRepository, "listByEducator">,
   ) {}
 
   // Le cycle en cours : c'est lui que lisent le plan, les séances et le calendrier.
@@ -235,6 +238,29 @@ export class TrainingSessionService {
       location,
       preparationSeconds: plausibleSeconds(input.preparationSeconds),
     });
+  }
+
+  // Présences validées ou corrigées par l’éducateur une fois la séance passée (présent, en retard,
+  // absent) : une séance est terminée quand son rendez-vous est passé.
+  async setAttendance(educatorId: string, sessionId: string, updates: unknown, now: Date = new Date()): Promise<PersistedTrainingSession> {
+    const existing = await this.trainingSessionRepository.findById(sessionId, educatorId);
+    if (!existing) {
+      throw new TrainingSessionNotFoundError();
+    }
+    if (existing.cancelledAt) {
+      throw new ValidationError("Cette séance est annulée : rétablis-la d’abord.");
+    }
+    if (!existing.meetingAt || existing.meetingAt > now) {
+      throw new ValidationError("Les présences se valident une fois la séance passée.");
+    }
+    const attendance = await correctAttendance({
+      playerRepository: this.playerRepository,
+      educatorId,
+      selectedPlayerIds: undefined,
+      existing: existing.attendance,
+      updates,
+    });
+    return this.trainingSessionRepository.update(sessionId, educatorId, { attendance });
   }
 
   // Rendez-vous (date + heure), lieu précis et description -- modifiables indépendamment du

@@ -1,4 +1,5 @@
 import { EducatorNotFoundError, PlateauNotFoundError } from "@evolyfoot/database";
+import { createSetAttendanceHandler } from "./set-attendance";
 import type { AttendanceEntry, CompetitionGame, CompetitionLineup } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 import { databaseErrorResponse } from "./api-errors";
@@ -29,6 +30,7 @@ export interface PlateauSummary {
 export interface PlateauGateway {
   list(educatorId: string): Promise<PlateauSummary[]>;
   get(educatorId: string, plateauId: string): Promise<PlateauSummary>;
+  setAttendance(educatorId: string, plateauId: string, updates: unknown): Promise<PlateauSummary>;
   create(
     educatorId: string,
     input: { name: string; dateLabel: string; date?: string | null; location?: string; result?: string; selectedPlayerIds?: unknown },
@@ -198,6 +200,20 @@ export function createRemovePlateauHandler(
   };
 }
 
+export function createSetPlateauAttendanceHandler(
+  resolveEducator: (request: Request) => Promise<PublicEducator | null>,
+  gateway: Pick<PlateauGateway, "setAttendance">,
+  log: (error: unknown) => void,
+): (request: Request, id: string) => Promise<Response> {
+  return createSetAttendanceHandler({
+    resolveEducator,
+    setAttendance: (educatorId, id, updates) => gateway.setAttendance(educatorId, id, updates),
+    isNotFound: (error) => error instanceof PlateauNotFoundError,
+    key: "plateau",
+    log,
+  });
+}
+
 export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway; disconnect: () => Promise<void> }> {
   const { createDatabaseClient, PrismaEducatorRepository, PrismaPlayerRepository, PrismaPlateauRepository, PlateauService } =
     await import("@evolyfoot/database");
@@ -240,6 +256,9 @@ export async function createPlateauGateway(): Promise<{ gateway: PlateauGateway;
           throw new PlateauNotFoundError();
         }
         return toSummary(plateau);
+      },
+      async setAttendance(educatorId, plateauId, updates) {
+        return toSummary(await service.setAttendance(educatorId, plateauId, updates));
       },
       async create(educatorId, input) {
         return toSummary(await service.create(educatorId, { ...input, date: input.date ? new Date(input.date) : null }));

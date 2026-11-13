@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attendanceStatusOf, createAttendanceEntry, summarizeAttendance } from "./attendance";
+import { attendanceStatusOf, buildAttendanceEntries, createAttendanceEntry, mergeAttendance, summarizeAttendance } from "./attendance";
 
 describe("attendance", () => {
   it("calcule le taux de présence", () => {
@@ -42,5 +42,59 @@ describe("attendanceStatusOf", () => {
   it("retombe sur présent/absent pour une entrée sans statut détaillé", () => {
     expect(attendanceStatusOf({ present: true })).toBe("present");
     expect(attendanceStatusOf({ present: false })).toBe("absent");
+  });
+});
+
+describe("buildAttendanceEntries", () => {
+  const players = [
+    { id: "a", name: "Yanis Martin" },
+    { id: "b", name: "Lina Dupont" },
+  ];
+
+  it("crée les entrées avec le nom de l'effectif et compte le retard comme présent", () => {
+    const entries = buildAttendanceEntries(
+      [
+        { playerId: "a", status: "late", comment: "Bus en retard" },
+        { playerId: "b", status: "sick", comment: "  Grippe  ", playerName: "<b>Zorro</b>" },
+      ],
+      players,
+    );
+    expect(entries.map((entry) => [entry.playerName, entry.status, entry.present, entry.comment])).toEqual([
+      ["Yanis Martin", "late", true, "Bus en retard"],
+      ["Lina Dupont", "sick", false, "Grippe"],
+    ]);
+  });
+
+  it("n'enregistre pas de commentaire pour un joueur présent", () => {
+    const [entry] = buildAttendanceEntries([{ playerId: "a", status: "present", comment: "ok" }], players);
+    expect(entry?.comment).toBeNull();
+  });
+
+  it.each([
+    [[], /au moins un joueur/],
+    ["texte", /au moins un joueur/],
+    [[{ playerId: "zzz", status: "present" }], /ne fait pas partie/],
+    [
+      [
+        { playerId: "a", status: "present" },
+        { playerId: "a", status: "absent" },
+      ],
+      /deux fois/,
+    ],
+    [[{ playerId: "a", status: "dormeur" }], /Statut de présence inconnu/],
+    [[{ playerId: "a", status: "absent", comment: "x".repeat(201) }], /trop long/],
+  ])("refuse %j", (updates, message) => {
+    expect(() => buildAttendanceEntries(updates, players)).toThrow(message);
+  });
+});
+
+describe("mergeAttendance", () => {
+  it("remplace les joueurs corrigés et garde les autres", () => {
+    const existing = [createAttendanceEntry("a", "Yanis", "absent", "malade"), createAttendanceEntry("b", "Lina", "present")];
+    const merged = mergeAttendance(existing, [createAttendanceEntry("a", "Yanis", "late")]);
+    expect(merged.map((entry) => [entry.playerId, entry.status])).toEqual([
+      ["b", "present"],
+      ["a", "late"],
+    ]);
   });
 });
