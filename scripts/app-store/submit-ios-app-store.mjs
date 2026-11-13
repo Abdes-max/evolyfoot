@@ -234,6 +234,8 @@ async function applyReviewSetup(jwt, appId, versionId, review) {
   const answers = Object.fromEntries(
     Object.entries({ ...templateRating.attributes, ...(review?.ageRatingOverrides ?? {}) }).filter(([, value]) => value !== null && value !== undefined),
   );
+  // Ancien et nouveau questionnaire : Apple refuse l'override v1 quand le v2 est renseigné.
+  if (answers.ageRatingOverrideV2 !== undefined) delete answers.ageRatingOverride;
   try {
     await api(jwt, "PATCH", `/ageRatingDeclarations/${ownRating.id}`, { data: { type: "ageRatingDeclarations", id: ownRating.id, attributes: answers } });
     console.log(`  → applied: ${JSON.stringify(answers)}`);
