@@ -2,6 +2,7 @@ import { EducatorNotFoundError, PlayerEvaluationNotFoundError, PlayerNotFoundErr
 import { playerEvaluationAspects } from "@evolyfoot/domain";
 import type { PlayerEvaluationScores } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface PlayerEvaluationSummary {
   id: string;
@@ -42,6 +43,10 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   }
   if (error instanceof PlayerNotFoundError || error instanceof PlayerEvaluationNotFoundError) {
     return Response.json({ error: error.message }, { status: 404 });
+  }
+  const databaseResponse = databaseErrorResponse(error, log);
+  if (databaseResponse) {
+    return databaseResponse;
   }
   if (error instanceof ValidationError || error instanceof Error) {
     return Response.json({ error: error.message }, { status: 400 });

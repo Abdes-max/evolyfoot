@@ -10,6 +10,7 @@ import {
   type BillingLine,
 } from "@evolyfoot/domain";
 import type { PublicAccount } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface BillingStore {
   summary(accountId: string): Promise<BillingSummary>;
@@ -166,6 +167,10 @@ async function withSummary(
     if (error instanceof EducatorNotFoundError) {
       return unauthorized();
     }
+    const databaseResponse = databaseErrorResponse(error, log);
+    if (databaseResponse) {
+      return databaseResponse;
+    }
     log(error);
     return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
   }
@@ -317,6 +322,10 @@ export function createWebhookHandler(
       try {
         await applyAndNotify(store, event.customerId, event.update, notify, log);
       } catch (error) {
+        const databaseResponse = databaseErrorResponse(error, log);
+        if (databaseResponse) {
+          return databaseResponse;
+        }
         log(error);
         return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
       }

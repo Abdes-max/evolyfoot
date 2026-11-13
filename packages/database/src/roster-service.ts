@@ -2,10 +2,15 @@ import { isValidJerseyNumber, playerFeet, playerPositions } from "@evolyfoot/dom
 import { EducatorNotFoundError, ValidationError } from "./errors";
 import type { EducatorRepository, PersistedPlayer, PlayerDetailsPatch, PlayerRepository } from "./repositories";
 
+const maxNameLength = 80;
+
 function normalizeFirstName(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) {
     throw new ValidationError("Indique un prénom.");
+  }
+  if (trimmed.length > maxNameLength) {
+    throw new ValidationError("Le prénom est trop long (80 caractères maximum).");
   }
   return trimmed;
 }
@@ -22,6 +27,9 @@ function normalizeLastName(value: string | undefined): string {
   const trimmed = value.trim();
   if (!trimmed) {
     throw new ValidationError("Indique un nom.");
+  }
+  if (trimmed.length > maxNameLength) {
+    throw new ValidationError("Le nom est trop long (80 caractères maximum).");
   }
   return trimmed;
 }

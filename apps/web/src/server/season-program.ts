@@ -1,6 +1,7 @@
 import { EducatorNotFoundError } from "@evolyfoot/database";
 import type { DevelopmentTheme, TrainingSlotSchedule } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface SeasonProgramView {
   priorities: DevelopmentTheme[];
@@ -38,6 +39,10 @@ export function createGetSeasonProgramHandler(
     try {
       return Response.json({ program: await seasonProgram.get(educator.id) });
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -60,6 +65,10 @@ export function createSaveSeasonProgramHandler(
     } catch (error) {
       if (error instanceof EducatorNotFoundError) {
         return Response.json({ error: error.message }, { status: 401 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       if (error instanceof Error) {
         // validateSeasonPriorities échoue avec une Error générique et un message pour le coach.
@@ -87,6 +96,10 @@ export function createSaveSeasonScheduleHandler(
     try {
       return Response.json({ program: await seasonProgram.saveSchedule(educator.id, body?.schedule) });
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       if (error instanceof Error) {
         return Response.json({ error: error.message }, { status: 400 });
       }

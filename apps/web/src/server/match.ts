@@ -1,6 +1,7 @@
 import { EducatorNotFoundError, MatchNotFoundError } from "@evolyfoot/database";
 import type { AttendanceEntry, MatchLineupAssignment, MatchPlayerStat, MatchResult, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface MatchSummary {
   id: string;
@@ -118,6 +119,10 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   }
   if (error instanceof MatchNotFoundError) {
     return Response.json({ error: error.message }, { status: 404 });
+  }
+  const databaseResponse = databaseErrorResponse(error, log);
+  if (databaseResponse) {
+    return databaseResponse;
   }
   if (error instanceof Error) {
     // La validation métier (adversaire vide, poste inconnu, capitaine hors composition...)

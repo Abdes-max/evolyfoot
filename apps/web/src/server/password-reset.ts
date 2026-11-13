@@ -1,6 +1,7 @@
 import { PasswordResetInvalidError, ValidationError } from "@evolyfoot/database";
 import { renderPasswordResetEmail, sendMail } from "./mailer";
 import { resolveOrigin } from "./request-origin";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface PasswordResetGateway {
   request(email: string, origin: string): Promise<void>;
@@ -53,6 +54,10 @@ export function createResetPasswordHandler(
       }
       if (error instanceof ValidationError) {
         return Response.json({ error: error.message }, { status: 400 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });

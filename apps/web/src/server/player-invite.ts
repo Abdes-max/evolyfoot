@@ -3,6 +3,7 @@ import { EducatorNotFoundError, PlayerNotFoundError, ValidationError } from "@ev
 import { buildSessionCookie, type PublicAccount, type PublicEducator } from "./auth";
 import { notificationServiceFor } from "./notifications";
 import { resolveOrigin } from "./request-origin";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface InvitePreviewSummary {
   playerName: string;
@@ -44,6 +45,10 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   }
   if (error instanceof InviteInvalidError) {
     return Response.json({ error: error.message }, { status: 410 });
+  }
+  const databaseResponse = databaseErrorResponse(error, log);
+  if (databaseResponse) {
+    return databaseResponse;
   }
   if (error instanceof ValidationError || error instanceof Error) {
     return Response.json({ error: error.message }, { status: 400 });

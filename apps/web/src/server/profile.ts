@@ -1,6 +1,7 @@
 import { EducatorNotFoundError, InvalidCredentialsError, ValidationError } from "@evolyfoot/database";
 import type { EducatorProfileInput } from "@evolyfoot/database";
 import { readSessionToken, type PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface ProfileSummary {
   id: string;
@@ -46,6 +47,10 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   }
   if (error instanceof ValidationError) {
     return Response.json({ error: error.message }, { status: 400 });
+  }
+  const databaseResponse = databaseErrorResponse(error, log);
+  if (databaseResponse) {
+    return databaseResponse;
   }
   if (error instanceof Error) {
     return Response.json({ error: error.message }, { status: 400 });

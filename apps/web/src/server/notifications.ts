@@ -2,6 +2,7 @@ import { ValidationError } from "@evolyfoot/database";
 import type { createDatabaseClient, NotificationService, PushSender } from "@evolyfoot/database";
 import type { NotificationPreferences } from "@evolyfoot/domain";
 import type { PublicAccount } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 type Database = ReturnType<typeof createDatabaseClient>;
 
@@ -143,6 +144,10 @@ export function createListNotificationsHandler(
     try {
       return Response.json(await notifications.list(account.id));
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -167,6 +172,10 @@ export function createMarkNotificationsReadHandler(
       return new Response(null, { status: 204 });
     } catch (error) {
       if (error instanceof ValidationError) return Response.json({ error: error.message }, { status: 400 });
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -190,6 +199,10 @@ export function createNotificationPreferencesHandler(
       return Response.json({ preferences: await notifications.preferences(account.id) });
     } catch (error) {
       if (error instanceof ValidationError) return Response.json({ error: error.message }, { status: 400 });
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -215,6 +228,10 @@ export function createPushDeviceHandler(
       return new Response(null, { status: 204 });
     } catch (error) {
       if (error instanceof ValidationError) return Response.json({ error: error.message }, { status: 400 });
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }

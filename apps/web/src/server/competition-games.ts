@@ -1,6 +1,7 @@
 import { EducatorNotFoundError, PlateauNotFoundError, TournamentNotFoundError, ValidationError, type CompetitionKind } from "@evolyfoot/database";
 import type { CompetitionGame } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface CompetitionGamesGateway {
   save(educatorId: string, kind: CompetitionKind, competitionId: string, games: unknown): Promise<CompetitionGame[]>;
@@ -41,6 +42,10 @@ export function createSaveCompetitionGamesHandler(
       if (error instanceof EducatorNotFoundError) return Response.json({ error: error.message }, { status: 401 });
       if (error instanceof TournamentNotFoundError || error instanceof PlateauNotFoundError) return Response.json({ error: error.message }, { status: 404 });
       if (error instanceof ValidationError) return Response.json({ error: error.message }, { status: 400 });
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
