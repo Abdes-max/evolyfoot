@@ -216,6 +216,49 @@ async function editableAppInfo(jwt, appId) {
   return (infos.data ?? []).find((info) => !live.includes(info.attributes?.state ?? info.attributes?.appStoreState)) ?? infos.data?.[0];
 }
 
+// Content rights and a free price, both required before any submission, as on the model app.
+async function applyAppSetup(jwt, appId, template) {
+  const rights = template.attributes?.contentRightsDeclaration ?? "DOES_NOT_USE_THIRD_PARTY_CONTENT";
+  try {
+    await api(jwt, "PATCH", `/apps/${appId}`, { data: { type: "apps", id: appId, attributes: { contentRightsDeclaration: rights } } });
+    console.log(`  → content rights: ${rights}`);
+  } catch (error) {
+    console.warn(`  ⚠ content rights not applied (${error.message}).`);
+  }
+
+  try {
+    const prices = await api(jwt, "GET", `/apps/${appId}/appPriceSchedule/manualPrices?limit=1`).catch(() => null);
+    if (prices?.data?.length) {
+      console.log("  → price already set.");
+      return;
+    }
+    const points = await api(jwt, "GET", `/apps/${appId}/appPricePoints?filter[territory]=FRA&limit=200`);
+    const free = (points.data ?? []).find((point) => Number(point.attributes?.customerPrice) === 0);
+    if (!free) throw new Error("no free price point");
+    await api(jwt, "POST", "/appPriceSchedules", {
+      data: {
+        type: "appPriceSchedules",
+        relationships: {
+          app: { data: { type: "apps", id: appId } },
+          baseTerritory: { data: { type: "territories", id: "FRA" } },
+          manualPrices: { data: [{ type: "appPrices", id: "${free-price}" }] },
+        },
+      },
+      included: [
+        {
+          type: "appPrices",
+          id: "${free-price}",
+          attributes: { startDate: null },
+          relationships: { appPricePoint: { data: { type: "appPricePoints", id: free.id } } },
+        },
+      ],
+    });
+    console.log("  → price: free (base territory France).");
+  } catch (error) {
+    console.warn(`  ⚠ price not set (${error.message}): set it to free in App Store Connect.`);
+  }
+}
+
 // Age rating answers and App Review contact copied from another app of the same account (TEMPLATE_BUNDLE_ID),
 // then the review notes and demo account of this app. The model app's data is never printed in full.
 async function applyReviewSetup(jwt, appId, versionId, review) {
@@ -225,6 +268,9 @@ async function applyReviewSetup(jwt, appId, versionId, review) {
     console.warn(`  ⚠ model app "${TEMPLATE_BUNDLE_ID}" not found with this API key: age rating and review contact left as they are.`);
     return;
   }
+
+  console.log("Setting content rights and price...");
+  await applyAppSetup(jwt, appId, template);
 
   console.log(`Copying the age rating answers of ${TEMPLATE_BUNDLE_ID}...`);
   const templateInfo = await editableAppInfo(jwt, template.id);
