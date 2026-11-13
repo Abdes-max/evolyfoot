@@ -1,9 +1,18 @@
 import { colors, radii, spacing } from "@evolyfoot/design-tokens";
-import { rehydrateTrainingSession, seasonSessionStatus, seasonSessionStatusLabels, type SavedTrainingSession, type TrainingSession } from "@evolyfoot/domain";
+import {
+  guidedSeasonCycle,
+  rehydrateTrainingSession,
+  seasonSessionStatus,
+  seasonSessionStatusLabels,
+  type AttendanceEntry,
+  type SavedTrainingSession,
+  type TrainingSession,
+} from "@evolyfoot/domain";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CancelEventPanel, CancelledBanner } from "../../components/cancel-event-panel";
+import { SavedSessionDetails } from "../../components/saved-session-details";
 import { TacticalPlayer } from "../../components/tactical-player";
 import { useAuth } from "../../lib/auth-context";
 import { kindLabels } from "../../lib/exercise-labels";
@@ -15,6 +24,12 @@ interface Detail {
   location: string | null;
   cancelledAt: string | null;
   cancellationNote: string | null;
+  description: string | null;
+  weekNumber: number;
+  slot: number;
+  guidedSeason: boolean;
+  convokedAt: string | null;
+  attendance: readonly AttendanceEntry[] | undefined;
 }
 
 function meetingLabel(iso: string): string {
@@ -36,7 +51,15 @@ export default function SeanceDetailScreen() {
       const [response, personal] = await Promise.all([apiRequest(`/api/sessions/${encodeURIComponent(id)}`), listPersonalExercises()]);
       const body = response?.ok ? await response.json().catch(() => null) : null;
       if (cancelled) return;
-      const record: (SavedTrainingSession & { cancelledAt?: string | null; cancellationNote?: string | null }) | null = body?.session ?? null;
+      const record:
+        | (SavedTrainingSession & {
+            cancelledAt?: string | null;
+            cancellationNote?: string | null;
+            description?: string | null;
+            convokedAt?: string | null;
+            attendance?: readonly AttendanceEntry[];
+          })
+        | null = body?.session ?? null;
       const session = record ? rehydrateTrainingSession(record, personal) : null;
       setDetail(
         record && session
@@ -46,6 +69,12 @@ export default function SeanceDetailScreen() {
               location: record.location ?? null,
               cancelledAt: record.cancelledAt ?? null,
               cancellationNote: record.cancellationNote ?? null,
+              description: record.description ?? null,
+              weekNumber: record.weekNumber,
+              slot: record.slot,
+              guidedSeason: record.cycleNumber === guidedSeasonCycle,
+              convokedAt: record.convokedAt ?? null,
+              attendance: record.attendance,
             }
           : null,
       );
@@ -113,6 +142,25 @@ export default function SeanceDetailScreen() {
             ))}
           </View>
         ))}
+
+        {detail.cancelledAt ? null : (
+          <SavedSessionDetails
+            guidedSeason={detail.guidedSeason}
+            isPast={done}
+            onChange={(patch) => setDetail((current) => (current ? { ...current, ...patch } : current))}
+            session={session}
+            sessionId={id}
+            slot={detail.slot}
+            state={{
+              meetingAt: detail.meetingAt,
+              location: detail.location,
+              description: detail.description,
+              convokedAt: detail.convokedAt,
+              attendance: detail.attendance,
+            }}
+            weekNumber={detail.weekNumber}
+          />
+        )}
 
         <CancelEventPanel
           cancellationNote={detail.cancellationNote}
