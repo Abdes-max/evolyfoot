@@ -18,6 +18,7 @@ import type { PersonalExercise } from "@evolyfoot/domain";
 import { rehydrateTrainingSession, type SavedTrainingSession } from "../rehydrate";
 import { SessionBuilder } from "../session-builder";
 import { CancelledBanner } from "../../cancel-event-panel";
+import { AttendanceValidation } from "../../attendance-validation";
 import { TrainingResponses } from "../../training-responses";
 
 interface RosterPlayer {
@@ -380,6 +381,15 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
                   roster={concernedPlayers(roster, convocationSettings?.playerIds)}
                   settings={convocationSettings}
                 />
+
+                {recordMeetingAt && new Date(recordMeetingAt).getTime() <= now && (
+                  <AttendanceValidation
+                    attendance={attendance}
+                    onSaved={(body) => setAttendance((body.session as { attendance?: readonly AttendanceEntry[] } | undefined)?.attendance)}
+                    players={concernedPlayers(roster, convocationSettings?.playerIds)}
+                    url={`/api/sessions/${sessionId}/attendance`}
+                  />
+                )}
 
                 <div className="match-convocation">
                   <button className="match-convocation-send" disabled={sendingConvocation} onClick={sendConvocation} type="button">

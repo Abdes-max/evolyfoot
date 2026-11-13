@@ -356,10 +356,15 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
               convokeUrl={`${endpoint}/${competitionId}/convoke`}
               convokedAt={item.convokedAt}
               meetingAt={item.date}
+              onAttendanceSaved={(body) => {
+                const saved = body[itemKey] as { attendance?: Competition["attendance"] } | undefined;
+                setItem((current) => (current && saved ? { ...current, attendance: saved.attendance } : current));
+              }}
               onSent={refresh}
               roster={roster}
               scheduledText={`Les joueurs concernés voient ce ${singular} sans pouvoir répondre tant que tu n’as pas envoyé la convocation.`}
               selectedPlayerIds={item.selectedPlayerIds}
+              validateUrl={isPast ? `${endpoint}/${competitionId}/attendance` : undefined}
             />
           )}
           <CancelEventPanel

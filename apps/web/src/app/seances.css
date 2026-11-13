@@ -601,3 +601,81 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* Validation des présences d'un événement terminé (attendance-validation.tsx). */
+.attendance-validation {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.attendance-validation h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.attendance-validation-hint,
+.attendance-validation-summary {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.attendance-validation-summary {
+  font-weight: 700;
+}
+.attendance-validation-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.attendance-validation-row {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.attendance-validation-name {
+  font-weight: 800;
+}
+.attendance-validation-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.attendance-choice {
+  min-height: 44px;
+  padding: 8px 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.attendance-choice.is-active.present {
+  border-color: var(--good, #3ddc84);
+  color: var(--good, #3ddc84);
+}
+.attendance-choice.is-active.late {
+  border-color: var(--warn, #ffb073);
+  color: var(--warn, #ffb073);
+}
+.attendance-choice.is-active.absent {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+.attendance-validation-reason,
+.attendance-validation-comment {
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+}
