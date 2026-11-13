@@ -247,11 +247,16 @@ export default function MatchListScreen() {
                   <Text style={styles.cardBody}>{match.location}</Text>
                 </View>
               ) : null}
+              {match.cancelledAt ? (
+                <Text style={styles.cancelledLine}>{`Match annulé${match.cancellationNote ? ` : ${match.cancellationNote}` : ""}`}</Text>
+              ) : null}
               {match.status === "played" ? <MatchScore match={match} /> : null}
-              {match.status === "scheduled" || match.convokedAt ? (
+              {!match.cancelledAt && (match.status === "scheduled" || match.convokedAt) ? (
                 <ConvocationSummary attendance={match.attendance} convokedAt={match.convokedAt} roster={roster} selectedPlayerIds={match.selectedPlayerIds} />
               ) : null}
-              <Text style={styles.cardLink}>{match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}</Text>
+              {match.cancelledAt ? null : (
+                <Text style={styles.cardLink}>{match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}</Text>
+              )}
             </TouchableOpacity>
           ))
         )}
@@ -342,6 +347,7 @@ const styles = themedStyles(() =>
     score: { fontSize: 15, fontWeight: "900", marginTop: 8 },
     scoreMissing: { color: colors.primary, fontSize: 12, fontWeight: "800", marginTop: 8 },
     cardBody: { color: colors.muted, fontSize: 11.5, marginTop: 2 },
+    cancelledLine: { color: colors.danger, fontSize: 12.5, fontWeight: "800", marginTop: 6 },
     cardLink: { color: colors.primary, fontSize: 11.5, fontWeight: "800", marginTop: 8 },
   }),
 );

@@ -18,6 +18,7 @@ interface Competition {
   result: string | null;
   finishedAt?: string | null;
   cancelledAt?: string | null;
+  cancellationNote?: string | null;
   convokedAt?: string | null;
   attendance?: AttendanceEntry[];
   selectedPlayerIds?: PlayerSelection;
@@ -202,13 +203,20 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
                       {item.location}
                     </p>
                   )}
+                  {item.cancelledAt && (
+                    <p aria-hidden="true" className="match-card-cancelled">
+                      {`${singular.charAt(0).toUpperCase()}${singular.slice(1)} annulé${item.cancellationNote ? ` : ${item.cancellationNote}` : ""}`}
+                    </p>
+                  )}
                   {item.result && <p aria-hidden="true">{item.result}</p>}
                   {(!isPast || item.convokedAt) && !item.cancelledAt && (
                     <ConvocationSummary attendance={item.attendance} convokedAt={item.convokedAt} roster={roster} selectedPlayerIds={item.selectedPlayerIds} />
                   )}
-                  <span aria-hidden="true" className="match-card-link card-cta">
-                    Voir le détail →
-                  </span>
+                  {!item.cancelledAt && (
+                    <span aria-hidden="true" className="match-card-link card-cta">
+                      Voir le détail →
+                    </span>
+                  )}
                 </Link>
               </li>
             );

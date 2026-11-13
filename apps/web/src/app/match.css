@@ -1575,3 +1575,11 @@ span.match-pitch-token-face {
 .convocation-summary-counts .pending {
   color: #e08a3c;
 }
+
+/* Carte annulée : motif en rouge, comme les cartes de séance. */
+.match-card-cancelled {
+  margin: 6px 0 0;
+  color: var(--bad);
+  font-size: 13px;
+  font-weight: 800;
+}
