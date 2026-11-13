@@ -2,6 +2,7 @@ import { VerificationInvalidError } from "@evolyfoot/database";
 import type { PublicEducator } from "./auth";
 import { renderVerificationEmail, sendMail } from "./mailer";
 import { resolveOrigin } from "./request-origin";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface EmailVerificationGateway {
   // Génère un jeton et envoie le lien de confirmation. Ne lève jamais -- un envoi raté (SMTP mal
@@ -41,6 +42,10 @@ export function createConsumeVerificationHandler(
       if (error instanceof VerificationInvalidError) {
         return Response.json({ error: error.message }, { status: 410 });
       }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -64,6 +69,10 @@ export function createResendVerificationHandler(
       await gateway.send(educator, resolveOrigin(request));
       return Response.json({ status: "ok" });
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }

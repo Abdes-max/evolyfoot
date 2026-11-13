@@ -1,4 +1,5 @@
 import { DuplicateEducatorEmailError, InvalidCredentialsError, ValidationError } from "@evolyfoot/database";
+import { databaseErrorResponse } from "./api-errors";
 
 export const SESSION_COOKIE_NAME = "evolyfoot_session";
 
@@ -106,6 +107,10 @@ function handleAuthError(error: unknown, log: (error: unknown) => void): Respons
     return Response.json({ error: error.message }, { status: 401 });
   }
 
+  const databaseResponse = databaseErrorResponse(error, log);
+  if (databaseResponse) {
+    return databaseResponse;
+  }
   log(error);
   return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
 }

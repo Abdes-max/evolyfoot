@@ -1,5 +1,6 @@
 import { EducatorNotFoundError, InvalidCredentialsError } from "@evolyfoot/database";
 import { buildClearedSessionCookie, type PublicAccount } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface AccountGateway {
   exportData(accountId: string): Promise<Record<string, unknown>>;
@@ -25,6 +26,10 @@ export function createExportAccountHandler(
         },
       });
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -57,6 +62,10 @@ export function createDeleteAccountHandler(
       }
       if (error instanceof EducatorNotFoundError) {
         return Response.json({ error: error.message }, { status: 401 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });

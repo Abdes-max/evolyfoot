@@ -1,5 +1,6 @@
 import type { MvpMetrics } from "@evolyfoot/database";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export type { MvpMetrics };
 
@@ -36,6 +37,10 @@ export function createMetricsHandler(
       const data = await metrics.get();
       return Response.json(data);
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }

@@ -1,6 +1,7 @@
 import { EducatorNotFoundError, PlayerNotFoundError } from "@evolyfoot/database";
 import type { PlayerDetailsInput } from "@evolyfoot/database";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface RosterPlayer {
   id: string;
@@ -55,6 +56,10 @@ export function createListRosterHandler(
       const players = await roster.list(educator.id);
       return Response.json({ players });
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -85,6 +90,10 @@ export function createAddPlayerHandler(
     } catch (error) {
       if (error instanceof EducatorNotFoundError) {
         return Response.json({ error: error.message }, { status: 401 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       if (error instanceof Error) {
         // La validation métier (prénom vide) échoue avec une Error générique.
@@ -145,6 +154,10 @@ export function createUpdatePlayerHandler(
       if (error instanceof PlayerNotFoundError) {
         return Response.json({ error: error.message }, { status: 404 });
       }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       if (error instanceof Error) {
         return Response.json({ error: error.message }, { status: 400 });
       }
@@ -171,6 +184,10 @@ export function createRemovePlayerHandler(
     } catch (error) {
       if (error instanceof PlayerNotFoundError) {
         return Response.json({ error: error.message }, { status: 404 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });

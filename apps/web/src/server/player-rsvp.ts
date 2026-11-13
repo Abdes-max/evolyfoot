@@ -3,6 +3,7 @@ import type { CompetitionKind } from "@evolyfoot/database";
 import { attendanceStatuses } from "@evolyfoot/domain";
 import type { AttendanceStatus } from "@evolyfoot/domain";
 import type { PublicAccount } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface PlayerRsvpGateway {
   respondToMatch(playerAccountId: string, matchId: string, status: AttendanceStatus, comment?: string | null): Promise<void>;
@@ -55,6 +56,10 @@ export function createRespondToMatchHandler(
       if (error instanceof ValidationError) {
         return Response.json({ error: error.message }, { status: 400 });
       }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -87,6 +92,10 @@ export function createRespondToTrainingSessionHandler(
       }
       if (error instanceof ValidationError) {
         return Response.json({ error: error.message }, { status: 400 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
@@ -121,6 +130,10 @@ export function createRespondToCompetitionHandler(
       }
       if (error instanceof ValidationError) {
         return Response.json({ error: error.message }, { status: 400 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });

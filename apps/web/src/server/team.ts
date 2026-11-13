@@ -1,6 +1,7 @@
 import { EducatorNotFoundError, TeamNotFoundError, ValidationError } from "@evolyfoot/database";
 import type { CompetitionLineup, TeamProfile } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface TeamGateway {
   get(educatorId: string): Promise<TeamProfile | null>;
@@ -48,6 +49,10 @@ export function createGetTeamHandler(
       const profile = await team.get(educator.id);
       return Response.json({ profile });
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -76,6 +81,10 @@ export function createSaveTeamHandler(
     } catch (error) {
       if (error instanceof EducatorNotFoundError) {
         return Response.json({ error: error.message }, { status: 401 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       if (error instanceof Error) {
         // La validation métier (createTeamProfile) échoue avec une Error générique.
@@ -109,6 +118,10 @@ export function createSaveTeamLogoHandler(
       if (error instanceof ValidationError) return Response.json({ error: error.message }, { status: 400 });
       if (error instanceof TeamNotFoundError) return Response.json({ error: error.message }, { status: 404 });
       if (error instanceof EducatorNotFoundError) return Response.json({ error: error.message }, { status: 401 });
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -131,6 +144,10 @@ export function createTeamLineupHandlers(
     } catch (error) {
       if (error instanceof ValidationError) return Response.json({ error: error.message }, { status: 400 });
       if (error instanceof TeamNotFoundError) return Response.json({ error: "Crée d’abord ton équipe." }, { status: 404 });
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }

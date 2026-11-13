@@ -2,6 +2,7 @@ import { EducatorNotFoundError, InviteInvalidError, PlayerNotFoundError, Validat
 import type { FollowedChild, PendingChild } from "@evolyfoot/database";
 import type { PublicAccount } from "./auth";
 import { notificationServiceFor } from "./notifications";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface PlayerChildrenGateway {
   list(accountId: string): Promise<FollowedChild[]>;
@@ -27,6 +28,10 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   }
   if (error instanceof InviteInvalidError || error instanceof ValidationError) {
     return Response.json({ error: error.message }, { status: 400 });
+  }
+  const databaseResponse = databaseErrorResponse(error, log);
+  if (databaseResponse) {
+    return databaseResponse;
   }
   log(error);
   return Response.json({ error: "Une erreur est survenue." }, { status: 500 });

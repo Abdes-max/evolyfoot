@@ -1,6 +1,7 @@
 import { EducatorNotFoundError } from "@evolyfoot/database";
 import type { PlayerDashboard } from "@evolyfoot/database";
 import type { PublicAccount } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface PlayerDashboardGateway {
   get(playerAccountId: string): Promise<PlayerDashboard>;
@@ -26,6 +27,10 @@ export function createGetPlayerDashboardHandler(
     } catch (error) {
       if (error instanceof EducatorNotFoundError) {
         return Response.json({ error: error.message }, { status: 404 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });

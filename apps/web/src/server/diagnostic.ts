@@ -1,6 +1,7 @@
 import { EducatorNotFoundError } from "@evolyfoot/database";
 import type { DiagnosticScores } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface DiagnosticGateway {
   get(educatorId: string): Promise<DiagnosticScores | null>;
@@ -43,6 +44,10 @@ export function createGetDiagnosticHandler(
       const scores = await diagnostic.get(educator.id);
       return Response.json({ scores });
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -71,6 +76,10 @@ export function createSaveDiagnosticHandler(
     } catch (error) {
       if (error instanceof EducatorNotFoundError) {
         return Response.json({ error: error.message }, { status: 401 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       if (error instanceof Error) {
         // La validation métier (summarizeDiagnostic) échoue avec une Error générique.

@@ -1,4 +1,5 @@
 import { ValidationError } from "@evolyfoot/database";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface ContactGateway {
   submit(input: { name: string; email: string; message: string }): Promise<void>;
@@ -29,6 +30,10 @@ export function createSubmitContactHandler(contact: ContactGateway, log: (error:
     } catch (error) {
       if (error instanceof ValidationError) {
         return Response.json({ error: error.message }, { status: 400 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });

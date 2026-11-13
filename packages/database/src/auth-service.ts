@@ -1,4 +1,4 @@
-import { normalizeEducatorEmail } from "./email";
+import { normalizeEducatorEmail, validateEmailFormat } from "./email";
 import { InvalidCredentialsError, ValidationError } from "./errors";
 import { MAX_PASSWORD_LENGTH, hashPassword, validatePassword, verifyPassword } from "./password";
 import { generateSessionToken, hashSessionToken } from "./session-token";
@@ -29,6 +29,9 @@ function validateDisplayName(displayName: string): string {
   if (!trimmed) {
     throw new Error("Le nom de l’éducateur est obligatoire.");
   }
+  if (trimmed.length > 120) {
+    throw new Error("Le nom est trop long (120 caractères maximum).");
+  }
 
   return trimmed;
 }
@@ -55,7 +58,7 @@ export class AuthService {
   }
 
   async register(input: { email: string; password: string; displayName: string }): Promise<AuthenticatedSession> {
-    const email = asValidationError(() => normalizeEducatorEmail(input.email));
+    const email = asValidationError(() => validateEmailFormat(normalizeEducatorEmail(input.email)));
     const password = asValidationError(() => validatePassword(input.password));
     const displayName = asValidationError(() => validateDisplayName(input.displayName));
     const passwordHash = await hashPassword(password);

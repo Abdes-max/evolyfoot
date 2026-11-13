@@ -1,6 +1,7 @@
 import { EducatorNotFoundError, TournamentNotFoundError } from "@evolyfoot/database";
 import type { AttendanceEntry, CompetitionGame, CompetitionLineup } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface TournamentSummary {
   id: string;
@@ -65,6 +66,10 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   }
   if (error instanceof TournamentNotFoundError) {
     return Response.json({ error: error.message }, { status: 404 });
+  }
+  const databaseResponse = databaseErrorResponse(error, log);
+  if (databaseResponse) {
+    return databaseResponse;
   }
   if (error instanceof Error) {
     // La validation métier (nom/date manquants) échoue avec une Error générique -- voir

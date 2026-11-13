@@ -11,6 +11,7 @@ import type { PublicEducator } from "./auth";
 import type { MailInput } from "./mailer";
 import { renderConvocationEmail, sendMail } from "./mailer";
 import { resolveOrigin } from "./request-origin";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface ConvocationOptions {
   onlyPending?: boolean;
@@ -75,6 +76,10 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   }
   if (error instanceof ValidationError) {
     return Response.json({ error: error.message }, { status: 400 });
+  }
+  const databaseResponse = databaseErrorResponse(error, log);
+  if (databaseResponse) {
+    return databaseResponse;
   }
   log(error);
   return Response.json({ error: "Une erreur est survenue." }, { status: 500 });

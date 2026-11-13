@@ -261,11 +261,53 @@ describe("PostgreSQL match persistence", () => {
 
     await expect(service.saveResult(educator.id, match.id, result)).rejects.toThrow(/une fois le match joué/);
 
-    await database.prisma.matchRecord.update({ where: { id: match.id }, data: { status: "played" } });
+    await database.prisma.matchRecord.update({
+      where: { id: match.id },
+      data: {
+        status: "played",
+        lineup: [
+          { slotId: "s1", playerId: "a", playerName: "Yanis" },
+          { slotId: "s2", playerId: "b", playerName: "Lina" },
+        ],
+      },
+    });
     const saved = await service.saveResult(educator.id, match.id, result);
 
     expect(saved).toMatchObject({ goalsFor: 2, goalsAgainst: 1 });
     expect(saved.playerStats.map((stat) => stat.playerName)).toEqual(["Yanis"]);
+  });
+
+  it("refuse un buteur qui ne fait pas partie du match et garde le nom du match", async () => {
+    const educator = await createEducator("result-known");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+    await database.prisma.matchRecord.update({
+      where: { id: match.id },
+      data: { status: "played", lineup: [{ slotId: "s1", playerId: "a", playerName: "Yanis" }] },
+    });
+
+    await expect(
+      service.saveResult(educator.id, match.id, {
+        goalsFor: 1,
+        goalsAgainst: 0,
+        playerStats: [{ playerId: "inconnu", playerName: "Zorro", goals: 1, assists: 0 }],
+      }),
+    ).rejects.toThrow(/ne fait pas partie de ce match/);
+
+    const saved = await service.saveResult(educator.id, match.id, {
+      goalsFor: 1,
+      goalsAgainst: 0,
+      playerStats: [{ playerId: "a", playerName: "<b>Zorro</b>", goals: 1, assists: 0 }],
+    });
+    expect(saved.playerStats.map((stat) => stat.playerName)).toEqual(["Yanis"]);
+  });
+
+  it("verrouille la composition et la formation d'un match joué", async () => {
+    const educator = await createEducator("played-lock");
+    const match = await service.create(educator.id, { opponent: "US Vallée", dateLabel: "Samedi", venue: "home", gameFormat: 8 });
+    await database.prisma.matchRecord.update({ where: { id: match.id }, data: { status: "played" } });
+
+    await expect(service.updateLineup(educator.id, match.id, { lineup: [], captainPlayerId: null })).rejects.toThrow(/rouvre-le/);
+    await expect(service.changeFormation(educator.id, match.id, { formationId: "3-2-2" })).rejects.toThrow(/rouvre-le/);
   });
 
   it("enregistre le système de l'adversaire et refuse un système du mauvais format", async () => {

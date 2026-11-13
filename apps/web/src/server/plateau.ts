@@ -1,6 +1,7 @@
 import { EducatorNotFoundError, PlateauNotFoundError } from "@evolyfoot/database";
 import type { AttendanceEntry, CompetitionGame, CompetitionLineup } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface PlateauSummary {
   id: string;
@@ -62,6 +63,10 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   }
   if (error instanceof PlateauNotFoundError) {
     return Response.json({ error: error.message }, { status: 404 });
+  }
+  const databaseResponse = databaseErrorResponse(error, log);
+  if (databaseResponse) {
+    return databaseResponse;
   }
   if (error instanceof Error) {
     return Response.json({ error: error.message }, { status: 400 });

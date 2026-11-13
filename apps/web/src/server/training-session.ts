@@ -1,6 +1,7 @@
 import { EducatorNotFoundError, TrainingSessionNotFoundError, ValidationError } from "@evolyfoot/database";
 import { ageGroups, developmentThemes, type AgeGroup, type AttendanceEntry, type DevelopmentTheme } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface TrainingSessionBlockInput {
   id: string;
@@ -159,6 +160,10 @@ export function createSaveTrainingSessionHandler(
       if (error instanceof EducatorNotFoundError) {
         return Response.json({ error: error.message }, { status: 401 });
       }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       if (error instanceof Error) {
         // La validation métier (durée, activité inconnue, énumération invalide) échoue avec une
         // Error générique.
@@ -211,6 +216,10 @@ export function createPrepareSeasonSessionHandler(
       if (error instanceof ValidationError) {
         return Response.json({ error: error.message }, { status: 400 });
       }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -248,6 +257,10 @@ export function createStartNextCycleHandler(
       if (error instanceof ValidationError) {
         return Response.json({ error: error.message }, { status: 400 });
       }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -257,17 +270,22 @@ export function createStartNextCycleHandler(
 export function createGetTrainingSessionHandler(
   resolveEducator: (request: Request) => Promise<PublicEducator | null>,
   trainingSession: Pick<TrainingSessionGateway, "getById">,
+  log: (error: unknown) => void = console.error,
 ): (request: Request, id: string) => Promise<Response> {
   return async (request, id) => {
     const educator = await resolveEducator(request);
     if (!educator) {
       return Response.json({ error: "Authentification requise." }, { status: 401 });
     }
-    const session = await trainingSession.getById(educator.id, id);
-    if (!session) {
-      return Response.json({ error: "Séance introuvable." }, { status: 404 });
+    try {
+      const session = await trainingSession.getById(educator.id, id);
+      if (!session) {
+        return Response.json({ error: "Séance introuvable." }, { status: 404 });
+      }
+      return Response.json({ session });
+    } catch (error) {
+      return databaseErrorResponse(error, log) ?? (log(error), Response.json({ error: "Une erreur est survenue." }, { status: 500 }));
     }
-    return Response.json({ session });
   };
 }
 
@@ -301,6 +319,10 @@ export function createUpdateTrainingSessionDetailsHandler(
       }
       if (error instanceof EducatorNotFoundError) {
         return Response.json({ error: error.message }, { status: 401 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       if (error instanceof Error) {
         return Response.json({ error: error.message }, { status: 400 });

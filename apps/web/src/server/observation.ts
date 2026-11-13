@@ -1,6 +1,7 @@
 import { EducatorNotFoundError, ObservationNotFoundError } from "@evolyfoot/database";
 import { diagnosticCriteria, type ObservationDraft, type ObservationReport } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 // Étend ObservationReport (le résultat d'une sauvegarde) avec ce qui n'existe qu'une fois
 // l'observation persistée : identifiant réel, éventuel match d'origine, horodatage -- nécessaire
@@ -112,6 +113,10 @@ export function createSaveObservationHandler(
       if (error instanceof EducatorNotFoundError) {
         return Response.json({ error: error.message }, { status: 401 });
       }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       if (error instanceof Error) {
         // La validation métier (completeObservation) échoue avec une Error générique.
         return Response.json({ error: error.message }, { status: 400 });
@@ -135,6 +140,10 @@ export function createListObservationsHandler(
     try {
       return Response.json({ observations: await observation.list(educator.id) });
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       if (error instanceof Error) {
         return Response.json({ error: error.message }, { status: 400 });
       }
@@ -159,6 +168,10 @@ export function createGetObservationHandler(
     } catch (error) {
       if (error instanceof ObservationNotFoundError) {
         return Response.json({ error: error.message }, { status: 404 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       if (error instanceof Error) {
         return Response.json({ error: error.message }, { status: 400 });
@@ -191,6 +204,10 @@ export function createDecideAdjustmentHandler(
     } catch (error) {
       if (error instanceof ObservationNotFoundError) {
         return Response.json({ error: error.message }, { status: 404 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });

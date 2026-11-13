@@ -1,5 +1,6 @@
 import type { AttendanceSummary } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface TeamStatsSummary {
   trainingCount: number;
@@ -29,6 +30,10 @@ export function createGetStatsHandler(
     try {
       return Response.json({ stats: await stats.get(educator.id) });
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }

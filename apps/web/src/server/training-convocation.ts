@@ -2,6 +2,7 @@ import { TeamNotFoundError, ValidationError } from "@evolyfoot/database";
 import type { TrainingConvocationSettings } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 import { convocationMailer, notifyByEmail, type ConvocationOutcome } from "./convocation";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface TrainingConvocationGateway {
   getSettings(educatorId: string): Promise<TrainingConvocationSettings>;
@@ -22,6 +23,10 @@ export function createGetConvocationSettingsHandler(
     try {
       return Response.json({ settings: await gateway.getSettings(educator.id) });
     } catch (error) {
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
+      }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
@@ -51,6 +56,10 @@ export function createSaveConvocationSettingsHandler(
       }
       if (error instanceof TeamNotFoundError) {
         return Response.json({ error: "Crée d’abord ton équipe." }, { status: 404 });
+      }
+      const databaseResponse = databaseErrorResponse(error, log);
+      if (databaseResponse) {
+        return databaseResponse;
       }
       log(error);
       return Response.json({ error: "Une erreur est survenue." }, { status: 500 });

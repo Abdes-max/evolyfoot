@@ -18,6 +18,9 @@ function normalizeOpponent(opponent: string): string {
   if (!trimmed) {
     throw new ValidationError("Indique l’équipe adverse.");
   }
+  if (trimmed.length > 120) {
+    throw new ValidationError("Le nom de l’équipe adverse est trop long (120 caractères maximum).");
+  }
   return trimmed;
 }
 
@@ -230,6 +233,9 @@ export class MatchService {
     if (match.cancelledAt) {
       throw new ValidationError("Ce match est annulé : rétablis-le d’abord.");
     }
+    if (match.status === "played") {
+      throw new ValidationError("Ce match est joué : rouvre-le pour modifier la composition.");
+    }
     validateLineupAgainstFormation(match.gameFormat, match.formationId, input.lineup);
     if (input.captainPlayerId && !input.lineup.some((assignment) => assignment.playerId === input.captainPlayerId)) {
       throw new ValidationError("Le capitaine doit faire partie des titulaires.");
@@ -250,6 +256,9 @@ export class MatchService {
     const match = await this.get(educatorId, matchId);
     if (match.cancelledAt) {
       throw new ValidationError("Ce match est annulé : rétablis-le d’abord.");
+    }
+    if (match.status === "played") {
+      throw new ValidationError("Ce match est joué : rouvre-le pour modifier la formation.");
     }
     const gameFormat = input.gameFormat === undefined ? match.gameFormat : normalizeGameFormat(input.gameFormat);
     if (!listFormations(gameFormat).some((formation) => formation.id === input.formationId)) {
@@ -306,10 +315,29 @@ export class MatchService {
     if (error) {
       throw new ValidationError(error);
     }
+    const known = new Map<string, string | null>();
+    for (const assignment of match.lineup) {
+      known.set(assignment.playerId, assignment.playerName);
+    }
+    for (const entry of match.attendance ?? []) {
+      known.set(entry.playerId, known.get(entry.playerId) ?? entry.playerName);
+    }
+    for (const playerId of match.substitutePlayerIds) {
+      known.set(playerId, known.get(playerId) ?? null);
+    }
+    const playerStats = result.playerStats
+      .filter((stat) => stat.goals > 0 || stat.assists > 0)
+      .map((stat) => {
+        if (!known.has(stat.playerId)) {
+          throw new ValidationError("Un buteur ou un passeur ne fait pas partie de ce match.");
+        }
+        // Le nom vient du match, pas de la requête : une valeur libre n’a rien à faire dans les statistiques.
+        return { ...stat, playerName: known.get(stat.playerId) ?? stat.playerName.trim().slice(0, 120) };
+      });
     return this.matchRepository.update(matchId, educatorId, {
       goalsFor: result.goalsFor,
       goalsAgainst: result.goalsAgainst,
-      playerStats: result.playerStats.filter((stat) => stat.goals > 0 || stat.assists > 0),
+      playerStats,
     });
   }
 

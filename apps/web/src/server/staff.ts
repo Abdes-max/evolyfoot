@@ -1,5 +1,6 @@
 import { DuplicateEducatorEmailError, EducatorNotFoundError, InviteInvalidError, ValidationError } from "@evolyfoot/database";
 import { buildSessionCookie, type PublicAccount } from "./auth";
+import { databaseErrorResponse } from "./api-errors";
 
 export interface StaffMemberSummary {
   id: string;
@@ -33,6 +34,10 @@ function errorResponse(error: unknown, log: (error: unknown) => void): Response 
   }
   if (error instanceof ValidationError) {
     return Response.json({ error: error.message }, { status: 400 });
+  }
+  const databaseResponse = databaseErrorResponse(error, log);
+  if (databaseResponse) {
+    return databaseResponse;
   }
   log(error);
   return Response.json({ error: "Une erreur est survenue." }, { status: 500 });
