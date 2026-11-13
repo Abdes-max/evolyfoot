@@ -211,20 +211,17 @@ jobs:
           cat > "$RUNNER_TEMP/signing.init.gradle" <<'GRADLE'
           allprojects {
             plugins.withId('com.android.application') {
-              android {
-                signingConfigs {
-                  upload {
-                    storeFile file(System.getenv('KEYSTORE_PATH'))
-                    storePassword System.getenv('KEYSTORE_PASSWORD')
-                    keyAlias System.getenv('KEY_ALIAS')
-                    keyPassword System.getenv('KEY_PASSWORD')
-                  }
-                }
-              }
-              // Après la lecture de build.gradle : le projet généré par Expo y signe la version
-              // release avec la clé de debug, qui écraserait une affectation faite plus tôt.
-              project.afterEvaluate {
-                android.buildTypes.release.signingConfig = android.signingConfigs.upload
+              // finalizeDsl : après la lecture de build.gradle (le projet généré par Expo y signe la
+              // version release avec la clé de debug) et avant la création des variantes. Une
+              // affectation plus tôt est écrasée ; plus tard (afterEvaluate), les variantes ont déjà
+              // retenu la clé de debug.
+              extensions.getByName('androidComponents').finalizeDsl { dsl ->
+                def upload = dsl.signingConfigs.create('upload')
+                upload.storeFile = file(System.getenv('KEYSTORE_PATH'))
+                upload.storePassword = System.getenv('KEYSTORE_PASSWORD')
+                upload.keyAlias = System.getenv('KEY_ALIAS')
+                upload.keyPassword = System.getenv('KEY_PASSWORD')
+                dsl.buildTypes.getByName('release').signingConfig = upload
               }
             }
           }
