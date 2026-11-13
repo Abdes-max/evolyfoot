@@ -21,5 +21,8 @@
     "ageRatingOverrides": {
       "messagingAndChat": true
     }
+  },
+  "googlePlay": {
+    "shortDescription": "Prépare tes séances, convoque tes joueurs et suis leur progression."
   }
 }
