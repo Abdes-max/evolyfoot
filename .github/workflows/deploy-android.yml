@@ -220,11 +220,11 @@ jobs:
                     keyPassword System.getenv('KEY_PASSWORD')
                   }
                 }
-                buildTypes {
-                  release {
-                    signingConfig signingConfigs.upload
-                  }
-                }
+              }
+              // Après la lecture de build.gradle : le projet généré par Expo y signe la version
+              // release avec la clé de debug, qui écraserait une affectation faite plus tôt.
+              project.afterEvaluate {
+                android.buildTypes.release.signingConfig = android.signingConfigs.upload
               }
             }
           }
@@ -248,6 +248,15 @@ jobs:
             ./gradlew bundleRelease --no-daemon
           fi
           ls -la app/build/outputs/bundle/release/
+          # Google refuse un App Bundle signé en debug : on le vérifie ici plutôt qu'à l'envoi.
+          if [ -f "$RUNNER_TEMP/signing.init.gradle" ]; then
+            signer=$(keytool -printcert -jarfile app/build/outputs/bundle/release/app-release.aab | grep -m1 "Owner:" || true)
+            echo "Signature : $signer"
+            if echo "$signer" | grep -q "Android Debug"; then
+              echo "::error::App Bundle signé avec la clé de debug au lieu de la clé d'upload."
+              exit 1
+            fi
+          fi
 
       - name: Conserver l'App Bundle
         if: steps.secrets-check.outputs.ready == 'true'
