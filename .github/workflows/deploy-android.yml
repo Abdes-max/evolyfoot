@@ -1,0 +1,270 @@
+name: Deploy Android to Google Play (internal track)
+
+# Construit EvolyFoot Coach et EvolyFoot Player pour Android sur un runner Linux, signe un App Bundle
+# (.aab) avec la clé d'upload et l'envoie sur la piste de test interne de Google Play (l'équivalent
+# de TestFlight, jamais la production), à chaque merge dans master qui touche le mobile ou ses
+# dépendances partagées. Même méthode qu'arena-pulse (deploy-android.yml) : ni EAS, ni Fastlane.
+# La mise en production est une étape manuelle séparée : promote-android-production.yml.
+#
+# Le dossier android/ n'est jamais commité : `expo prebuild` le régénère à chaque run depuis app.json.
+# Le job `plan` ne retient que les applis concernées par le push, comme deploy-ios.yml.
+#
+# Sans clé d'upload, l'App Bundle est signé avec la clé de debug du projet généré et n'est pas envoyé :
+# le build se vérifie avant même que les comptes soient prêts.
+# Checklist unique (voir docs/delivery.md) :
+#   1. Play Console → Créer une application : « EvolyFoot Coach » (com.evolyfoot.coach) et
+#      « EvolyFoot Player » (com.evolyfoot.player). Le nom de package est définitif.
+#   2. Compte de service (le même qu'arena-pulse convient) invité dans Play Console → Utilisateurs
+#      et autorisations, avec le droit de publier sur les deux applis.
+# Secrets du dépôt (Settings → Secrets and variables → Actions), mêmes noms qu'arena-pulse ; une
+# seule clé d'upload sert aux deux applis (Google signe ensuite avec sa clé, Play App Signing) :
+#   ANDROID_KEYSTORE_BASE64          -- `base64 -w0 evolyfoot-upload.keystore`
+#   ANDROID_KEYSTORE_PASSWORD        -- mot de passe du keystore
+#   ANDROID_KEY_ALIAS                -- alias de la clé (ex. evolyfoot-upload)
+#   ANDROID_KEY_PASSWORD             -- identique au mot de passe du keystore (format PKCS12)
+#   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON -- contenu JSON de la clé du compte de service (non encodé)
+on:
+  push:
+    branches: [master]
+    paths:
+      - "apps/mobile/**"
+      - "apps/mobile-player/**"
+      - "packages/domain/**"
+      - "packages/design-tokens/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-android.yml"
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: >-
+          versionCode de cet envoi -- strictement supérieur au dernier envoyé sur Google Play. Par
+          défaut, le numéro de run GitHub Actions.
+        required: false
+      apps:
+        description: "Applis à construire : both (défaut), mobile (Coach) ou mobile-player (Player)."
+        type: choice
+        options: [both, mobile, mobile-player]
+        default: both
+      upload:
+        description: "Envoyer sur Google Play. Décoché : App Bundle seul, pour tester ce workflow."
+        type: boolean
+        default: true
+
+jobs:
+  # Choisit les applis à construire d'après les fichiers du push (voir deploy-ios.yml).
+  plan:
+    name: Choisir les applis à construire
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+      any: ${{ steps.pick.outputs.any }}
+    steps:
+      - name: Comparer les fichiers modifiés
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          APPS_INPUT: ${{ inputs.apps }}
+          REPO: ${{ github.repository }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          coach=false
+          player=false
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            case "${APPS_INPUT:-both}" in
+              mobile) coach=true ;;
+              mobile-player) player=true ;;
+              *)
+                coach=true
+                player=true
+                ;;
+            esac
+          else
+            files=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --paginate --jq '.files[].filename' || true)
+            if [ -z "$files" ]; then
+              echo "::warning::Fichiers modifiés introuvables : les deux applis sont construites par précaution."
+              coach=true
+              player=true
+            else
+              while IFS= read -r file; do
+                case "$file" in
+                  packages/domain/*.test.ts) ;;
+                  apps/mobile/*) coach=true ;;
+                  apps/mobile-player/*) player=true ;;
+                  packages/domain/*|packages/design-tokens/*|pnpm-lock.yaml|.github/workflows/deploy-android.yml)
+                    coach=true
+                    player=true
+                    ;;
+                esac
+              done <<< "$files"
+            fi
+          fi
+
+          any=false
+          if [ "$coach" = true ] || [ "$player" = true ]; then
+            any=true
+          fi
+          matrix=$(jq -cn --argjson coach "$coach" --argjson player "$player" '{include: (
+            [ (if $coach then {app: "mobile", package: "com.evolyfoot.coach"} else empty end),
+              (if $player then {app: "mobile-player", package: "com.evolyfoot.player"} else empty end) ]
+            | if length == 0 then [{app: "aucune", package: ""}] else . end
+          )}')
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "any=$any" >> "$GITHUB_OUTPUT"
+          echo "Coach : $coach -- Player : $player"
+
+  android:
+    name: Construire et envoyer sur Google Play (${{ matrix.app }})
+    needs: plan
+    if: needs.plan.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      EXPO_PUBLIC_API_URL: https://evolyfoot.com
+      VERSION_CODE: ${{ inputs.version_code || github.run_number }}
+    steps:
+      - name: Vérifier la présence des secrets Google Play
+        id: secrets-check
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          EVENT: ${{ github.event_name }}
+          UPLOAD_INPUT: ${{ inputs.upload }}
+        run: |
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Clé d'upload manquante pour ${{ matrix.app }} : App Bundle signé avec la clé de debug, non envoyé. Voir l'en-tête de .github/workflows/deploy-android.yml."
+          else
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            :
+          elif [ "$EVENT" = "workflow_dispatch" ] && [ "$UPLOAD_INPUT" = "false" ]; then
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::App Bundle seul : rien n'est envoyé sur Google Play."
+          elif [ -z "$SERVICE_ACCOUNT" ]; then
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Envoi Google Play ignoré : GOOGLE_PLAY_SERVICE_ACCOUNT_JSON manquant. L'App Bundle reste téléchargeable dans les artefacts du run."
+          else
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Récupérer le code
+        if: steps.secrets-check.outputs.ready == 'true'
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Installer Node.js
+        if: steps.secrets-check.outputs.ready == 'true'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Activer pnpm
+        if: steps.secrets-check.outputs.ready == 'true'
+        run: corepack enable && corepack prepare pnpm@10.15.1 --activate
+
+      - name: Installer les dépendances
+        if: steps.secrets-check.outputs.ready == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Installer Java
+        if: steps.secrets-check.outputs.ready == 'true'
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: pnpm-lock.yaml
+
+      # versionCode : numéro de run (unique et croissant) ; versionName : `version` d'app.json.
+      # Modifié sur la copie du runner uniquement, avant que prebuild ne génère build.gradle.
+      - name: Générer le projet Android natif
+        if: steps.secrets-check.outputs.ready == 'true'
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          set -euo pipefail
+          node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync("app.json","utf8"));j.expo.android.versionCode=Number(process.env.VERSION_CODE);fs.writeFileSync("app.json",JSON.stringify(j,null,2)+"\n")'
+          npx expo prebuild --platform android --clean --no-install
+
+      - name: Décoder la clé d'upload
+        if: steps.secrets-check.outputs.signed == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo -n "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.keystore"
+
+      # Signature injectée par un script d'initialisation Gradle : ni chemin ni mot de passe dans
+      # un fichier du projet généré (voir arena-pulse).
+      - name: Écrire le script de signature
+        if: steps.secrets-check.outputs.signed == 'true'
+        run: |
+          cat > "$RUNNER_TEMP/signing.init.gradle" <<'GRADLE'
+          allprojects {
+            plugins.withId('com.android.application') {
+              android {
+                signingConfigs {
+                  upload {
+                    storeFile file(System.getenv('KEYSTORE_PATH'))
+                    storePassword System.getenv('KEYSTORE_PASSWORD')
+                    keyAlias System.getenv('KEY_ALIAS')
+                    keyPassword System.getenv('KEY_PASSWORD')
+                  }
+                }
+                buildTypes {
+                  release {
+                    signingConfig signingConfigs.upload
+                  }
+                }
+              }
+            }
+          }
+          GRADLE
+
+      - name: Construire l'App Bundle signé
+        if: steps.secrets-check.outputs.ready == 'true'
+        working-directory: apps/${{ matrix.app }}/android
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/upload.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+          NODE_ENV: production
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          if [ -f "$RUNNER_TEMP/signing.init.gradle" ]; then
+            ./gradlew bundleRelease --no-daemon --init-script "$RUNNER_TEMP/signing.init.gradle"
+          else
+            ./gradlew bundleRelease --no-daemon
+          fi
+          ls -la app/build/outputs/bundle/release/
+
+      - name: Conserver l'App Bundle
+        if: steps.secrets-check.outputs.ready == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.app }}-${{ env.VERSION_CODE }}.aab
+          path: apps/${{ matrix.app }}/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 14
+
+      # Tant que l'appli n'a jamais été publiée, Google n'accepte que des releases en brouillon :
+      # on les déploie aux testeurs internes depuis Play Console (ou une fois la fiche validée).
+      - name: Envoyer sur la piste interne
+        if: steps.secrets-check.outputs.ready == 'true' && steps.secrets-check.outputs.upload == 'true'
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ matrix.package }}
+          releaseFiles: apps/${{ matrix.app }}/android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: ${{ vars.ANDROID_RELEASE_STATUS || 'draft' }}
