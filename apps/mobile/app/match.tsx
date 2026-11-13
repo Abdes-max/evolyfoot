@@ -248,10 +248,12 @@ export default function MatchListScreen() {
                 </View>
               ) : null}
               {match.status === "played" ? <MatchScore match={match} /> : null}
-              {match.status === "scheduled" || match.convokedAt ? (
+              {!match.cancelledAt && (match.status === "scheduled" || match.convokedAt) ? (
                 <ConvocationSummary attendance={match.attendance} convokedAt={match.convokedAt} roster={roster} selectedPlayerIds={match.selectedPlayerIds} />
               ) : null}
-              <Text style={styles.cardLink}>{match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}</Text>
+              {match.cancelledAt ? null : (
+                <Text style={styles.cardLink}>{match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}</Text>
+              )}
             </TouchableOpacity>
           ))
         )}

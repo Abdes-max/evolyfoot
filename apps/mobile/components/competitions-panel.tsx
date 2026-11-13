@@ -163,10 +163,10 @@ export function CompetitionsPanel({ kind, scope }: { kind: CompetitionKind; scop
                 </View>
               ) : null}
               {item.result ? <Text style={styles.cardBody}>{item.result}</Text> : null}
-              {!past || item.convokedAt ? (
+              {!item.cancelledAt && (!past || item.convokedAt) ? (
                 <ConvocationSummary attendance={item.attendance} convokedAt={item.convokedAt} roster={roster} selectedPlayerIds={item.selectedPlayerIds} />
               ) : null}
-              <Text style={styles.cardLink}>Voir le détail →</Text>
+              {item.cancelledAt ? null : <Text style={styles.cardLink}>Voir le détail →</Text>}
             </TouchableOpacity>
           );
         })

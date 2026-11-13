@@ -206,9 +206,11 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
                   {(!isPast || item.convokedAt) && !item.cancelledAt && (
                     <ConvocationSummary attendance={item.attendance} convokedAt={item.convokedAt} roster={roster} selectedPlayerIds={item.selectedPlayerIds} />
                   )}
-                  <span aria-hidden="true" className="match-card-link card-cta">
-                    Voir le détail →
-                  </span>
+                  {!item.cancelledAt && (
+                    <span aria-hidden="true" className="match-card-link card-cta">
+                      Voir le détail →
+                    </span>
+                  )}
                 </Link>
               </li>
             );

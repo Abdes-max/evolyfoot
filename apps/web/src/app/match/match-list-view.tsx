@@ -315,7 +315,7 @@ export function MatchListView() {
               {matchesInScope(matches, scope, now).map((match) => (
                 <li key={match.id}>
                   <Link
-                    aria-label={`${match.opponent} — ${match.status === "played" ? "Voir la composition" : "Préparer la composition"}`}
+                    aria-label={`${match.opponent} — ${match.cancelledAt ? "Voir le match annulé" : match.status === "played" ? "Voir la composition" : "Préparer la composition"}`}
                     className="match-card card-link"
                     href={`/match/${match.id}`}
                   >
@@ -345,9 +345,11 @@ export function MatchListView() {
                         selectedPlayerIds={match.selectedPlayerIds}
                       />
                     )}
-                    <span aria-hidden="true" className="match-card-link card-cta">
-                      {match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}
-                    </span>
+                    {!match.cancelledAt && (
+                      <span aria-hidden="true" className="match-card-link card-cta">
+                        {match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}
+                      </span>
+                    )}
                   </Link>
                 </li>
               ))}
