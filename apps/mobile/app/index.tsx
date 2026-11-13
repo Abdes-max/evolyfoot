@@ -25,6 +25,7 @@ import { CardGlow } from "../components/card-glow";
 import { CalendarIcon, ClockIcon, PinIcon } from "../components/icons";
 import { TeamCrest } from "../components/team-crest";
 import { ThemeToggle } from "../components/theme-toggle";
+import { NotificationBell } from "../components/notification-bell";
 import { useAuth, type MobileMatch } from "../lib/auth-context";
 import { competitionKinds, type Competition, type CompetitionKind } from "../lib/competitions";
 import { useUnread } from "../lib/push";
@@ -194,6 +195,7 @@ export default function HomeScreen() {
             </View>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <NotificationBell />
             <ThemeToggle />
             <TouchableOpacity accessibilityLabel="Mon compte" onPress={confirmLogout} style={styles.avatar}>
               <Text style={styles.avatarText}>{educator ? initials(educator.displayName) : "?"}</Text>

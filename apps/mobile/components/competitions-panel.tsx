@@ -146,8 +146,8 @@ export function CompetitionsPanel({ kind, scope }: { kind: CompetitionKind; scop
               onPress={() => router.push({ pathname: "/competition/[id]", params: { id: item.id, kind } })}
               style={styles.card}
             >
-              <View style={[styles.statusBadge, past && styles.statusBadgePast]}>
-                <Text style={[styles.statusText, past && styles.statusTextPast]}>
+              <View style={[styles.statusBadge, past && styles.statusBadgePast, item.cancelledAt && styles.statusBadgeCancelled]}>
+                <Text style={[styles.statusText, past && styles.statusTextPast, item.cancelledAt && styles.statusTextCancelled]}>
                   {item.cancelledAt ? "Annulé" : item.finishedAt ? "Terminé" : past ? "Passé" : "À venir"}
                 </Text>
               </View>
@@ -215,6 +215,8 @@ const styles = themedStyles(() =>
     cancelButtonText: { color: colors.muted, fontSize: 11, fontWeight: "800" },
     empty: { color: colors.muted, fontSize: 11, marginTop: 12 },
     card: { marginTop: 12, padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md },
+    statusBadgeCancelled: { backgroundColor: "#ef4444", borderColor: "#ef4444" },
+    statusTextCancelled: { color: "#ffffff" },
     statusBadge: { alignSelf: "flex-start", paddingVertical: 5, paddingHorizontal: 10, borderRadius: radii.pill, backgroundColor: colors.primarySoft },
     statusBadgePast: { backgroundColor: "rgba(52,211,153,.14)" },
     statusText: { fontSize: 9, fontWeight: "800", color: colors.primary, textTransform: "uppercase" },

@@ -18,7 +18,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CollapsibleSection } from "../../components/collapsible-section";
 import { ConcernedPlayersPicker } from "../../components/concerned-players-picker";
-import { CancelEventPanel } from "../../components/cancel-event-panel";
+import { CancelEventPanel, CancelledBanner } from "../../components/cancel-event-panel";
 import { ConvocationActions } from "../../components/convocation-actions";
 import { MatchAnalysis } from "../../components/match-analysis";
 import { MatchClockPanel } from "../../components/match-clock";
@@ -235,17 +235,13 @@ export default function MatchDetailScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page} ref={scrollRef}>
-        <Text style={styles.step}>{match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</Text>
+        <Text style={styles.step}>{cancelled ? "MATCH" : match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</Text>
         <Text style={styles.title}>{match.opponent}</Text>
         <Text style={styles.body}>
           {match.dateLabel} · {venueLabel[match.venue]} · Foot à {match.gameFormat}
         </Text>
 
-        {cancelled && !readOnly ? (
-          <Text style={styles.cancelledNote}>
-            Match annulé : tout est bloqué (lieu, joueurs, convocation, composition, « joué »). Rétablis-le juste en dessous de la convocation pour le modifier.
-          </Text>
-        ) : null}
+        {cancelled ? <CancelledBanner note={match.cancellationNote} /> : null}
 
         <View style={styles.locationBlock}>
           <Text style={styles.locationLabel}>Lieu</Text>
@@ -291,20 +287,24 @@ export default function MatchDetailScreen() {
         )}
 
         <View style={styles.concerned}>
-          <ConvocationActions
-            attendance={match.attendance}
-            canSend={!locked}
-            convokeUrl={`/api/matches/${encodeURIComponent(match.id)}/convoke`}
-            convokedAt={match.convokedAt ?? null}
-            onSent={refreshMatch}
-            roster={roster}
-            scheduledText="Les joueurs concernés voient le match sans pouvoir répondre tant que la convocation n’est pas envoyée."
-            selectedPlayerIds={match.selectedPlayerIds}
-          />
+          {/* Annulé : ni convocation, ni présents / absents. */}
+          {cancelled ? null : (
+            <ConvocationActions
+              attendance={match.attendance}
+              canSend={!locked}
+              convokeUrl={`/api/matches/${encodeURIComponent(match.id)}/convoke`}
+              convokedAt={match.convokedAt ?? null}
+              onSent={refreshMatch}
+              roster={roster}
+              scheduledText="Les joueurs concernés voient le match sans pouvoir répondre tant que la convocation n’est pas envoyée."
+              selectedPlayerIds={match.selectedPlayerIds}
+            />
+          )}
           {!readOnly ? (
             <CancelEventPanel
               cancellationNote={match.cancellationNote}
               cancelledAt={match.cancelledAt}
+              hideState
               noun="le match"
               onChange={(state) => setMatch((current) => (current ? { ...current, ...state } : current))}
               url={`/api/matches/${encodeURIComponent(match.id)}/cancel`}
@@ -331,81 +331,83 @@ export default function MatchDetailScreen() {
           <MatchClockPanel matchId={match.id} />
         )}
 
-        {/* Composition facultative, repliée comme le résultat. */}
-        <CollapsibleSection
-          style={{ marginTop: spacing.md }}
-          summary={match.lineup.length > 0 ? `${match.lineup.length} titulaires · ${match.substitutePlayerIds.length} remplaçants` : "Facultative"}
-          title="Composition"
-        >
-          {!locked && formations.length > 1 && (
-            <View style={styles.formationRow}>
-              {formations.map((formation) => (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: formation.id === match.formationId }}
-                  key={formation.id}
-                  onPress={() => changeFormation(formation.id)}
-                  style={[styles.formationChoice, formation.id === match.formationId && styles.formationChoiceActive]}
-                >
-                  <Text style={[styles.formationChoiceText, formation.id === match.formationId && styles.formationChoiceTextActive]}>{formation.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          <View style={styles.pitchWrap}>
-            <MatchPitch
-              captainPlayerId={match.captainPlayerId}
-              lineup={match.lineup}
-              numberOf={(playerId) => roster.find((player) => player.id === playerId)?.jerseyNumber || null}
-              onSlotTap={
-                locked
-                  ? undefined
-                  : (slotId) => {
-                      setPickerSlotId(slotId);
-                    }
-              }
-              slots={slots}
-            />
-          </View>
-
-          <View style={styles.bench}>
-            <Text style={styles.benchTitle}>Remplaçants{locked ? "" : ` (max. ${maxSubstitutes(match.gameFormat as GameFormat)})`}</Text>
-            <View style={styles.benchRow}>
-              {Array.from({ length: maxSubstitutes(match.gameFormat as GameFormat) }, (_, index) => {
-                const playerId = match.substitutePlayerIds[index];
-                const player = playerId ? roster.find((candidate) => candidate.id === playerId) : null;
-                return (
+        {/* Composition facultative, repliée comme le résultat ; rien à préparer pour un match annulé. */}
+        {cancelled ? null : (
+          <CollapsibleSection
+            style={{ marginTop: spacing.md }}
+            summary={match.lineup.length > 0 ? `${match.lineup.length} titulaires · ${match.substitutePlayerIds.length} remplaçants` : "Facultative"}
+            title="Composition"
+          >
+            {!locked && formations.length > 1 && (
+              <View style={styles.formationRow}>
+                {formations.map((formation) => (
                   <TouchableOpacity
-                    accessibilityLabel={player ? `Remplaçant : ${player.name}` : "Remplaçant : aucun joueur, toucher pour affecter"}
                     accessibilityRole="button"
-                    disabled={locked}
-                    key={index}
-                    onPress={() =>
-                      player
-                        ? Alert.alert(`Retirer ${player.name} du banc ?`, undefined, [
-                            { text: "Annuler", style: "cancel" },
-                            { text: "Retirer", style: "destructive", onPress: () => removeFromBench(player.id) },
-                          ])
-                        : setBenchPicking(true)
-                    }
-                    style={styles.benchItem}
+                    accessibilityState={{ selected: formation.id === match.formationId }}
+                    key={formation.id}
+                    onPress={() => changeFormation(formation.id)}
+                    style={[styles.formationChoice, formation.id === match.formationId && styles.formationChoiceActive]}
                   >
-                    <View style={[pitchStyles.token, player && pitchStyles.tokenFilled]}>
-                      <Text style={[pitchStyles.tokenText, player && pitchStyles.tokenTextFilled]}>{player ? initials(player.name) : "+"}</Text>
-                    </View>
-                    <Text numberOfLines={1} style={[styles.benchName, !player && styles.benchNameFree]}>
-                      {player ? player.name.split(" ")[0] : "Libre"}
-                    </Text>
+                    <Text style={[styles.formationChoiceText, formation.id === match.formationId && styles.formationChoiceTextActive]}>{formation.label}</Text>
                   </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
+                ))}
+              </View>
+            )}
 
-          {/* La composition se fait directement sur le terrain : pas de liste des postes en dessous. */}
-          {!locked && <Text style={styles.sectionHint}>Touche un poste sur le terrain pour y affecter un joueur.</Text>}
-        </CollapsibleSection>
+            <View style={styles.pitchWrap}>
+              <MatchPitch
+                captainPlayerId={match.captainPlayerId}
+                lineup={match.lineup}
+                numberOf={(playerId) => roster.find((player) => player.id === playerId)?.jerseyNumber || null}
+                onSlotTap={
+                  locked
+                    ? undefined
+                    : (slotId) => {
+                        setPickerSlotId(slotId);
+                      }
+                }
+                slots={slots}
+              />
+            </View>
+
+            <View style={styles.bench}>
+              <Text style={styles.benchTitle}>Remplaçants{locked ? "" : ` (max. ${maxSubstitutes(match.gameFormat as GameFormat)})`}</Text>
+              <View style={styles.benchRow}>
+                {Array.from({ length: maxSubstitutes(match.gameFormat as GameFormat) }, (_, index) => {
+                  const playerId = match.substitutePlayerIds[index];
+                  const player = playerId ? roster.find((candidate) => candidate.id === playerId) : null;
+                  return (
+                    <TouchableOpacity
+                      accessibilityLabel={player ? `Remplaçant : ${player.name}` : "Remplaçant : aucun joueur, toucher pour affecter"}
+                      accessibilityRole="button"
+                      disabled={locked}
+                      key={index}
+                      onPress={() =>
+                        player
+                          ? Alert.alert(`Retirer ${player.name} du banc ?`, undefined, [
+                              { text: "Annuler", style: "cancel" },
+                              { text: "Retirer", style: "destructive", onPress: () => removeFromBench(player.id) },
+                            ])
+                          : setBenchPicking(true)
+                      }
+                      style={styles.benchItem}
+                    >
+                      <View style={[pitchStyles.token, player && pitchStyles.tokenFilled]}>
+                        <Text style={[pitchStyles.tokenText, player && pitchStyles.tokenTextFilled]}>{player ? initials(player.name) : "+"}</Text>
+                      </View>
+                      <Text numberOfLines={1} style={[styles.benchName, !player && styles.benchNameFree]}>
+                        {player ? player.name.split(" ")[0] : "Libre"}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* La composition se fait directement sur le terrain : pas de liste des postes en dessous. */}
+            {!locked && <Text style={styles.sectionHint}>Touche un poste sur le terrain pour y affecter un joueur.</Text>}
+          </CollapsibleSection>
+        )}
 
         {saveError ? <Text style={styles.fieldError}>{saveError}</Text> : null}
 

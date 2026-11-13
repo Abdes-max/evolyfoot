@@ -33,6 +33,15 @@ export function TargetIcon(props: IconProps) {
   );
 }
 
+export function PinIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11Z" />
+      <circle cx="12" cy="10" r="2.4" />
+    </svg>
+  );
+}
+
 export function CalendarIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>

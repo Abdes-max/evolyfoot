@@ -1,12 +1,14 @@
 "use client";
 
 import { matchesInScope, matchScopeLabels, type MatchScope, gameFormats, listFormations } from "@evolyfoot/domain";
-import type { GameFormat, MatchStatus, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
+import type { AttendanceEntry, GameFormat, MatchStatus, MatchVenue, PlayerSelection } from "@evolyfoot/domain";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { frenchDateLabel, parseDatetimeInputValue } from "../date-format";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "../concerned-players-picker";
+import { ConvocationSummary } from "../convocation-summary";
+import { CalendarIcon, PinIcon } from "../icons";
 import { PlaceInput } from "../place-input";
 import { CalendarImport } from "./calendar-import";
 import { CompetitionsPanel } from "./competitions-panel";
@@ -25,6 +27,9 @@ interface MatchSummary {
   goalsAgainst?: number | null;
   // Annulé par le coach (ISO).
   cancelledAt?: string | null;
+  convokedAt?: string | null;
+  attendance?: AttendanceEntry[];
+  selectedPlayerIds?: PlayerSelection;
 }
 
 interface TeamSummary {
@@ -34,6 +39,19 @@ interface TeamSummary {
 
 const statusLabel: Record<MatchStatus, string> = { scheduled: "À venir", played: "Joué" };
 const venueLabel: Record<MatchVenue, string> = { home: "Domicile", away: "Extérieur" };
+
+// Score d'un match joué, en vert pour une victoire, en rouge pour une défaite ; sinon rappel de le saisir.
+function MatchScore({ match }: { match: MatchSummary }) {
+  if (match.goalsFor == null || match.goalsAgainst == null) {
+    return <p className="match-card-score missing">Résultat à saisir</p>;
+  }
+  const outcome = match.goalsFor > match.goalsAgainst ? "win" : match.goalsFor < match.goalsAgainst ? "loss" : "draw";
+  return (
+    <p className={`match-card-score ${outcome}`}>
+      Score : {match.goalsFor} – {match.goalsAgainst}
+    </p>
+  );
+}
 
 async function readErrorMessage(response: Response): Promise<string> {
   const body = await response.json().catch(() => ({}));
@@ -155,10 +173,11 @@ export function MatchListView() {
     <main className="match-shell">
       <header className="page-header match-header">
         <div>
-          <span className="eyebrow light">MATCHS &amp; COMPÉTITIONS</span>
-          <h1 title="Prépare tes matchs, note tes compétitions.">Prépare tes matchs, note tes compétitions.</h1>
-          <p title="Compose ton équipe et observe le match une fois joué ; garde aussi une trace de tes tournois et plateaux.">
-            Compose ton équipe et observe le match une fois joué ; garde aussi une trace de tes tournois et plateaux.
+          <span className="eyebrow light">MATCHS</span>
+          <h1 title="Prépare et suis tes matchs.">Prépare et suis tes matchs.</h1>
+          <p>
+            Compose ton équipe, désigne un capitaine, puis observe le match une fois joué pour ajuster tes prochaines séances si nécessaire. Garde aussi une
+            trace de tes tournois et plateaux.
           </p>
         </div>
       </header>
@@ -175,55 +194,66 @@ export function MatchListView() {
       )}
 
       {authenticated && (
-        <section className="match-content">
+        <section className="match-content match-list-screen">
           {!creating ? (
-            <button className="match-new-button" onClick={() => setCreating(true)} type="button">
-              + Nouveau match
-            </button>
+            <>
+              <button className="match-new-button" onClick={() => setCreating(true)} type="button">
+                + Nouveau match
+              </button>
+              <CalendarImport<MatchSummary>
+                existing={matches}
+                formationId={formationId}
+                gameFormat={gameFormat}
+                onImported={(created) => setMatches((current) => [...created, ...current])}
+                teamName={teamName}
+              />
+            </>
           ) : (
             <form className="match-create-form" onSubmit={createMatch}>
-              <div className="form-row">
-                <label>
-                  Équipe adverse
-                  <input onChange={(event) => setOpponent(event.target.value)} placeholder="Ex. US Vallée" value={opponent} />
-                </label>
-                <label>
-                  Date
-                  <input onChange={(event) => setDateInput(event.target.value)} required type="datetime-local" value={dateInput} />
-                </label>
-              </div>
-              <div className="form-row">
-                <fieldset>
-                  <legend>Domicile ou extérieur</legend>
-                  <div className="choice-grid">
-                    {(["home", "away"] as const).map((option) => (
-                      <button
-                        aria-pressed={venue === option}
-                        className={venue === option ? "choice active" : "choice"}
-                        key={option}
-                        onClick={() => setVenue(option)}
-                        type="button"
-                      >
-                        {venueLabel[option]}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <label>
-                  Format de jeu
-                  <select onChange={(event) => setGameFormat(Number(event.target.value) as GameFormat)} value={gameFormat}>
-                    {gameFormats.map((format) => (
-                      <option key={format} value={format}>
-                        Foot à {format}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+              <label>
+                Équipe adverse
+                <input onChange={(event) => setOpponent(event.target.value)} placeholder="Ex. US Vallée" value={opponent} />
+              </label>
+              <label>
+                Date
+                <input onChange={(event) => setDateInput(event.target.value)} required type="datetime-local" value={dateInput} />
+              </label>
+              <fieldset>
+                <legend>Lieu</legend>
+                <div className="choice-grid">
+                  {(["home", "away"] as const).map((option) => (
+                    <button
+                      aria-pressed={venue === option}
+                      className={venue === option ? "choice active" : "choice"}
+                      key={option}
+                      onClick={() => setVenue(option)}
+                      type="button"
+                    >
+                      {venueLabel[option]}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
               <label>
                 Adresse du terrain
                 <PlaceInput onChange={setLocation} value={location} />
               </label>
+              <fieldset>
+                <legend>Format de jeu</legend>
+                <div className="choice-grid">
+                  {gameFormats.map((format) => (
+                    <button
+                      aria-pressed={gameFormat === format}
+                      className={gameFormat === format ? "choice active" : "choice"}
+                      key={format}
+                      onClick={() => setGameFormat(format)}
+                      type="button"
+                    >
+                      {format}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
               <fieldset>
                 <legend>Formation</legend>
                 <div className="choice-grid">
@@ -276,7 +306,9 @@ export function MatchListView() {
             ))}
           </div>
 
-          {matchesInScope(matches, scope, now).length === 0 ? (
+          {matches.length === 0 ? (
+            <p className="match-empty">Aucun match préparé pour l’instant.</p>
+          ) : matchesInScope(matches, scope, now).length === 0 ? (
             <p className="match-empty">{scope === "past" ? "Aucun match passé." : "Aucun match à venir."}</p>
           ) : (
             <ul className="match-list" aria-label="Matchs">
@@ -288,19 +320,31 @@ export function MatchListView() {
                     href={`/match/${match.id}`}
                   >
                     <div className="match-card-top">
-                      <span className={`match-status match-status-${match.status}`}>{match.cancelledAt ? "Annulé" : statusLabel[match.status]}</span>
+                      <span className={`match-status match-status-${match.status}${match.cancelledAt ? " status-cancelled" : ""}`}>
+                        {match.cancelledAt ? "Annulé" : statusLabel[match.status]}
+                      </span>
                       <span className="match-card-format">Foot à {match.gameFormat}</span>
                     </div>
                     <h2 aria-hidden="true">{match.opponent}</h2>
-                    <p aria-hidden="true">
+                    <p aria-hidden="true" className="match-card-meta">
+                      <CalendarIcon />
                       {match.dateLabel} · {venueLabel[match.venue]}
-                      {match.location ? ` · ${match.location}` : ""}
                     </p>
-                    <p aria-hidden="true" className="match-card-lineup">
-                      {typeof match.goalsFor === "number"
-                        ? `Score : ${match.goalsFor} – ${match.goalsAgainst}`
-                        : `${match.lineup.length}/${match.gameFormat} postes pourvus`}
-                    </p>
+                    {match.location && (
+                      <p aria-hidden="true" className="match-card-meta">
+                        <PinIcon />
+                        {match.location}
+                      </p>
+                    )}
+                    {match.status === "played" && <MatchScore match={match} />}
+                    {(match.status === "scheduled" || match.convokedAt) && !match.cancelledAt && (
+                      <ConvocationSummary
+                        attendance={match.attendance}
+                        convokedAt={match.convokedAt}
+                        roster={roster}
+                        selectedPlayerIds={match.selectedPlayerIds}
+                      />
+                    )}
                     <span aria-hidden="true" className="match-card-link card-cta">
                       {match.status === "played" ? "Voir la composition →" : "Préparer la composition →"}
                     </span>
@@ -309,14 +353,6 @@ export function MatchListView() {
               ))}
             </ul>
           )}
-
-          <CalendarImport<MatchSummary>
-            existing={matches}
-            formationId={formationId}
-            gameFormat={gameFormat}
-            onImported={(created) => setMatches((current) => [...created, ...current])}
-            teamName={teamName}
-          />
 
           <CompetitionsPanel
             detailBasePath="/match/tournois"
@@ -336,10 +372,6 @@ export function MatchListView() {
             singular="plateau"
             title="Plateaux"
           />
-
-          <Link className="back-link" href="/app">
-            Retour au tableau de bord
-          </Link>
         </section>
       )}
     </main>

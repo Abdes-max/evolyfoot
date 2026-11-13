@@ -4,6 +4,7 @@ import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { CollapsibleSection } from "../components/collapsible-section";
 import { CompetitionLineupEditor } from "../components/competition-lineup";
+import { PlayerAvatar } from "../components/player-avatar";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { TeamCrest } from "../components/team-crest";
 import { useAuth } from "../lib/auth-context";
@@ -13,18 +14,6 @@ import { themedStyles } from "../lib/themed-styles";
 
 // Même regroupement que la page Équipe du web : par poste, dans l’ordre du terrain, puis par numéro.
 const positionGroups = [...playerPositions.map((position) => ({ key: position as string, label: position as string })), { key: "", label: "Sans poste" }];
-
-function initials(name: string): string {
-  return (
-    name
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]!.toUpperCase())
-      .join("") || "?"
-  );
-}
 
 export default function EquipeScreen() {
   const { team, roster, addPlayer, renamePlayer, removePlayer, saveTeamLogo, sessionToken, apiRequest } = useAuth();
@@ -234,9 +223,7 @@ export default function EquipeScreen() {
                         onPress={() => router.push(`/equipe/${player.id}`)}
                         style={styles.rowNameLink}
                       >
-                        <View style={styles.avatar}>
-                          <Text style={styles.avatarText}>{initials(player.name)}</Text>
-                        </View>
+                        <PlayerAvatar name={player.name} photo={player.photo} style={styles.avatar} textStyle={styles.avatarText} />
                         <View style={{ flex: 1 }}>
                           <Text style={styles.rowName}>{player.name}</Text>
                           {pendingTutorPlayerIds.includes(player.id) ? (

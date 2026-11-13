@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { frenchDateLabel, parseDateInputValue, sortChronologically } from "../date-format";
-import type { MatchScope, PlayerSelection } from "@evolyfoot/domain";
+import type { AttendanceEntry, MatchScope, PlayerSelection } from "@evolyfoot/domain";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "../concerned-players-picker";
+import { ConvocationSummary } from "../convocation-summary";
+import { CalendarIcon, PinIcon } from "../icons";
 import { PlaceInput } from "../place-input";
 
 interface Competition {
@@ -16,6 +18,9 @@ interface Competition {
   result: string | null;
   finishedAt?: string | null;
   cancelledAt?: string | null;
+  convokedAt?: string | null;
+  attendance?: AttendanceEntry[];
+  selectedPlayerIds?: PlayerSelection;
 }
 
 interface CompetitionsPanelProps {
@@ -55,6 +60,8 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
   const [location, setLocation] = useState("");
   const [error, setError] = useState("");
   const [adding, setAdding] = useState(false);
+  // Formulaire d'ajout replié derrière « + Ajouter », comme dans l'app Coach.
+  const [formOpen, setFormOpen] = useState(false);
   const [roster, setRoster] = useState<ConcernedPlayer[]>([]);
   // Joueurs concernés, tout l'effectif par défaut (voir ConcernedPlayersPicker).
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<PlayerSelection>(null);
@@ -108,6 +115,7 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
       setResult("");
       setLocation("");
       setSelectedPlayerIds(null);
+      setFormOpen(false);
     } catch {
       setError("Une erreur est survenue.");
     } finally {
@@ -125,26 +133,40 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
 
   return (
     <section className="competitions-panel" aria-labelledby={`competitions-${listKey}`}>
-      <h2 id={`competitions-${listKey}`}>{title}</h2>
-      <form className="competitions-form" onSubmit={add}>
-        <input onChange={(event) => setName(event.target.value)} placeholder={`Nom du ${singular}`} value={name} />
-        <input aria-label="Date" onChange={(event) => setDateInput(event.target.value)} required type="date" value={dateInput} />
-        <input onChange={(event) => setResult(event.target.value)} placeholder="Bilan (optionnel)" value={result} />
-        <div className="competitions-form-place">
-          <PlaceInput onChange={setLocation} value={location} />
-        </div>
-        <div className="competitions-form-players">
-          <ConcernedPlayersPicker
-            hint="Seuls les joueurs cochés voient l’événement, reçoivent la convocation et peuvent répondre."
-            onChange={setSelectedPlayerIds}
-            roster={roster}
-            value={selectedPlayerIds}
-          />
-        </div>
-        <button disabled={adding || selectedPlayerIds?.length === 0} type="submit">
-          {adding ? "Ajout…" : "Ajouter"}
-        </button>
-      </form>
+      <div className="competitions-head">
+        <h2 id={`competitions-${listKey}`}>{title}</h2>
+        {!formOpen && (
+          <button aria-label={`Ajouter un ${singular}`} className="competitions-add" onClick={() => setFormOpen(true)} type="button">
+            + Ajouter
+          </button>
+        )}
+      </div>
+      {formOpen && (
+        <form className="competitions-form" onSubmit={add}>
+          <input onChange={(event) => setName(event.target.value)} placeholder={`Nom du ${singular}`} value={name} />
+          <input aria-label="Date" onChange={(event) => setDateInput(event.target.value)} required type="date" value={dateInput} />
+          <input onChange={(event) => setResult(event.target.value)} placeholder="Bilan (optionnel)" value={result} />
+          <div className="competitions-form-place">
+            <PlaceInput onChange={setLocation} value={location} />
+          </div>
+          <div className="competitions-form-players">
+            <ConcernedPlayersPicker
+              hint="Seuls les joueurs cochés voient l’événement, reçoivent la convocation et peuvent répondre."
+              onChange={setSelectedPlayerIds}
+              roster={roster}
+              value={selectedPlayerIds}
+            />
+          </div>
+          <div className="competitions-form-actions">
+            <button disabled={adding || selectedPlayerIds?.length === 0} type="submit">
+              {adding ? "Ajout…" : "Ajouter"}
+            </button>
+            <button className="secondary" onClick={() => setFormOpen(false)} type="button">
+              Annuler
+            </button>
+          </div>
+        </form>
+      )}
       {error && (
         <p className="field-error" role="alert">
           {error}
@@ -165,16 +187,25 @@ export function CompetitionsPanel({ title, singular, endpoint, listKey, itemKey,
               <li key={item.id}>
                 <Link aria-label={`${item.name} — Voir le détail`} className="match-card card-link" href={`${detailBasePath}/${item.id}`}>
                   <div className="match-card-top">
-                    <span className={isPast ? "match-status match-status-played" : "match-status match-status-scheduled"}>
+                    <span className={`match-status ${isPast ? "match-status-played" : "match-status-scheduled"}${item.cancelledAt ? " status-cancelled" : ""}`}>
                       {item.cancelledAt ? "Annulé" : item.finishedAt ? "Terminé" : isPast ? "Passé" : "À venir"}
                     </span>
                   </div>
                   <h2 aria-hidden="true">{item.name}</h2>
-                  <p aria-hidden="true">
+                  <p aria-hidden="true" className="match-card-meta">
+                    <CalendarIcon />
                     {item.dateLabel}
-                    {item.location ? ` · ${item.location}` : ""}
-                    {item.result ? ` · ${item.result}` : ""}
                   </p>
+                  {item.location && (
+                    <p aria-hidden="true" className="match-card-meta">
+                      <PinIcon />
+                      {item.location}
+                    </p>
+                  )}
+                  {item.result && <p aria-hidden="true">{item.result}</p>}
+                  {(!isPast || item.convokedAt) && !item.cancelledAt && (
+                    <ConvocationSummary attendance={item.attendance} convokedAt={item.convokedAt} roster={roster} selectedPlayerIds={item.selectedPlayerIds} />
+                  )}
                   <span aria-hidden="true" className="match-card-link card-cta">
                     Voir le détail →
                   </span>

@@ -227,8 +227,8 @@ export default function MatchListScreen() {
               style={styles.card}
             >
               <View style={styles.cardTop}>
-                <View style={[styles.statusBadge, match.status === "played" && styles.statusBadgePlayed]}>
-                  <Text style={[styles.statusText, match.status === "played" && styles.statusTextPlayed]}>
+                <View style={[styles.statusBadge, match.status === "played" && styles.statusBadgePlayed, match.cancelledAt && styles.statusBadgeCancelled]}>
+                  <Text style={[styles.statusText, match.status === "played" && styles.statusTextPlayed, match.cancelledAt && styles.statusTextCancelled]}>
                     {match.cancelledAt ? "Annulé" : statusLabel[match.status]}
                   </Text>
                 </View>
@@ -326,6 +326,8 @@ const styles = themedStyles(() =>
     empty: { color: colors.muted, fontSize: 11, textAlign: "center", marginTop: 30 },
     card: { marginTop: 14, padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md },
     cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    statusBadgeCancelled: { backgroundColor: "#ef4444", borderColor: "#ef4444" },
+    statusTextCancelled: { color: "#ffffff" },
     statusBadge: { paddingVertical: 5, paddingHorizontal: 10, borderRadius: radii.pill, backgroundColor: colors.primarySoft },
     statusBadgePlayed: { backgroundColor: "rgba(52,211,153,.14)" },
     statusText: { fontSize: 9, fontWeight: "800", color: colors.primary, textTransform: "uppercase" },

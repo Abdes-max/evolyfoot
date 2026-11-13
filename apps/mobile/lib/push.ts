@@ -1,10 +1,11 @@
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { router } from "expo-router";
+import { useEffect } from "react";
 import { AppState, Platform } from "react-native";
 import { apiFetch } from "./api";
+import { publishUnread, useUnreadCounts, type UnreadCounts } from "./unread-store";
 
 // Réglages du compte appliqués aux notifications reçues appli ouverte (téléphone déverrouillé) : bandeau et son.
 // Les notifications reçues appli fermée ou téléphone verrouillé sont affichées par le système ; le serveur
@@ -66,30 +67,21 @@ export async function unregisterPush(sessionToken: string): Promise<void> {
   if (token) await apiFetch("/api/push-devices", { method: "DELETE", sessionToken, body: JSON.stringify({ token }) }).catch(() => undefined);
 }
 
-export interface UnreadCounts {
-  unreadCount: number;
-  unreadMessages: number;
-  // Joueurs dont un tuteur attend une réponse du coach.
-  pendingTutorPlayerIds: string[];
-}
+export type { UnreadCounts } from "./unread-store";
 
 export async function readUnread(sessionToken: string): Promise<UnreadCounts | null> {
   const response = await apiFetch("/api/notifications", { sessionToken }).catch(() => null);
   const body = response?.ok ? await response.json().catch(() => null) : null;
   if (!body) return null;
   Notifications.setBadgeCountAsync(body.unreadCount).catch(() => undefined);
-  return { unreadCount: body.unreadCount, unreadMessages: body.unreadMessages, pendingTutorPlayerIds: body.pendingTutorPlayerIds ?? [] };
+  const counts = { unreadCount: body.unreadCount, unreadMessages: body.unreadMessages, pendingTutorPlayerIds: body.pendingTutorPlayerIds ?? [] };
+  publishUnread(counts);
+  return counts;
 }
 
-// Compteurs « non lus » relus à chaque affichage de l'écran.
+// Compteurs « non lus » partagés, relus à l’affichage et toutes les 30 secondes.
 export function useUnread(sessionToken: string | null): UnreadCounts {
-  const [counts, setCounts] = useState<UnreadCounts>({ unreadCount: 0, unreadMessages: 0, pendingTutorPlayerIds: [] });
-  useFocusEffect(
-    useCallback(() => {
-      if (sessionToken) void readUnread(sessionToken).then((value) => value && setCounts(value));
-    }, [sessionToken]),
-  );
-  return counts;
+  return useUnreadCounts(sessionToken, readUnread);
 }
 
 // Branché une fois sous la session : enregistre le téléphone, met à jour la pastille de l'icône au
@@ -103,7 +95,12 @@ export function usePushNotifications(sessionToken: string | null, routeForLink: 
     const appState = AppState.addEventListener("change", (state) => {
       if (state === "active") void readUnread(sessionToken);
     });
-    return () => appState.remove();
+    // Notification reçue appli ouverte (nouveau message…) : pastilles à jour tout de suite.
+    const received = Notifications.addNotificationReceivedListener(() => void readUnread(sessionToken));
+    return () => {
+      appState.remove();
+      received.remove();
+    };
   }, [sessionToken]);
 
   const lastResponse = Notifications.useLastNotificationResponse();

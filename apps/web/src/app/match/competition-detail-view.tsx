@@ -15,7 +15,7 @@ import {
 } from "@evolyfoot/domain";
 import { parseDateInputValue } from "../date-format";
 import { ConcernedPlayersPicker, type ConcernedPlayer } from "../concerned-players-picker";
-import { CancelEventPanel } from "../cancel-event-panel";
+import { CancelEventPanel, CancelledBanner } from "../cancel-event-panel";
 import { selectionSummary } from "../selection-summary";
 import { CollapsibleSection } from "../collapsible-section";
 import { ConvocationActions } from "../convocation-actions";
@@ -282,7 +282,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
         <div>
           <span className="eyebrow light">
             {item.cancelledAt
-              ? `${singular.toUpperCase()} ANNULÉ`
+              ? singular.toUpperCase()
               : item.finishedAt
                 ? `${singular.toUpperCase()} TERMINÉ`
                 : isPast
@@ -295,11 +295,7 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
       </header>
 
       <section className="match-content event-sheet">
-        {item.cancelledAt && (
-          <p className="event-cancelled-note">
-            {`Ce ${singular} est annulé : tout est bloqué (détails, joueurs, convocation, composition, rencontres). Rétablis-le depuis la carte Convocation pour le modifier.`}
-          </p>
-        )}
+        {item.cancelledAt && <CancelledBanner note={item.cancellationNote} />}
         <form className="event-card match-details-form" onSubmit={saveDetails}>
           <h2>Détails</h2>
           <label>
@@ -351,61 +347,69 @@ export function CompetitionDetailView({ competitionId, endpoint, itemKey, singul
         )}
 
         <div className="event-card">
-          <h2>Convocation</h2>
-          <ConvocationActions
-            attendance={item.attendance}
-            canSend={!isPast && !item.cancelledAt}
-            convokeUrl={`${endpoint}/${competitionId}/convoke`}
-            convokedAt={item.convokedAt}
-            meetingAt={item.date}
-            onSent={refresh}
-            roster={roster}
-            scheduledText={`Les joueurs concernés voient ce ${singular} sans pouvoir répondre tant que tu n’as pas envoyé la convocation.`}
-            selectedPlayerIds={item.selectedPlayerIds}
-          />
+          <h2>{cancelled ? "Annulation" : "Convocation"}</h2>
+          {/* Annulé : ni convocation, ni présents / absents. */}
+          {!cancelled && (
+            <ConvocationActions
+              attendance={item.attendance}
+              canSend={!isPast && !item.cancelledAt}
+              convokeUrl={`${endpoint}/${competitionId}/convoke`}
+              convokedAt={item.convokedAt}
+              meetingAt={item.date}
+              onSent={refresh}
+              roster={roster}
+              scheduledText={`Les joueurs concernés voient ce ${singular} sans pouvoir répondre tant que tu n’as pas envoyé la convocation.`}
+              selectedPlayerIds={item.selectedPlayerIds}
+            />
+          )}
           <CancelEventPanel
             cancellationNote={item.cancellationNote}
             cancelledAt={item.cancelledAt}
+            hideState
             noun={`ce ${singular}`}
             onChange={(state) => setItem((current) => (current ? { ...current, ...state } : current))}
             url={`${endpoint}/${competitionId}/cancel`}
           />
         </div>
 
-        <CollapsibleSection
-          summary={item.lineup?.lineup.length ? `${item.lineup.lineup.length} titulaires · foot à ${item.lineup.gameFormat}` : "Facultative"}
-          title="Composition"
-        >
-          <CompetitionLineupEditor
-            defaultGameFormat={teamGameFormat}
-            initial={item.lineup ?? null}
-            key={`${item.id}-${lineupVersion}`}
-            lineupUrl={`${endpoint}/${competitionId}/lineup`}
-            players={roster.filter(
-              (player) =>
-                concernedPlayers([player], item.selectedPlayerIds ?? null).length > 0 ||
-                item.lineup?.lineup.some((assignment) => assignment.playerId === player.id) ||
-                item.lineup?.substitutePlayerIds.includes(player.id),
-            )}
-            readOnly={Boolean(item.finishedAt || item.cancelledAt)}
-            template={teamLineup}
-          />
-        </CollapsibleSection>
-
-        <CollapsibleSection summary={competitionRecordLabel(item.games ?? []) || "Aucune rencontre saisie"} title="Rencontres et scores">
-          <p className="match-slot-hint event-hint">Une ligne par rencontre jouée : équipe rencontrée, score, buteurs et passeurs décisifs.</p>
-          {item.cancelledAt ? (
-            <p className="match-slot-hint">{`Ce ${singular} est annulé : rétablis-le pour saisir les rencontres.`}</p>
-          ) : (
-            <CompetitionGames
-              games={item.games ?? []}
-              gamesUrl={`${endpoint}/${competitionId}/games`}
-              key={item.id}
-              onSaved={(games) => setItem((current) => (current ? { ...current, games } : current))}
-              players={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
+        {!cancelled && (
+          <CollapsibleSection
+            summary={item.lineup?.lineup.length ? `${item.lineup.lineup.length} titulaires · foot à ${item.lineup.gameFormat}` : "Facultative"}
+            title="Composition"
+          >
+            <CompetitionLineupEditor
+              defaultGameFormat={teamGameFormat}
+              initial={item.lineup ?? null}
+              key={`${item.id}-${lineupVersion}`}
+              lineupUrl={`${endpoint}/${competitionId}/lineup`}
+              players={roster.filter(
+                (player) =>
+                  concernedPlayers([player], item.selectedPlayerIds ?? null).length > 0 ||
+                  item.lineup?.lineup.some((assignment) => assignment.playerId === player.id) ||
+                  item.lineup?.substitutePlayerIds.includes(player.id),
+              )}
+              readOnly={Boolean(item.finishedAt || item.cancelledAt)}
+              template={teamLineup}
             />
-          )}
-        </CollapsibleSection>
+          </CollapsibleSection>
+        )}
+
+        {!cancelled && (
+          <CollapsibleSection summary={competitionRecordLabel(item.games ?? []) || "Aucune rencontre saisie"} title="Rencontres et scores">
+            <p className="match-slot-hint event-hint">Une ligne par rencontre jouée : équipe rencontrée, score, buteurs et passeurs décisifs.</p>
+            {item.cancelledAt ? (
+              <p className="match-slot-hint">{`Ce ${singular} est annulé : rétablis-le pour saisir les rencontres.`}</p>
+            ) : (
+              <CompetitionGames
+                games={item.games ?? []}
+                gamesUrl={`${endpoint}/${competitionId}/games`}
+                key={item.id}
+                onSaved={(games) => setItem((current) => (current ? { ...current, games } : current))}
+                players={concernedPlayers(roster, item.selectedPlayerIds ?? null)}
+              />
+            )}
+          </CollapsibleSection>
+        )}
 
         {!cancelled && (
           <button className="match-convocation-send event-wide" disabled={saving} onClick={toggleFinished} type="button">

@@ -17,6 +17,7 @@ import { cycleWeekLabel } from "../cycle";
 import type { PersonalExercise } from "@evolyfoot/domain";
 import { rehydrateTrainingSession, type SavedTrainingSession } from "../rehydrate";
 import { SessionBuilder } from "../session-builder";
+import { CancelledBanner } from "../../cancel-event-panel";
 import { TrainingResponses } from "../../training-responses";
 
 interface RosterPlayer {
@@ -289,13 +290,17 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
               {state.guidedSeason ? `Semaine ${state.weekNumber} de la saison` : cycleWeekLabel(state.weekNumber)} · Séance {state.slot + 1}
             </span>
             <h1>Ajuste ta séance.</h1>
-            <span className="activity-category-tag">
-              {cancelledAt ? "Annulée" : seasonSessionStatusLabels[seasonSessionStatus({ meetingAt: recordMeetingAt }, now)]}
-            </span>
+            {cancelledAt ? (
+              <CancelledBanner label="ANNULÉE" note={cancellationNote} />
+            ) : (
+              <span className="activity-category-tag">{seasonSessionStatusLabels[seasonSessionStatus({ meetingAt: recordMeetingAt }, now)]}</span>
+            )}
             <p>{state.session.intention}</p>
-            <Link className="primary-button session-field-link" href={`/session/${sessionId}/terrain`}>
-              Lancer le mode terrain
-            </Link>
+            {!cancelledAt && (
+              <Link className="primary-button session-field-link" href={`/session/${sessionId}/terrain`}>
+                Lancer le mode terrain
+              </Link>
+            )}
           </>
         ) : (
           <>
@@ -365,37 +370,41 @@ export function SavedSessionView({ sessionId }: { sessionId: string }) {
               </button>
             </form>
 
-            <TrainingResponses
-              attendance={attendance}
-              convokedAt={convokedAt}
-              meetingAt={recordMeetingAt}
-              roster={concernedPlayers(roster, convocationSettings?.playerIds)}
-              settings={convocationSettings}
-            />
+            {/* Annulée : ni convocation, ni présents / absents. */}
+            {!cancelledAt && (
+              <>
+                <TrainingResponses
+                  attendance={attendance}
+                  convokedAt={convokedAt}
+                  meetingAt={recordMeetingAt}
+                  roster={concernedPlayers(roster, convocationSettings?.playerIds)}
+                  settings={convocationSettings}
+                />
 
-            <div className="match-convocation">
-              <button className="match-convocation-send" disabled={sendingConvocation} onClick={sendConvocation} type="button">
-                {sendingConvocation
-                  ? "Envoi…"
-                  : confirmingNoLocation && !location.trim()
-                    ? "Envoyer sans lieu"
-                    : convokedAt
-                      ? "Renvoyer la convocation"
-                      : "Envoyer la convocation maintenant"}
-              </button>
-              <p className="match-slot-hint">
-                {location.trim() ? `Lieu indiqué : ${location.trim()}.` : "Aucun lieu renseigné : ajoutez-le ci-dessus pour qu’il figure dans la convocation."}{" "}
-                Envoyée à tout l’effectif -- une séance n’a pas de composition retenue.
-              </p>
-              {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
-            </div>
+                <div className="match-convocation">
+                  <button className="match-convocation-send" disabled={sendingConvocation} onClick={sendConvocation} type="button">
+                    {sendingConvocation
+                      ? "Envoi…"
+                      : confirmingNoLocation && !location.trim()
+                        ? "Envoyer sans lieu"
+                        : convokedAt
+                          ? "Renvoyer la convocation"
+                          : "Envoyer la convocation maintenant"}
+                  </button>
+                  <p className="match-slot-hint">
+                    {location.trim()
+                      ? `Lieu indiqué : ${location.trim()}.`
+                      : "Aucun lieu renseigné : ajoutez-le ci-dessus pour qu’il figure dans la convocation."}{" "}
+                    Envoyée à tout l’effectif -- une séance n’a pas de composition retenue.
+                  </p>
+                  {convocationFeedback && <p className="match-convocation-feedback">{convocationFeedback}</p>}
+                </div>
+              </>
+            )}
 
             <div className="session-cancel">
               {cancelledAt ? (
                 <>
-                  <p className="session-cancel-state" role="status">
-                    Entraînement annulé{cancellationNote ? ` : ${cancellationNote}` : ""}.
-                  </p>
                   <button disabled={cancelling} onClick={restoreSession} type="button">
                     {cancelling ? "…" : "Rétablir l’entraînement"}
                   </button>

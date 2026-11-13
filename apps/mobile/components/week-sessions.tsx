@@ -129,7 +129,7 @@ export function WeekSessions({ scope }: { scope: SessionScope }) {
                 <Text style={[styles.convocation, session.cancelledAt ? styles.cancelled : session.convokedAt ? styles.sent : styles.pending]}>
                   {convocationLine(session, settings)}
                 </Text>
-                {session.convokedAt ? (
+                {session.convokedAt && !session.cancelledAt ? (
                   <View style={styles.counts}>
                     <Text style={[styles.count, { color: "#3ddc84" }]}>{responses.present.length} présents</Text>
                     <Text style={[styles.count, { color: "#ff6b6b" }]}>{responses.absent.length} absents</Text>

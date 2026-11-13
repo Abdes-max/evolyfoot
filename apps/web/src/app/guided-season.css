@@ -742,3 +742,45 @@
     grid-column: 1 / -1;
   }
 }
+
+/* Cloche de l’en-tête de l’appli coach (sidebar-nav.tsx) : en haut à droite à toutes les largeurs. */
+.app-bell {
+  position: fixed;
+  right: 20px;
+  top: 16px;
+  z-index: 40;
+}
+
+.app-bell .notification-bell > button {
+  background: var(--surface);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 18%);
+  height: 44px;
+  width: 44px;
+}
+
+.app-bell .notification-bell svg {
+  height: 22px;
+  width: 22px;
+}
+
+.app-bell .notification-panel {
+  bottom: auto;
+  left: auto;
+  right: 0;
+  top: 52px;
+}
+
+@media (max-width: 950px) {
+  .app-bell {
+    right: 12px;
+    top: calc(10px + env(safe-area-inset-top));
+  }
+
+  .app-bell .notification-panel {
+    bottom: auto;
+    left: 50%;
+    max-height: calc(100dvh - 96px);
+    right: auto;
+    top: calc(64px + env(safe-area-inset-top));
+  }
+}
