@@ -27,6 +27,7 @@ interface MatchSummary {
   goalsAgainst?: number | null;
   // Annulé par le coach (ISO).
   cancelledAt?: string | null;
+  cancellationNote?: string | null;
   convokedAt?: string | null;
   attendance?: AttendanceEntry[];
   selectedPlayerIds?: PlayerSelection;
@@ -334,6 +335,11 @@ export function MatchListView() {
                       <p aria-hidden="true" className="match-card-meta">
                         <PinIcon />
                         {match.location}
+                      </p>
+                    )}
+                    {match.cancelledAt && (
+                      <p aria-hidden="true" className="match-card-cancelled">
+                        {`Match annulé${match.cancellationNote ? ` : ${match.cancellationNote}` : ""}`}
                       </p>
                     )}
                     {match.status === "played" && <MatchScore match={match} />}
