@@ -57,6 +57,11 @@ on:
         required: false
         default: false
         type: boolean
+      review_details_only:
+        description: "Mettre à jour seulement les informations pour la revue (compte de démo, notes), même pendant la revue. Ignore tout le reste."
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   plan:
@@ -105,6 +110,7 @@ jobs:
           METADATA_FILE: ${{ matrix.dir }}/store-assets/metadata.fr.json
           SCREENSHOTS_DIR: ${{ inputs.update_screenshots && format('{0}/store-assets/app-store', matrix.dir) || '' }}
           SUBMIT: ${{ inputs.submit }}
+          REVIEW_DETAILS_ONLY: ${{ inputs.review_details_only }}
           TEMPLATE_BUNDLE_ID: com.arenapulse.mobile
           REVIEW_DEMO_LOGIN: ${{ matrix.name == 'player' && secrets.APP_REVIEW_PLAYER_LOGIN || secrets.APP_REVIEW_COACH_LOGIN }}
           REVIEW_DEMO_PASSWORD: ${{ matrix.name == 'player' && secrets.APP_REVIEW_PLAYER_PASSWORD || secrets.APP_REVIEW_COACH_PASSWORD }}
