@@ -29,6 +29,7 @@ import { TacticalPlayer } from "../components/tactical-player";
 import { DateTimeField } from "../components/date-time-field";
 import { PlaceInput } from "../components/place-input";
 import { TrainingResponses } from "../components/training-responses";
+import { CancelledBanner } from "../components/cancel-event-panel";
 import { useAuth } from "../lib/auth-context";
 import { sessionHtml, sharePdf } from "../lib/pdf-export";
 import { themedStyles } from "../lib/themed-styles";
@@ -505,29 +506,33 @@ export default function SessionScreen() {
         </Text>
         {savedId && (
           <View style={styles.card}>
-            <Text style={styles.summaryLabel}>CONVOCATION</Text>
+            <Text style={styles.summaryLabel}>{cancelledAt ? "ANNULATION" : "CONVOCATION"}</Text>
             <Text style={styles.detailText}>{[meetingLabel(meetingAt), location.trim() || null].filter(Boolean).join(" — ")}</Text>
-            <TrainingResponses attendance={attendance} convokedAt={convokedAt} roster={trainingRoster} />
-            <TouchableOpacity
-              accessibilityRole="button"
-              disabled={convoking}
-              onPress={confirmConvocation}
-              style={[styles.validate, convoking && styles.validateDisabled]}
-            >
-              <Text style={styles.validateText}>{convoking ? "Envoi…" : convokedAt ? "Renvoyer la convocation" : "Envoyer la convocation maintenant"}</Text>
-            </TouchableOpacity>
-            <Text style={styles.detailText}>Envoyée à tout l’effectif dans la messagerie, avec le rendez-vous et le lieu.</Text>
-            {convocationStatus ? (
-              <Text accessibilityLiveRegion="polite" style={styles.status}>
-                {convocationStatus}
-              </Text>
-            ) : null}
+            {/* Annulé : ni convocation, ni présents / absents. */}
+            {cancelledAt ? (
+              <CancelledBanner label="ANNULÉE" note={cancellationNote} />
+            ) : (
+              <>
+                <TrainingResponses attendance={attendance} convokedAt={convokedAt} roster={trainingRoster} />
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  disabled={convoking}
+                  onPress={confirmConvocation}
+                  style={[styles.validate, convoking && styles.validateDisabled]}
+                >
+                  <Text style={styles.validateText}>{convoking ? "Envoi…" : convokedAt ? "Renvoyer la convocation" : "Envoyer la convocation maintenant"}</Text>
+                </TouchableOpacity>
+                <Text style={styles.detailText}>Envoyée à tout l’effectif dans la messagerie, avec le rendez-vous et le lieu.</Text>
+                {convocationStatus ? (
+                  <Text accessibilityLiveRegion="polite" style={styles.status}>
+                    {convocationStatus}
+                  </Text>
+                ) : null}
+              </>
+            )}
             <View style={styles.cancelBox}>
               {cancelledAt ? (
                 <>
-                  <Text accessibilityLiveRegion="polite" style={styles.cancelState}>
-                    {`Entraînement annulé${cancellationNote ? ` : ${cancellationNote}` : ""}.`}
-                  </Text>
                   <TouchableOpacity accessibilityRole="button" disabled={cancelling} onPress={() => void restoreTraining()} style={styles.cancelButton}>
                     <Text style={styles.cancelButtonText}>{cancelling ? "…" : "Rétablir l’entraînement"}</Text>
                   </TouchableOpacity>

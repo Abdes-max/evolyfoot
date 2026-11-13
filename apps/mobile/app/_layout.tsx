@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, type ReactNode } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { CoachTabBar } from "../components/coach-tab-bar";
+import { NotificationBell } from "../components/notification-bell";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { usePushNotifications } from "../lib/push";
 import { ThemeProvider, useTheme } from "../lib/theme";
@@ -69,6 +70,8 @@ function Navigation() {
             headerTitle: "",
             headerBackVisible: false,
             headerLeft: () => <BackButton />,
+            // Cloche des notifications toujours en haut à droite, sauf sur l’écran des notifications.
+            headerRight: route.name === "notifications" ? undefined : () => <NotificationBell />,
             headerTintColor: colors.primary,
             headerStyle: { backgroundColor: colors.paper },
             headerShadowVisible: false,

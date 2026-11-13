@@ -97,3 +97,12 @@ export function LineupIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function BellIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <Path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15Z" />
+      <Path d="M10 20.5a2 2 0 0 0 4 0" />
+    </Icon>
+  );
+}

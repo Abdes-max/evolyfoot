@@ -333,15 +333,17 @@ test("l’éducateur enregistre un tournoi et un plateau depuis Matchs & compét
   await page.route("**/api/plateaux", competitionRoute(plateaux, "plateau", "plateaux"));
 
   await page.goto("/match");
-  await expect(page.getByRole("heading", { name: "Prépare tes matchs, note tes compétitions." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prépare et suis tes matchs." })).toBeVisible();
 
   const tournoiForm = page.locator(".competitions-panel", { hasText: "Tournois" });
+  await tournoiForm.getByRole("button", { name: "Ajouter un tournoi" }).click();
   await tournoiForm.getByPlaceholder("Nom du tournoi").fill("Tournoi de printemps");
   await tournoiForm.getByLabel("Date").fill("2027-04-12");
   await tournoiForm.getByRole("button", { name: "Ajouter" }).click();
   await expect(tournoiForm.getByText("Tournoi de printemps")).toBeVisible();
 
   const plateauForm = page.locator(".competitions-panel", { hasText: "Plateaux" });
+  await plateauForm.getByRole("button", { name: "Ajouter un plateau" }).click();
   await plateauForm.getByPlaceholder("Nom du plateau").fill("Plateau de rentrée");
   await plateauForm.getByLabel("Date").fill("2027-09-14");
   await plateauForm.getByRole("button", { name: "Ajouter" }).click();

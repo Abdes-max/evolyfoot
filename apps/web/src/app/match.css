@@ -1407,3 +1407,171 @@ span.match-pitch-token-face {
   color: var(--ink);
   font-size: 14px;
 }
+
+/* Fiche annulée (CancelledBanner) : pastille rouge et motif, bien visibles. */
+.event-cancelled-banner {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  border: 1.5px solid #ef4444;
+  border-radius: 14px;
+  display: grid;
+  gap: 8px;
+  grid-column: 1 / -1;
+  padding: 14px 16px;
+}
+
+.event-cancelled-pill {
+  background: #ef4444;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 900;
+  justify-self: start;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+}
+
+.event-cancelled-banner p {
+  color: var(--bad);
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* Pastille « Annulé » des listes (matchs, tournois, plateaux). */
+.status-cancelled {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+}
+
+/* Écran Matchs : même mise en page que l'app Coach (une colonne, cartes empilées). */
+.match-list-screen {
+  width: min(760px, calc(100% - 32px));
+}
+.match-list-screen .match-new-button {
+  width: 100%;
+  margin-bottom: 12px;
+}
+.match-list-screen .match-list {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.match-list-screen .match-create-form {
+  display: grid;
+  gap: 14px;
+}
+.match-list-screen .competitions-panel {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin-top: 30px;
+}
+.competitions-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.competitions-head h2 {
+  font-size: 18px !important;
+  margin: 0 !important;
+}
+.competitions-add {
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  min-height: 36px;
+  padding: 0 12px;
+}
+.competitions-form-actions {
+  display: flex;
+  gap: 10px;
+  grid-column: 1 / -1;
+  order: 3;
+}
+.competitions-form-actions button {
+  background: var(--accent);
+  border: 0;
+  border-radius: 9px;
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 800;
+  min-height: 44px;
+  padding: 0 16px;
+}
+.competitions-form-actions button.secondary {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+.competitions-form-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+.match-list-screen .competitions-form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  grid-template-columns: 1fr;
+  padding: 16px;
+}
+.match-card-meta {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+.match-card-meta svg {
+  color: var(--accent);
+  flex-shrink: 0;
+  height: 16px;
+  width: 16px;
+}
+.match-card-score {
+  color: var(--ink) !important;
+  font-size: 13px !important;
+  font-weight: 800;
+}
+.match-card-score.win {
+  color: var(--good) !important;
+}
+.match-card-score.loss {
+  color: var(--bad) !important;
+}
+.match-card-score.missing {
+  color: var(--muted) !important;
+}
+.convocation-summary {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+}
+.match-card .convocation-summary-sent {
+  color: var(--good);
+  font-size: 12px;
+  font-weight: 800;
+}
+.match-card .convocation-summary-pending {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+.convocation-summary-counts {
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px !important;
+  font-weight: 800;
+  gap: 14px;
+}
+.convocation-summary-counts .present {
+  color: var(--good);
+}
+.convocation-summary-counts .absent {
+  color: var(--bad);
+}
+.convocation-summary-counts .pending {
+  color: #e08a3c;
+}

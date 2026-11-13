@@ -3,6 +3,7 @@ import { playerPositionCodes, playerPositions } from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { PlayerAvatar } from "../../components/player-avatar";
 import { useAuth } from "../../lib/auth-context";
 import { themedStyles } from "../../lib/themed-styles";
 
@@ -59,16 +60,7 @@ export default function MessagesListScreen() {
               onPress={() => router.push({ pathname: "/messages/[id]", params: { id: player.id, name: player.name } })}
               style={styles.row}
             >
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {player.name
-                    .trim()
-                    .split(/\s+/)
-                    .slice(0, 2)
-                    .map((part) => part[0]!.toUpperCase())
-                    .join("")}
-                </Text>
-              </View>
+              <PlayerAvatar name={player.name} photo={player.photo} style={styles.avatar} textStyle={styles.avatarText} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{player.name}</Text>
                 <Text style={styles.meta}>

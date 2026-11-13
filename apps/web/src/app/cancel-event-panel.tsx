@@ -10,6 +10,7 @@ export function CancelEventPanel({
   cancelledAt,
   cancellationNote,
   onChange,
+  hideState = false,
 }: {
   url: string;
   // « le match », « ce tournoi »… : sert au libellé du bouton et au message de confirmation.
@@ -17,6 +18,8 @@ export function CancelEventPanel({
   cancelledAt: string | null | undefined;
   cancellationNote: string | null | undefined;
   onChange: (state: { cancelledAt: string | null; cancellationNote: string | null }) => void;
+  // Le motif est déjà affiché par CancelledBanner en haut de la fiche : seulement « Rétablir ».
+  hideState?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
@@ -70,9 +73,11 @@ export function CancelEventPanel({
     <div className="session-cancel">
       {cancelledAt ? (
         <>
-          <p className="session-cancel-state" role="status">
-            Annulé{cancellationNote ? ` : ${cancellationNote}` : ""}.
-          </p>
+          {!hideState && (
+            <p className="session-cancel-state" role="status">
+              Annulé{cancellationNote ? ` : ${cancellationNote}` : ""}.
+            </p>
+          )}
           <button disabled={busy} onClick={restore} type="button">
             {busy ? "…" : "Rétablir"}
           </button>
@@ -104,6 +109,16 @@ export function CancelEventPanel({
         </button>
       )}
       {feedback && <p className="match-convocation-feedback">{feedback}</p>}
+    </div>
+  );
+}
+
+// En haut d’une fiche annulée : pastille rouge ANNULÉ et motif donné aux joueurs.
+export function CancelledBanner({ note, label = "ANNULÉ" }: { note: string | null | undefined; label?: string }) {
+  return (
+    <div className="event-cancelled-banner" role="status">
+      <span className="event-cancelled-pill">{label}</span>
+      <p>{note ? `Annulé : ${note}` : "Annulé"}</p>
     </div>
   );
 }

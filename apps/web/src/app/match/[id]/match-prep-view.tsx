@@ -27,7 +27,7 @@ import type {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
-import { CancelEventPanel } from "../../cancel-event-panel";
+import { CancelEventPanel, CancelledBanner } from "../../cancel-event-panel";
 import { CollapsibleSection } from "../../collapsible-section";
 import { ConvocationActions } from "../../convocation-actions";
 import { selectionSummary } from "../../selection-summary";
@@ -506,7 +506,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
     <main className="match-shell">
       <header className="page-header match-header">
         <div>
-          <span className="eyebrow light">{match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</span>
+          <span className="eyebrow light">{cancelled ? "MATCH" : match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</span>
           <h1 title={match.opponent}>{match.opponent}</h1>
           <p title={`${match.dateLabel} · ${venueLabel[match.venue]} · Foot à ${match.gameFormat}`}>
             {match.dateLabel} · {venueLabel[match.venue]} · Foot à {match.gameFormat}
@@ -517,11 +517,7 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       {/* Même ordre que la fiche match de l'app Coach : lieu, joueurs concernés, convocation, résultat,
           composition (facultative, repliée), analyse, puis « Marquer comme joué ». */}
       <section className="match-content event-sheet">
-        {cancelled && !readOnly && (
-          <p className="event-cancelled-note">
-            Match annulé : tout est bloqué (lieu, joueurs, convocation, composition, « joué »). Rétablis-le depuis la carte Convocation pour le modifier.
-          </p>
-        )}
+        {cancelled && <CancelledBanner note={match.cancellationNote} />}
         <div className="event-card match-details-form">
           <h2>Lieu</h2>
           {cancelled ? (
@@ -597,22 +593,26 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         )}
 
         <div className="event-card">
-          <h2>Convocation</h2>
-          <ConvocationActions
-            attendance={match.attendance}
-            canSend={!locked}
-            convokeUrl={`/api/matches/${matchId}/convoke`}
-            convokedAt={match.convokedAt ?? null}
-            meetingAt={match.date}
-            onSent={refreshMatch}
-            roster={roster}
-            scheduledText="Les joueurs concernés voient le match sans pouvoir répondre tant que la convocation n’est pas envoyée."
-            selectedPlayerIds={match.selectedPlayerIds}
-          />
+          <h2>{cancelled ? "Annulation" : "Convocation"}</h2>
+          {/* Annulé : ni convocation, ni présents / absents. */}
+          {!cancelled && (
+            <ConvocationActions
+              attendance={match.attendance}
+              canSend={!locked}
+              convokeUrl={`/api/matches/${matchId}/convoke`}
+              convokedAt={match.convokedAt ?? null}
+              meetingAt={match.date}
+              onSent={refreshMatch}
+              roster={roster}
+              scheduledText="Les joueurs concernés voient le match sans pouvoir répondre tant que la convocation n’est pas envoyée."
+              selectedPlayerIds={match.selectedPlayerIds}
+            />
+          )}
           {!readOnly && (
             <CancelEventPanel
               cancellationNote={match.cancellationNote}
               cancelledAt={match.cancelledAt}
+              hideState
               noun="le match"
               onChange={(state) => setMatch((current) => (current ? { ...current, ...state } : current))}
               url={`/api/matches/${matchId}/cancel`}
@@ -639,86 +639,89 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           </CollapsibleSection>
         )}
 
-        <CollapsibleSection
-          summary={match.lineup.length > 0 ? `${match.lineup.length} titulaires · ${match.substitutePlayerIds.length} remplaçants` : "Facultative"}
-          title="Composition"
-        >
-          {!locked && (
-            <label className="match-game-format-picker">
-              <span>Format de jeu</span>
-              <select onChange={(event) => changeGameFormat(Number(event.target.value) as GameFormat)} value={gameFormat}>
-                {gameFormats.map((format) => (
-                  <option key={format} value={format}>
-                    Foot à {format}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {!locked && formations.length > 1 && (
-            <div className="match-formation-picker" role="group" aria-label="Formation">
-              {formations.map((formation) => (
-                <button
-                  aria-pressed={formation.id === match.formationId}
-                  className={formation.id === match.formationId ? "choice active" : "choice"}
-                  key={formation.id}
-                  onClick={() => changeFormation(formation.id)}
-                  type="button"
-                >
-                  {formation.label}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="competition-lineup">
-            <MatchPitch
-              captainPlayerId={match.captainPlayerId}
-              lineup={match.lineup}
-              onSlotAssign={locked ? undefined : assignSlot}
-              onCaptainChange={locked ? undefined : (playerId) => setCaptainPlayer(playerId ?? "")}
-              onSlotClear={locked ? undefined : (slotId) => assignSlot(slotId, "")}
-              roster={concernedRoster}
-              slots={slots}
-              substitutePlayerIds={match.substitutePlayerIds}
-            />
-          </div>
-          {!locked && <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur.</p>}
-
-          <section aria-labelledby="match-bench-title" className="match-bench">
-            <h2 id="match-bench-title">Remplaçants {locked ? "" : `(max. ${maxSubstitutes(gameFormat)})`}</h2>
-            <div aria-label="Remplaçants" className="match-bench-tokens" role="group">
-              {benchSlots.map((playerId, index) => {
-                const player = playerId ? roster.find((candidate) => candidate.id === playerId) : null;
-                const label = player ? `Remplaçant : ${player.name}` : "Remplaçant : aucun joueur, toucher pour affecter";
-
-                return (
-                  <div aria-label={label} className={`match-pitch-token ${player ? "filled" : "empty"}`} key={index}>
-                    {!locked && <button aria-label={label} className="match-pitch-token-hit" onClick={() => setPickingBenchIndex(index)} type="button" />}
-                    <span aria-hidden="true">{player ? initials(player.name) : "+"}</span>
-                  </div>
-                );
-              })}
-            </div>
-            {pickingBenchIndex !== null && (
-              <PlayerPicker
-                currentPlayerId={benchSlots[pickingBenchIndex] ?? null}
-                onClear={() => {
-                  setBenchSlot(pickingBenchIndex, "");
-                  setPickingBenchIndex(null);
-                }}
-                onClose={() => setPickingBenchIndex(null)}
-                onPick={(playerId) => {
-                  setBenchSlot(pickingBenchIndex, playerId);
-                  setPickingBenchIndex(null);
-                }}
-                // Une place déjà occupée ne propose que « Laisser le poste libre » (voir setBenchSlot).
-                players={benchSlots[pickingBenchIndex] ? [] : concernedRoster.filter((candidate) => !match.substitutePlayerIds.includes(candidate.id))}
-                statusOf={(playerId) => (assignedPlayerIds.has(playerId) ? "déjà titulaire" : null)}
-                title="Choisir un remplaçant"
-              />
+        {/* Rien à préparer pour un match annulé. */}
+        {!cancelled && (
+          <CollapsibleSection
+            summary={match.lineup.length > 0 ? `${match.lineup.length} titulaires · ${match.substitutePlayerIds.length} remplaçants` : "Facultative"}
+            title="Composition"
+          >
+            {!locked && (
+              <label className="match-game-format-picker">
+                <span>Format de jeu</span>
+                <select onChange={(event) => changeGameFormat(Number(event.target.value) as GameFormat)} value={gameFormat}>
+                  {gameFormats.map((format) => (
+                    <option key={format} value={format}>
+                      Foot à {format}
+                    </option>
+                  ))}
+                </select>
+              </label>
             )}
-          </section>
-        </CollapsibleSection>
+            {!locked && formations.length > 1 && (
+              <div className="match-formation-picker" role="group" aria-label="Formation">
+                {formations.map((formation) => (
+                  <button
+                    aria-pressed={formation.id === match.formationId}
+                    className={formation.id === match.formationId ? "choice active" : "choice"}
+                    key={formation.id}
+                    onClick={() => changeFormation(formation.id)}
+                    type="button"
+                  >
+                    {formation.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="competition-lineup">
+              <MatchPitch
+                captainPlayerId={match.captainPlayerId}
+                lineup={match.lineup}
+                onSlotAssign={locked ? undefined : assignSlot}
+                onCaptainChange={locked ? undefined : (playerId) => setCaptainPlayer(playerId ?? "")}
+                onSlotClear={locked ? undefined : (slotId) => assignSlot(slotId, "")}
+                roster={concernedRoster}
+                slots={slots}
+                substitutePlayerIds={match.substitutePlayerIds}
+              />
+            </div>
+            {!locked && <p className="match-slot-hint">Touche un poste sur le terrain pour y affecter un joueur.</p>}
+
+            <section aria-labelledby="match-bench-title" className="match-bench">
+              <h2 id="match-bench-title">Remplaçants {locked ? "" : `(max. ${maxSubstitutes(gameFormat)})`}</h2>
+              <div aria-label="Remplaçants" className="match-bench-tokens" role="group">
+                {benchSlots.map((playerId, index) => {
+                  const player = playerId ? roster.find((candidate) => candidate.id === playerId) : null;
+                  const label = player ? `Remplaçant : ${player.name}` : "Remplaçant : aucun joueur, toucher pour affecter";
+
+                  return (
+                    <div aria-label={label} className={`match-pitch-token ${player ? "filled" : "empty"}`} key={index}>
+                      {!locked && <button aria-label={label} className="match-pitch-token-hit" onClick={() => setPickingBenchIndex(index)} type="button" />}
+                      <span aria-hidden="true">{player ? initials(player.name) : "+"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {pickingBenchIndex !== null && (
+                <PlayerPicker
+                  currentPlayerId={benchSlots[pickingBenchIndex] ?? null}
+                  onClear={() => {
+                    setBenchSlot(pickingBenchIndex, "");
+                    setPickingBenchIndex(null);
+                  }}
+                  onClose={() => setPickingBenchIndex(null)}
+                  onPick={(playerId) => {
+                    setBenchSlot(pickingBenchIndex, playerId);
+                    setPickingBenchIndex(null);
+                  }}
+                  // Une place déjà occupée ne propose que « Laisser le poste libre » (voir setBenchSlot).
+                  players={benchSlots[pickingBenchIndex] ? [] : concernedRoster.filter((candidate) => !match.substitutePlayerIds.includes(candidate.id))}
+                  statusOf={(playerId) => (assignedPlayerIds.has(playerId) ? "déjà titulaire" : null)}
+                  title="Choisir un remplaçant"
+                />
+              )}
+            </section>
+          </CollapsibleSection>
+        )}
 
         {!cancelled && (
           <MatchAnalysis

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BallIcon, CalendarIcon, EyeIcon, HomeIcon, UsersIcon } from "./icons";
-import { UnreadBadge, useNotifications } from "./notification-bell";
+import { BallIcon, CalendarIcon, EyeIcon, HomeIcon, MessageIcon, UsersIcon } from "./icons";
+import { NotificationBell, UnreadBadge, useNotifications } from "./notification-bell";
 import { SidebarIdentity } from "./sidebar-identity";
 
 // Auparavant définie une seule fois, en dur, dans page.tsx (l'accueil) : chaque autre page
@@ -19,6 +19,7 @@ const navItems: ReadonlyArray<{ href: string; label: string; icon: typeof HomeIc
   { href: "/seances", label: "Séances", icon: CalendarIcon },
   { href: "/match", label: "Matchs", icon: BallIcon },
   { href: "/observations", label: "Observations", icon: EyeIcon },
+  { href: "/messagerie", label: "Messages", icon: MessageIcon },
   { href: "/equipe", label: "Mon équipe", icon: UsersIcon },
 ];
 
@@ -31,27 +32,31 @@ export function SidebarNav() {
   const pendingTutors = feed.pendingTutorPlayerIds.length;
 
   return (
-    <aside className="sidebar">
-      <div className="brand">
-        <span className="brand-mark">EV</span>
-        <span>EvolyFoot</span>
+    <>
+      {/* Cloche des notifications dans l’en-tête de l’appli, en haut à droite, comme sur l’appli Coach. */}
+      <div className="app-bell">
+        <NotificationBell />
       </div>
-      <nav aria-label="Navigation principale">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          // Statistiques et messagerie concernent l’équipe : on y accède depuis Mon équipe, qui reste en surbrillance.
-          const isActive =
-            href === "/app"
-              ? pathname === "/app"
-              : pathname.startsWith(href) || (href === "/equipe" && (pathname.startsWith("/statistiques") || pathname.startsWith("/messagerie")));
-          return (
-            <Link className={isActive ? "nav-item active" : "nav-item"} href={href} key={href}>
-              <Icon /> <span className="nav-label">{label}</span>
-              {href === "/equipe" && <UnreadBadge count={pendingTutors} label={pendingTutors > 1 ? "demandes de tuteur" : "demande de tuteur"} />}
-            </Link>
-          );
-        })}
-      </nav>
-      <SidebarIdentity />
-    </aside>
+      <aside className="sidebar">
+        <div className="brand">
+          <span className="brand-mark">EV</span>
+          <span>EvolyFoot</span>
+        </div>
+        <nav aria-label="Navigation principale">
+          {navItems.map(({ href, label, icon: Icon }) => {
+            // Les statistiques concernent l’équipe : on y accède depuis Mon équipe, qui reste en surbrillance.
+            const isActive = href === "/app" ? pathname === "/app" : pathname.startsWith(href) || (href === "/equipe" && pathname.startsWith("/statistiques"));
+            return (
+              <Link className={isActive ? "nav-item active" : "nav-item"} href={href} key={href}>
+                <Icon /> <span className="nav-label">{label}</span>
+                {href === "/messagerie" && <UnreadBadge count={feed.unreadMessages} label="messages non lus" />}
+                {href === "/equipe" && <UnreadBadge count={pendingTutors} label={pendingTutors > 1 ? "demandes de tuteur" : "demande de tuteur"} />}
+              </Link>
+            );
+          })}
+        </nav>
+        <SidebarIdentity />
+      </aside>
+    </>
   );
 }

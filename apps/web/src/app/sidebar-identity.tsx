@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { NotificationBell } from "./notification-bell";
 import { useEffect, useState } from "react";
 import { TeamCrest } from "./team-crest";
 import { ThemeToggle } from "./theme-toggle";
@@ -199,7 +198,6 @@ export function SidebarIdentity() {
             <span>Voir mon profil</span>
           </div>
         </Link>
-        <NotificationBell />
         <ThemeToggle />
         <button aria-label="Se déconnecter" onClick={logout} type="button">
           Déconnexion

@@ -3,7 +3,7 @@ import { rehydrateTrainingSession, seasonSessionStatus, seasonSessionStatusLabel
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { CancelEventPanel } from "../../components/cancel-event-panel";
+import { CancelEventPanel, CancelledBanner } from "../../components/cancel-event-panel";
 import { TacticalPlayer } from "../../components/tactical-player";
 import { useAuth } from "../../lib/auth-context";
 import { kindLabels } from "../../lib/exercise-labels";
@@ -82,21 +82,19 @@ export default function SeanceDetailScreen() {
       <ScrollView contentContainerStyle={styles.page}>
         <View style={styles.statusRow}>
           <Text style={styles.step}>SÉANCE</Text>
-          <Text style={[styles.status, detail.cancelledAt ? styles.statusCancelled : done ? styles.statusDone : styles.statusPrepared]}>
-            {statusLabel.toUpperCase()}
-          </Text>
+          {detail.cancelledAt ? null : <Text style={[styles.status, done ? styles.statusDone : styles.statusPrepared]}>{statusLabel.toUpperCase()}</Text>}
         </View>
         <Text style={styles.title}>{session.title}</Text>
         <Text style={styles.muted}>
           {[detail.meetingAt ? meetingLabel(detail.meetingAt) : null, detail.location, `${total} min`].filter(Boolean).join(" · ")}
         </Text>
         {detail.cancelledAt ? (
-          <Text style={styles.cancelled}>{`Entraînement annulé${detail.cancellationNote ? ` : ${detail.cancellationNote}` : ""}.`}</Text>
-        ) : null}
-
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.push(`/terrain/${id}` as never)} style={styles.primary}>
-          <Text style={styles.primaryText}>Lancer le mode chronomètre</Text>
-        </TouchableOpacity>
+          <CancelledBanner label="ANNULÉE" note={detail.cancellationNote} />
+        ) : (
+          <TouchableOpacity accessibilityRole="button" onPress={() => router.push(`/terrain/${id}` as never)} style={styles.primary}>
+            <Text style={styles.primaryText}>Lancer le mode chronomètre</Text>
+          </TouchableOpacity>
+        )}
 
         {session.blocks.map((block, index) => (
           <View key={block.id} style={styles.card}>
@@ -119,6 +117,7 @@ export default function SeanceDetailScreen() {
         <CancelEventPanel
           cancellationNote={detail.cancellationNote}
           cancelledAt={detail.cancelledAt}
+          hideState
           noun="cette séance"
           onChange={(state) => setDetail((current) => (current ? { ...current, ...state } : current))}
           url={`/api/sessions/${encodeURIComponent(id)}/cancel`}
@@ -146,10 +145,8 @@ const styles = themedStyles(() =>
     },
     statusPrepared: { color: colors.primary, borderColor: colors.primary },
     statusDone: { color: colors.lime, borderColor: colors.lime },
-    statusCancelled: { color: colors.danger, borderColor: colors.danger },
     title: { fontSize: 24, fontWeight: "800", color: colors.ink, marginTop: 6 },
     muted: { fontSize: 12, lineHeight: 17, color: colors.muted },
-    cancelled: { color: colors.danger, fontSize: 13, fontWeight: "800", marginTop: 4 },
     primary: {
       minHeight: 52,
       marginVertical: spacing.md,

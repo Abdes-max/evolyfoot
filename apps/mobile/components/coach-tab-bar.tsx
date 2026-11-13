@@ -1,9 +1,11 @@
 import { colors, spacing } from "@evolyfoot/design-tokens";
 import { router, usePathname } from "expo-router";
+import { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../lib/auth-context";
-import { useUnread } from "../lib/push";
+import { readUnread, useUnread } from "../lib/push";
+import { CountBadge } from "./notification-bell";
 import { BallIcon, CalendarIcon, HomeIcon, MessageIcon, UsersIcon } from "./icons";
 import { themedStyles } from "../lib/themed-styles";
 
@@ -26,15 +28,19 @@ export function CoachTabBar() {
   const insets = useSafeAreaInsets();
   const { sessionToken } = useAuth();
   const { unreadMessages, pendingTutorPlayerIds } = useUnread(sessionToken);
+  // Chaque changement d’écran relit les compteurs (un fil ouvert efface sa pastille).
+  useEffect(() => {
+    if (sessionToken) void readUnread(sessionToken);
+  }, [pathname, sessionToken]);
 
   return (
     <View accessibilityRole="tablist" style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
       {coachTabs.map((tab) => {
         const active = isActive(pathname, tab.href);
-        const messageBadge = tab.href === "/messages" && unreadMessages > 0 && !active;
+        const messageBadge = tab.href === "/messages" && unreadMessages > 0;
         // Demande d’accès d’un tuteur en attente : pastille sur Équipe tant qu’elle n’est pas traitée.
         const tutorBadge = tab.href === "/equipe" && pendingTutorPlayerIds.length > 0;
-        const badge = messageBadge || tutorBadge;
+        const badge = messageBadge ? unreadMessages : tutorBadge ? pendingTutorPlayerIds.length : 0;
         return (
           <TouchableOpacity
             accessibilityLabel={
@@ -54,9 +60,9 @@ export function CoachTabBar() {
           >
             <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
               <tab.icon color={active ? colors.primary : colors.muted} size={22} />
+              {badge > 0 ? <CountBadge count={badge} style={styles.badge} /> : null}
             </View>
             <Text style={[styles.label, active && styles.labelActive]}>{tab.label}</Text>
-            {badge ? <View style={styles.dot} /> : null}
           </TouchableOpacity>
         );
       })}
@@ -74,6 +80,6 @@ const styles = themedStyles(() =>
     labelActive: { color: colors.primary },
     line: { width: 24, height: 2, backgroundColor: "transparent" },
     lineActive: { backgroundColor: colors.lime },
-    dot: { position: "absolute", top: 4, right: 14, width: 9, height: 9, borderRadius: 5, backgroundColor: "#ef4444" },
+    badge: { top: -6, right: -2 },
   }),
 );

@@ -12,6 +12,7 @@ export function CancelEventPanel({
   cancelledAt,
   cancellationNote,
   onChange,
+  hideState = false,
 }: {
   url: string;
   // « le match », « ce tournoi »… : sert au libellé du bouton.
@@ -19,6 +20,8 @@ export function CancelEventPanel({
   cancelledAt: string | null | undefined;
   cancellationNote: string | null | undefined;
   onChange: (state: { cancelledAt: string | null; cancellationNote: string | null }) => void;
+  // Le motif est déjà affiché par CancelledBanner en haut de la fiche : seulement « Rétablir ».
+  hideState?: boolean;
 }) {
   const { apiRequest } = useAuth();
   const [open, setOpen] = useState(false);
@@ -63,9 +66,11 @@ export function CancelEventPanel({
     <View style={styles.box}>
       {cancelledAt ? (
         <>
-          <Text accessibilityLiveRegion="polite" style={styles.state}>
-            {`Annulé${cancellationNote ? ` : ${cancellationNote}` : ""}.`}
-          </Text>
+          {hideState ? null : (
+            <Text accessibilityLiveRegion="polite" style={styles.state}>
+              {`Annulé${cancellationNote ? ` : ${cancellationNote}` : ""}.`}
+            </Text>
+          )}
           <TouchableOpacity accessibilityRole="button" disabled={busy} onPress={() => void restore()} style={styles.button}>
             <Text style={styles.buttonText}>{busy ? "…" : "Rétablir"}</Text>
           </TouchableOpacity>
@@ -105,8 +110,32 @@ export function CancelEventPanel({
   );
 }
 
+// En haut d’une fiche annulée : pastille rouge ANNULÉ et motif donné aux joueurs.
+export function CancelledBanner({ note, label = "ANNULÉ" }: { note: string | null | undefined; label?: string }) {
+  return (
+    <View accessibilityLiveRegion="polite" style={styles.banner}>
+      <View style={styles.bannerPill}>
+        <Text style={styles.bannerPillText}>{label}</Text>
+      </View>
+      <Text style={styles.bannerText}>{note ? `Annulé : ${note}` : "Annulé"}</Text>
+    </View>
+  );
+}
+
 const styles = themedStyles(() =>
   StyleSheet.create({
+    banner: {
+      marginTop: spacing.md,
+      gap: 8,
+      padding: 14,
+      borderRadius: radii.sm,
+      borderWidth: 1.5,
+      borderColor: "#ef4444",
+      backgroundColor: colors.dangerSoft,
+    },
+    bannerPill: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.pill, backgroundColor: "#ef4444" },
+    bannerPillText: { color: "#ffffff", fontSize: 11, fontWeight: "900", letterSpacing: 1 },
+    bannerText: { color: colors.danger, fontSize: 15, fontWeight: "800" },
     box: { gap: 8, marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line },
     state: { color: colors.danger, fontSize: 13, fontWeight: "800" },
     label: { color: colors.primary, fontSize: 10, fontWeight: "800", letterSpacing: 0.6 },
