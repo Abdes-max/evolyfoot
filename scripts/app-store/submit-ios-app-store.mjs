@@ -300,8 +300,9 @@ async function main() {
 
   console.log(BUILD_NUMBER ? `Looking up build ${BUILD_NUMBER}...` : "Looking up the most recently processed build...");
   const buildFilter = BUILD_NUMBER ? `&filter[version]=${encodeURIComponent(BUILD_NUMBER)}` : "";
-  const builds = await api(jwt, "GET", `/builds?filter[app]=${appId}&filter[processingState]=VALID${buildFilter}&sort=-uploadedDate&limit=1`);
-  const build = builds.data?.[0];
+  const builds = await api(jwt, "GET", `/builds?filter[app]=${appId}&filter[processingState]=VALID${buildFilter}&limit=200`);
+  // Highest build number: the API sort by upload date is not reliable for the latest builds.
+  const build = (builds.data ?? []).reduce((best, item) => (!best || Number(item.attributes.version) > Number(best.attributes.version) ? item : best), null);
   if (!build) {
     throw new Error(
       BUILD_NUMBER
