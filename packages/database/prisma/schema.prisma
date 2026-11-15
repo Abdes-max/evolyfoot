@@ -57,90 +57,94 @@ enum MessageAuthorRole {
 // (`educators`) reste, ainsi que `sessions.educator_id`, pour éviter une migration de renommage
 // massive ; c'est bien le modèle de compte pour les deux rôles.
 model Educator {
-  id                 String                   @id @default(uuid()) @db.Uuid
-  email              String                   @unique
-  displayName        String                   @map("display_name")
-  passwordHash       String                   @map("password_hash")
+  id                      String                   @id @default(uuid()) @db.Uuid
+  email                   String                   @unique
+  displayName             String                   @map("display_name")
+  passwordHash            String                   @map("password_hash")
   // "coach" | "player". `getEducatorForSession` ne résout que les comptes "coach", donc les
   // routes API éducateur rejettent automatiquement un jeton de compte joueur.
-  role               String                   @default("coach")
+  role                    String                   @default("coach")
   // Rempli quand le lien reçu par e-mail à l'inscription a été cliqué. `null` = compte non
   // encore confirmé (la session existe déjà -- on ne bloque pas la connexion, voir
   // EmailVerificationService -- mais l'appli affiche un rappel tant que c'est vide).
-  emailVerifiedAt    DateTime?                @map("email_verified_at")
-  emailVerifications EmailVerification[]
-  passwordResets     PasswordReset[]
+  emailVerifiedAt         DateTime?                @map("email_verified_at")
+  // Compte suspendu par un superadmin : plus de connexion, les sessions ouvertes ne sont plus reconnues.
+  suspendedAt             DateTime?                @map("suspended_at")
+  // Compte de test : écarté des statistiques réelles par le superadmin.
+  isTest                  Boolean                  @default(false) @map("is_test")
+  emailVerifications      EmailVerification[]
+  passwordResets          PasswordReset[]
   // Renseigné uniquement pour un compte "player" : l'enfant actuellement affiché parmi ceux que le
   // compte suit (voir PlayerFollowerLink). Plus unique : deux parents peuvent suivre le même enfant.
-  linkedPlayerId     String?                  @map("linked_player_id") @db.Uuid
-  linkedPlayer       Player?                  @relation("PlayerFollowers", fields: [linkedPlayerId], references: [id], onDelete: Cascade)
+  linkedPlayerId          String?                  @map("linked_player_id") @db.Uuid
+  linkedPlayer            Player?                  @relation("PlayerFollowers", fields: [linkedPlayerId], references: [id], onDelete: Cascade)
   // Renseigné pour un compte "assistant" (l'éducateur dont il rejoint l'équipe) et pour un espace
   // d'équipe "team" (l'éducateur qui l'a créé).
-  ownerEducatorId    String?                  @map("owner_educator_id") @db.Uuid
-  owner              Educator?                @relation("TeamStaff", fields: [ownerEducatorId], references: [id], onDelete: Cascade)
-  staff              Educator[]               @relation("TeamStaff")
-  staffInvites       StaffInvite[]
-  invitesCreated     PlayerInvite[]
-  followedPlayers    PlayerFollowerLink[]
-  followRequests     PlayerFollowRequest[]
+  ownerEducatorId         String?                  @map("owner_educator_id") @db.Uuid
+  owner                   Educator?                @relation("TeamStaff", fields: [ownerEducatorId], references: [id], onDelete: Cascade)
+  staff                   Educator[]               @relation("TeamStaff")
+  staffInvites            StaffInvite[]
+  invitesCreated          PlayerInvite[]
+  followedPlayers         PlayerFollowerLink[]
+  followRequests          PlayerFollowRequest[]
   // Fiche profil de l'éducateur (page /profil). Tous optionnels : renseignés après l'inscription,
   // qui ne demande que nom / e-mail / mot de passe. `birthDate` est stocké en texte ISO
   // (`YYYY-MM-DD`) plutôt qu'en `DateTime` -- une date de naissance n'a pas d'heure ni de fuseau,
   // et l'app manipule déjà ses dates en texte libre ailleurs (MatchRecord.dateLabel).
-  birthDate          String?                  @map("birth_date")
-  club               String?
+  birthDate               String?                  @map("birth_date")
+  club                    String?
   // Club rejoint par un code (partage d'exercices entre éducateurs). Indépendant du champ libre
   // `club` du profil, qui ne donne accès à rien.
-  clubId             String?                  @map("club_id") @db.Uuid
-  sharingClub        Club?                    @relation(fields: [clubId], references: [id], onDelete: SetNull)
-  country            String?
-  address            String?
-  phone              String?
-  diploma            String?
-  seasonFormat       String?                  @map("season_format")
+  clubId                  String?                  @map("club_id") @db.Uuid
+  sharingClub             Club?                    @relation(fields: [clubId], references: [id], onDelete: SetNull)
+  country                 String?
+  address                 String?
+  phone                   String?
+  diploma                 String?
+  seasonFormat            String?                  @map("season_format")
   // Réglages de notification (catégories, contenu sur l'écran verrouillé, bandeau, son) : voir
   // `notification-preferences.ts` côté domaine. `null` = réglages par défaut (tout activé).
-  notificationPreferences Json?               @map("notification_preferences")
+  notificationPreferences Json?                    @map("notification_preferences")
   // Profil de coach : valeurs contrôlées par EducatorProfileService (playStyles côté domaine).
   // Cycle de 4 semaines en cours : les écrans de planification ne lisent que ses séances.
-  currentCycle       Int                      @default(1) @map("current_cycle")
+  currentCycle            Int                      @default(1) @map("current_cycle")
   // Abonnement (compte "coach" seulement ; ses espaces d'équipe et ses adjoints en dépendent). Essai :
   // `trialEndsAt` si fixé (comptes créés avant le paiement), sinon 14 jours après l'inscription. Les
   // champs Stripe sont tenus à jour par le webhook (voir BillingService).
-  trialEndsAt          DateTime?                @map("trial_ends_at")
-  stripeCustomerId     String?                  @unique @map("stripe_customer_id")
-  stripeSubscriptionId String?                  @map("stripe_subscription_id")
+  trialEndsAt             DateTime?                @map("trial_ends_at")
+  stripeCustomerId        String?                  @unique @map("stripe_customer_id")
+  stripeSubscriptionId    String?                  @map("stripe_subscription_id")
   // Statut Stripe de l'abonnement (active, trialing, past_due, canceled...).
-  subscriptionStatus   String?                  @map("subscription_status")
+  subscriptionStatus      String?                  @map("subscription_status")
   // "monthly" | "season"
-  billingCycle         String?                  @map("billing_cycle")
-  currentPeriodEnd     DateTime?                @map("current_period_end")
+  billingCycle            String?                  @map("billing_cycle")
+  currentPeriodEnd        DateTime?                @map("current_period_end")
   // Fin d'accès d'un abonnement résilié (fin de la période payée) ; null tant qu'il se renouvelle.
-  subscriptionCancelAt DateTime?                @map("subscription_cancel_at")
+  subscriptionCancelAt    DateTime?                @map("subscription_cancel_at")
   // Équipes et adjoints en plus payés dans l'abonnement (quantités Stripe), pour rappeler une mise à jour.
-  billedExtraTeams     Int?                     @map("billed_extra_teams")
-  billedExtraCoaches   Int?                     @map("billed_extra_coaches")
+  billedExtraTeams        Int?                     @map("billed_extra_teams")
+  billedExtraCoaches      Int?                     @map("billed_extra_coaches")
   // Dernier rappel d'abonnement envoyé par e-mail (voir billingReminderDue).
-  billingReminder      String?                  @map("billing_reminder")
-  playStyle          String?                  @map("play_style")
-  preferredFormation String?                  @map("preferred_formation")
-  team               Team?
-  diagnostic         Diagnostic?
-  seasonProgram      SeasonProgram?
-  notifications      Notification[]
-  pushDevices        PushDevice[]
-  sessions           Session[]
-  trainingSessions   TrainingSessionRecord[]
-  observations       ObservationRecord[]
-  players            Player[]
-  matches            MatchRecord[]
-  tournaments        TournamentRecord[]
-  plateaux           PlateauRecord[]
-  personalExercises  PersonalExerciseRecord[]
-  playerEvaluations  PlayerEvaluationRecord[]
-  messages           MessageRecord[]
-  createdAt          DateTime                 @default(now()) @map("created_at")
-  updatedAt          DateTime                 @updatedAt @map("updated_at")
+  billingReminder         String?                  @map("billing_reminder")
+  playStyle               String?                  @map("play_style")
+  preferredFormation      String?                  @map("preferred_formation")
+  team                    Team?
+  diagnostic              Diagnostic?
+  seasonProgram           SeasonProgram?
+  notifications           Notification[]
+  pushDevices             PushDevice[]
+  sessions                Session[]
+  trainingSessions        TrainingSessionRecord[]
+  observations            ObservationRecord[]
+  players                 Player[]
+  matches                 MatchRecord[]
+  tournaments             TournamentRecord[]
+  plateaux                PlateauRecord[]
+  personalExercises       PersonalExerciseRecord[]
+  playerEvaluations       PlayerEvaluationRecord[]
+  messages                MessageRecord[]
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
 
   @@index([ownerEducatorId])
   @@index([clubId])
@@ -160,16 +164,19 @@ model Club {
 }
 
 model Session {
-  id           String   @id @default(uuid()) @db.Uuid
-  educatorId   String   @map("educator_id") @db.Uuid
-  educator     Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
-  tokenHash    String   @unique @map("token_hash")
-  expiresAt    DateTime @map("expires_at")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id                         String   @id @default(uuid()) @db.Uuid
+  educatorId                 String   @map("educator_id") @db.Uuid
+  educator                   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  tokenHash                  String   @unique @map("token_hash")
+  expiresAt                  DateTime @map("expires_at")
+  createdAt                  DateTime @default(now()) @map("created_at")
   // Équipe choisie par l'éducateur dans cette session : l'un de ses espaces d'équipe (compte
   // "team"), `null` pour sa première équipe. Vérifié à chaque lecture plutôt que par clé étrangère :
   // un espace supprimé ramène simplement sur la première équipe.
-  activeTeamId String?  @map("active_team_id") @db.Uuid
+  activeTeamId               String?  @map("active_team_id") @db.Uuid
+  // Session ouverte par un superadmin « en tant que » cet éducateur : courte, avec bandeau dans l'appli,
+  // et sans les actions sensibles (suppression, mot de passe, facturation).
+  impersonatedBySuperAdminId String?  @map("impersonated_by_super_admin_id") @db.Uuid
 
   @@index([educatorId])
   @@map("sessions")
@@ -717,4 +724,50 @@ model PlayerEvaluationRecord {
   @@index([educatorId])
   @@index([playerId])
   @@map("player_evaluations")
+}
+
+// Compte superadmin : séparé des éducateurs (jamais un rôle), créé uniquement par script. Session et
+// cookie propres, voir SuperAdminService.
+model SuperAdmin {
+  id           String              @id @default(uuid()) @db.Uuid
+  email        String              @unique
+  displayName  String              @map("display_name")
+  passwordHash String              @map("password_hash")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  lastLoginAt  DateTime?           @map("last_login_at")
+  sessions     SuperAdminSession[]
+  auditLogs    AdminAuditLog[]
+
+  @@map("super_admins")
+}
+
+model SuperAdminSession {
+  id           String     @id @default(uuid()) @db.Uuid
+  superAdminId String     @map("super_admin_id") @db.Uuid
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+  tokenHash    String     @unique @map("token_hash")
+  expiresAt    DateTime   @map("expires_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@index([superAdminId])
+  @@map("super_admin_sessions")
+}
+
+// Journal d'audit : une ligne par action d'écriture d'un superadmin. La cible est notée par type et
+// identifiant (pas de clé étrangère : la ligne survit à la suppression de la cible).
+model AdminAuditLog {
+  id           String     @id @default(uuid()) @db.Uuid
+  superAdminId String     @map("super_admin_id") @db.Uuid
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+  action       String
+  targetType   String     @map("target_type")
+  targetId     String?    @map("target_id")
+  // Libellé de la cible au moment de l'action (e-mail de l'éducateur...), pour relire le journal après coup.
+  targetLabel  String?    @map("target_label")
+  note         String?
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([superAdminId])
+  @@map("admin_audit_logs")
 }

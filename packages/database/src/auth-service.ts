@@ -1,5 +1,5 @@
 import { normalizeEducatorEmail, validateEmailFormat } from "./email";
-import { InvalidCredentialsError, ValidationError } from "./errors";
+import { AccountSuspendedError, InvalidCredentialsError, ValidationError } from "./errors";
 import { MAX_PASSWORD_LENGTH, hashPassword, validatePassword, verifyPassword } from "./password";
 import { generateSessionToken, hashSessionToken } from "./session-token";
 import type { EducatorRecord, EducatorRepository, SessionRepository } from "./repositories";
@@ -80,6 +80,10 @@ export class AuthService {
     if (!(await verifyPassword(input.password, record.passwordHash)) || record.role === "team") {
       throw new InvalidCredentialsError();
     }
+    // Le mot de passe est juste : on peut dire que le compte est suspendu sans révéler l'existence d'un compte.
+    if (record.suspendedAt) {
+      throw new AccountSuspendedError();
+    }
     const educator: EducatorRecord = {
       id: record.id,
       email: record.email,
@@ -109,7 +113,8 @@ export class AuthService {
       return null;
     }
     const account = await this.educatorRepository.findById(session.educatorId);
-    return account ? { account, activeTeamId: session.activeTeamId ?? null } : null;
+    // Un compte suspendu n'est plus reconnu, même avec une session encore valide.
+    return account && !account.suspendedAt ? { account, activeTeamId: session.activeTeamId ?? null } : null;
   }
 
   // Ne résout QUE les comptes "coach" : un jeton de compte joueur renvoie `null`, donc toutes les
@@ -124,7 +129,8 @@ export class AuthService {
     // Un adjoint travaille sur les données de son éducateur : toutes les routes d'équipe reçoivent
     // donc le compte titulaire. Ce qui touche au compte lui-même passe par getAccountForSession.
     if (account.role === "assistant") {
-      return account.ownerEducatorId ? this.educatorRepository.findById(account.ownerEducatorId) : null;
+      const owner = account.ownerEducatorId ? await this.educatorRepository.findById(account.ownerEducatorId) : null;
+      return owner && !owner.suspendedAt ? owner : null;
     }
     // Un éducateur qui a choisi une autre de ses équipes travaille sur l'espace de cette équipe.
     if (resolved.activeTeamId) {

@@ -89,6 +89,13 @@ export class InvalidCredentialsError extends Error {
   }
 }
 
+export class AccountSuspendedError extends Error {
+  constructor() {
+    super("Ce compte est suspendu. Contacte le support.");
+    this.name = "AccountSuspendedError";
+  }
+}
+
 export class ClubNotFoundError extends Error {
   constructor() {
     super("Aucun club ne correspond à ce code.");

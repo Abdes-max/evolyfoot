@@ -290,6 +290,7 @@ export function toEducatorRecord(educator: Educator): EducatorRecord {
     linkedPlayerId: educator.linkedPlayerId,
     ownerEducatorId: educator.ownerEducatorId,
     emailVerifiedAt: educator.emailVerifiedAt,
+    suspendedAt: educator.suspendedAt,
     createdAt: educator.createdAt,
     updatedAt: educator.updatedAt,
   });
@@ -349,6 +350,7 @@ export function toSessionRecord(session: Session): SessionRecord {
     id: session.id,
     educatorId: session.educatorId,
     activeTeamId: session.activeTeamId,
+    impersonatedBySuperAdminId: session.impersonatedBySuperAdminId,
     expiresAt: session.expiresAt,
     createdAt: session.createdAt,
   });

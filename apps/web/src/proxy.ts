@@ -11,6 +11,8 @@ import { isMarketingPath } from "./marketing-routes";
 // chaque route API et chaque page via /api/auth/session) : autant rester indépendant de Prisma
 // pour garder ce garde-fou rapide et sans dépendance lourde.
 const SESSION_COOKIE_NAME = "evolyfoot_session";
+// Cookie du superadmin (voir server/super-admin.ts), dupliqué pour la même raison.
+const SUPER_ADMIN_COOKIE_NAME = "evolyfoot_superadmin";
 
 // Pages accessibles sans session : le site vitrine (voir marketing-routes.ts) et les deux
 // formulaires d'authentification (il faut bien pouvoir atteindre /connexion pour obtenir une
@@ -25,6 +27,17 @@ export function proxy(request: NextRequest): NextResponse {
   if (pathname.startsWith("/api/")) {
     const contentLength = Number(request.headers.get("content-length") ?? 0);
     return contentLength > MAX_API_BODY_BYTES ? NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 }) : NextResponse.next();
+  }
+
+  // Espace superadmin : sans cookie superadmin, retour à sa page de connexion (la session est revérifiée par chaque route API).
+  if (pathname === "/super-admin" || pathname.startsWith("/super-admin/")) {
+    if (pathname === "/super-admin/login" || request.cookies.has(SUPER_ADMIN_COOKIE_NAME)) {
+      return NextResponse.next();
+    }
+    const login = request.nextUrl.clone();
+    login.pathname = "/super-admin/login";
+    login.search = "";
+    return NextResponse.redirect(login);
   }
 
   if (isMarketingPath(pathname) || AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
