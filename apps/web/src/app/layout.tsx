@@ -9,6 +9,7 @@ import "./bibliotheque.css";
 import "./roster.css";
 import "./metrics.css";
 import "./super-admin.css";
+import "./setup-guide.css";
 import "./match.css";
 import "./observations.css";
 import "./charts.css";

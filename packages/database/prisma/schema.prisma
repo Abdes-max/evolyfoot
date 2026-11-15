@@ -72,6 +72,8 @@ model Educator {
   suspendedAt             DateTime?                @map("suspended_at")
   // Compte de test : écarté des statistiques réelles par le superadmin.
   isTest                  Boolean                  @default(false) @map("is_test")
+  // Guide de configuration fermé par le coach (web et mobile partagent cet état) ; `null` = encore affiché.
+  setupGuideDismissedAt   DateTime?                @map("setup_guide_dismissed_at")
   emailVerifications      EmailVerification[]
   passwordResets          PasswordReset[]
   // Renseigné uniquement pour un compte "player" : l'enfant actuellement affiché parmi ceux que le

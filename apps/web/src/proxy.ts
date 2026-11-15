@@ -22,11 +22,31 @@ const AUTH_PATHS = ["/connexion", "/inscription"];
 // Largement au-dessus d'une photo de schéma ou de joueur, redimensionnée côté client.
 const MAX_API_BODY_BYTES = 3_000_000;
 
+// Uniquement en développement : autorise l'app mobile testée via `expo start --web` (un autre
+// port, donc une autre origine) à appeler cette API locale. Jamais en production -- la vraie app
+// mobile (iOS/Android) ne passe pas par un navigateur et n'est pas concernée par CORS.
+function withDevCors(response: NextResponse, request: NextRequest): NextResponse {
+  const origin = request.headers.get("origin");
+  if (process.env.NODE_ENV === "production" || !origin) {
+    return response;
+  }
+  response.headers.set("Access-Control-Allow-Origin", origin);
+  response.headers.set("Access-Control-Allow-Headers", "content-type, authorization, x-client-platform");
+  response.headers.set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
+  return response;
+}
+
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
   if (pathname.startsWith("/api/")) {
+    if (request.method === "OPTIONS") {
+      return withDevCors(new NextResponse(null, { status: 204 }), request);
+    }
     const contentLength = Number(request.headers.get("content-length") ?? 0);
-    return contentLength > MAX_API_BODY_BYTES ? NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 }) : NextResponse.next();
+    return withDevCors(
+      contentLength > MAX_API_BODY_BYTES ? NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 }) : NextResponse.next(),
+      request,
+    );
   }
 
   // Espace superadmin : sans cookie superadmin, retour à sa page de connexion (la session est revérifiée par chaque route API).

@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { isMarketingPath } from "@/marketing-routes";
 import { ImpersonationBanner } from "./impersonation-banner";
+import { SetupGuide } from "./setup-guide";
 
 // Le proxy (apps/web/src/proxy.ts) ne vérifie que la présence du cookie de session, pas sa
 // validité en base -- une vérification bon marché à chaque navigation, avant même que le JS
@@ -98,6 +99,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     <>
       {impersonatedBy ? <ImpersonationBanner superAdminEmail={impersonatedBy} /> : null}
       {children}
+      {!impersonatedBy && !isPublicPath && !isPlayerArea(pathname) && pathname !== "/onboarding" ? <SetupGuide /> : null}
     </>
   );
 }
