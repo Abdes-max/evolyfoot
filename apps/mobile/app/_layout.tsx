@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, type ReactNode } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { CoachTabBar } from "../components/coach-tab-bar";
+import { SetupGuide } from "../components/setup-guide";
 import { NotificationBell } from "../components/notification-bell";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { usePushNotifications } from "../lib/push";
@@ -79,6 +80,7 @@ function Navigation() {
           })}
         />
       </View>
+      {showTabs ? <SetupGuide /> : null}
       {showTabs ? <CoachTabBar /> : null}
     </View>
   );

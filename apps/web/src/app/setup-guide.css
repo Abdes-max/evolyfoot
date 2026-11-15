@@ -1,0 +1,136 @@
+.setup-guide {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 900;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  max-width: calc(100vw - 36px);
+}
+.setup-guide-toggle {
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+.setup-guide-toggle:hover {
+  border-color: var(--accent);
+}
+.setup-guide-card {
+  width: min(360px, calc(100vw - 36px));
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+.setup-guide-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.setup-guide-card h2 {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.3px;
+}
+.setup-guide-card header button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.setup-guide-card > p {
+  margin: 6px 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.setup-guide-card ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.setup-guide-card li a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.setup-guide-card li a:hover {
+  outline: 1px solid var(--accent);
+}
+.setup-guide-label {
+  flex: 1;
+}
+.setup-guide-check {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--muted-2);
+  border-radius: 50%;
+  color: var(--paper);
+  font-size: 13px;
+}
+.setup-guide-card li.done a {
+  color: var(--muted);
+}
+.setup-guide-card li.done .setup-guide-label {
+  text-decoration: line-through;
+}
+.setup-guide-card li.done .setup-guide-check {
+  border-color: var(--good);
+  background: var(--good);
+}
+.setup-guide-card footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.setup-guide-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--line);
+  overflow: hidden;
+}
+.setup-guide-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.setup-guide-card footer button {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+@media print {
+  .setup-guide {
+    display: none;
+  }
+}

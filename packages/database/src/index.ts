@@ -67,6 +67,8 @@ export { MatchService } from "./match-service";
 export { matchKickoffTime, matchMeetingTime } from "./match-time";
 export { MessagingService } from "./messaging-service";
 export { MetricsService } from "./metrics-service";
+export { SetupGuideService, setupGuideStepIds } from "./setup-guide-service";
+export type { SetupGuide, SetupGuideStepId } from "./setup-guide-service";
 export { impersonationSessionMs, SuperAdminService, superAdminMinPasswordLength } from "./super-admin-service";
 export type {
   AdminAuditEntry,
