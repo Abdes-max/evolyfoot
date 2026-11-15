@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { isMarketingPath } from "@/marketing-routes";
+import { ImpersonationBanner } from "./impersonation-banner";
 
 // Le proxy (apps/web/src/proxy.ts) ne vérifie que la présence du cookie de session, pas sa
 // validité en base -- une vérification bon marché à chaque navigation, avant même que le JS
@@ -13,6 +14,11 @@ import { isMarketingPath } from "@/marketing-routes";
 // être connecté que cette page doit éliminer. Même rôle que AuthGate dans
 // apps/mobile/app/_layout.tsx, côté web.
 const AUTH_PATHS = ["/connexion", "/inscription"];
+
+// L'espace superadmin a sa propre session et ses propres gardes (proxy + routes API).
+function isSuperAdminArea(pathname: string): boolean {
+  return pathname === "/super-admin" || pathname.startsWith("/super-admin/");
+}
 
 // Un compte "player" (tuteur/joueur) ne peut voir QUE l'espace /joueur ; un compte "coach" ne
 // peut PAS y aller. AuthGate redirige selon le rôle renvoyé par /api/auth/session.
@@ -28,12 +34,14 @@ type SessionCheck = {
   // (statut resté périmé après un router.replace vers une autre page protégée).
   pathname: string;
   status: "authenticated" | "redirecting";
+  impersonatedBy?: string;
 };
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isPublicPath = isMarketingPath(pathname) || AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const isPublicPath =
+    isSuperAdminArea(pathname) || isMarketingPath(pathname) || AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const [sessionCheck, setSessionCheck] = useState<SessionCheck | null>(null);
 
   useEffect(() => {
@@ -62,7 +70,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
           setSessionCheck({ pathname, status: "redirecting" });
           router.replace("/app");
         } else {
-          setSessionCheck({ pathname, status: "authenticated" });
+          setSessionCheck({ pathname, status: "authenticated", impersonatedBy: typeof body.impersonatedBy === "string" ? body.impersonatedBy : undefined });
         }
       } catch {
         if (!cancelled) {
@@ -85,5 +93,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return null;
   }
 
-  return <>{children}</>;
+  const impersonatedBy = isPublicPath ? undefined : sessionCheck?.impersonatedBy;
+  return (
+    <>
+      {impersonatedBy ? <ImpersonationBanner superAdminEmail={impersonatedBy} /> : null}
+      {children}
+    </>
+  );
 }

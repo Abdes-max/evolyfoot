@@ -135,6 +135,16 @@ Cet environnement **ne porte aucune règle de protection** (pas d'approbateur re
 
 Les sauvegardes automatisées de PostgreSQL et la supervision de l'application restent à mettre en place avant un usage de production réel — non couvertes par cette configuration de base.
 
+## Compte superadmin (web)
+
+Compte séparé des éducateurs, accessible sur `/super-admin/login` (cookie `evolyfoot_superadmin`, 8 h, essais limités à 5 par 15 min). Il n'existe aucune inscription : le compte se crée à la main, sur le serveur, avec un mot de passe saisi dans le terminal (12 caractères minimum, jamais en argument) :
+
+```bash
+docker compose run --rm -it --entrypoint node migrate scripts/create-super-admin.mjs --email vous@exemple.fr --name "Votre nom"
+```
+
+(le service `migrate` embarque le dépôt complet et la `DATABASE_URL` de production). Rotation du mot de passe : onglet « Compte » de l'espace superadmin. Chaque action (suspension, suppression, « se connecter en tant que »…) est inscrite dans l'onglet « Journal ». Pendant une connexion « en tant que » (30 min, bandeau visible), la suppression de compte, le changement de mot de passe et la facturation sont refusés.
+
 ## Paiement (Stripe)
 
 Abonnement des coachs : essai de 14 jours sans carte, puis paiement mensuel ou à la saison (prix dans
