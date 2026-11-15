@@ -1,8 +1,14 @@
 import { createAccountGateway, createDeleteAccountHandler } from "@/server/account";
 import { resolveAccountFromRequest } from "@/server/auth";
 import { hour, limitByAddress } from "@/server/rate-limit";
+import { rejectIfImpersonating } from "@/server/super-admin";
 
 export async function DELETE(request: Request): Promise<Response> {
+  const impersonated = await rejectIfImpersonating(request);
+  if (impersonated) {
+    return impersonated;
+  }
+
   const tooMany = limitByAddress(request, "delete-account", 10, hour);
   if (tooMany) {
     return tooMany;

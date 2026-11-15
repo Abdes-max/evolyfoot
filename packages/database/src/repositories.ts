@@ -43,6 +43,8 @@ export interface EducatorRecord {
   // `role`/`linkedPlayerId` : absent = compte créé avant cette fonctionnalité, traité comme non
   // confirmé côté affichage sans casser les faux de test existants.
   emailVerifiedAt?: Date | null;
+  // Compte suspendu par un superadmin : plus de connexion ni de session reconnue.
+  suspendedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -275,6 +277,8 @@ export interface SessionRecord {
   educatorId: string;
   // Espace d'équipe choisi pour cette session, `null` ou absent pour la première équipe.
   activeTeamId?: string | null;
+  // Session ouverte par un superadmin « en tant que » cet éducateur.
+  impersonatedBySuperAdminId?: string | null;
   expiresAt: Date;
   createdAt: Date;
 }

@@ -1,4 +1,4 @@
-import { DuplicateEducatorEmailError, InvalidCredentialsError, ValidationError } from "@evolyfoot/database";
+import { AccountSuspendedError, DuplicateEducatorEmailError, InvalidCredentialsError, ValidationError } from "@evolyfoot/database";
 import { databaseErrorResponse } from "./api-errors";
 
 export const SESSION_COOKIE_NAME = "evolyfoot_session";
@@ -105,6 +105,9 @@ function handleAuthError(error: unknown, log: (error: unknown) => void): Respons
   }
   if (error instanceof InvalidCredentialsError) {
     return Response.json({ error: error.message }, { status: 401 });
+  }
+  if (error instanceof AccountSuspendedError) {
+    return Response.json({ error: error.message }, { status: 403 });
   }
 
   const databaseResponse = databaseErrorResponse(error, log);

@@ -5,6 +5,7 @@ export { maxTeamsPerEducator, TeamSpaceService, type TeamChoice, type TeamOwner 
 export { createDatabaseClient } from "./client";
 export { normalizeEducatorEmail } from "./email";
 export {
+  AccountSuspendedError,
   ClubNotFoundError,
   DiagnosticNotFoundError,
   DuplicateEducatorEmailError,
@@ -66,6 +67,17 @@ export { MatchService } from "./match-service";
 export { matchKickoffTime, matchMeetingTime } from "./match-time";
 export { MessagingService } from "./messaging-service";
 export { MetricsService } from "./metrics-service";
+export { impersonationSessionMs, SuperAdminService, superAdminMinPasswordLength } from "./super-admin-service";
+export type {
+  AdminAuditEntry,
+  AdminAuditTarget,
+  AdminEducatorDetail,
+  AdminEducatorFilter,
+  AdminEducatorItem,
+  AdminStats,
+  SuperAdminLogin,
+  SuperAdminRecord,
+} from "./super-admin-service";
 export { ObservationService } from "./observation-service";
 export { ContactMessageService } from "./contact-message-service";
 export { PasswordResetInvalidError, PasswordResetService } from "./password-reset-service";
