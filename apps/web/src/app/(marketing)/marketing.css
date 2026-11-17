@@ -663,6 +663,18 @@
   border-top: 1px solid var(--m-line);
   font-size: 12px;
   color: var(--m-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+.m-footer-legal a {
+  color: var(--m-muted);
+  text-decoration: none;
+}
+.m-footer-legal a:hover {
+  color: var(--m-accent);
 }
 
 @media (max-width: 820px) {

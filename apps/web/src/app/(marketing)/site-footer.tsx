@@ -29,7 +29,12 @@ export function SiteFooter() {
           <Link href="/confidentialite">Confidentialité</Link>
           <Link href="/cgu">CGU</Link>
         </div>
-        <p className="m-footer-legal">© {new Date().getFullYear()} EvolyFoot. Tous droits réservés.</p>
+        <p className="m-footer-legal">
+          <span>© {new Date().getFullYear()} EvolyFoot. Tous droits réservés.</span>
+          <a href="https://kelto-studio.fr" rel="noopener" target="_blank">
+            Conçu par Kelto Studio
+          </a>
+        </p>
       </div>
     </footer>
   );
