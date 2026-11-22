@@ -10,17 +10,17 @@
 }
 .setup-guide-toggle {
   padding: 11px 16px;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 12px;
-  background: var(--surface);
-  color: var(--ink);
+  background: var(--accent);
+  color: var(--accent-ink);
   font: inherit;
   font-weight: 800;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   cursor: pointer;
 }
 .setup-guide-toggle:hover {
-  border-color: var(--accent);
+  background: var(--accent-dark);
 }
 .setup-guide-card {
   width: min(360px, calc(100vw - 36px));
