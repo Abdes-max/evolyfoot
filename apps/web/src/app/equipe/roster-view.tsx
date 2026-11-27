@@ -327,7 +327,7 @@ export function RosterView() {
                       value={feedUrlInput}
                     />
                     <button disabled={feedUrlBusy} type="submit">
-                      {feedUrlBusy ? "Enregistrement…" : "Enregistrer le flux"}
+                      {feedUrlBusy ? "Validation…" : "Valider le flux"}
                     </button>
                   </div>
                   {team.calendarFeedUrl ? (
