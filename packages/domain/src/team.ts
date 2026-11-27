@@ -56,6 +56,15 @@ export function validateTeamLogo(logo: string): string | null {
 
 export const calendarFeedUrlMaxLength = 2000;
 
+// Les abonnements calendrier (iOS, Google, Outlook...) utilisent souvent le schéma `webcal(s):`,
+// qui désigne le même flux qu'un simple `http(s):`. On le normalise avant validation/stockage pour
+// que le reste du pipeline (fetch, garde anti-SSRF) n'ait à connaître que http(s).
+export function normalizeCalendarFeedUrl(url: string): string {
+  if (url.startsWith("webcal://")) return `http://${url.slice("webcal://".length)}`;
+  if (url.startsWith("webcals://")) return `https://${url.slice("webcals://".length)}`;
+  return url;
+}
+
 // Problème de l'URL de flux de calendrier proposée, `null` si elle est valide : une URL http(s),
 // comme on en reçoit d'un service de ligue (ex. export .ics de la FFF). La résolution réseau et
 // la garde anti-SSRF (IP privée/locale) se font côté serveur au moment du fetch, pas ici.
@@ -67,6 +76,6 @@ export function validateCalendarFeedUrl(url: string): string | null {
   } catch {
     return "Indique un lien valide.";
   }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "Le lien doit commencer par http:// ou https://.";
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "Le lien doit commencer par http://, https:// ou webcal(s)://.";
   return null;
 }

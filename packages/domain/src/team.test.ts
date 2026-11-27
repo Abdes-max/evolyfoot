@@ -34,7 +34,7 @@ describe("team profile", () => {
   });
 });
 
-import { validateTeamLogo, teamLogoMaxLength, validateCalendarFeedUrl, calendarFeedUrlMaxLength } from "./team";
+import { validateTeamLogo, teamLogoMaxLength, validateCalendarFeedUrl, calendarFeedUrlMaxLength, normalizeCalendarFeedUrl } from "./team";
 
 describe("validateTeamLogo", () => {
   it("accepte une image en data URL et refuse le reste ou le trop lourd", () => {
@@ -50,7 +50,15 @@ describe("validateCalendarFeedUrl", () => {
     expect(validateCalendarFeedUrl("https://media.fff.fr/calendars/2026/eq/1625_FA_6.ics")).toBeNull();
     expect(validateCalendarFeedUrl("http://exemple.test/calendrier.ics")).toBeNull();
     expect(validateCalendarFeedUrl("pas une url")).toMatch(/lien valide/);
-    expect(validateCalendarFeedUrl("ftp://exemple.test/calendrier.ics")).toMatch(/http:\/\/ ou https:\/\//);
+    expect(validateCalendarFeedUrl("ftp://exemple.test/calendrier.ics")).toMatch(/http:\/\/, https:\/\/ ou webcal/);
     expect(validateCalendarFeedUrl(`https://exemple.test/${"a".repeat(calendarFeedUrlMaxLength)}`)).toMatch(/trop long/);
+  });
+});
+
+describe("normalizeCalendarFeedUrl", () => {
+  it("convertit webcal(s): en http(s): et laisse le reste inchangé", () => {
+    expect(normalizeCalendarFeedUrl("webcal://media.fff.fr/calendars/2026/eq/1625_FA_6.ics")).toBe("http://media.fff.fr/calendars/2026/eq/1625_FA_6.ics");
+    expect(normalizeCalendarFeedUrl("webcals://media.fff.fr/calendars/2026/eq/1625_FA_6.ics")).toBe("https://media.fff.fr/calendars/2026/eq/1625_FA_6.ics");
+    expect(normalizeCalendarFeedUrl("https://exemple.test/calendrier.ics")).toBe("https://exemple.test/calendrier.ics");
   });
 });

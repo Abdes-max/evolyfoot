@@ -53,6 +53,7 @@ export {
   calendarFeedUrlMaxLength,
   createTeamProfile,
   gameFormats,
+  normalizeCalendarFeedUrl,
   sortTrainingDays,
   teamLogoMaxLength,
   validateCalendarFeedUrl,

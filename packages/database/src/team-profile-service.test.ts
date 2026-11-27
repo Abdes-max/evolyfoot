@@ -189,6 +189,8 @@ describe("TeamProfileService", () => {
 
     const withFeed = await service.saveCalendarFeedUrl("educator-1", "https://media.fff.fr/calendars/2026/eq/1625_FA_6.ics");
     expect(withFeed.profile).toMatchObject({ name: "FC Horizon", calendarFeedUrl: "https://media.fff.fr/calendars/2026/eq/1625_FA_6.ics" });
+    const withWebcalFeed = await service.saveCalendarFeedUrl("educator-1", "webcal://media.fff.fr/calendars/2026/eq/1625_FA_6.ics");
+    expect(withWebcalFeed.profile.calendarFeedUrl).toBe("http://media.fff.fr/calendars/2026/eq/1625_FA_6.ics");
     expect((await service.saveCalendarFeedUrl("educator-1", null)).profile.calendarFeedUrl).toBeNull();
     await expect(service.saveCalendarFeedUrl("educator-1", "pas une url")).rejects.toBeInstanceOf(ValidationError);
     await expect(service.saveCalendarFeedUrl("inconnu", null)).rejects.toBeInstanceOf(TeamNotFoundError);
