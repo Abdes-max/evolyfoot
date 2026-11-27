@@ -2,7 +2,7 @@
   "expo": {
     "name": "EvolyFoot Player",
     "slug": "evolyfoot-player",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "orientation": "portrait",
     "scheme": "evolyfoot-player",
     "icon": "./assets/icon.png",
