@@ -487,6 +487,36 @@ nav.profil-tabs {
   font-size: 13px;
   font-weight: 700;
 }
+.abonnement-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.5);
+}
+.abonnement-popup {
+  display: grid;
+  gap: 16px;
+  max-width: 420px;
+  padding: 24px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: center;
+}
+.abonnement-popup button {
+  min-height: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 800;
+  cursor: pointer;
+}
 .billing-link {
   display: flex;
   justify-content: space-between;

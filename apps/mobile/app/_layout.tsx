@@ -1,8 +1,8 @@
-import { colors } from "@evolyfoot/design-tokens";
+import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { router, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState, type ReactNode } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CoachTabBar } from "../components/coach-tab-bar";
 import { SetupGuide } from "../components/setup-guide";
 import { NotificationBell } from "../components/notification-bell";
@@ -50,6 +50,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   const { educator, restoring, sessionToken, apiRequest } = useAuth();
   const pathname = usePathname();
   const [billingBlocked, setBillingBlocked] = useState(false);
+  const [billingPopupDismissed, setBillingPopupDismissed] = useState(false);
   usePushNotifications(sessionToken, routeForLink);
 
   useEffect(() => {
@@ -75,7 +76,23 @@ function AuthGate({ children }: { children: ReactNode }) {
     }
   }, [billingBlocked, pathname]);
 
-  return <>{restoring ? null : children}</>;
+  return (
+    <>
+      {restoring ? null : children}
+      <Modal animationType="fade" transparent visible={billingBlocked && !billingPopupDismissed}>
+        <View style={styles.billingPopupOverlay}>
+          <View style={styles.billingPopupCard}>
+            <Text style={styles.billingPopupText}>
+              Ton essai de 14 jours est terminé (ou ton abonnement a pris fin). Abonne-toi pour retrouver un accès complet à EvolyFoot.
+            </Text>
+            <TouchableOpacity onPress={() => setBillingPopupDismissed(true)} style={styles.billingPopupButton}>
+              <Text style={styles.billingPopupButtonText}>S’abonner</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
 }
 
 function Navigation() {
@@ -127,3 +144,38 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  billingPopupOverlay: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.lg,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  billingPopupCard: {
+    gap: spacing.md,
+    maxWidth: 360,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
+  },
+  billingPopupText: {
+    color: colors.ink,
+    fontSize: 15,
+    lineHeight: 21,
+    textAlign: "center",
+  },
+  billingPopupButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 46,
+    borderRadius: radii.md,
+    backgroundColor: colors.primary,
+  },
+  billingPopupButtonText: {
+    color: colors.primaryInk,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+});
