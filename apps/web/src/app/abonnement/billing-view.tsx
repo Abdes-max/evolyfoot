@@ -62,7 +62,6 @@ export function BillingView() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [synced, setSynced] = useState(false);
-  const [popupDismissed, setPopupDismissed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,16 +94,6 @@ export function BillingView() {
 
   return (
     <>
-      {billing.access.state === "expired" && !popupDismissed && (
-        <div className="abonnement-popup-overlay" role="presentation">
-          <div aria-label="Abonnement nécessaire" aria-modal="true" className="abonnement-popup" role="dialog">
-            <p>Ton essai de 14 jours est terminé (ou ton abonnement a pris fin). Abonne-toi pour retrouver un accès complet à EvolyFoot.</p>
-            <button className="primary" onClick={() => setPopupDismissed(true)} type="button">
-              S’abonner
-            </button>
-          </div>
-        </div>
-      )}
       {params.get("resiliation") === "ok" && (
         <p className="abonnement-notice" role="status">
           Résiliation enregistrée : tu gardes l’accès jusqu’à la fin de la période payée. Recharge la page si elle n’apparaît pas encore.
