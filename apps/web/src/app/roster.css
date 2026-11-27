@@ -80,6 +80,18 @@
 .roster-lineup-cta {
   justify-self: start;
 }
+.roster-calendar-feed {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.roster-calendar-feed label {
+  font-weight: 800;
+  font-size: 13px;
+}
 .roster-side-title {
   margin-top: 6px;
   color: var(--muted);

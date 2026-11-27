@@ -47,6 +47,7 @@ interface TeamSummary {
   gameFormat: number;
   playerCount: number;
   logo?: string | null;
+  calendarFeedUrl?: string | null;
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
@@ -59,6 +60,9 @@ export function RosterView() {
   const [logoError, setLogoError] = useState("");
   const [authenticated, setAuthenticated] = useState<boolean | undefined>(undefined);
   const [team, setTeam] = useState<TeamSummary | null>(null);
+  const [feedUrlInput, setFeedUrlInput] = useState("");
+  const [feedUrlBusy, setFeedUrlBusy] = useState(false);
+  const [feedUrlError, setFeedUrlError] = useState("");
 
   // Choisit (data URL) ou retire (null) le logo de l'équipe.
   async function saveLogo(logo: string | null) {
@@ -88,6 +92,36 @@ export function RosterView() {
     } catch {
       setLogoError("Cette image n'a pas pu être lue.");
     }
+  }
+
+  // Choisit (URL) ou retire (null) le flux de calendrier abonné de l'équipe.
+  async function saveCalendarFeedUrl(calendarFeedUrl: string | null) {
+    setFeedUrlBusy(true);
+    setFeedUrlError("");
+    try {
+      const response = await fetch("/api/team/calendar-feed", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ calendarFeedUrl }),
+      });
+      if (!response.ok) {
+        setFeedUrlError(await readErrorMessage(response));
+        return;
+      }
+      const body = await response.json();
+      const saved = body.profile?.calendarFeedUrl ?? null;
+      setTeam((current) => (current ? { ...current, calendarFeedUrl: saved } : current));
+      setFeedUrlInput(saved ?? "");
+    } catch {
+      setFeedUrlError("Une erreur est survenue.");
+    } finally {
+      setFeedUrlBusy(false);
+    }
+  }
+
+  function submitCalendarFeedUrl(event: FormEvent) {
+    event.preventDefault();
+    void saveCalendarFeedUrl(feedUrlInput.trim() || null);
   }
   const [players, setPlayers] = useState<RosterPlayer[]>([]);
   // Joueurs dont un tuteur attend une réponse : pastille sur leur ligne.
@@ -125,6 +159,7 @@ export function RosterView() {
           return;
         }
         setTeam(teamBody.profile ?? null);
+        setFeedUrlInput(teamBody.profile?.calendarFeedUrl ?? "");
         setPlayers(rosterBody.players ?? []);
       } catch {
         if (!cancelled) {
@@ -274,6 +309,39 @@ export function RosterView() {
                   )}
                 </div>
               </div>
+
+              {team && (
+                <form className="roster-calendar-feed" onSubmit={submitCalendarFeedUrl}>
+                  <label htmlFor="roster-calendar-feed-url">Flux de calendrier (.ics)</label>
+                  <p className="field-hint">
+                    Les matchs d’un flux (ex. calendrier officiel de la ligue) sont ajoutés automatiquement, avec un repère « Flux » : leur date et leur lieu
+                    ne sont plus modifiables à la main.
+                  </p>
+                  <div className="roster-add-row">
+                    <input
+                      disabled={feedUrlBusy}
+                      id="roster-calendar-feed-url"
+                      onChange={(event) => setFeedUrlInput(event.target.value)}
+                      placeholder="https://…/calendrier.ics"
+                      type="url"
+                      value={feedUrlInput}
+                    />
+                    <button disabled={feedUrlBusy} type="submit">
+                      {feedUrlBusy ? "Enregistrement…" : "Enregistrer"}
+                    </button>
+                  </div>
+                  {team.calendarFeedUrl ? (
+                    <button className="inline-cta" disabled={feedUrlBusy} onClick={() => void saveCalendarFeedUrl(null)} type="button">
+                      Retirer le flux
+                    </button>
+                  ) : null}
+                  {feedUrlError ? (
+                    <p className="field-error" role="alert">
+                      {feedUrlError}
+                    </p>
+                  ) : null}
+                </form>
+              )}
 
               <TeamLineup gameFormat={(team?.gameFormat ?? 8) as GameFormat} players={players} />
 

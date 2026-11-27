@@ -7,7 +7,7 @@ import { CompetitionLineupEditor } from "../components/competition-lineup";
 import { PlayerAvatar } from "../components/player-avatar";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { TeamCrest } from "../components/team-crest";
-import { useAuth } from "../lib/auth-context";
+import { useAuth, type AuthResult } from "../lib/auth-context";
 import { useUnread } from "../lib/push";
 import { pickTeamLogo } from "../lib/team-logo";
 import { themedStyles } from "../lib/themed-styles";
@@ -16,7 +16,7 @@ import { themedStyles } from "../lib/themed-styles";
 const positionGroups = [...playerPositions.map((position) => ({ key: position as string, label: position as string })), { key: "", label: "Sans poste" }];
 
 export default function EquipeScreen() {
-  const { team, roster, addPlayer, renamePlayer, removePlayer, saveTeamLogo, sessionToken, apiRequest } = useAuth();
+  const { team, roster, addPlayer, renamePlayer, removePlayer, saveTeamLogo, saveTeamCalendarFeedUrl, sessionToken, apiRequest } = useAuth();
   // Compo type de l'équipe (indépendante des matchs) : undefined tant qu'elle n'est pas chargée.
   const [teamLineup, setTeamLineup] = useState<CompetitionLineup | null | undefined>(undefined);
   useFocusEffect(
@@ -52,6 +52,7 @@ export default function EquipeScreen() {
       setLogoBusy(false);
     }
   }
+
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
   const [addError, setAddError] = useState("");
@@ -134,6 +135,8 @@ export default function EquipeScreen() {
             </View>
           </View>
         )}
+
+        {team && <TeamCalendarFeedCard calendarFeedUrl={team.calendarFeedUrl ?? null} onSave={saveTeamCalendarFeedUrl} />}
 
         {!team && (
           <Link asChild href="/onboarding">
@@ -263,6 +266,58 @@ export default function EquipeScreen() {
   );
 }
 
+// Monté seulement une fois l'équipe chargée (voir `{team && <TeamCalendarFeedCard .../>}` ci-dessus) :
+// l'état local part donc toujours de la bonne valeur initiale, sans effet pour le resynchroniser.
+function TeamCalendarFeedCard({ calendarFeedUrl, onSave }: { calendarFeedUrl: string | null; onSave: (url: string | null) => Promise<AuthResult> }) {
+  const [input, setInput] = useState(calendarFeedUrl ?? "");
+  const [current, setCurrent] = useState(calendarFeedUrl);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function save(url: string | null) {
+    setBusy(true);
+    setError("");
+    const result = await onSave(url);
+    if (result.ok) {
+      setCurrent(url);
+      setInput(url ?? "");
+    } else {
+      setError(result.error);
+    }
+    setBusy(false);
+  }
+
+  return (
+    <View style={styles.feedCard}>
+      <Text style={styles.feedLabel}>Flux de calendrier (.ics)</Text>
+      <Text style={styles.feedHint}>
+        Les matchs d’un flux (ex. calendrier officiel de la ligue) sont ajoutés automatiquement, avec un repère « Flux » : leur date et leur lieu ne sont
+        plus modifiables à la main.
+      </Text>
+      <View style={styles.addRow}>
+        <TextInput
+          accessibilityLabel="URL du flux de calendrier"
+          autoCapitalize="none"
+          editable={!busy}
+          onChangeText={setInput}
+          placeholder="https://…/calendrier.ics"
+          style={styles.input}
+          value={input}
+        />
+        <TouchableOpacity disabled={busy} onPress={() => void save(input.trim() || null)} style={styles.addButton}>
+          <Text style={styles.addButtonText}>{busy ? "…" : "OK"}</Text>
+        </TouchableOpacity>
+      </View>
+      {current ? (
+        <TouchableOpacity accessibilityRole="button" disabled={busy} onPress={() => void save(null)}>
+          <Text style={styles.feedRemove}>Retirer le flux</Text>
+        </TouchableOpacity>
+      ) : null}
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+    </View>
+  );
+}
+
 const styles = themedStyles(() =>
   StyleSheet.create({
     safe: { flex: 1, backgroundColor: colors.paper },
@@ -322,6 +377,18 @@ const styles = themedStyles(() =>
     tutorRequest: { alignSelf: "flex-start", marginTop: 3, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: "#ef4444" },
     tutorRequestText: { color: "#ffffff", fontSize: 10.5, fontWeight: "800" },
     jersey: { color: colors.muted, opacity: 0.6, fontSize: 26, fontWeight: "900", fontStyle: "italic", marginRight: 4 },
+    feedCard: {
+      marginTop: 12,
+      padding: spacing.md,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surface,
+      gap: 6,
+    },
+    feedLabel: { fontSize: 13, fontWeight: "800", color: colors.ink },
+    feedHint: { fontSize: 11.5, color: colors.muted, lineHeight: 16 },
+    feedRemove: { fontSize: 11, fontWeight: "800", color: colors.muted, marginTop: 2 },
     noTeamLink: { marginTop: 12, padding: 12, backgroundColor: colors.primarySoft, borderRadius: radii.sm },
     noTeamText: { color: colors.primary, fontSize: 11, fontWeight: "800" },
     label: { fontSize: 11, fontWeight: "800", color: colors.ink, marginTop: 24, marginBottom: 9 },

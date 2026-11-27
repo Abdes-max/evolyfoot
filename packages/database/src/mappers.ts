@@ -421,6 +421,8 @@ export function toPersistedMatch(record: PrismaMatchRecord): PersistedMatch {
     id: record.id,
     educatorId: record.educatorId,
     opponent: record.opponent,
+    fromFeed: record.fromFeed,
+    feedUid: record.feedUid,
     dateLabel: record.dateLabel,
     date: record.date,
     meetingOffsetMinutes: record.meetingOffsetMinutes,
@@ -525,6 +527,7 @@ export function toPersistedTeamProfile(team: Team): PersistedTeamProfile {
     // calendrier hebdomadaire en dépendent pour numéroter les créneaux correctement.
     trainingDays: sortTrainingDays(team.trainingDays.map(fromPrismaTrainingDay)),
     logo: team.logo,
+    calendarFeedUrl: team.calendarFeedUrl,
   });
 
   return Object.freeze({

@@ -236,7 +236,14 @@ export default function MatchDetailScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page} ref={scrollRef}>
         <Text style={styles.step}>{cancelled ? "MATCH" : match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</Text>
-        <Text style={styles.title}>{match.opponent}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{match.opponent}</Text>
+          {match.fromFeed ? (
+            <View style={styles.feedBadge}>
+              <Text style={styles.feedBadgeText}>Flux</Text>
+            </View>
+          ) : null}
+        </View>
         <Text style={styles.body}>
           {match.dateLabel} · {venueLabel[match.venue]} · Foot à {match.gameFormat}
         </Text>
@@ -245,8 +252,11 @@ export default function MatchDetailScreen() {
 
         <View style={styles.locationBlock}>
           <Text style={styles.locationLabel}>Lieu</Text>
-          {cancelled ? (
-            <Text style={styles.readonlyValue}>{location || "Lieu non renseigné"}</Text>
+          {cancelled || match.fromFeed ? (
+            <Text style={styles.readonlyValue}>
+              {location || "Lieu non renseigné"}
+              {match.fromFeed ? " — vient du flux de calendrier abonné, non modifiable." : ""}
+            </Text>
           ) : (
             <>
               <PlaceInput
@@ -511,7 +521,10 @@ const styles = themedStyles(() =>
     safe: { flex: 1, backgroundColor: colors.paper },
     page: { padding: spacing.lg, paddingBottom: 50 },
     step: { fontSize: 10, fontWeight: "800", color: colors.primary, letterSpacing: 1.1 },
-    title: { fontSize: 26, fontWeight: "800", color: colors.ink, marginTop: 8 },
+    titleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
+    title: { fontSize: 26, fontWeight: "800", color: colors.ink },
+    feedBadge: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.primary },
+    feedBadgeText: { fontSize: 9, fontWeight: "800", color: colors.primary, textTransform: "uppercase" },
     body: { fontSize: 12.5, color: colors.muted, marginTop: 6 },
     locationBlock: { marginTop: spacing.md, gap: 6 },
     locationLabel: { fontSize: 11, fontWeight: "800", color: colors.muted },

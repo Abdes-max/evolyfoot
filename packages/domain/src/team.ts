@@ -24,6 +24,9 @@ export interface TeamProfile {
   // Logo de l'équipe (data URL d'une image réduite) ; absent tant que le coach n'en a pas choisi. Il ne se modifie
   // que par saveLogo : l'enregistrement du profil ne le touche jamais.
   logo?: string | null;
+  // URL d'un flux de calendrier externe (.ics) auquel l'équipe est abonnée ; même principe que
+  // `logo` -- ne se modifie que par saveCalendarFeedUrl, jamais par l'enregistrement du profil.
+  calendarFeedUrl?: string | null;
 }
 export type TeamProfileErrors = Partial<Record<keyof TeamProfile, string>>;
 export function validateTeamProfile(profile: TeamProfile): TeamProfileErrors {
@@ -48,5 +51,22 @@ export const teamLogoMaxLength = 400_000;
 export function validateTeamLogo(logo: string): string | null {
   if (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(logo)) return "Le logo doit être une image PNG, JPEG ou WebP.";
   if (logo.length > teamLogoMaxLength) return "Le logo est trop lourd : choisis une image plus petite.";
+  return null;
+}
+
+export const calendarFeedUrlMaxLength = 2000;
+
+// Problème de l'URL de flux de calendrier proposée, `null` si elle est valide : une URL http(s),
+// comme on en reçoit d'un service de ligue (ex. export .ics de la FFF). La résolution réseau et
+// la garde anti-SSRF (IP privée/locale) se font côté serveur au moment du fetch, pas ici.
+export function validateCalendarFeedUrl(url: string): string | null {
+  if (url.length > calendarFeedUrlMaxLength) return "Ce lien est trop long.";
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return "Indique un lien valide.";
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "Le lien doit commencer par http:// ou https://.";
   return null;
 }

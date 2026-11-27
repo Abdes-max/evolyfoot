@@ -335,4 +335,44 @@ describe("PostgreSQL match persistence", () => {
 
     await expect(service.updateDetails(stranger.id, match.id, { location: "Ailleurs" })).rejects.toBeInstanceOf(MatchNotFoundError);
   });
+
+  it("synchronise un flux de calendrier abonné : crée au premier passage, met à jour sans dupliquer ensuite", async () => {
+    const educator = await createEducator("feed-sync");
+    const event = { title: "FC Horizon - US Vallée", date: new Date("2026-12-06T14:00:00.000Z"), location: "Stade X", uid: "uid-1" };
+
+    await service.syncFeed(educator.id, "FC Horizon", 8, defaultFormationId(8), [event]);
+    const [created] = await service.list(educator.id);
+
+    expect(created).toMatchObject({ opponent: "US Vallée", venue: "home", location: "Stade X", fromFeed: true, feedUid: "uid-1" });
+
+    await service.syncFeed(educator.id, "FC Horizon", 8, defaultFormationId(8), [{ ...event, location: "Stade Y" }]);
+    const matches = await service.list(educator.id);
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({ location: "Stade Y", fromFeed: true });
+  });
+
+  it("ignore un événement de flux sans UID", async () => {
+    const educator = await createEducator("feed-no-uid");
+
+    await service.syncFeed(educator.id, "FC Horizon", 8, defaultFormationId(8), [
+      { title: "FC Horizon - US Vallée", date: null, location: null, uid: null },
+    ]);
+
+    await expect(service.list(educator.id)).resolves.toHaveLength(0);
+  });
+
+  it("verrouille la date et le lieu d'un match issu d'un flux, mais pas ses autres champs", async () => {
+    const educator = await createEducator("feed-lock");
+    await service.syncFeed(educator.id, "FC Horizon", 8, defaultFormationId(8), [
+      { title: "FC Horizon - US Vallée", date: new Date("2026-12-06T14:00:00.000Z"), location: "Stade X", uid: "uid-lock" },
+    ]);
+    const [match] = await service.list(educator.id);
+
+    await expect(service.updateDetails(educator.id, match!.id, { date: new Date("2026-12-07T14:00:00.000Z") })).rejects.toThrow(/calendrier abonné/);
+    await expect(service.updateDetails(educator.id, match!.id, { location: "Ailleurs" })).rejects.toThrow(/calendrier abonné/);
+
+    const updated = await service.updateDetails(educator.id, match!.id, { description: "Brassage journée 1" });
+    expect(updated.description).toBe("Brassage journée 1");
+  });
 });

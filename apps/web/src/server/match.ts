@@ -3,6 +3,7 @@ import { createSetAttendanceHandler } from "./set-attendance";
 import type { AttendanceEntry, MatchLineupAssignment, MatchPlayerStat, MatchResult, MatchStatus, MatchVenue } from "@evolyfoot/domain";
 import type { PublicEducator } from "./auth";
 import { databaseErrorResponse } from "./api-errors";
+import { fetchCalendarFeed } from "./calendar-feed";
 
 export interface MatchSummary {
   id: string;
@@ -24,6 +25,9 @@ export interface MatchSummary {
   gameFormat: number;
   formationId: string;
   status: MatchStatus;
+  // Vient d'un flux de calendrier abonné (voir Team.calendarFeedUrl) : date et lieu ne sont alors
+  // plus modifiables (voir MatchService.updateDetails), le reste du match l'est normalement.
+  fromFeed: boolean;
   lineup: readonly MatchLineupAssignment[];
   captainPlayerId: string | null;
   substitutePlayerIds: readonly string[];
@@ -446,14 +450,42 @@ export function createSetMatchAttendanceHandler(
 }
 
 export async function createMatchGateway(): Promise<{ gateway: MatchGateway; disconnect: () => Promise<void> }> {
-  const { createDatabaseClient, MatchService, PrismaEducatorRepository, PrismaMatchRepository, PrismaPlayerRepository, matchKickoffTime, matchMeetingTime } =
-    await import("@evolyfoot/database");
+  const {
+    createDatabaseClient,
+    MatchService,
+    PrismaEducatorRepository,
+    PrismaMatchRepository,
+    PrismaPlayerRepository,
+    PrismaTeamRepository,
+    matchKickoffTime,
+    matchMeetingTime,
+  } = await import("@evolyfoot/database");
+  const { defaultFormationId } = await import("@evolyfoot/domain");
   const database = createDatabaseClient(process.env.DATABASE_URL ?? "");
   const service = new MatchService(
     new PrismaEducatorRepository(database.prisma),
     new PrismaMatchRepository(database.prisma),
     new PrismaPlayerRepository(database.prisma),
   );
+  const teamRepository = new PrismaTeamRepository(database.prisma);
+
+  // Best-effort : resynchronise le flux de calendrier abonné de l'équipe (voir
+  // Team.calendarFeedUrl) avant de lister -- l'écran Matchs doit toujours s'afficher, flux
+  // disponible ou non.
+  async function syncCalendarFeed(educatorId: string): Promise<void> {
+    try {
+      const team = await teamRepository.findForEducator(educatorId);
+      if (!team?.profile.calendarFeedUrl) {
+        return;
+      }
+      const events = await fetchCalendarFeed(educatorId, team.profile.calendarFeedUrl);
+      if (events.length > 0) {
+        await service.syncFeed(educatorId, team.profile.name, team.profile.gameFormat, defaultFormationId(team.profile.gameFormat), events);
+      }
+    } catch {
+      // Flux indisponible ou équipe introuvable : la liste se fait sans synchronisation.
+    }
+  }
 
   function toSummary(match: Awaited<ReturnType<typeof service.get>>): MatchSummary {
     return {
@@ -470,6 +502,7 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
       gameFormat: match.gameFormat,
       formationId: match.formationId,
       status: match.status,
+      fromFeed: match.fromFeed,
       lineup: match.lineup,
       captainPlayerId: match.captainPlayerId,
       substitutePlayerIds: match.substitutePlayerIds,
@@ -488,6 +521,7 @@ export async function createMatchGateway(): Promise<{ gateway: MatchGateway; dis
   return {
     gateway: {
       async list(educatorId) {
+        await syncCalendarFeed(educatorId);
         const matches = await service.list(educatorId);
         return matches.map(toSummary);
       },

@@ -43,6 +43,9 @@ export interface MobileMatch {
   captainPlayerId: string | null;
   substitutePlayerIds: string[];
   opponentFormationId?: string | null;
+  // Vient d'un flux de calendrier abonné (voir Team.calendarFeedUrl) : date et lieu ne sont alors
+  // plus modifiables, le reste du match l'est normalement.
+  fromFeed?: boolean;
   // ISO, absent pour un match sans date réelle.
   date?: string | null;
   location?: string | null;
@@ -131,6 +134,8 @@ export interface AuthContextValue {
   saveTeam(profile: TeamProfile): Promise<AuthResult>;
   // Choisit (data URL) ou retire (null) le logo de l'équipe.
   saveTeamLogo(logo: string | null): Promise<AuthResult>;
+  // Choisit (URL) ou retire (null) le flux de calendrier abonné de l'équipe.
+  saveTeamCalendarFeedUrl(calendarFeedUrl: string | null): Promise<AuthResult>;
   saveDiagnostic(scores: DiagnosticScores): Promise<AuthResult>;
   saveTrainingSession(session: TrainingSession, slotInput: SessionSlotInput): Promise<SaveSessionResult>;
   listSessions(): Promise<readonly SavedTrainingSession[]>;
@@ -350,6 +355,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { ok: false, error: "Connecte-toi pour modifier le logo." };
       }
       const response = await apiFetch("/api/team/logo", { method: "PUT", sessionToken, body: JSON.stringify({ logo }) });
+      if (!response.ok) {
+        return { ok: false, error: await readErrorMessage(response) };
+      }
+      const body = await response.json();
+      setTeam(body.profile);
+      return { ok: true };
+    },
+    [sessionToken],
+  );
+
+  const saveTeamCalendarFeedUrl = useCallback(
+    async (calendarFeedUrl: string | null): Promise<AuthResult> => {
+      if (!sessionToken) {
+        return { ok: false, error: "Connecte-toi pour modifier le flux de calendrier." };
+      }
+      const response = await apiFetch("/api/team/calendar-feed", { method: "PUT", sessionToken, body: JSON.stringify({ calendarFeedUrl }) });
       if (!response.ok) {
         return { ok: false, error: await readErrorMessage(response) };
       }
@@ -715,6 +736,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       deleteAccount,
       saveTeam,
       saveTeamLogo,
+      saveTeamCalendarFeedUrl,
       saveDiagnostic,
       saveTrainingSession,
       listSessions,
@@ -751,6 +773,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       deleteAccount,
       saveTeam,
       saveTeamLogo,
+      saveTeamCalendarFeedUrl,
       saveDiagnostic,
       saveTrainingSession,
       listSessions,

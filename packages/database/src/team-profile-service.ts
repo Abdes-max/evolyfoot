@@ -4,6 +4,7 @@ import {
   validateCompetitionLineup,
   type CompetitionLineup,
   createTeamProfile,
+  validateCalendarFeedUrl,
   validateTeamLogo,
 } from "@evolyfoot/domain";
 import type { TeamProfile } from "@evolyfoot/domain";
@@ -33,6 +34,17 @@ export class TeamProfileService {
       }
     }
     return this.teamRepository.updateLogo(educatorId, logo);
+  }
+
+  // Choisit l'URL du flux de calendrier abonné de l'équipe, ou le retire (`null`).
+  async saveCalendarFeedUrl(educatorId: string, calendarFeedUrl: string | null): Promise<PersistedTeamProfile> {
+    if (calendarFeedUrl !== null) {
+      const problem = validateCalendarFeedUrl(calendarFeedUrl);
+      if (problem) {
+        throw new ValidationError(problem);
+      }
+    }
+    return this.teamRepository.updateCalendarFeedUrl(educatorId, calendarFeedUrl);
   }
 
   async defaultLineup(educatorId: string): Promise<CompetitionLineup | null> {

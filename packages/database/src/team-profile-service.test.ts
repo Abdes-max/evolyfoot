@@ -87,6 +87,14 @@ class InMemoryTeamRepository implements TeamRepository {
     return updated;
   }
 
+  async updateCalendarFeedUrl(educatorId: string, calendarFeedUrl: string | null): Promise<PersistedTeamProfile> {
+    const existing = this.teamsByEducatorId.get(educatorId);
+    if (!existing) throw new TeamNotFoundError();
+    const updated = { ...existing, profile: { ...existing.profile, calendarFeedUrl } };
+    this.teamsByEducatorId.set(educatorId, updated);
+    return updated;
+  }
+
   async findForEducator(educatorId: string): Promise<PersistedTeamProfile | null> {
     this.readEducatorIds.push(educatorId);
     return this.teamsByEducatorId.get(educatorId) ?? null;
@@ -173,5 +181,16 @@ describe("TeamProfileService", () => {
     expect((await service.saveLogo("educator-1", null)).profile.logo).toBeNull();
     await expect(service.saveLogo("educator-1", "https://exemple.test/logo.png")).rejects.toBeInstanceOf(ValidationError);
     await expect(service.saveLogo("inconnu", null)).rejects.toBeInstanceOf(TeamNotFoundError);
+  });
+
+  it("choisit puis retire l'URL du flux de calendrier sans toucher au reste du profil, et refuse une URL invalide", async () => {
+    const service = new TeamProfileService(new InMemoryEducatorRepository(["educator-1"]), new InMemoryTeamRepository());
+    await service.save("educator-1", validProfile);
+
+    const withFeed = await service.saveCalendarFeedUrl("educator-1", "https://media.fff.fr/calendars/2026/eq/1625_FA_6.ics");
+    expect(withFeed.profile).toMatchObject({ name: "FC Horizon", calendarFeedUrl: "https://media.fff.fr/calendars/2026/eq/1625_FA_6.ics" });
+    expect((await service.saveCalendarFeedUrl("educator-1", null)).profile.calendarFeedUrl).toBeNull();
+    await expect(service.saveCalendarFeedUrl("educator-1", "pas une url")).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.saveCalendarFeedUrl("inconnu", null)).rejects.toBeInstanceOf(TeamNotFoundError);
   });
 });
