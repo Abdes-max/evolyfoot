@@ -95,6 +95,9 @@ export interface BillingView {
   enforced: boolean;
   // Seul le coach titulaire gère l'abonnement ; un adjoint ne voit que l'état.
   canManage: boolean;
+  // A déjà eu un abonnement Stripe (résilié depuis) : un accès "expired" veut alors dire
+  // "abonnement terminé", pas "essai terminé".
+  everSubscribed: boolean;
   access: { state: "subscribed"; status: string } | { state: "trial"; trialEndsAt: string; daysLeft: number } | { state: "expired"; trialEndsAt: string };
   cycle: BillingCycle | null;
   currentPeriodEnd: string | null;
@@ -126,6 +129,7 @@ export function toBillingView(summary: BillingSummary, account: PublicAccount, e
     enabled,
     enforced: billingEnforced(),
     canManage: account.id === summary.coachId,
+    everSubscribed: summary.stripeSubscriptionId !== null,
     access:
       access.state === "subscribed"
         ? access

@@ -4,6 +4,8 @@ export type BillingAccess = { state: "subscribed" } | { state: "trial"; daysLeft
 
 export interface BillingState {
   enforced: boolean;
+  everSubscribed: boolean;
+  currentPeriodEnd: string | null;
   access: BillingAccess;
 }
 

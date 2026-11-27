@@ -7,7 +7,7 @@ import { CoachTabBar } from "../components/coach-tab-bar";
 import { SetupGuide } from "../components/setup-guide";
 import { NotificationBell } from "../components/notification-bell";
 import { AuthProvider, useAuth } from "../lib/auth-context";
-import { fetchBilling } from "../lib/billing";
+import { fetchBilling, type BillingState } from "../lib/billing";
 import { usePushNotifications } from "../lib/push";
 import { ThemeProvider, useTheme } from "../lib/theme";
 
@@ -19,6 +19,20 @@ function routeForLink(link: string): string {
   // /messagerie?joueur=:id → fil de ce joueur.
   const player = link.match(/[?&]joueur=([^&#]+)/)?.[1];
   return player ? `/messages/${player}` : "/notifications";
+}
+
+function longDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
+
+// Abonnement résilié depuis (everSubscribed) : "ton abonnement a pris fin", pas "ton essai est
+// terminé" -- même distinction que la page web /abonnement.
+function billingPopupMessage(billing: BillingState): string {
+  const ended =
+    billing.everSubscribed && billing.currentPeriodEnd
+      ? `Ton abonnement a pris fin le ${longDate(billing.currentPeriodEnd)}.`
+      : "Ton essai de 14 jours est terminé.";
+  return `${ended} Abonne-toi pour retrouver un accès complet à EvolyFoot.`;
 }
 
 const PUBLIC_ROUTES = ["/connexion", "/inscription"];
@@ -49,8 +63,9 @@ function BackButton() {
 function AuthGate({ children }: { children: ReactNode }) {
   const { educator, restoring, sessionToken, apiRequest } = useAuth();
   const pathname = usePathname();
-  const [billingBlocked, setBillingBlocked] = useState(false);
+  const [billing, setBilling] = useState<BillingState | null>(null);
   const [billingPopupDismissed, setBillingPopupDismissed] = useState(false);
+  const billingBlocked = billing?.enforced === true && billing.access.state === "expired";
   usePushNotifications(sessionToken, routeForLink);
 
   useEffect(() => {
@@ -62,8 +77,8 @@ function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!educator) return;
     let cancelled = false;
-    fetchBilling(apiRequest).then((billing) => {
-      if (!cancelled) setBillingBlocked(billing?.enforced === true && billing.access.state === "expired");
+    fetchBilling(apiRequest).then((result) => {
+      if (!cancelled) setBilling(result);
     });
     return () => {
       cancelled = true;
@@ -82,9 +97,7 @@ function AuthGate({ children }: { children: ReactNode }) {
       <Modal animationType="fade" transparent visible={billingBlocked && !billingPopupDismissed}>
         <View style={styles.billingPopupOverlay}>
           <View style={styles.billingPopupCard}>
-            <Text style={styles.billingPopupText}>
-              Ton essai de 14 jours est terminé (ou ton abonnement a pris fin). Abonne-toi pour retrouver un accès complet à EvolyFoot.
-            </Text>
+            <Text style={styles.billingPopupText}>{billing ? billingPopupMessage(billing) : ""}</Text>
             <TouchableOpacity onPress={() => setBillingPopupDismissed(true)} style={styles.billingPopupButton}>
               <Text style={styles.billingPopupButtonText}>S’abonner</Text>
             </TouchableOpacity>
