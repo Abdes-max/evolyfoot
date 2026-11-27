@@ -1,12 +1,13 @@
 import { colors } from "@evolyfoot/design-tokens";
 import { router, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { CoachTabBar } from "../components/coach-tab-bar";
 import { SetupGuide } from "../components/setup-guide";
 import { NotificationBell } from "../components/notification-bell";
 import { AuthProvider, useAuth } from "../lib/auth-context";
+import { fetchBilling } from "../lib/billing";
 import { usePushNotifications } from "../lib/push";
 import { ThemeProvider, useTheme } from "../lib/theme";
 
@@ -21,6 +22,10 @@ function routeForLink(link: string): string {
 }
 
 const PUBLIC_ROUTES = ["/connexion", "/inscription"];
+
+// Seul le profil reste ouvert quand l'essai est terminé et que l'accès est bloqué (BILLING_ENFORCED) :
+// l'abonnement se prend sur le site (règle 3.1.1 de l'App Store), le profil y renvoie déjà.
+const BILLING_OPEN_ROUTES = ["/profil", ...PUBLIC_ROUTES];
 
 // Sans en-tête : l'accueil (point de départ), la connexion/inscription et le mode terrain (qui a
 // son propre bouton « Quitter »). Partout ailleurs, un bouton Retour en haut à gauche.
@@ -42,8 +47,9 @@ function BackButton() {
 }
 
 function AuthGate({ children }: { children: ReactNode }) {
-  const { educator, restoring, sessionToken } = useAuth();
+  const { educator, restoring, sessionToken, apiRequest } = useAuth();
   const pathname = usePathname();
+  const [billingBlocked, setBillingBlocked] = useState(false);
   usePushNotifications(sessionToken, routeForLink);
 
   useEffect(() => {
@@ -51,6 +57,23 @@ function AuthGate({ children }: { children: ReactNode }) {
       router.replace("/connexion");
     }
   }, [educator, pathname, restoring]);
+
+  useEffect(() => {
+    if (!educator) return;
+    let cancelled = false;
+    fetchBilling(apiRequest).then((billing) => {
+      if (!cancelled) setBillingBlocked(billing?.enforced === true && billing.access.state === "expired");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [educator, apiRequest]);
+
+  useEffect(() => {
+    if (billingBlocked && !BILLING_OPEN_ROUTES.includes(pathname)) {
+      router.replace("/profil");
+    }
+  }, [billingBlocked, pathname]);
 
   return <>{restoring ? null : children}</>;
 }
