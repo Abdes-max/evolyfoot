@@ -22,10 +22,17 @@ on:
           déploiement progressif, à augmenter dans un run suivant.
         required: false
         default: "1.0"
+      target_track:
+        description: >-
+          Piste cible : production (défaut), ou alpha pour mettre à jour le test fermé existant
+          (mêmes testeurs, les 14 jours ne repartent pas de zéro).
+        type: choice
+        options: [production, alpha]
+        default: production
 
 jobs:
   promote:
-    name: Promouvoir interne → production (${{ inputs.app }})
+    name: Promouvoir interne → ${{ inputs.target_track || 'production' }} (${{ inputs.app }})
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -40,7 +47,7 @@ jobs:
           GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           PACKAGE_NAME: ${{ inputs.app == 'player' && 'com.evolyfoot.player' || 'com.evolyfoot.coach' }}
           SOURCE_TRACK: internal
-          TARGET_TRACK: production
+          TARGET_TRACK: ${{ inputs.target_track || 'production' }}
           VERSION_CODE: ${{ inputs.version_code }}
           ROLLOUT_FRACTION: ${{ inputs.rollout_fraction }}
         run: node scripts/play-store/promote-android-release.mjs
