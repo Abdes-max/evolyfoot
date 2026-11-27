@@ -34,7 +34,7 @@ describe("team profile", () => {
   });
 });
 
-import { validateTeamLogo, teamLogoMaxLength } from "./team";
+import { validateTeamLogo, teamLogoMaxLength, validateCalendarFeedUrl, calendarFeedUrlMaxLength } from "./team";
 
 describe("validateTeamLogo", () => {
   it("accepte une image en data URL et refuse le reste ou le trop lourd", () => {
@@ -42,5 +42,15 @@ describe("validateTeamLogo", () => {
     expect(validateTeamLogo("data:image/svg+xml;base64,PHN2Zz4=")).toMatch(/PNG, JPEG ou WebP/);
     expect(validateTeamLogo("https://exemple.test/logo.png")).toMatch(/PNG, JPEG ou WebP/);
     expect(validateTeamLogo("data:image/png;base64," + "A".repeat(teamLogoMaxLength))).toMatch(/trop lourd/);
+  });
+});
+
+describe("validateCalendarFeedUrl", () => {
+  it("accepte une URL http(s) et refuse le reste ou le trop long", () => {
+    expect(validateCalendarFeedUrl("https://media.fff.fr/calendars/2026/eq/1625_FA_6.ics")).toBeNull();
+    expect(validateCalendarFeedUrl("http://exemple.test/calendrier.ics")).toBeNull();
+    expect(validateCalendarFeedUrl("pas une url")).toMatch(/lien valide/);
+    expect(validateCalendarFeedUrl("ftp://exemple.test/calendrier.ics")).toMatch(/http:\/\/ ou https:\/\//);
+    expect(validateCalendarFeedUrl(`https://exemple.test/${"a".repeat(calendarFeedUrlMaxLength)}`)).toMatch(/trop long/);
   });
 });

@@ -48,7 +48,17 @@ export {
 export type { ImportedExerciseText, PersonalExercise, PersonalExerciseInput } from "./personal-exercise";
 export { currentCycleWeek, firstFreeCycleSlot, rehydrateTrainingSession, suggestedMeetingAt, trainingCycleWeekCount } from "./training-calendar";
 export type { SavedTrainingSession } from "./training-calendar";
-export { ageGroups, createTeamProfile, gameFormats, sortTrainingDays, teamLogoMaxLength, validateTeamLogo, validateTeamProfile } from "./team";
+export {
+  ageGroups,
+  calendarFeedUrlMaxLength,
+  createTeamProfile,
+  gameFormats,
+  sortTrainingDays,
+  teamLogoMaxLength,
+  validateCalendarFeedUrl,
+  validateTeamLogo,
+  validateTeamProfile,
+} from "./team";
 export type { GameFormat, TeamProfile, TeamProfileErrors, TrainingDay } from "./team";
 export { diagnosticCriteria, summarizeDiagnostic } from "./diagnostic";
 export type { DiagnosticCriterion, DiagnosticScores, DiagnosticSummary } from "./diagnostic";

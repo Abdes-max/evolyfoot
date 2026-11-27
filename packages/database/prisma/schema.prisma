@@ -367,6 +367,10 @@ model Team {
   trainingPlayerIds   Json?              @map("training_player_ids")
   // Logo de l'équipe : data URL d'une image réduite (comme Player.photo).
   logo                String?
+  // URL d'un flux de calendrier externe (.ics, ex. calendrier officiel FFF) auquel l'équipe est
+  // abonnée : resynchronisé à chaque ouverture de l'écran Matchs (voir MatchService.syncFeed).
+  // `null` = pas de flux.
+  calendarFeedUrl     String?            @map("calendar_feed_url")
   // Compo type (format, formation, titulaires, capitaine, 6 remplaçants au plus) : voir competition-lineup.ts côté domaine.
   defaultLineup       Json?              @map("default_lineup")
   createdAt           DateTime           @default(now()) @map("created_at")
@@ -550,6 +554,12 @@ model MatchRecord {
   educatorId           String              @map("educator_id") @db.Uuid
   educator             Educator            @relation(fields: [educatorId], references: [id], onDelete: Cascade)
   opponent             String
+  // Vient d'un flux de calendrier abonné (voir Team.calendarFeedUrl) plutôt que saisi à la main :
+  // `opponent`/`dateLabel`/`date`/`venue`/`location` sont alors en lecture seule côté coach (voir
+  // MatchService.updateDetails), remis à jour automatiquement à chaque resynchronisation.
+  // `feedUid` est l'UID de l'événement .ics, qui identifie le match d'une synchro à l'autre.
+  fromFeed             Boolean             @default(false) @map("from_feed")
+  feedUid              String?             @map("feed_uid")
   dateLabel            String              @map("date_label")
   // Vraie date ET heure du coup d'envoi, dérivée du datepicker de création (datetime-local) --
   // utilisée pour trier/regrouper par semaine (voir PlayerDashboardService et les pages listes
@@ -604,6 +614,7 @@ model MatchRecord {
   updatedAt            DateTime            @updatedAt @map("updated_at")
 
   @@index([educatorId])
+  @@unique([educatorId, feedUid])
   @@map("matches")
 }
 

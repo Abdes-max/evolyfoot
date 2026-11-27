@@ -242,6 +242,8 @@ export interface TeamRepository {
   findForEducator(educatorId: string): Promise<PersistedTeamProfile | null>;
   // Logo seul : l'enregistrement du profil ne le modifie jamais. `null` le retire.
   updateLogo(educatorId: string, logo: string | null): Promise<PersistedTeamProfile>;
+  // URL du flux de calendrier abonné, même principe que le logo. `null` le retire.
+  updateCalendarFeedUrl(educatorId: string, calendarFeedUrl: string | null): Promise<PersistedTeamProfile>;
   // Compo type de l'équipe ; null tant qu'elle n'est pas préparée (ou sans équipe).
   findDefaultLineup(educatorId: string): Promise<CompetitionLineup | null>;
   updateDefaultLineup(educatorId: string, lineup: CompetitionLineup | null): Promise<void>;
@@ -492,6 +494,11 @@ export interface PersistedMatch {
   id: string;
   educatorId: string;
   opponent: string;
+  // Vient d'un flux de calendrier abonné (voir Team.calendarFeedUrl / MatchService.syncFeed) :
+  // `opponent`/`dateLabel`/`date`/`venue`/`location` ne sont alors plus modifiables à la main.
+  fromFeed: boolean;
+  // UID de l'événement .ics d'origine quand `fromFeed`, `null` sinon.
+  feedUid: string | null;
   dateLabel: string;
   // Vraie date ET heure du coup d'envoi (voir le commentaire dans schema.prisma) -- `null` pour un
   // match créé avant l'introduction de ce champ, seul `dateLabel` reste fiable pour lui.
@@ -554,6 +561,22 @@ export interface MatchRepository {
       location?: string | null;
       description?: string | null;
       selectedPlayerIds?: PlayerSelection;
+    },
+  ): Promise<PersistedMatch>;
+  // Crée ou met à jour le match issu d'un événement de flux abonné (voir MatchService.syncFeed),
+  // identifié par `(educatorId, feedUid)` -- ne touche jamais lineup/attendance/résultat/etc. d'un
+  // match déjà préparé, seulement les champs issus du flux.
+  upsertFeedMatch(
+    educatorId: string,
+    feedUid: string,
+    input: {
+      opponent: string;
+      dateLabel: string;
+      date: Date | null;
+      venue: MatchVenue;
+      gameFormat: GameFormat;
+      formationId: string;
+      location: string | null;
     },
   ): Promise<PersistedMatch>;
   update(

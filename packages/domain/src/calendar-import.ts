@@ -6,6 +6,10 @@ export interface CalendarEvent {
   readonly title: string;
   readonly date: Date | null;
   readonly location: string | null;
+  // UID de l'événement (ligne `UID:`) -- `null` si absent du fichier. Identifie le même événement
+  // d'une synchronisation à l'autre pour un flux abonné (voir MatchService.syncFeed côté base) ;
+  // inutilisé par l'import fichier ponctuel.
+  readonly uid: string | null;
 }
 
 export interface ImportedFixture {
@@ -42,11 +46,11 @@ export function parseCalendarFile(content: string): CalendarEvent[] {
     .replace(/\n[ \t]/g, "")
     .split("\n");
   const events: CalendarEvent[] = [];
-  let current: { title: string; date: Date | null; location: string | null } | null = null;
+  let current: { title: string; date: Date | null; location: string | null; uid: string | null } | null = null;
 
   for (const line of lines) {
     if (line === "BEGIN:VEVENT") {
-      current = { title: "", date: null, location: null };
+      current = { title: "", date: null, location: null, uid: null };
     } else if (line === "END:VEVENT") {
       if (current?.title) {
         events.push(current);
@@ -65,6 +69,8 @@ export function parseCalendarFile(content: string): CalendarEvent[] {
         current.date = parseDate(value);
       } else if (name === "LOCATION") {
         current.location = unescapeText(value) || null;
+      } else if (name === "UID") {
+        current.uid = unescapeText(value) || null;
       }
     }
   }

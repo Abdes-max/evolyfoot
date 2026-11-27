@@ -4,6 +4,7 @@ import { fixtureFromTitle, parseCalendarFile } from "./calendar-import";
 const file = [
   "BEGIN:VCALENDAR",
   "BEGIN:VEVENT",
+  "UID:1625_FA_6-20261107",
   "SUMMARY:FC Horizon - US Vallée",
   "DTSTART:20261107T140000Z",
   "LOCATION:Stade Marius Requier\\, Aix-en-Provence",
@@ -20,7 +21,7 @@ const file = [
 ].join("\r\n");
 
 describe("lecture d'un calendrier .ics", () => {
-  it("lit le titre, la date et le lieu, et ignore un événement sans titre", () => {
+  it("lit le titre, la date, le lieu et l'UID, et ignore un événement sans titre", () => {
     const events = parseCalendarFile(file);
 
     expect(events).toHaveLength(2);
@@ -28,6 +29,7 @@ describe("lecture d'un calendrier .ics", () => {
       title: "FC Horizon - US Vallée",
       date: new Date("2026-11-07T14:00:00.000Z"),
       location: "Stade Marius Requier, Aix-en-Provence",
+      uid: "1625_FA_6-20261107",
     });
   });
 
@@ -42,7 +44,7 @@ describe("lecture d'un calendrier .ics", () => {
   it("garde l'événement si sa date est illisible", () => {
     const [event] = parseCalendarFile("BEGIN:VEVENT\nSUMMARY:Match\nDTSTART:demain\nEND:VEVENT");
 
-    expect(event).toEqual({ title: "Match", date: null, location: null });
+    expect(event).toEqual({ title: "Match", date: null, location: null, uid: null });
   });
 
   it("ne lit rien dans un fichier sans événement", () => {

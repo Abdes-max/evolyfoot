@@ -769,6 +769,14 @@ export class PrismaTeamRepository implements TeamRepository {
     }
   }
 
+  async updateCalendarFeedUrl(educatorId: string, calendarFeedUrl: string | null): Promise<PersistedTeamProfile> {
+    try {
+      return toPersistedTeamProfile(await this.prisma.team.update({ where: { educatorId }, data: { calendarFeedUrl } }));
+    } catch (error) {
+      return translateTeamWriteError(error);
+    }
+  }
+
   async findForEducator(educatorId: string): Promise<PersistedTeamProfile | null> {
     const team = await this.prisma.team.findUnique({ where: { educatorId } });
     return team === null ? null : toPersistedTeamProfile(team);
@@ -1069,6 +1077,46 @@ export class PrismaMatchRepository implements MatchRepository {
     } catch (error) {
       return translateMatchCreateError(error);
     }
+  }
+
+  async upsertFeedMatch(
+    educatorId: string,
+    feedUid: string,
+    input: {
+      opponent: string;
+      dateLabel: string;
+      date: Date | null;
+      venue: MatchVenue;
+      gameFormat: GameFormat;
+      formationId: string;
+      location: string | null;
+    },
+  ): Promise<PersistedMatch> {
+    const match = await this.prisma.matchRecord.upsert({
+      where: { educatorId_feedUid: { educatorId, feedUid } },
+      create: {
+        educatorId,
+        fromFeed: true,
+        feedUid,
+        opponent: input.opponent,
+        dateLabel: input.dateLabel,
+        date: input.date,
+        venue: toPrismaMatchVenue(input.venue),
+        gameFormat: input.gameFormat,
+        formationId: input.formationId,
+        location: input.location,
+      },
+      // Seuls les champs issus du flux sont retouchés -- jamais lineup/attendance/résultat/etc.
+      // d'un match déjà préparé depuis la dernière synchro.
+      update: {
+        opponent: input.opponent,
+        dateLabel: input.dateLabel,
+        date: input.date,
+        venue: toPrismaMatchVenue(input.venue),
+        location: input.location,
+      },
+    });
+    return toPersistedMatch(match);
   }
 
   // `updateMany` (plutôt que `update`, qui ne peut filtrer que sur une clé unique) vérifie

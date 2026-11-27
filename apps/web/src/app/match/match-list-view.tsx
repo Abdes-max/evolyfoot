@@ -22,6 +22,9 @@ interface MatchSummary {
   location?: string | null;
   gameFormat: number;
   status: MatchStatus;
+  // Vient d'un flux de calendrier abonné (voir Team.calendarFeedUrl) : date et lieu ne sont alors
+  // plus modifiables (voir la fiche détail), le reste du match l'est normalement.
+  fromFeed?: boolean;
   lineup: ReadonlyArray<unknown>;
   goalsFor?: number | null;
   goalsAgainst?: number | null;
@@ -325,6 +328,7 @@ export function MatchListView() {
                         {match.cancelledAt ? "Annulé" : statusLabel[match.status]}
                       </span>
                       <span className="match-card-format">Foot à {match.gameFormat}</span>
+                      {match.fromFeed && <span className="match-status match-status-feed">Flux</span>}
                     </div>
                     <h2 aria-hidden="true">{match.opponent}</h2>
                     <p aria-hidden="true" className="match-card-meta">

@@ -29,6 +29,7 @@ const match: MatchSummary = {
   gameFormat: 8,
   formationId: "3-3-1",
   status: "scheduled",
+  fromFeed: false,
   lineup: [],
   captainPlayerId: null,
   substitutePlayerIds: [],

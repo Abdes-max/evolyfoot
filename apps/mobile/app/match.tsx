@@ -233,6 +233,11 @@ export default function MatchListScreen() {
                   </Text>
                 </View>
                 <Text style={styles.cardFormat}>Foot à {match.gameFormat}</Text>
+                {match.fromFeed ? (
+                  <View style={styles.statusBadgeFeed}>
+                    <Text style={styles.statusTextFeed}>Flux</Text>
+                  </View>
+                ) : null}
               </View>
               <Text style={styles.cardTitle}>{match.opponent}</Text>
               <View style={styles.metaRow}>
@@ -337,6 +342,15 @@ const styles = themedStyles(() =>
     statusBadgePlayed: { backgroundColor: "rgba(52,211,153,.14)" },
     statusText: { fontSize: 9, fontWeight: "800", color: colors.primary, textTransform: "uppercase" },
     statusTextPlayed: { color: "#34d399" },
+    statusBadgeFeed: {
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      backgroundColor: "transparent",
+    },
+    statusTextFeed: { fontSize: 9, fontWeight: "800", color: colors.primary, textTransform: "uppercase" },
     cardFormat: { color: colors.muted, fontSize: 10, fontWeight: "700" },
     cardTitle: { fontSize: 17, fontWeight: "800", color: colors.ink, marginTop: 6 },
     filters: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },

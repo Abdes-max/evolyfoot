@@ -1,7 +1,7 @@
 import { EducatorNotFoundError, TeamNotFoundError, ValidationError } from "@evolyfoot/database";
 import type { TeamProfile } from "@evolyfoot/domain";
 import { describe, expect, it } from "vitest";
-import { createGetTeamHandler, createSaveTeamHandler, createSaveTeamLogoHandler, type TeamGateway } from "./team";
+import { createGetTeamHandler, createSaveTeamCalendarFeedHandler, createSaveTeamHandler, createSaveTeamLogoHandler, type TeamGateway } from "./team";
 
 const educator = { id: "educator-1", email: "coach@example.test", displayName: "Coach" };
 const validProfile: TeamProfile = {
@@ -204,5 +204,47 @@ describe("createSaveTeamLogoHandler", () => {
     expect((await failing(new ValidationError("Le logo doit être une image."))(jsonRequest({ logo: "x" }))).status).toBe(400);
     expect((await failing(new TeamNotFoundError())(jsonRequest({ logo }))).status).toBe(404);
     expect((await failing(new Error("boom"))(jsonRequest({ logo }))).status).toBe(500);
+  });
+});
+
+describe("createSaveTeamCalendarFeedHandler", () => {
+  const calendarFeedUrl = "https://media.fff.fr/calendars/2026/eq/1625_FA_6.ics";
+
+  it("exige une session et un lien (texte ou null)", async () => {
+    const unused = { saveCalendarFeedUrl: async () => validProfile };
+    expect((await createSaveTeamCalendarFeedHandler(anonymous, unused, () => undefined)(jsonRequest({ calendarFeedUrl }))).status).toBe(401);
+    expect((await createSaveTeamCalendarFeedHandler(authenticated, unused, () => undefined)(jsonRequest({}))).status).toBe(400);
+    expect((await createSaveTeamCalendarFeedHandler(authenticated, unused, () => undefined)(jsonRequest({ calendarFeedUrl: 3 }))).status).toBe(400);
+  });
+
+  it("transmet le lien, ou null pour le retirer, et renvoie le profil", async () => {
+    const received: unknown[] = [];
+    const handler = createSaveTeamCalendarFeedHandler(
+      authenticated,
+      {
+        saveCalendarFeedUrl: async (id, value) => {
+          received.push([id, value]);
+          return { ...validProfile, calendarFeedUrl: value };
+        },
+      },
+      () => undefined,
+    );
+
+    const response = await handler(jsonRequest({ calendarFeedUrl }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).profile.calendarFeedUrl).toBe(calendarFeedUrl);
+    await handler(jsonRequest({ calendarFeedUrl: null }));
+    expect(received).toEqual([
+      ["educator-1", calendarFeedUrl],
+      ["educator-1", null],
+    ]);
+  });
+
+  it("répond 400 pour un lien invalide, 404 sans équipe, 500 sinon", async () => {
+    const failing = (error: unknown) =>
+      createSaveTeamCalendarFeedHandler(authenticated, { saveCalendarFeedUrl: async () => Promise.reject(error) }, () => undefined);
+    expect((await failing(new ValidationError("Indique un lien valide."))(jsonRequest({ calendarFeedUrl: "x" }))).status).toBe(400);
+    expect((await failing(new TeamNotFoundError())(jsonRequest({ calendarFeedUrl }))).status).toBe(404);
+    expect((await failing(new Error("boom"))(jsonRequest({ calendarFeedUrl }))).status).toBe(500);
   });
 });

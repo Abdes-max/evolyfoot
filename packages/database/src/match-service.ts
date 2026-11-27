@@ -1,5 +1,6 @@
 import {
   defaultFormationId,
+  fixtureFromTitle,
   formationSlots,
   gameFormats,
   listFormations,
@@ -8,11 +9,18 @@ import {
   validateMatchPlan,
   validateMatchResult,
 } from "@evolyfoot/domain";
-import type { AttendanceEntry, GameFormat, MatchLineupAssignment, MatchPlan, MatchResult, MatchVenue } from "@evolyfoot/domain";
+import type { AttendanceEntry, CalendarEvent, GameFormat, MatchLineupAssignment, MatchPlan, MatchResult, MatchVenue } from "@evolyfoot/domain";
 import { EducatorNotFoundError, MatchNotFoundError, ValidationError } from "./errors";
 import { readPlayerSelection } from "./player-selection";
 import { correctAttendance } from "./attendance-correction";
 import type { EducatorRepository, MatchRepository, PersistedMatch, PlayerRepository } from "./repositories";
+
+// Même format que frenchDateLabel (apps/web/src/app/date-format.ts), dupliqué ici plutôt que
+// partagé entre client et serveur -- même convention que ce fichier-là, pour un match synchronisé
+// côté serveur depuis un flux de calendrier abonné (voir syncFeed).
+function frenchDateLabel(date: Date): string {
+  return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(date).replace(/^\p{L}/u, (letter) => letter.toUpperCase());
+}
 
 function normalizeOpponent(opponent: string): string {
   const trimmed = opponent.trim();
@@ -181,6 +189,32 @@ export class MatchService {
     });
   }
 
+  // Resynchronise les matchs du flux de calendrier abonné de l'équipe (voir Team.calendarFeedUrl) :
+  // un match par événement portant un UID, identifié par cet UID d'une synchro à l'autre (voir
+  // MatchRepository.upsertFeedMatch) -- ne touche jamais un match déjà préparé au-delà de ses
+  // champs d'identité/horaire. Un événement qui échoue à s'enregistrer n'empêche pas les suivants.
+  async syncFeed(educatorId: string, teamName: string, gameFormat: GameFormat, formationId: string, events: readonly CalendarEvent[]): Promise<void> {
+    for (const event of events) {
+      if (!event.uid) {
+        continue;
+      }
+      const fixture = fixtureFromTitle(event.title, teamName);
+      try {
+        await this.matchRepository.upsertFeedMatch(educatorId, event.uid, {
+          opponent: fixture.opponent,
+          dateLabel: event.date ? frenchDateLabel(event.date) : "Date à préciser",
+          date: event.date,
+          venue: fixture.venue,
+          gameFormat,
+          formationId,
+          location: event.location,
+        });
+      } catch {
+        // Best-effort : un événement en échec ne doit pas bloquer la resynchronisation des autres.
+      }
+    }
+  }
+
   // Rendez-vous (calculé à `date - meetingOffsetMinutes`, voir matchMeetingTime), lieu précis et
   // description -- modifiables indépendamment de la composition, avant comme après que le match
   // soit joué (une adresse ou une note reste correcte a posteriori, contrairement à la
@@ -201,6 +235,13 @@ export class MatchService {
     const match = await this.get(educatorId, matchId);
     if (match.cancelledAt) {
       throw new ValidationError("Ce match est annulé : rétablis-le d’abord.");
+    }
+    if (match.fromFeed) {
+      const dateChanged = input.date !== undefined && (input.date?.getTime() ?? null) !== (match.date?.getTime() ?? null);
+      const locationChanged = input.location !== undefined && normalizeOptionalText(input.location) !== match.location;
+      if (dateChanged || locationChanged) {
+        throw new ValidationError("Cet événement provient du calendrier abonné : la date et le lieu ne sont pas modifiables.");
+      }
     }
     if (input.opponentFormationId && !listFormations(match.gameFormat).some((formation) => formation.id === input.opponentFormationId)) {
       throw new ValidationError("Ce système n’existe pas pour ce format de jeu.");

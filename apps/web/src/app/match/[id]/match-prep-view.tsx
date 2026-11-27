@@ -53,6 +53,9 @@ interface MatchRecord {
   gameFormat: number;
   formationId: string;
   status: MatchStatus;
+  // Vient d'un flux de calendrier abonné (voir Team.calendarFeedUrl) : date et lieu ne sont alors
+  // plus modifiables, le reste du match l'est normalement.
+  fromFeed?: boolean;
   lineup: MatchLineupAssignment[];
   captainPlayerId: string | null;
   substitutePlayerIds: string[];
@@ -507,7 +510,9 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
       <header className="page-header match-header">
         <div>
           <span className="eyebrow light">{cancelled ? "MATCH" : match.status === "played" ? "MATCH JOUÉ" : "PRÉPARATION DU MATCH"}</span>
-          <h1 title={match.opponent}>{match.opponent}</h1>
+          <h1 title={match.opponent}>
+            {match.opponent} {match.fromFeed && <span className="match-status match-status-feed">Flux</span>}
+          </h1>
           <p title={`${match.dateLabel} · ${venueLabel[match.venue]} · Foot à ${match.gameFormat}`}>
             {match.dateLabel} · {venueLabel[match.venue]} · Foot à {match.gameFormat}
           </p>
@@ -520,8 +525,11 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
         {cancelled && <CancelledBanner note={match.cancellationNote} />}
         <div className="event-card match-details-form">
           <h2>Lieu</h2>
-          {cancelled ? (
-            <p className="event-readonly">{location || "Lieu non renseigné"}</p>
+          {cancelled || match.fromFeed ? (
+            <p className="event-readonly">
+              {location || "Lieu non renseigné"}
+              {match.fromFeed && <span className="match-feed-note"> — vient du flux de calendrier abonné, non modifiable.</span>}
+            </p>
           ) : (
             <>
               <PlaceInput
@@ -546,7 +554,8 @@ export function MatchPrepView({ matchId }: { matchId: string }) {
           <form className="match-details-form" onSubmit={saveDetails}>
             <label>
               <span>Date et heure du match</span>
-              <input disabled={locked} onChange={(event) => setDate(event.target.value)} type="datetime-local" value={date} />
+              <input disabled={locked || match.fromFeed} onChange={(event) => setDate(event.target.value)} type="datetime-local" value={date} />
+              {match.fromFeed && <span className="match-slot-hint">Vient du flux de calendrier abonné, non modifiable.</span>}
             </label>
             <label>
               <span>Rendez-vous, minutes avant le match</span>
