@@ -47,6 +47,13 @@ function buildPatch(input: EducatorProfileInput): EducatorProfilePatch {
     patch.displayName = trimmed;
   }
 
+  if (input.photo !== undefined) {
+    if (input.photo !== null && typeof input.photo !== "string") {
+      throw new ValidationError("Photo de profil invalide.");
+    }
+    patch.photo = input.photo;
+  }
+
   if (input.birthDate !== undefined) {
     if (input.birthDate === null || input.birthDate.trim() === "") {
       patch.birthDate = null;
@@ -85,6 +92,7 @@ function buildPatch(input: EducatorProfileInput): EducatorProfilePatch {
 
 export interface EducatorProfileInput {
   displayName?: string;
+  photo?: string | null;
   birthDate?: string | null;
   club?: string | null;
   country?: string | null;

@@ -14,6 +14,7 @@ class InMemoryEducatorProfileRepository implements EducatorProfileRepository {
       id,
       email: "coach@example.test",
       displayName: "Coach",
+      photo: null,
       birthDate: null,
       club: null,
       country: null,
@@ -87,6 +88,19 @@ describe("EducatorProfileService", () => {
     expect(updated.phone).toBeNull();
     expect(updated.country).toBe("France");
     expect(updated.displayName).toBe("Coach");
+  });
+
+  it("stores and clears the profile photo", async () => {
+    const repository = new InMemoryEducatorProfileRepository("educator-1");
+    const service = new EducatorProfileService(repository);
+
+    const withPhoto = await service.update("educator-1", { photo: "data:image/jpeg;base64,abcd" });
+    expect(withPhoto.photo).toBe("data:image/jpeg;base64,abcd");
+
+    const cleared = await service.update("educator-1", { photo: null });
+    expect(cleared.photo).toBeNull();
+
+    await expect(service.update("educator-1", { photo: 42 as unknown as string })).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("rejects an empty display name and a malformed birth date", async () => {

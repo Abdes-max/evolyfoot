@@ -332,6 +332,7 @@ export function toEducatorProfile(educator: Educator): EducatorProfile {
     id: educator.id,
     email: educator.email,
     displayName: educator.displayName,
+    photo: educator.photo,
     birthDate: educator.birthDate,
     club: educator.club,
     country: educator.country,

@@ -2,16 +2,19 @@ import { colors, radii, spacing } from "@evolyfoot/design-tokens";
 import { allFormationIds, diagnosticCriteria, playStyles, type DiagnosticScores } from "@evolyfoot/domain";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Alert, Linking, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Linking, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { ConvocationSettings } from "../components/convocation-settings";
+import { PhotoChoice } from "../components/photo-choice";
 import { ThemeToggle } from "../components/theme-toggle";
 import { apiBaseUrl } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
+import { pickPlayerPhoto } from "../lib/player-photo";
 import { themedStyles } from "../lib/themed-styles";
 
 interface Profile {
   email: string;
   displayName: string;
+  photo: string | null;
   birthDate: string | null;
   club: string | null;
   country: string | null;
@@ -426,10 +429,21 @@ function billingLabel(access: BillingAccess, cancelAt: string | null): string {
   return "Essai terminé";
 }
 
-// Bannière du profil : identité et encart d'abonnement. L'abonnement se prend et se gère sur le site.
-function ProfileBanner({ displayName }: { displayName: string }) {
+// Bannière du profil : identité (photo éditable) et encart d'abonnement. L'abonnement se prend et
+// se gère sur le site.
+function ProfileBanner({
+  displayName,
+  photo,
+  onPhotoChange,
+}: {
+  displayName: string;
+  photo: string | null;
+  onPhotoChange: (photo: string | null) => Promise<void>;
+}) {
   const { apiRequest } = useAuth();
   const [billing, setBilling] = useState<{ access: BillingAccess; cancelAt: string | null } | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoChoice, setPhotoChoice] = useState<{ original: string; cutout: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -442,20 +456,70 @@ function ProfileBanner({ displayName }: { displayName: string }) {
     };
   }, [apiRequest]);
 
+  async function changePhoto() {
+    setPhotoBusy(true);
+    try {
+      const picked = await pickPlayerPhoto();
+      if (!picked) return;
+      // Détourage sur le serveur ; en cas d’échec, la photo d’origine est enregistrée telle quelle.
+      const response = await apiRequest("/api/photos/detourage", { method: "POST", body: JSON.stringify({ image: picked }) });
+      const body = response?.ok ? await response.json().catch(() => null) : null;
+      if (typeof body?.image === "string") {
+        setPhotoChoice({ original: picked, cutout: body.image });
+        return;
+      }
+      await onPhotoChange(picked);
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  function removePhoto() {
+    Alert.alert("Retirer la photo ?", undefined, [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Retirer",
+        style: "destructive",
+        onPress: async () => {
+          setPhotoBusy(true);
+          await onPhotoChange(null);
+          setPhotoBusy(false);
+        },
+      },
+    ]);
+  }
+
   const subscribed = billing?.access.state === "subscribed";
   return (
     <View style={styles.banner}>
       <View style={styles.identity}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials(displayName)}</Text>
-        </View>
+        <TouchableOpacity accessibilityLabel={photo ? "Changer la photo de profil" : "Ajouter une photo de profil"} disabled={photoBusy} onPress={changePhoto}>
+          <View style={styles.avatar}>
+            {photo ? <Image source={{ uri: photo }} style={styles.avatarImage} /> : <Text style={styles.avatarText}>{initials(displayName)}</Text>}
+            {photoBusy && <ActivityIndicator color={colors.primaryInk} style={StyleSheet.absoluteFill} />}
+          </View>
+        </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.bannerName}>{displayName}</Text>
           <Text accessibilityLabel="Note du profil : indicative" style={styles.rating}>
             ★★☆☆☆
           </Text>
+          {photo && (
+            <TouchableOpacity accessibilityRole="button" disabled={photoBusy} onPress={removePhoto}>
+              <Text style={styles.removePhoto}>Retirer la photo</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
+      <PhotoChoice
+        cutout={photoChoice?.cutout ?? null}
+        onCancel={() => setPhotoChoice(null)}
+        onChoose={(chosen) => {
+          setPhotoChoice(null);
+          void onPhotoChange(chosen);
+        }}
+        original={photoChoice?.original ?? null}
+      />
       <View style={styles.plan}>
         <Text style={styles.planName}>{subscribed ? "ABONNEMENT COACH" : "ESSAI GRATUIT"}</Text>
         <Text style={styles.planNote}>{billing ? billingLabel(billing.access, billing.cancelAt) : "…"}</Text>
@@ -599,6 +663,13 @@ export default function ProfilScreen() {
     setMessage("Informations enregistrées.");
   }
 
+  async function savePhoto(photo: string | null) {
+    const response = await apiRequest("/api/profile", { method: "PATCH", body: JSON.stringify({ photo }) });
+    if (response?.ok) {
+      setProfile((await response.json()).profile);
+    }
+  }
+
   async function changePassword() {
     if (passwords.next !== passwords.confirm) {
       setPasswordMessage("La confirmation ne correspond pas au nouveau mot de passe.");
@@ -637,7 +708,7 @@ export default function ProfilScreen() {
         </View>
         {loadError ? <Text style={styles.danger}>{loadError}</Text> : null}
 
-        <ProfileBanner displayName={displayName} />
+        <ProfileBanner displayName={displayName} onPhotoChange={savePhoto} photo={profile?.photo ?? null} />
 
         <View accessibilityRole="tablist" style={styles.tabs}>
           {profileTabs.map((item) => (
@@ -841,9 +912,12 @@ const styles = themedStyles(() =>
       backgroundColor: "rgba(255,255,255,0.16)",
       borderWidth: 2,
       borderColor: "rgba(255,255,255,0.4)",
+      overflow: "hidden",
     },
+    avatarImage: { width: "100%", height: "100%" },
     avatarText: { fontSize: 18, fontWeight: "800", color: colors.primaryInk },
     bannerName: { fontSize: 20, fontWeight: "800", color: colors.primaryInk },
+    removePhoto: { fontSize: 11, fontWeight: "800", color: colors.primaryInk, opacity: 0.85, marginTop: 4 },
     rating: { fontSize: 13, letterSpacing: 2, color: colors.primaryInk, opacity: 0.85 },
     plan: { alignItems: "flex-start", gap: 4 },
     planName: { fontSize: 13, fontWeight: "800", letterSpacing: 0.6, color: colors.primaryInk },
