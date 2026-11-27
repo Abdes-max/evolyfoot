@@ -291,8 +291,8 @@ function TeamCalendarFeedCard({ calendarFeedUrl, onSave }: { calendarFeedUrl: st
     <View style={styles.feedCard}>
       <Text style={styles.feedLabel}>Flux de calendrier (.ics)</Text>
       <Text style={styles.feedHint}>
-        Les matchs d’un flux (ex. calendrier officiel de la ligue) sont ajoutés automatiquement, avec un repère « Flux » : leur date et leur lieu ne sont
-        plus modifiables à la main.
+        Les matchs d’un flux (ex. calendrier officiel de la ligue) sont ajoutés automatiquement, avec un repère « Flux » : leur date et leur lieu ne sont plus
+        modifiables à la main.
       </Text>
       <View style={styles.addRow}>
         <TextInput

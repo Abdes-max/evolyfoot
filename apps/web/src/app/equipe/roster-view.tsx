@@ -314,8 +314,8 @@ export function RosterView() {
                 <form className="roster-calendar-feed" onSubmit={submitCalendarFeedUrl}>
                   <label htmlFor="roster-calendar-feed-url">Flux de calendrier (.ics)</label>
                   <p className="field-hint">
-                    Les matchs d’un flux (ex. calendrier officiel de la ligue) sont ajoutés automatiquement, avec un repère « Flux » : leur date et leur lieu
-                    ne sont plus modifiables à la main.
+                    Les matchs d’un flux (ex. calendrier officiel de la ligue) sont ajoutés automatiquement, avec un repère « Flux » : leur date et leur lieu ne
+                    sont plus modifiables à la main.
                   </p>
                   <div className="roster-add-row">
                     <input

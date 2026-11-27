@@ -355,9 +355,7 @@ describe("PostgreSQL match persistence", () => {
   it("ignore un événement de flux sans UID", async () => {
     const educator = await createEducator("feed-no-uid");
 
-    await service.syncFeed(educator.id, "FC Horizon", 8, defaultFormationId(8), [
-      { title: "FC Horizon - US Vallée", date: null, location: null, uid: null },
-    ]);
+    await service.syncFeed(educator.id, "FC Horizon", 8, defaultFormationId(8), [{ title: "FC Horizon - US Vallée", date: null, location: null, uid: null }]);
 
     await expect(service.list(educator.id)).resolves.toHaveLength(0);
   });
