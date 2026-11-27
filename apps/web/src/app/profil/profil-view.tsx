@@ -7,12 +7,16 @@ import { ProfileAccountBlocks } from "./account-blocks";
 import { SeasonTab } from "./season-tab";
 import { ThemeToggle } from "../theme-toggle";
 import { BillingPlan } from "../abonnement/billing-plan";
-import { useEffect, useMemo, useState } from "react";
+import { resizeImageToDataUrl } from "../image-resize";
+import { cutoutPhoto } from "../photo-cutout";
+import { PhotoChoice } from "../photo-choice";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 
 interface Profile {
   id: string;
   email: string;
   displayName: string;
+  photo: string | null;
   birthDate: string | null;
   club: string | null;
   country: string | null;
@@ -31,6 +35,7 @@ type EditableKey = "displayName" | "birthDate" | "club" | "country" | "address" 
 // des valeurs cohérentes.
 const seasonFormatOptions = ["Saison partagée (juil.–juin)", "Année civile (janv.–déc.)"];
 const diplomaOptions = ["Aucun", "Animateur", "CFF1", "CFF2", "CFF3", "CFF4", "BMF", "BEF"];
+const profilePhotoMaxSide = 400;
 
 const fields: ReadonlyArray<{ key: EditableKey; label: string; type: "text" | "date" | "tel"; options?: string[] }> = [
   { key: "displayName", label: "Nom", type: "text" },
@@ -105,6 +110,9 @@ export function ProfilView() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoChoice, setPhotoChoice] = useState<{ original: string; cutout: string } | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [pwOpen, setPwOpen] = useState(false);
   const [pwCurrent, setPwCurrent] = useState("");
@@ -206,6 +214,44 @@ export function ProfilView() {
     }
   }
 
+  async function savePhoto(photo: string | null) {
+    setPhotoBusy(true);
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ photo }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) {
+        setProfile(body.profile);
+      }
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function onPhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, profilePhotoMaxSide);
+      const cutout = await cutoutPhoto(dataUrl);
+      if (cutout) {
+        setPhotoChoice({ original: dataUrl, cutout });
+        setPhotoBusy(false);
+      } else {
+        await savePhoto(dataUrl);
+      }
+    } catch {
+      setPhotoBusy(false);
+    }
+  }
+
   async function changePassword(event: React.FormEvent) {
     event.preventDefault();
     setPwError("");
@@ -270,16 +316,43 @@ export function ProfilView() {
           <>
             <div className="profil-banner">
               <div className="profil-identity">
-                <span className="profil-avatar" aria-hidden="true">
-                  {initials(profile.displayName)}
-                </span>
+                {profile.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img alt="" className="profil-avatar profil-avatar-photo" src={profile.photo} />
+                ) : (
+                  <span className="profil-avatar" aria-hidden="true">
+                    {initials(profile.displayName)}
+                  </span>
+                )}
                 <div>
                   <h2>{profile.displayName}</h2>
                   <span className="profil-rating" aria-label="Note du profil : indicative">
                     ★★☆☆☆
                   </span>
+                  <div className="profil-photo-actions">
+                    <button disabled={photoBusy} onClick={() => photoInputRef.current?.click()} type="button">
+                      {photoBusy ? "Détourage…" : profile.photo ? "Changer la photo" : "Ajouter une photo"}
+                    </button>
+                    {profile.photo && (
+                      <button disabled={photoBusy} onClick={() => savePhoto(null)} type="button">
+                        Retirer
+                      </button>
+                    )}
+                    <input accept="image/*" className="visually-hidden" onChange={onPhotoChange} ref={photoInputRef} type="file" />
+                  </div>
                 </div>
               </div>
+              {photoChoice && (
+                <PhotoChoice
+                  cutout={photoChoice.cutout}
+                  onCancel={() => setPhotoChoice(null)}
+                  onChoose={(photo) => {
+                    setPhotoChoice(null);
+                    void savePhoto(photo);
+                  }}
+                  original={photoChoice.original}
+                />
+              )}
               <BillingPlan />
             </div>
 

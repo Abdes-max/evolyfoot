@@ -117,6 +117,7 @@ export interface EducatorProfile {
   id: string;
   email: string;
   displayName: string;
+  photo: string | null;
   birthDate: string | null;
   club: string | null;
   country: string | null;
@@ -132,6 +133,7 @@ export interface EducatorProfile {
 // Patch partiel : une clé absente n'est pas touchée, une clé à `null` efface le champ.
 export type EducatorProfilePatch = Partial<{
   displayName: string;
+  photo: string | null;
   birthDate: string | null;
   club: string | null;
   country: string | null;

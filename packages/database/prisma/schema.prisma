@@ -92,7 +92,10 @@ model Educator {
   // Fiche profil de l'éducateur (page /profil). Tous optionnels : renseignés après l'inscription,
   // qui ne demande que nom / e-mail / mot de passe. `birthDate` est stocké en texte ISO
   // (`YYYY-MM-DD`) plutôt qu'en `DateTime` -- une date de naissance n'a pas d'heure ni de fuseau,
-  // et l'app manipule déjà ses dates en texte libre ailleurs (MatchRecord.dateLabel).
+  // et l'app manipule déjà ses dates en texte libre ailleurs (MatchRecord.dateLabel). `photo` suit
+  // le même choix que `Player.photo` : une image (data URL) redimensionnée côté client, stockée
+  // telle quelle -- pas de stockage d'objets ni de CDN pour l'instant.
+  photo                   String?
   birthDate               String?                  @map("birth_date")
   club                    String?
   // Club rejoint par un code (partage d'exercices entre éducateurs). Indépendant du champ libre

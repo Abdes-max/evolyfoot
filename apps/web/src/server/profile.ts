@@ -7,6 +7,7 @@ export interface ProfileSummary {
   id: string;
   email: string;
   displayName: string;
+  photo: string | null;
   birthDate: string | null;
   club: string | null;
   country: string | null;
@@ -27,7 +28,7 @@ export interface ProfileGateway {
 
 // Champs texte optionnels de la fiche : présents dans le corps => `string | null` accepté (null
 // efface), absents => on n'y touche pas.
-const optionalFields = ["birthDate", "club", "country", "address", "phone", "diploma", "seasonFormat", "playStyle", "preferredFormation"] as const;
+const optionalFields = ["photo", "birthDate", "club", "country", "address", "phone", "diploma", "seasonFormat", "playStyle", "preferredFormation"] as const;
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
   try {
@@ -163,6 +164,7 @@ export async function createProfileGateway(): Promise<{ gateway: ProfileGateway;
       id: profile.id,
       email: profile.email,
       displayName: profile.displayName,
+      photo: profile.photo,
       birthDate: profile.birthDate,
       club: profile.club,
       country: profile.country,

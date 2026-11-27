@@ -11,6 +11,7 @@ interface Educator {
   id: string;
   email: string;
   displayName: string;
+  photo?: string | null;
   emailVerified?: boolean;
 }
 
@@ -59,17 +60,22 @@ export function SidebarIdentity() {
         setEducator(sessionBody.educator ?? null);
 
         if (sessionBody.educator) {
-          const [teamResponse, rosterResponse, teamChoices] = await Promise.all([
+          const [teamResponse, rosterResponse, profileResponse, teamChoices] = await Promise.all([
             fetch("/api/team"),
             fetch("/api/roster"),
+            fetch("/api/profile"),
             sessionBody.role === "coach" ? listTeams() : Promise.resolve([]),
           ]);
           const teamBody = await teamResponse.json().catch(() => ({ profile: null }));
           const rosterBody = await rosterResponse.json().catch(() => ({ players: [] }));
+          const profileBody = await profileResponse.json().catch(() => ({ profile: null }));
           if (!cancelled) {
             setTeam(teamBody.profile ?? null);
             setPlayerCount(Array.isArray(rosterBody.players) ? rosterBody.players.length : 0);
             setTeams(teamChoices);
+            if (profileBody.profile?.photo) {
+              setEducator((current) => (current ? { ...current, photo: profileBody.profile.photo } : current));
+            }
           }
         }
       } catch {
@@ -192,7 +198,12 @@ export function SidebarIdentity() {
       </div>
       <div className="coach">
         <Link aria-label="Ouvrir mon profil" className="coach-link" href="/profil">
-          <span className="avatar">{initials(educator.displayName)}</span>
+          {educator.photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img alt="" className="avatar avatar-photo" src={educator.photo} />
+          ) : (
+            <span className="avatar">{initials(educator.displayName)}</span>
+          )}
           <div>
             <strong>{educator.displayName}</strong>
             <span>Voir mon profil</span>

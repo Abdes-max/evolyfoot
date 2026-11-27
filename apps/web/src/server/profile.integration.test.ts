@@ -10,6 +10,7 @@ const summary: ProfileSummary = {
   id: "educator-1",
   email: "coach@example.test",
   displayName: "Coach",
+  photo: null,
   birthDate: null,
   club: null,
   country: null,
