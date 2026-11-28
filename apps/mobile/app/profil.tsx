@@ -420,13 +420,13 @@ function formatBirthDate(value: string | null): string {
 
 type BillingAccess = { state: "subscribed" } | { state: "trial"; daysLeft: number } | { state: "expired" };
 
-function billingLabel(access: BillingAccess, cancelAt: string | null): string {
+function billingLabel(access: BillingAccess, cancelAt: string | null, everSubscribed: boolean): string {
   if (access.state === "subscribed") return cancelAt ? "Abonnement résilié" : "Abonnement actif";
   if (access.state === "trial") {
     const plural = access.daysLeft > 1 ? "s" : "";
     return `Essai gratuit : ${access.daysLeft} jour${plural} restant${plural}`;
   }
-  return "Essai terminé";
+  return everSubscribed ? "Abonnement terminé" : "Essai terminé";
 }
 
 // Bannière du profil : identité (photo éditable) et encart d'abonnement. L'abonnement se prend et
@@ -441,7 +441,7 @@ function ProfileBanner({
   onPhotoChange: (photo: string | null) => Promise<void>;
 }) {
   const { apiRequest } = useAuth();
-  const [billing, setBilling] = useState<{ access: BillingAccess; cancelAt: string | null } | null>(null);
+  const [billing, setBilling] = useState<{ access: BillingAccess; cancelAt: string | null; everSubscribed: boolean } | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoChoice, setPhotoChoice] = useState<{ original: string; cutout: string } | null>(null);
 
@@ -522,7 +522,7 @@ function ProfileBanner({
       />
       <View style={styles.plan}>
         <Text style={styles.planName}>{subscribed ? "ABONNEMENT COACH" : "ESSAI GRATUIT"}</Text>
-        <Text style={styles.planNote}>{billing ? billingLabel(billing.access, billing.cancelAt) : "…"}</Text>
+        <Text style={styles.planNote}>{billing ? billingLabel(billing.access, billing.cancelAt, billing.everSubscribed) : "…"}</Text>
         <TouchableOpacity accessibilityRole="link" onPress={() => Linking.openURL(`${apiBaseUrl()}/abonnement`)} style={styles.planCta}>
           <Text style={styles.planCtaText}>{subscribed ? "Mon abonnement" : "S’abonner"}</Text>
         </TouchableOpacity>

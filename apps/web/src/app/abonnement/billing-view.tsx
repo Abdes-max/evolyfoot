@@ -8,6 +8,7 @@ export interface BillingState {
   enabled: boolean;
   enforced: boolean;
   canManage: boolean;
+  everSubscribed: boolean;
   access: { state: "subscribed"; status: string } | { state: "trial"; trialEndsAt: string; daysLeft: number } | { state: "expired"; trialEndsAt: string };
   cycle: BillingCycle | null;
   currentPeriodEnd: string | null;
@@ -38,7 +39,7 @@ export function billingStateLabel(billing: BillingState): string {
   if (billing.access.state === "subscribed") return billing.cancelAt ? "Abonnement résilié" : "Abonnement actif";
   if (billing.access.state === "trial")
     return `Essai gratuit : ${billing.access.daysLeft} jour${billing.access.daysLeft > 1 ? "s" : ""} restant${billing.access.daysLeft > 1 ? "s" : ""}`;
-  return "Essai terminé";
+  return billing.everSubscribed ? "Abonnement terminé" : "Essai terminé";
 }
 
 export async function fetchBilling(): Promise<BillingState | null> {
@@ -120,7 +121,9 @@ export function BillingView() {
                   .join(" · ")
               : billing.access.state === "trial"
                 ? `Accès complet jusqu’au ${longDate(billing.access.trialEndsAt)}, sans carte bancaire. Abonne-toi quand tu veux : le premier prélèvement attend la fin de l’essai.`
-                : `Ton essai s’est terminé le ${longDate(billing.access.trialEndsAt)}. Abonne-toi pour continuer à préparer tes séances.`}
+                : billing.everSubscribed && billing.currentPeriodEnd
+                  ? `Ton abonnement a pris fin le ${longDate(billing.currentPeriodEnd)}. Abonne-toi pour continuer à préparer tes séances.`
+                  : `Ton essai s’est terminé le ${longDate(billing.access.trialEndsAt)}. Abonne-toi pour continuer à préparer tes séances.`}
         </span>
       </div>
 
